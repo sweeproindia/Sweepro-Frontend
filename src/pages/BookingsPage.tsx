@@ -65,6 +65,10 @@ const getStatusColor = (status: string) => {
 
 export default function BookingsPage() {
   const [filter, setFilter] = useState('all');
+  
+  // User's preferred time slot from subscription
+  const preferredTimeSlot = '10:00 AM';
+  const preferredDuration = '3 hours';
 
   const filteredBookings = bookings.filter(booking => {
     if (filter === 'all') return true;
@@ -79,12 +83,12 @@ export default function BookingsPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
             <p className="text-muted-foreground mt-2">
-              Manage your cleaning appointments and view service history
+              Your preferred time: {preferredTimeSlot} ({preferredDuration}) • Click below to book for tomorrow
             </p>
           </div>
           <Button className="btn-hero">
             <Plus className="h-4 w-4 mr-2" />
-            Schedule New Cleaning
+            Book Service for Tomorrow
           </Button>
         </div>
 
@@ -231,21 +235,25 @@ export default function BookingsPage() {
         {/* Quick Booking Card */}
         <Card className="dashboard-card slide-up bg-gradient-feature">
           <CardHeader>
-            <CardTitle>Need an Extra Cleaning?</CardTitle>
+            <CardTitle>Quick Booking</CardTitle>
             <CardDescription>
-              Book additional one-time cleaning services for special occasions
+              Your next service will be scheduled at {preferredTimeSlot} for {preferredDuration}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button className="btn-hero">
                 <Plus className="h-4 w-4 mr-2" />
-                Book One-Time Service
+                Book for Tomorrow ({new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()})
               </Button>
               <Button variant="outline">
-                Contact Support
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule for Specific Date
               </Button>
             </div>
+            <p className="text-sm text-muted-foreground mt-3">
+              Need to change your preferred time slot? Contact support or update in subscription settings.
+            </p>
           </CardContent>
         </Card>
       </div>
