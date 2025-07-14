@@ -1,6 +1,7 @@
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Calendar, CreditCard, Clock, CheckCircle, Plus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -136,30 +137,55 @@ export default function Dashboard() {
           {/* Quick Actions */}
           <Card className="dashboard-card slide-up">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Manage your cleaning services easily</CardDescription>
+              <CardTitle>Quick Booking</CardTitle>
+              <CardDescription>Book services with your fixed time slot (10:00 AM - 1:00 PM)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Link to="/bookings">
-                <Button className="w-full justify-start" variant="outline">
+              {/* Today Booking */}
+              <div className="p-4 bg-gradient-feature rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-foreground">Book for Today</h4>
+                  <Badge className="bg-success text-success-foreground">Available</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Schedule cleaning service for today at your preferred time
+                </p>
+                <Button className="btn-hero w-full">
                   <Plus className="h-4 w-4 mr-2" />
-                  Schedule New Cleaning
+                  Book for Today
                 </Button>
-              </Link>
+              </div>
+
+              {/* Tomorrow Booking */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-foreground">Book for Tomorrow</h4>
+                  <Badge variant="outline">Already Booked</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()} at 10:00 AM - Sarah Johnson
+                </p>
+                <Button variant="outline" disabled className="w-full">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Booking Confirmed
+                </Button>
+              </div>
               
-              <Link to="/subscription">
-                <Button className="w-full justify-start" variant="outline">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Manage Subscription
-                </Button>
-              </Link>
-              
-              <Link to="/support">
-                <Button className="w-full justify-start" variant="outline">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Contact Support
-                </Button>
-              </Link>
+              <div className="space-y-2">
+                <Link to="/bookings">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    View All Bookings
+                  </Button>
+                </Link>
+                
+                <Link to="/subscription">
+                  <Button className="w-full justify-start" variant="outline">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Manage Subscription
+                  </Button>
+                </Link>
+              </div>
               
               <div className="pt-4 border-t border-border">
                 <div className="bg-gradient-feature rounded-lg p-4">

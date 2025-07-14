@@ -114,6 +114,21 @@ export default function SubscriptionPage() {
               </div>
             </div>
 
+            {/* Time Slot Information */}
+            <div className="p-4 bg-muted/30 rounded-lg">
+              <h4 className="font-semibold text-foreground mb-2">Fixed Time Slot</h4>
+              <div className="flex items-center space-x-4">
+                <div>
+                  <p className="text-lg font-medium text-foreground">10:00 AM - 1:00 PM</p>
+                  <p className="text-sm text-muted-foreground">Duration: 3 hours</p>
+                </div>
+                <Badge variant="secondary">Set during subscription</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Contact support to change your preferred time slot
+              </p>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-border">
               <Button variant="outline">
                 <Settings className="h-4 w-4 mr-2" />

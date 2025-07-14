@@ -232,6 +232,54 @@ export default function BookingsPage() {
           </Card>
         )}
 
+        {/* Booking History */}
+        <Card className="dashboard-card slide-up">
+          <CardHeader>
+            <CardTitle>Booking History</CardTitle>
+            <CardDescription>
+              Complete history of your cleaning services
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Date</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Cleaner</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Duration</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.map((booking) => (
+                    <tr key={booking.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {new Date(booking.date).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-foreground">
+                        {booking.cleaner.name}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {booking.duration}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge className={getStatusColor(booking.status)} variant="secondary">
+                          {booking.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {booking.status === 'completed' ? 'Excellent service' : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Quick Booking Card */}
         <Card className="dashboard-card slide-up bg-gradient-feature">
           <CardHeader>
