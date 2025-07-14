@@ -1,0 +1,19 @@
+import { Navbar } from '@/components/Navbar';
+import { HeroSection } from '@/components/landing/HeroSection';
+import { FeaturesSection } from '@/components/landing/FeaturesSection';
+import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
+import { PricingSection } from '@/components/landing/PricingSection';
+import { Footer } from '@/components/Footer';
+
+export default function LandingPage() {
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+      <HeroSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <PricingSection />
+      <Footer />
+    </div>
+  );
+}

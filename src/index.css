@@ -1,42 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Modern Maid Services Design System */
 
 @layer base {
   :root {
+    /* Brand Colors - Professional Blue & Teal Palette */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 210 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 20% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 195 100% 42%; /* Trust-building teal */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 195 100% 88%;
+    --primary-gradient: linear-gradient(135deg, hsl(195 100% 42%), hsl(210 100% 56%));
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 17% 95%;
+    --secondary-foreground: 210 20% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 17% 96%;
+    --muted-foreground: 210 16% 46%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 195 100% 88%;
+    --accent-foreground: 195 100% 20%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 71% 90%;
 
-    --radius: 0.5rem;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 210 20% 90%;
+    --input: 210 20% 94%;
+    --ring: 195 100% 42%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(195 100% 42%) 0%, hsl(210 100% 56%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 17% 98%) 100%);
+    --gradient-feature: linear-gradient(135deg, hsl(195 100% 95%) 0%, hsl(210 100% 95%) 100%);
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px -2px hsl(210 20% 12% / 0.08);
+    --shadow-medium: 0 4px 16px -4px hsl(210 20% 12% / 0.12);
+    --shadow-large: 0 12px 32px -8px hsl(210 20% 12% / 0.16);
+    --shadow-feature: 0 8px 24px -6px hsl(195 100% 42% / 0.15);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +125,66 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter;
+  }
+}
+
+@layer components {
+  /* Hero Button Variant */
+  .btn-hero {
+    @apply bg-gradient-to-r from-primary to-blue-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg;
+    @apply hover:shadow-feature transform hover:-translate-y-1 transition-all duration-300;
+    @apply shadow-medium;
+  }
+
+  /* Feature Card Style */
+  .feature-card {
+    @apply bg-card p-8 rounded-2xl border border-border;
+    @apply hover:shadow-feature hover:-translate-y-2 transition-all duration-300;
+    background: var(--gradient-card);
+  }
+
+  /* Pricing Card Style */
+  .pricing-card {
+    @apply bg-card p-8 rounded-2xl border border-border relative overflow-hidden;
+    @apply hover:shadow-large hover:-translate-y-1 transition-all duration-300;
+    background: var(--gradient-card);
+  }
+
+  .pricing-card.popular {
+    @apply border-primary shadow-feature;
+    background: var(--gradient-feature);
+  }
+
+  .pricing-card.popular::before {
+    content: 'Most Popular';
+    @apply absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground;
+    @apply px-4 py-1 rounded-full text-sm font-medium;
+  }
+
+  /* Dashboard Card Style */
+  .dashboard-card {
+    @apply bg-card p-6 rounded-xl border border-border;
+    @apply hover:shadow-medium transition-all duration-300;
+    background: var(--gradient-card);
+  }
+
+  /* Smooth Animations */
+  .fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+
+  .slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }

@@ -1,0 +1,279 @@
+import { useState } from 'react';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MessageCircle, Phone, Mail, Clock, HelpCircle, Search, ChevronRight } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+const faqItems = [
+  {
+    question: 'How do I reschedule a cleaning appointment?',
+    answer: 'You can reschedule appointments up to 24 hours in advance through your dashboard. Go to My Bookings and click Reschedule next to the appointment.'
+  },
+  {
+    question: 'What happens if I am not home during the cleaning?',
+    answer: 'Our cleaners can work while you are away. Just ensure they have access to your home and any specific instructions. You will receive updates via SMS.'
+  },
+  {
+    question: 'Can I pause my subscription temporarily?',
+    answer: 'Yes, you can pause your subscription for up to 3 months. Go to Subscription Details and click "Pause Subscription". Your plan will resume automatically.'
+  },
+  {
+    question: 'What cleaning supplies do the maids bring?',
+    answer: 'Our cleaners bring all necessary supplies including eco-friendly cleaning products, vacuum cleaners, mops, and other equipment.'
+  },
+  {
+    question: 'How do I change my subscription plan?',
+    answer: 'You can upgrade or downgrade your plan anytime from the Subscription page. Changes take effect from your next billing cycle.'
+  },
+  {
+    question: 'What if I am not satisfied with the cleaning?',
+    answer: 'We offer a 100% satisfaction guarantee. Contact us within 24 hours of the service, and we will arrange a re-clean at no extra cost.'
+  }
+];
+
+const supportChannels = [
+  {
+    icon: MessageCircle,
+    title: 'Live Chat',
+    description: 'Get instant help from our support team',
+    availability: 'Available 24/7',
+    action: 'Start Chat',
+    color: 'text-primary'
+  },
+  {
+    icon: Phone,
+    title: 'Phone Support',
+    description: 'Speak directly with our specialists',
+    availability: 'Mon-Sun, 8 AM - 10 PM',
+    action: 'Call Now: +91 98765 43210',
+    color: 'text-success'
+  },
+  {
+    icon: Mail,
+    title: 'Email Support',
+    description: 'Send us detailed queries via email',
+    availability: 'Response within 4 hours',
+    action: 'Send Email',
+    color: 'text-warning'
+  }
+];
+
+export default function SupportPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    subject: '',
+    category: '',
+    message: ''
+  });
+  const { toast } = useToast();
+
+  const filteredFAQ = faqItems.filter(item =>
+    item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      toast({
+        title: "Support ticket created!",
+        description: "We'll get back to you within 24 hours.",
+      });
+      setFormData({ subject: '', category: '', message: '' });
+    }, 1000);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="fade-in">
+          <h1 className="text-3xl font-bold text-foreground">Support Center</h1>
+          <p className="text-muted-foreground mt-2">
+            Get help with your cleaning services and account management
+          </p>
+        </div>
+
+        {/* Support Channels */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 slide-up">
+          {supportChannels.map((channel, index) => (
+            <Card 
+              key={channel.title} 
+              className="dashboard-card hover:shadow-feature cursor-pointer group"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <CardHeader className="text-center">
+                <div className={`w-12 h-12 mx-auto rounded-full bg-card border-2 border-border flex items-center justify-center group-hover:border-primary/30 transition-colors ${channel.color}`}>
+                  <channel.icon className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-lg">{channel.title}</CardTitle>
+                <CardDescription>{channel.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="text-center space-y-3">
+                <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>{channel.availability}</span>
+                </div>
+                <Button className="w-full btn-hero">
+                  {channel.action}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Support Form */}
+        <Card className="dashboard-card slide-up">
+          <CardHeader>
+            <CardTitle>Submit a Support Request</CardTitle>
+            <CardDescription>
+              Describe your issue and we'll get back to you as soon as possible
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input
+                    id="subject"
+                    placeholder="Brief description of your issue"
+                    value={formData.subject}
+                    onChange={(e) => handleInputChange('subject', e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="booking">Booking Issues</SelectItem>
+                      <SelectItem value="billing">Billing & Payments</SelectItem>
+                      <SelectItem value="service">Service Quality</SelectItem>
+                      <SelectItem value="technical">Technical Issues</SelectItem>
+                      <SelectItem value="general">General Inquiry</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Please provide detailed information about your issue..."
+                  value={formData.message}
+                  onChange={(e) => handleInputChange('message', e.target.value)}
+                  rows={5}
+                  required
+                />
+              </div>
+              
+              <Button type="submit" className="btn-hero" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* FAQ Section */}
+        <Card className="dashboard-card slide-up">
+          <CardHeader>
+            <CardTitle>Frequently Asked Questions</CardTitle>
+            <CardDescription>
+              Find quick answers to common questions
+            </CardDescription>
+            
+            {/* FAQ Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search FAQ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {filteredFAQ.map((item, index) => (
+                <details 
+                  key={index}
+                  className="group border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                >
+                  <summary className="flex items-center justify-between cursor-pointer list-none">
+                    <div className="flex items-center space-x-3">
+                      <HelpCircle className="h-5 w-5 text-primary" />
+                      <span className="font-medium text-foreground">{item.question}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-open:rotate-90 transition-transform" />
+                  </summary>
+                  <div className="mt-3 pl-8 text-muted-foreground">
+                    {item.answer}
+                  </div>
+                </details>
+              ))}
+              
+              {filteredFAQ.length === 0 && (
+                <div className="text-center py-8">
+                  <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No results found</h3>
+                  <p className="text-muted-foreground">
+                    Try adjusting your search terms or contact our support team directly.
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Emergency Contact */}
+        <Card className="dashboard-card slide-up bg-gradient-feature border border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Phone className="h-5 w-5 text-primary" />
+              <span>Emergency Support</span>
+            </CardTitle>
+            <CardDescription>
+              For urgent issues during cleaning appointments
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button className="btn-hero">
+                <Phone className="h-4 w-4 mr-2" />
+                Call Emergency Line
+              </Button>
+              <Button variant="outline">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Live Chat Support
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mt-3">
+              Available 24/7 for cleaning-related emergencies and urgent support needs.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+}
