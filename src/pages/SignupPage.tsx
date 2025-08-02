@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff, Lock, Mail, Phone, Sparkles, User } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);

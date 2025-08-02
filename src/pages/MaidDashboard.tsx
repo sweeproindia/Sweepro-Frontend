@@ -2,7 +2,7 @@ import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, MessageCircle, Star, User } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const maidStats = [
@@ -174,44 +174,37 @@ export default function MaidDashboard() {
             </CardContent>
           </Card>
 
-          {/* My Bookings */}
+          {/* Quick Actions */}
           <Card className="dashboard-card slide-up">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>My Bookings</CardTitle>
-                  <CardDescription>Your confirmed and pending bookings</CardDescription>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>Common tasks and shortcuts</CardDescription>
                 </div>
-                <Link to="/maid-bookings">
-                  <Button variant="outline" size="sm">
-                    View All
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {myBookings.map((booking) => (
-                <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      booking.status === 'confirmed' ? 'bg-success' : 
-                      booking.status === 'pending' ? 'bg-warning' : 'bg-primary'
-                    }`} />
-                    <div>
-                      <p className="font-medium text-foreground">{booking.date} at {booking.time}</p>
-                      <p className="text-sm text-muted-foreground">{booking.client} • {booking.address}</p>
-                      <p className="text-xs text-muted-foreground">{booking.duration} • {booking.earnings}</p>
-                    </div>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    booking.status === 'confirmed' ? 'bg-success-light text-success' :
-                    booking.status === 'pending' ? 'bg-warning/20 text-warning' : 'bg-primary-light text-primary'
-                  }`}>
-                    {booking.status}
-                  </span>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Link to="/maid-bookings">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    View All Bookings
+                  </Button>
+                </Link>
+                <Button className="w-full justify-start" variant="outline">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Set Availability
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  View Earnings
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <User className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

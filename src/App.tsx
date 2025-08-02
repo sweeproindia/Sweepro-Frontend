@@ -8,9 +8,12 @@ import BookingsPage from "./pages/BookingsPage";
 import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import MaidBookingsPage from "./pages/MaidBookingsPage";
 import MaidDashboard from "./pages/MaidDashboard";
+import MaidSupportPage from "./pages/MaidSupportPage";
 import NotFound from "./pages/NotFound";
 import PaymentsPage from "./pages/PaymentsPage";
+import ProfilePage from "./pages/ProfilePage";
 import SignupPage from "./pages/SignupPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import SupportPage from "./pages/SupportPage";
@@ -29,6 +32,9 @@ const App = () => (
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/maid-dashboard" element={<MaidDashboard />} />
+          <Route path="/maid-bookings" element={<MaidBookingsPage />} />
+          <Route path="/maid-support" element={<MaidSupportPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
