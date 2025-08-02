@@ -1,17 +1,19 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AdminDashboard from "./pages/AdminDashboard";
+import BookingsPage from "./pages/BookingsPage";
+import Dashboard from "./pages/Dashboard";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import Dashboard from "./pages/Dashboard";
-import BookingsPage from "./pages/BookingsPage";
-import SubscriptionPage from "./pages/SubscriptionPage";
-import PaymentsPage from "./pages/PaymentsPage";
-import SupportPage from "./pages/SupportPage";
+import MaidDashboard from "./pages/MaidDashboard";
 import NotFound from "./pages/NotFound";
+import PaymentsPage from "./pages/PaymentsPage";
+import SignupPage from "./pages/SignupPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import SupportPage from "./pages/SupportPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/maid-dashboard" element={<MaidDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
           <Route path="/payments" element={<PaymentsPage />} />

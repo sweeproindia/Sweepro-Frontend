@@ -1,15 +1,16 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Crown, Eye, EyeOff, Lock, Mail, Shield, Sparkles, User } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [userType, setUserType] = useState<'user' | 'maid' | 'admin'>('user');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -26,9 +27,23 @@ export default function LoginPage() {
       setIsLoading(false);
       toast({
         title: "Login successful!",
-        description: "Welcome back to CleanEase.",
+        description: `Welcome back to CleanEase as ${userType}.`,
       });
-      navigate('/dashboard');
+      
+      // Navigate based on user type
+      switch (userType) {
+        case 'user':
+          navigate('/dashboard');
+          break;
+        case 'maid':
+          navigate('/maid-dashboard');
+          break;
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+        default:
+          navigate('/dashboard');
+      }
     }, 1000);
   };
 
@@ -58,6 +73,40 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* User Type Selection */}
+            <div className="mb-6">
+              <Label className="text-sm font-medium mb-3 block">Login as</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant={userType === 'user' ? 'default' : 'outline'}
+                  className="flex flex-col items-center py-3 h-auto"
+                  onClick={() => setUserType('user')}
+                >
+                  <User className="h-5 w-5 mb-1" />
+                  <span className="text-xs">User</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={userType === 'maid' ? 'default' : 'outline'}
+                  className="flex flex-col items-center py-3 h-auto"
+                  onClick={() => setUserType('maid')}
+                >
+                  <Shield className="h-5 w-5 mb-1" />
+                  <span className="text-xs">Maid</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={userType === 'admin' ? 'default' : 'outline'}
+                  className="flex flex-col items-center py-3 h-auto"
+                  onClick={() => setUserType('admin')}
+                >
+                  <Crown className="h-5 w-5 mb-1" />
+                  <span className="text-xs">Admin</span>
+                </Button>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
