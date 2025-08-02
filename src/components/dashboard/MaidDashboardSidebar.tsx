@@ -1,14 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { Calendar, CreditCard, Home, LogOut, MessageCircle, Settings, Sparkles, User } from 'lucide-react';
+import { Calendar, Home, LogOut, MessageCircle, Sparkles } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/maid-dashboard', icon: Home },
   { name: 'My Bookings', href: '/maid-bookings', icon: Calendar },
-  { name: 'Earnings', href: '/maid-earnings', icon: CreditCard },
-  { name: 'Profile', href: '/maid-profile', icon: User },
   { name: 'Support', href: '/maid-support', icon: MessageCircle },
-  { name: 'Settings', href: '/maid-settings', icon: Settings },
+  
 ];
 
 export const MaidDashboardSidebar = () => {

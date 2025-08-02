@@ -232,3 +232,18 @@
   0% { filter: drop-shadow(0 0 0px #60a5fa); }
   100% { filter: drop-shadow(0 0 32px #60a5fa); }
 }
+
+/* Testimonials hover pause effect */
+.hover\:pause:hover {
+  animation-play-state: paused;
+}
+
+/* Smooth scrolling for navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Offset for fixed navbar when scrolling to sections */
+section[id], div[id] {
+  scroll-margin-top: 5rem;
+}
