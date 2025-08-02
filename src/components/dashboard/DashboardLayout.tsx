@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { DashboardSidebar } from './DashboardSidebar';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Bell, User } from 'lucide-react';
+import { Menu, X, Bell, User, LogOut, Sparkles } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -9,6 +11,31 @@ interface DashboardLayoutProps {
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+  
+  // Determine if user is on admin dashboard
+  const isAdmin = location.pathname.startsWith('/admin');
+  
+  // Navigation items based on user type
+  const customerNavigationItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
+    { name: 'My Bookings', href: '/bookings', icon: '📅' },
+    { name: 'Subscription', href: '/subscription', icon: '💳' },
+    { name: 'Payment History', href: '/payments', icon: '🧾' },
+    { name: 'Support', href: '/support', icon: '💬' },
+  ];
+
+  const adminNavigationItems = [
+    { name: 'Dashboard', href: '/admin', icon: '🏠' },
+    { name: 'Bookings', href: '/admin#bookings', icon: '📅' },
+    { name: 'Subscriptions', href: '/admin#subscriptions', icon: '💳' },
+    { name: 'Payments', href: '/admin#payments', icon: '🧾' },
+    { name: 'Users', href: '/admin#users', icon: '👥' },
+    { name: 'Maids', href: '/admin#maids', icon: '🛡️' },
+    { name: 'Analytics', href: '/admin#analytics', icon: '📊' },
+  ];
+
+  const navigationItems = isAdmin ? adminNavigationItems : customerNavigationItems;
 
   return (
     <div className="h-screen flex overflow-hidden bg-background">
@@ -28,7 +55,58 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <X className="h-6 w-6" />
               </Button>
             </div>
-            {/* Mobile sidebar content would go here */}
+            
+            {/* Mobile sidebar content */}
+            <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-border">
+              <div className="flex items-center space-x-2">
+                <div className="bg-gradient-hero rounded-lg p-2">
+                  <Sparkles className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <span className="text-xl font-bold text-foreground">CleanEase</span>
+                {isAdmin && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Admin
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex-1 flex flex-col overflow-y-auto">
+              <nav className="flex-1 px-2 py-4 space-y-1">
+                {navigationItems.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `group flex items-center px-2 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`
+                    }
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    {item.name}
+                  </NavLink>
+                ))}
+              </nav>
+              
+              {/* Logout Button */}
+              <div className="p-2">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    window.location.href = '/';
+                  }}
+                >
+                  <LogOut className="mr-3 h-5 w-5" />
+                  Logout
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -64,7 +142,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               {/* Profile */}
               <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                 <User className="h-5 w-5" />
-                <span className="hidden md:block text-sm font-medium">John Doe</span>
+                <span className="hidden md:block text-sm font-medium">
+                  {isAdmin ? 'Admin User' : 'John Doe'}
+                </span>
               </Button>
             </div>
           </div>

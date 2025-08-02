@@ -1,8 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Calendar, CreditCard, Receipt, MessageCircle, LogOut, Sparkles } from 'lucide-react';
+import { Home, Calendar, CreditCard, Receipt, MessageCircle, LogOut, Sparkles, Users, Shield, BarChart3, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-const navigationItems = [
+const customerNavigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'My Bookings', href: '/bookings', icon: Calendar },
   { name: 'Subscription', href: '/subscription', icon: CreditCard },
@@ -10,10 +11,38 @@ const navigationItems = [
   { name: 'Support', href: '/support', icon: MessageCircle },
 ];
 
+const adminNavigationItems = [
+  { name: 'Dashboard', href: '/admin', icon: Home },
+  { name: 'Bookings', href: '/admin#bookings', icon: Calendar },
+  { name: 'Subscriptions', href: '/admin#subscriptions', icon: CreditCard },
+  { name: 'Payments', href: '/admin#payments', icon: Receipt },
+  { name: 'Users', href: '/admin#users', icon: Users },
+  { name: 'Maids', href: '/admin#maids', icon: Shield },
+  { name: 'Analytics', href: '/admin#analytics', icon: BarChart3 },
+];
+
 export const DashboardSidebar = () => {
   const location = useLocation();
   
-  const isActive = (path: string) => location.pathname === path;
+  // Determine if user is on admin dashboard
+  const isAdmin = location.pathname.startsWith('/admin');
+  const navigationItems = isAdmin ? adminNavigationItems : customerNavigationItems;
+  
+  const isActive = (path: string) => {
+    if (path.includes('#')) {
+      // Handle hash-based navigation for admin tabs
+      const [basePath, hash] = path.split('#');
+      if (location.pathname === basePath) {
+        // If no hash is set, default to first tab (bookings)
+        if (!location.hash && hash === 'bookings') {
+          return true;
+        }
+        return location.hash === `#${hash}`;
+      }
+      return false;
+    }
+    return location.pathname === path;
+  };
 
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
@@ -25,6 +54,11 @@ export const DashboardSidebar = () => {
               <Sparkles className="h-6 w-6 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold text-foreground">CleanEase</span>
+            {isAdmin && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                Admin
+              </Badge>
+            )}
           </div>
         </div>
         
