@@ -187,4 +187,48 @@
     from { opacity: 0; transform: translateY(40px); }
     to { opacity: 1; transform: translateY(0); }
   }
+
+  /* Continuous floating animation for testimonials */
+  .float-continuous {
+    animation: floatContinuous 3s ease-in-out infinite;
+  }
+  @keyframes floatContinuous {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-16px); }
+  }
+
+  /* Continuous rotation for image */
+  .rotate-slow {
+    animation: rotateSlow 16s linear infinite;
+  }
+  @keyframes rotateSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Slide in from left */
+  .slide-in-left {
+    animation: slideInLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-80px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Slide in from right */
+  .slide-in-right {
+    animation: slideInRight 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(80px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}
+
+.animate-glow {
+  animation: glowImage 2s ease-in-out infinite alternate;
+}
+@keyframes glowImage {
+  0% { filter: drop-shadow(0 0 0px #60a5fa); }
+  100% { filter: drop-shadow(0 0 32px #60a5fa); }
 }

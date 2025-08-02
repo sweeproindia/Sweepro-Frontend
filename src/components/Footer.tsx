@@ -1,9 +1,9 @@
+import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Sparkles, Twitter } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
 export const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className="bg-[#0C1B37] border-t border-border text-white " >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
@@ -12,9 +12,9 @@ export const Footer = () => {
               <div className="bg-gradient-hero rounded-lg p-2">
                 <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground">CleanEase</span>
+              <span className="text-xl font-bold" style={{ color: '#FFFFFF' }}>CleanEase</span>
             </Link>
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed" >
               Professional maid services made simple. Subscribe once and enjoy 
               hassle-free cleaning with our trusted, background-verified professionals.
             </p>
