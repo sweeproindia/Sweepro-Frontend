@@ -1,355 +1,564 @@
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-    ArrowRight,
     BarChart3,
     Calendar,
-    CheckCircle,
     DollarSign,
-    Settings,
     Shield,
-    Users
+    Users,
+    TrendingUp
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { AdminBookingsSection } from '@/components/dashboard/AdminBookingsSection';
+import { AdminSubscriptionsSection } from '@/components/dashboard/AdminSubscriptionsSection';
+import { AdminPaymentsSection } from '@/components/dashboard/AdminPaymentsSection';
+import { AdminUsersSection } from '@/components/dashboard/AdminUsersSection';
+import { AdminMaidsSection } from '@/components/dashboard/AdminMaidsSection';
+import { AdminAnalyticsSection } from '@/components/dashboard/AdminAnalyticsSection';
 
-const adminStats = [
+// Mock data for pending bookings
+const pendingBookings = [
   {
-    title: 'Total Users',
-    value: '1,247',
-    description: '+12% from last month',
-    icon: Users,
-    color: 'text-primary'
+    id: 'BK001',
+    customerName: 'Sarah Johnson',
+    customerEmail: 'sarah.j@email.com',
+    service: 'Deep Cleaning',
+    date: '2024-01-15',
+    time: '10:00 AM',
+    address: '123 Main St, City',
+    price: 1200,
+    status: 'pending' as const
   },
   {
-    title: 'Active Maids',
-    value: '89',
-    description: '23 available today',
-    icon: Shield,
-    color: 'text-success'
+    id: 'BK002',
+    customerName: 'Mike Chen',
+    customerEmail: 'mike.chen@email.com',
+    service: 'Regular Cleaning',
+    date: '2024-01-16',
+    time: '2:00 PM',
+    address: '456 Oak Ave, City',
+    price: 800,
+    status: 'pending' as const
   },
   {
-    title: 'Revenue',
-    value: '₹2.4M',
-    description: '+8% from last month',
-    icon: DollarSign,
-    color: 'text-warning'
+    id: 'BK003',
+    customerName: 'Emily Davis',
+    customerEmail: 'emily.d@email.com',
+    service: 'Kitchen Deep Clean',
+    date: '2024-01-17',
+    time: '9:00 AM',
+    address: '789 Pine Rd, City',
+    price: 950,
+    status: 'pending' as const
   },
   {
-    title: 'Bookings',
-    value: '456',
-    description: 'This week',
-    icon: Calendar,
-    color: 'text-primary'
+    id: 'BK004',
+    customerName: 'Alex Thompson',
+    customerEmail: 'alex.t@email.com',
+    service: 'Bathroom Deep Clean',
+    date: '2024-01-18',
+    time: '11:00 AM',
+    address: '321 Elm St, City',
+    price: 750,
+    status: 'pending' as const
+  },
+  {
+    id: 'BK005',
+    customerName: 'Jessica Lee',
+    customerEmail: 'jessica.l@email.com',
+    service: 'Full House Cleaning',
+    date: '2024-01-19',
+    time: '8:00 AM',
+    address: '654 Maple Dr, City',
+    price: 1500,
+    status: 'pending' as const
+  },
+  {
+    id: 'BK006',
+    customerName: 'Robert Wilson',
+    customerEmail: 'robert.w@email.com',
+    service: 'Carpet Cleaning',
+    date: '2024-01-20',
+    time: '3:00 PM',
+    address: '987 Cedar Ln, City',
+    price: 1100,
+    status: 'pending' as const
   }
 ];
 
-const recentActivities = [
+// Mock data for confirmed bookings
+const confirmedBookings = [
   {
-    id: 1,
-    type: 'user_registration',
-    message: 'New user registered: john.doe@email.com',
-    time: '2 minutes ago',
-    status: 'completed'
+    id: 'BK007',
+    customerName: 'Lisa Anderson',
+    customerEmail: 'lisa.a@email.com',
+    service: 'Regular Cleaning',
+    date: '2024-01-14',
+    time: '1:00 PM',
+    address: '111 First St, City',
+    price: 800,
+    status: 'confirmed' as const,
+    assignedMaid: 'Maria Garcia'
   },
   {
-    id: 2,
-    type: 'booking_created',
-    message: 'New booking created by user #1234',
-    time: '5 minutes ago',
-    status: 'pending'
+    id: 'BK008',
+    customerName: 'David Brown',
+    customerEmail: 'david.b@email.com',
+    service: 'Deep Cleaning',
+    date: '2024-01-13',
+    time: '10:00 AM',
+    address: '222 Second Ave, City',
+    price: 1200,
+    status: 'confirmed' as const,
+    assignedMaid: 'Ana Rodriguez'
   },
   {
-    id: 3,
-    type: 'maid_verified',
-    message: 'Maid Sarah Johnson verified successfully',
-    time: '10 minutes ago',
-    status: 'completed'
-  },
-  {
-    id: 4,
-    type: 'payment_received',
-    message: 'Payment received: ₹450 from user #5678',
-    time: '15 minutes ago',
-    status: 'completed'
+    id: 'BK009',
+    customerName: 'Jennifer White',
+    customerEmail: 'jennifer.w@email.com',
+    service: 'Kitchen Cleaning',
+    date: '2024-01-12',
+    time: '2:00 PM',
+    address: '333 Third Rd, City',
+    price: 950,
+    status: 'confirmed' as const,
+    assignedMaid: 'Sofia Martinez'
   }
 ];
 
-const systemAlerts = [
+// Mock data for subscriptions
+const subscriptions = [
   {
-    id: 1,
-    type: 'warning',
-    message: 'Server load is high (85%)',
-    time: '5 minutes ago'
+    id: 'SUB001',
+    customerName: 'John Smith',
+    customerEmail: 'john.smith@email.com',
+    plan: 'Premium Monthly',
+    status: 'active' as const,
+    startDate: '2024-01-01',
+    endDate: '2024-02-01',
+    price: 150,
+    usage: 8,
+    limit: 12,
+    nextBilling: '2024-02-01'
   },
   {
-    id: 2,
-    type: 'info',
-    message: 'Database backup completed',
-    time: '1 hour ago'
+    id: 'SUB002',
+    customerName: 'Mary Johnson',
+    customerEmail: 'mary.j@email.com',
+    plan: 'Basic Weekly',
+    status: 'active' as const,
+    startDate: '2024-01-05',
+    endDate: '2024-01-12',
+    price: 80,
+    usage: 3,
+    limit: 4,
+    nextBilling: '2024-01-12'
   },
   {
-    id: 3,
-    type: 'success',
-    message: 'New maid onboarding completed',
-    time: '2 hours ago'
+    id: 'SUB003',
+    customerName: 'Tom Wilson',
+    customerEmail: 'tom.w@email.com',
+    plan: 'Premium Yearly',
+    status: 'active' as const,
+    startDate: '2024-01-01',
+    endDate: '2025-01-01',
+    price: 1500,
+    usage: 45,
+    limit: 144,
+    nextBilling: '2025-01-01'
+  },
+  {
+    id: 'SUB004',
+    customerName: 'Sarah Davis',
+    customerEmail: 'sarah.d@email.com',
+    plan: 'Basic Monthly',
+    status: 'expired' as const,
+    startDate: '2023-12-01',
+    endDate: '2024-01-01',
+    price: 100,
+    usage: 12,
+    limit: 12,
+    nextBilling: '2024-01-01'
+  },
+  {
+    id: 'SUB005',
+    customerName: 'Mike Brown',
+    customerEmail: 'mike.b@email.com',
+    plan: 'Premium Weekly',
+    status: 'cancelled' as const,
+    startDate: '2024-01-01',
+    endDate: '2024-01-08',
+    price: 120,
+    usage: 2,
+    limit: 4,
+    nextBilling: '2024-01-08'
   }
 ];
+
+// Mock data for payments
+const payments = [
+  {
+    id: 'PAY001',
+    customerName: 'John Smith',
+    customerEmail: 'john.smith@email.com',
+    amount: 150,
+    method: 'Credit Card',
+    status: 'completed' as const,
+    date: '2024-01-01',
+    transactionId: 'TXN123456789',
+    description: 'Premium Monthly Subscription'
+  },
+  {
+    id: 'PAY002',
+    customerName: 'Mary Johnson',
+    customerEmail: 'mary.j@email.com',
+    amount: 80,
+    method: 'PayPal',
+    status: 'completed' as const,
+    date: '2024-01-05',
+    transactionId: 'TXN987654321',
+    description: 'Basic Weekly Subscription'
+  },
+  {
+    id: 'PAY003',
+    customerName: 'Tom Wilson',
+    customerEmail: 'tom.w@email.com',
+    amount: 1500,
+    method: 'Bank Transfer',
+    status: 'pending' as const,
+    date: '2024-01-01',
+    transactionId: 'TXN456789123',
+    description: 'Premium Yearly Subscription'
+  },
+  {
+    id: 'PAY004',
+    customerName: 'Sarah Davis',
+    customerEmail: 'sarah.d@email.com',
+    amount: 100,
+    method: 'Credit Card',
+    status: 'failed' as const,
+    date: '2023-12-01',
+    transactionId: 'TXN789123456',
+    description: 'Basic Monthly Subscription'
+  },
+  {
+    id: 'PAY005',
+    customerName: 'Mike Brown',
+    customerEmail: 'mike.b@email.com',
+    amount: 120,
+    method: 'PayPal',
+    status: 'refunded' as const,
+    date: '2024-01-01',
+    transactionId: 'TXN321654987',
+    description: 'Premium Weekly Subscription'
+  }
+];
+
+// Mock data for users
+const users = [
+  {
+    id: 'USR001',
+    name: 'John Smith',
+    email: 'john.smith@email.com',
+    phone: '+1-555-0123',
+    joinDate: '2024-01-01',
+    status: 'active' as const,
+    totalBookings: 15,
+    totalSpent: 2250,
+    lastActive: '2024-01-15'
+  },
+  {
+    id: 'USR002',
+    name: 'Mary Johnson',
+    email: 'mary.j@email.com',
+    phone: '+1-555-0124',
+    joinDate: '2024-01-05',
+    status: 'active' as const,
+    totalBookings: 8,
+    totalSpent: 640,
+    lastActive: '2024-01-14'
+  },
+  {
+    id: 'USR003',
+    name: 'Tom Wilson',
+    email: 'tom.w@email.com',
+    phone: '+1-555-0125',
+    joinDate: '2024-01-01',
+    status: 'active' as const,
+    totalBookings: 45,
+    totalSpent: 6750,
+    lastActive: '2024-01-15'
+  },
+  {
+    id: 'USR004',
+    name: 'Sarah Davis',
+    email: 'sarah.d@email.com',
+    phone: '+1-555-0126',
+    joinDate: '2023-12-01',
+    status: 'pending' as const,
+    totalBookings: 12,
+    totalSpent: 1200,
+    lastActive: '2024-01-10'
+  },
+  {
+    id: 'USR005',
+    name: 'Mike Brown',
+    email: 'mike.b@email.com',
+    phone: '+1-555-0127',
+    joinDate: '2024-01-01',
+    status: 'suspended' as const,
+    totalBookings: 2,
+    totalSpent: 240,
+    lastActive: '2024-01-08'
+  }
+];
+
+// Mock data for all maids
+const allMaids = [
+  {
+    id: 'MAID001',
+    name: 'Maria Garcia',
+    email: 'maria.g@email.com',
+    phone: '+1-555-1001',
+    address: '123 Worker St, City',
+    experience: '3 years',
+    specializations: ['Regular Cleaning', 'Deep Cleaning', 'Kitchen Cleaning'],
+    rating: 4.8,
+    status: 'active' as const,
+    totalBookings: 156,
+    joinDate: '2023-06-15'
+  },
+  {
+    id: 'MAID002',
+    name: 'Ana Rodriguez',
+    email: 'ana.r@email.com',
+    phone: '+1-555-1002',
+    address: '456 Service Ave, City',
+    experience: '5 years',
+    specializations: ['Deep Cleaning', 'Full House Cleaning', 'Carpet Cleaning'],
+    rating: 4.9,
+    status: 'active' as const,
+    totalBookings: 203,
+    joinDate: '2023-03-20'
+  },
+  {
+    id: 'MAID003',
+    name: 'Sofia Martinez',
+    email: 'sofia.m@email.com',
+    phone: '+1-555-1003',
+    address: '789 Clean Rd, City',
+    experience: '2 years',
+    specializations: ['Regular Cleaning', 'Bathroom Cleaning', 'Kitchen Cleaning'],
+    rating: 4.6,
+    status: 'active' as const,
+    totalBookings: 89,
+    joinDate: '2023-09-10'
+  },
+  {
+    id: 'MAID004',
+    name: 'Isabella Lopez',
+    email: 'isabella.l@email.com',
+    phone: '+1-555-1004',
+    address: '321 Maid St, City',
+    experience: '1 year',
+    specializations: ['Regular Cleaning', 'Kitchen Cleaning'],
+    rating: 4.3,
+    status: 'pending' as const,
+    totalBookings: 0,
+    joinDate: '2024-01-10'
+  },
+  {
+    id: 'MAID005',
+    name: 'Carmen Torres',
+    email: 'carmen.t@email.com',
+    phone: '+1-555-1005',
+    address: '654 Helper Ave, City',
+    experience: '4 years',
+    specializations: ['Deep Cleaning', 'Full House Cleaning', 'Carpet Cleaning', 'Bathroom Cleaning'],
+    rating: 4.7,
+    status: 'pending' as const,
+    totalBookings: 0,
+    joinDate: '2024-01-12'
+  }
+];
+
+// Available maids (only active ones)
+const availableMaids = allMaids.filter(maid => maid.status === 'active');
+
+// Analytics data
+const analyticsData = {
+  totalBookings: 156,
+  totalCustomers: 89,
+  totalMaids: 5,
+  totalRevenue: 23450,
+  monthlyGrowth: 12.5,
+  customerGrowth: 8.3,
+  maidGrowth: 25.0,
+  revenueGrowth: 15.7
+};
 
 export default function AdminDashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = location.hash.replace('#', '');
+    if (hash && ['bookings', 'subscriptions', 'payments', 'users', 'maids', 'analytics'].includes(hash)) {
+      return hash;
+    }
+    return 'bookings';
+  });
+
+  // Sync tabs with URL hash
+  useEffect(() => {
+    const hash = location.hash.replace('#', '');
+    if (hash && ['bookings', 'subscriptions', 'payments', 'users', 'maids', 'analytics'].includes(hash)) {
+      setActiveTab(hash);
+    } else if (!location.hash) {
+      // Default to bookings tab if no hash is set
+      setActiveTab('bookings');
+    }
+  }, [location.hash]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    navigate(`/admin#${value}`);
+  };
+
+  const handleAssignMaid = (bookingId: string, maidId: string) => {
+    // Mock function - in real app, this would update the booking
+    console.log(`Assigning maid ${maidId} to booking ${bookingId}`);
+  };
+
+  const handleAddMaid = (maidData: any) => {
+    // Mock function - in real app, this would add a new maid
+    console.log('Adding new maid:', maidData);
+  };
+
+  const handleVerifyMaid = (maidId: string) => {
+    // Mock function - in real app, this would verify the maid
+    console.log('Verifying maid:', maidId);
+  };
+
+  const handleVerifyUser = (userId: string) => {
+    // Mock function - in real app, this would verify the user
+    console.log('Verifying user:', userId);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Monitor and manage the CleanEase platform
-          </p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage bookings, customers, maids, and monitor platform performance
+            </p>
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 slide-up">
-          {adminStats.map((stat, index) => (
-            <Card key={stat.title} className="dashboard-card" style={{ animationDelay: `${index * 0.1}s` }}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activities */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Recent Activities</CardTitle>
-                  <CardDescription>Latest platform activities and events</CardDescription>
-                </div>
-                <Link to="/admin/activities">
-                  <Button variant="outline" size="sm">
-                    View All
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
+        {/* Statistics Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="dashboard-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      activity.status === 'completed' ? 'bg-success' : 
-                      activity.status === 'pending' ? 'bg-warning' : 'bg-primary'
-                    }`} />
-                    <div>
-                      <p className="font-medium text-foreground">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    activity.status === 'completed' ? 'bg-success-light text-success' :
-                    activity.status === 'pending' ? 'bg-warning/20 text-warning' : 'bg-primary-light text-primary'
-                  }`}>
-                    {activity.status}
-                  </span>
-                </div>
-              ))}
+            <CardContent>
+              <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
+              <p className="text-xs text-success flex items-center gap-1">
+                ↗️ {analyticsData.monthlyGrowth}% from last month
+              </p>
             </CardContent>
           </Card>
 
-          {/* System Alerts */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>System Alerts</CardTitle>
-                  <CardDescription>Platform status and notifications</CardDescription>
-                </div>
-                <Link to="/admin/alerts">
-                  <Button variant="outline" size="sm">
-                    View All
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
+          <Card className="dashboard-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="space-y-4">
-              {systemAlerts.map((alert) => (
-                <div key={alert.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      alert.type === 'warning' ? 'bg-warning' : 
-                      alert.type === 'info' ? 'bg-primary' : 'bg-success'
-                    }`} />
-                    <div>
-                      <p className="font-medium text-foreground">{alert.message}</p>
-                      <p className="text-xs text-muted-foreground">{alert.time}</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {alert.type}
-                  </Badge>
-                </div>
-              ))}
+            <CardContent>
+              <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
+              <p className="text-xs text-success flex items-center gap-1">
+                ↗️ {analyticsData.customerGrowth}% from last month
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Maids</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analyticsData.totalMaids}</div>
+              <p className="text-xs text-success flex items-center gap-1">
+                ↗️ {analyticsData.maidGrowth}% from last month
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
+              <p className="text-xs text-success flex items-center gap-1">
+                ↗️ {analyticsData.revenueGrowth}% from last month
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <Card className="dashboard-card slide-up">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link to="/admin/users">
-                <Button className="w-full justify-start" variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Users
-                </Button>
-              </Link>
-              
-              <Link to="/admin/maids">
-                <Button className="w-full justify-start" variant="outline">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Manage Maids
-                </Button>
-              </Link>
-              
-              <Link to="/admin/analytics">
-                <Button className="w-full justify-start" variant="outline">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View Analytics
-                </Button>
-              </Link>
-              
-              <Link to="/admin/settings">
-                <Button className="w-full justify-start" variant="outline">
-                  <Settings className="h-4 w-4 mr-2" />
-                  System Settings
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="maids">Maids</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
 
-        {/* Platform Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Management */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>Overview of user statistics and management</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gradient-feature rounded-lg p-4">
-                  <h4 className="font-semibold text-foreground mb-2">Active Users</h4>
-                  <p className="text-2xl font-bold text-primary">1,247</p>
-                  <p className="text-sm text-muted-foreground">+12% this month</p>
-                </div>
-                
-                <div className="bg-gradient-feature rounded-lg p-4">
-                  <h4 className="font-semibold text-foreground mb-2">New Users</h4>
-                  <p className="text-2xl font-bold text-primary">89</p>
-                  <p className="text-sm text-muted-foreground">This week</p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Button className="w-full justify-start" variant="outline">
-                  <Users className="h-4 w-4 mr-2" />
-                  View All Users
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Verify Users
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent value="bookings">
+            <AdminBookingsSection
+              pendingBookings={pendingBookings}
+              confirmedBookings={confirmedBookings}
+              availableMaids={availableMaids}
+              onAssignMaid={handleAssignMaid}
+            />
+          </TabsContent>
 
-          {/* Maid Management */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <CardTitle>Maid Management</CardTitle>
-              <CardDescription>Overview of maid statistics and management</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gradient-feature rounded-lg p-4">
-                  <h4 className="font-semibold text-foreground mb-2">Active Maids</h4>
-                  <p className="text-2xl font-bold text-primary">89</p>
-                  <p className="text-sm text-muted-foreground">23 available today</p>
-                </div>
-                
-                <div className="bg-gradient-feature rounded-lg p-4">
-                  <h4 className="font-semibold text-foreground mb-2">Pending Verification</h4>
-                  <p className="text-2xl font-bold text-primary">12</p>
-                  <p className="text-sm text-muted-foreground">Need approval</p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Button className="w-full justify-start" variant="outline">
-                  <Shield className="h-4 w-4 mr-2" />
-                  View All Maids
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Verify Maids
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="subscriptions">
+            <AdminSubscriptionsSection subscriptions={subscriptions} />
+          </TabsContent>
 
-        {/* Revenue & Analytics */}
-        <Card className="dashboard-card slide-up">
-          <CardHeader>
-            <CardTitle>Revenue & Analytics</CardTitle>
-            <CardDescription>Financial overview and performance metrics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-gradient-feature rounded-lg p-4">
-                <h4 className="font-semibold text-foreground mb-2">Monthly Revenue</h4>
-                <p className="text-2xl font-bold text-primary">₹2.4M</p>
-                <p className="text-sm text-muted-foreground">+8% from last month</p>
-              </div>
-              
-              <div className="bg-gradient-feature rounded-lg p-4">
-                <h4 className="font-semibold text-foreground mb-2">Total Bookings</h4>
-                <p className="text-2xl font-bold text-primary">456</p>
-                <p className="text-sm text-muted-foreground">This week</p>
-              </div>
-              
-              <div className="bg-gradient-feature rounded-lg p-4">
-                <h4 className="font-semibold text-foreground mb-2">Success Rate</h4>
-                <p className="text-2xl font-bold text-primary">94%</p>
-                <p className="text-sm text-muted-foreground">Completed bookings</p>
-              </div>
-              
-              <div className="bg-gradient-feature rounded-lg p-4">
-                <h4 className="font-semibold text-foreground mb-2">Customer Satisfaction</h4>
-                <p className="text-2xl font-bold text-primary">4.7★</p>
-                <p className="text-sm text-muted-foreground">Average rating</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="payments">
+            <AdminPaymentsSection payments={payments} />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <AdminUsersSection users={users} onVerifyUser={handleVerifyUser} />
+          </TabsContent>
+
+          <TabsContent value="maids">
+            <AdminMaidsSection
+              allMaids={allMaids}
+              onAddMaid={handleAddMaid}
+              onVerifyMaid={handleVerifyMaid}
+            />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AdminAnalyticsSection analyticsData={analyticsData} />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
