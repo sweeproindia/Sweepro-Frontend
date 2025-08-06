@@ -6,9 +6,11 @@ import { Link } from 'react-router-dom';
 interface NavbarProps {
   isAuthenticated?: boolean;
   onAuthAction?: () => void;
+  onLoginClick?: () => void;
+  onSignupClick?: () => void;
 }
 
-export const Navbar = ({ isAuthenticated = false, onAuthAction }: NavbarProps) => {
+export const Navbar = ({ isAuthenticated = false, onAuthAction, onLoginClick, onSignupClick }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -207,12 +209,18 @@ export const Navbar = ({ isAuthenticated = false, onAuthAction }: NavbarProps) =
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
+                <button
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={onLoginClick}
+                >
                   Login
-                </Link>
-                <Link to="/signup">
-                  <Button className="btn-hero">Get Started</Button>
-                </Link>
+                </button>
+                <button
+                  className="btn-hero px-4 py-2 rounded bg-blue-500 text-white font-semibold shadow hover:bg-blue-600 transition"
+                  onClick={onSignupClick}
+                >
+                  Get Started
+                </button>
               </div>
             )}
           </div>
@@ -270,12 +278,18 @@ export const Navbar = ({ isAuthenticated = false, onAuthAction }: NavbarProps) =
               </Link>
             ) : (
               <div className="space-y-2 pt-2">
-                <Link to="/login" onClick={toggleMenu}>
-                  <Button variant="outline" className="w-full">Login</Button>
-                </Link>
-                <Link to="/signup" onClick={toggleMenu}>
-                  <Button className="btn-hero w-full">Get Started</Button>
-                </Link>
+                <button
+                  className="w-full border border-blue-500 text-blue-700 font-semibold rounded py-2 hover:bg-blue-50 transition"
+                  onClick={() => { toggleMenu(); if (onLoginClick) onLoginClick(); }}
+                >
+                  Login
+                </button>
+                <button
+                  className="btn-hero w-full px-4 py-2 rounded bg-blue-500 text-white font-semibold shadow hover:bg-blue-600 transition"
+                  onClick={() => { toggleMenu(); if (onSignupClick) onSignupClick(); }}
+                >
+                  Get Started
+                </button>
               </div>
             )}
           </div>
