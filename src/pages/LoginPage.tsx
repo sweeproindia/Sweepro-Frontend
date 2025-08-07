@@ -6,10 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Crown, Eye, EyeOff, Lock, Mail, Shield, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [userType, setUserType] = useState<'user' | 'maid' | 'admin'>('user');
   const [formData, setFormData] = useState({
     email: '',
@@ -17,17 +17,17 @@ export default function LoginPage() {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, isLoading } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const user = await login(formData.email, formData.password);
+      
       toast({
         title: "Login successful!",
-        description: `Welcome back to CleanEase as ${userType}.`,
+        description: `Welcome back to CleanEase, ${user.name}!`,
       });
       
       // Navigate based on user type
@@ -44,7 +44,13 @@ export default function LoginPage() {
         default:
           navigate('/dashboard');
       }
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Invalid credentials",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,6 +112,18 @@ export default function LoginPage() {
                 </Button>
               </div>
             </div>
+
+            {/* Sample Login Info */}
+            {userType === 'user' && (
+              <div className="mb-6 p-4 bg-muted/30 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Sample User Logins:</h4>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  <div><strong>Active User:</strong> active@example.com / any password</div>
+                  <div><strong>Inactive User:</strong> inactive@example.com / any password</div>
+                  <div><strong>Pending User:</strong> pending@example.com / any password</div>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
