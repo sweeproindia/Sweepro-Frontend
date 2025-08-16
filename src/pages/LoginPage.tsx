@@ -4,22 +4,62 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Crown, Eye, EyeOff, Lock, Mail, Shield, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthService, LoginCredentials } from '@/services/authService';
+import { toast } from '@/components/ui/use-toast';
+
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [userType, setUserType] = useState('user');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
-  const handleSubmit = () => {
+   const navigate = useNavigate();
+
+  const handleSubmit = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    
+    try {
+      const credentials: LoginCredentials = {
+        email: formData.email,
+        password: formData.password
+      };
+
+      const response = await AuthService.login(credentials);
+      
+      if (response.success && response.data?.user) {
+        const user = response.data.user;
+        
+        toast({
+          title: 'Login successful!',
+          description: `Welcome back to CleanEase, ${user.name}!`,
+        });
+
+        // Navigate based on user role from backend response
+        switch (user.role) {
+          case 'ADMIN':
+            navigate('/admin-dashboard');
+            break;
+          case 'MAID':
+            navigate('/maid-dashboard');
+            break;
+          case 'CUSTOMER':
+          default:
+            navigate('/dashboard');
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Login failed',
+        description: error.response?.message || error.message || 'Invalid credentials',
+        variant: 'destructive',
+      });
+    } finally {
       setIsLoading(false);
-      alert(`Login successful! Welcome back as ${userType}.`);
-    }, 1000);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -56,50 +96,14 @@ export default function LoginPage() {
               Sign in to your account to manage your cleaning services
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* User Type Selection */}
-            <div>
-              <Label className="text-sm font-medium mb-3 block text-blue-900/80">Login as</Label>
-              <div className="grid grid-cols-3 gap-3">
-                <Button
-                  type="button"
-                  variant={userType === 'user' ? 'default' : 'outline'}
-                  className={`flex flex-col items-center py-3 h-auto transition-all duration-200 ${
-                    userType === 'user' 
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-400 text-white shadow-md hover:shadow-lg' 
-                      : 'bg-white/30 text-blue-900/60 border-white/40 hover:bg-white/40 hover:text-blue-900'
-                  }`}
-                  onClick={() => setUserType('user')}
-                >
-                  <User className="h-5 w-5 mb-1" />
-                  <span className="text-xs">User</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={userType === 'maid' ? 'default' : 'outline'}
-                  className={`flex flex-col items-center py-3 h-auto transition-all duration-200 ${
-                    userType === 'maid' 
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-400 text-white shadow-md hover:shadow-lg' 
-                      : 'bg-white/30 text-blue-900/60 border-white/40 hover:bg-white/40 hover:text-blue-900'
-                  }`}
-                  onClick={() => setUserType('maid')}
-                >
-                  <Shield className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Maid</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={userType === 'admin' ? 'default' : 'outline'}
-                  className={`flex flex-col items-center py-3 h-auto transition-all duration-200 ${
-                    userType === 'admin' 
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-400 text-white shadow-md hover:shadow-lg' 
-                      : 'bg-white/30 text-blue-900/60 border-white/40 hover:bg-white/40 hover:text-blue-900'
-                  }`}
-                  onClick={() => setUserType('admin')}
-                >
-                  <Crown className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Admin</span>
-                </Button>
+          <CardContent>
+            {/* Login Info */}
+            <div className="mb-6 p-4 bg-muted/30 rounded-lg">
+              <h4 className="font-semibold text-sm mb-2">Login Information:</h4>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div>• Role-based navigation will be determined automatically</div>
+                <div>• Your dashboard will match your account type</div>
+                <div>• Use your registered email and password</div>
               </div>
             </div>
 

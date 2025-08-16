@@ -1,9 +1,13 @@
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, CreditCard, Clock, CheckCircle, Plus, ArrowRight } from 'lucide-react';
+import { Calendar, CreditCard, Clock, CheckCircle, Plus, ArrowRight, AlertTriangle, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
+import { SubscriptionModal } from '@/components/SubscriptionModal';
+import { useToast } from '@/hooks/use-toast';
 
 const stats = [
   {
@@ -64,12 +68,183 @@ const recentBookings = [
 ];
 
 export default function Dashboard() {
+  const { user, updateUser, isAuthenticated } = useUser();
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const { toast } = useToast();
+
+  // Show subscription modal for inactive and pending users
+  useEffect(() => {
+    if (user && (user.status === 'INACTIVE' || user.status === 'PENDING')) {
+      setShowSubscriptionModal(true);
+    }
+  }, [user]);
+
+  const handleSubscriptionComplete = () => {
+    if (user) {
+      // Update user status to active and add subscription
+      const updatedUser = {
+        ...user,
+        status: 'active' as const,
+        subscription: {
+          id: 'new_sub',
+          planName: 'Standard',
+          planType: 'Standard',
+          price: 3499,
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          isActive: true,
+          autoRenewal: true,
+          nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        }
+      };
+      updateUser(updatedUser);
+      
+      toast({
+        title: "Welcome to CleanEase!",
+        description: "Your subscription has been activated successfully.",
+      });
+    }
+  };
+
+  // If no user or not authenticated, show loading
+  if (!user || !isAuthenticated) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Render different content based on user status
+  if (user.status === 'INACTIVE') {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          {/* Welcome Section */}
+          <div className="fade-in">
+            <h1 className="text-3xl font-bold text-foreground">Welcome, {user.name}!</h1>
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+              <h3 className="font-semibold mb-2">Your Profile</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><span className="font-medium">Email:</span> {user.email}</div>
+                <div><span className="font-medium">Phone:</span> {user.phone}</div>
+                <div><span className="font-medium">Role:</span> {user.role}</div>
+                <div><span className="font-medium">Status:</span> <Badge variant="outline">{user.status}</Badge></div>
+                {user.address && <div className="md:col-span-2"><span className="font-medium">Address:</span> {user.address}</div>}
+              </div>
+            </div>
+            <p className="text-muted-foreground mt-4">
+              Complete your subscription to start enjoying our premium cleaning services.
+            </p>
+          </div>
+
+          {/* Subscription Required Card */}
+          <Card className="dashboard-card slide-up bg-gradient-feature">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Crown className="h-12 w-12 text-primary" />
+              </div>
+              <CardTitle className="text-2xl">Choose Your Plan</CardTitle>
+              <CardDescription>
+                Select a subscription plan to unlock premium cleaning services
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-6">
+              <div className="max-w-md mx-auto">
+                <p className="text-muted-foreground mb-6">
+                  Get started with our professional cleaning services. Choose from our flexible plans designed to meet your needs.
+                </p>
+                <Button 
+                  className="btn-hero"
+                  onClick={() => setShowSubscriptionModal(true)}
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Choose Plan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <SubscriptionModal
+          isOpen={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
+          userStatus="inactive"
+          onSubscriptionComplete={handleSubscriptionComplete}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  if (user.status === 'PENDING') {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          {/* Welcome Section */}
+          <div className="fade-in">
+            <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+              <h3 className="font-semibold mb-2">Your Profile</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><span className="font-medium">Email:</span> {user.email}</div>
+                <div><span className="font-medium">Phone:</span> {user.phone}</div>
+                <div><span className="font-medium">Role:</span> {user.role}</div>
+                <div><span className="font-medium">Status:</span> <Badge variant="destructive">{user.status}</Badge></div>
+                {user.address && <div className="md:col-span-2"><span className="font-medium">Address:</span> {user.address}</div>}
+              </div>
+            </div>
+            <p className="text-muted-foreground mt-4">
+              Your account status requires attention. Renew to continue enjoying our services.
+            </p>
+          </div>
+
+          {/* Subscription Expired Card */}
+          <Card className="dashboard-card slide-up bg-gradient-feature">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <AlertTriangle className="h-12 w-12 text-warning" />
+              </div>
+              <CardTitle className="text-2xl">Subscription Expired</CardTitle>
+              <CardDescription>
+                Your subscription has expired. Renew now to continue services.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-6">
+              <div className="max-w-md mx-auto">
+                <p className="text-muted-foreground mb-6">
+                  Don't miss out on our premium cleaning services. Renew your subscription to continue enjoying a clean home.
+                </p>
+                <Button 
+                  className="btn-hero"
+                  onClick={() => setShowSubscriptionModal(true)}
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Renew Subscription
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <SubscriptionModal
+          isOpen={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
+          userStatus="pending"
+          onSubscriptionComplete={handleSubscriptionComplete}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  // Active user dashboard (original content)
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, John!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
           <p className="text-muted-foreground mt-2">
             Here's what's happening with your cleaning services today.
           </p>
@@ -212,20 +387,39 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-gradient-feature rounded-lg p-4">
                 <h4 className="font-semibold text-foreground mb-2">Current Plan</h4>
-                <p className="text-2xl font-bold text-primary">Standard</p>
-                <p className="text-sm text-muted-foreground">5 visits per week</p>
+                <p className="text-2xl font-bold text-primary">
+                  {user.subscription?.planName || 'Standard'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {user.subscription?.planType === 'Standard' ? '5 visits per week' : 
+                   user.subscription?.planType === 'Premium' ? 'Daily visits' : '2 visits per week'}
+                </p>
               </div>
               
               <div className="bg-gradient-feature rounded-lg p-4">
                 <h4 className="font-semibold text-foreground mb-2">Monthly Cost</h4>
-                <p className="text-2xl font-bold text-primary">₹3,499</p>
-                <p className="text-sm text-muted-foreground">Auto-renewal enabled</p>
+                <p className="text-2xl font-bold text-primary">
+                  ₹{user.subscription?.price?.toLocaleString() || '3,499'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {user.subscription?.autoRenewal ? 'Auto-renewal enabled' : 'Auto-renewal disabled'}
+                </p>
               </div>
               
               <div className="bg-gradient-feature rounded-lg p-4">
                 <h4 className="font-semibold text-foreground mb-2">Next Billing</h4>
-                <p className="text-2xl font-bold text-primary">Dec 15</p>
-                <p className="text-sm text-muted-foreground">2024</p>
+                <p className="text-2xl font-bold text-primary">
+                  {user.subscription?.nextBillingDate ? 
+                    new Date(user.subscription.nextBillingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) :
+                    'Dec 15'
+                  }
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {user.subscription?.nextBillingDate ? 
+                    new Date(user.subscription.nextBillingDate).getFullYear().toString() :
+                    '2024'
+                  }
+                </p>
               </div>
             </div>
           </CardContent>

@@ -1,565 +1,722 @@
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-    BarChart3,
-    Calendar,
-    DollarSign,
-    Shield,
-    Users,
-    TrendingUp
-} from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { AdminBookingsSection } from '@/components/dashboard/AdminBookingsSection';
-import { AdminSubscriptionsSection } from '@/components/dashboard/AdminSubscriptionsSection';
-import { AdminPaymentsSection } from '@/components/dashboard/AdminPaymentsSection';
-import { AdminUsersSection } from '@/components/dashboard/AdminUsersSection';
-import { AdminMaidsSection } from '@/components/dashboard/AdminMaidsSection';
-import { AdminAnalyticsSection } from '@/components/dashboard/AdminAnalyticsSection';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { DashboardLayout } from '../components/dashboard/DashboardLayout';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { useToast } from '../hooks/use-toast';
+import {
+  BarChart3,
+  Calendar,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Package,
+  Shield,
+  Star,
+  TrendingUp,
+  Users
+} from 'lucide-react';
+import { BookingService, Booking } from '../services/bookingService';
+import { SubscriptionService, Subscription, SubscriptionPlan } from '../services/subscriptionService';
+import { PaymentService, Payment } from '../services/paymentService';
+import { apiRequest, HttpMethod } from '../services/api';
 
-// Mock data for pending bookings
-const pendingBookings = [
-  {
-    id: 'BK001',
-    customerName: 'Sarah Johnson',
-    customerEmail: 'sarah.j@email.com',
-    service: 'Deep Cleaning',
-    date: '2024-01-15',
-    time: '10:00 AM',
-    address: '123 Main St, City',
-    price: 1200,
-    status: 'pending' as const
-  },
-  {
-    id: 'BK002',
-    customerName: 'Mike Chen',
-    customerEmail: 'mike.chen@email.com',
-    service: 'Regular Cleaning',
-    date: '2024-01-16',
-    time: '2:00 PM',
-    address: '456 Oak Ave, City',
-    price: 800,
-    status: 'pending' as const
-  },
-  {
-    id: 'BK003',
-    customerName: 'Emily Davis',
-    customerEmail: 'emily.d@email.com',
-    service: 'Kitchen Deep Clean',
-    date: '2024-01-17',
-    time: '9:00 AM',
-    address: '789 Pine Rd, City',
-    price: 950,
-    status: 'pending' as const
-  },
-  {
-    id: 'BK004',
-    customerName: 'Alex Thompson',
-    customerEmail: 'alex.t@email.com',
-    service: 'Bathroom Deep Clean',
-    date: '2024-01-18',
-    time: '11:00 AM',
-    address: '321 Elm St, City',
-    price: 750,
-    status: 'pending' as const
-  },
-  {
-    id: 'BK005',
-    customerName: 'Jessica Lee',
-    customerEmail: 'jessica.l@email.com',
-    service: 'Full House Cleaning',
-    date: '2024-01-19',
-    time: '8:00 AM',
-    address: '654 Maple Dr, City',
-    price: 1500,
-    status: 'pending' as const
-  },
-  {
-    id: 'BK006',
-    customerName: 'Robert Wilson',
-    customerEmail: 'robert.w@email.com',
-    service: 'Carpet Cleaning',
-    date: '2024-01-20',
-    time: '3:00 PM',
-    address: '987 Cedar Ln, City',
-    price: 1100,
-    status: 'pending' as const
-  }
-];
+// User interface from backend
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'CUSTOMER' | 'MAID' | 'ADMIN';
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLACKLISTED';
+  address?: string;
+  createdAt: string;
+}
 
-// Mock data for confirmed bookings
-const confirmedBookings = [
-  {
-    id: 'BK007',
-    customerName: 'Lisa Anderson',
-    customerEmail: 'lisa.a@email.com',
-    service: 'Regular Cleaning',
-    date: '2024-01-14',
-    time: '1:00 PM',
-    address: '111 First St, City',
-    price: 800,
-    status: 'confirmed' as const,
-    assignedMaid: 'Maria Garcia'
-  },
-  {
-    id: 'BK008',
-    customerName: 'David Brown',
-    customerEmail: 'david.b@email.com',
-    service: 'Deep Cleaning',
-    date: '2024-01-13',
-    time: '10:00 AM',
-    address: '222 Second Ave, City',
-    price: 1200,
-    status: 'confirmed' as const,
-    assignedMaid: 'Ana Rodriguez'
-  },
-  {
-    id: 'BK009',
-    customerName: 'Jennifer White',
-    customerEmail: 'jennifer.w@email.com',
-    service: 'Kitchen Cleaning',
-    date: '2024-01-12',
-    time: '2:00 PM',
-    address: '333 Third Rd, City',
-    price: 950,
-    status: 'confirmed' as const,
-    assignedMaid: 'Sofia Martinez'
-  }
-];
-
-// Mock data for subscriptions
-const subscriptions = [
-  {
-    id: 'SUB001',
-    customerName: 'John Smith',
-    customerEmail: 'john.smith@email.com',
-    plan: 'Premium Monthly',
-    status: 'active' as const,
-    startDate: '2024-01-01',
-    endDate: '2024-02-01',
-    price: 150,
-    usage: 8,
-    limit: 12,
-    nextBilling: '2024-02-01'
-  },
-  {
-    id: 'SUB002',
-    customerName: 'Mary Johnson',
-    customerEmail: 'mary.j@email.com',
-    plan: 'Basic Weekly',
-    status: 'active' as const,
-    startDate: '2024-01-05',
-    endDate: '2024-01-12',
-    price: 80,
-    usage: 3,
-    limit: 4,
-    nextBilling: '2024-01-12'
-  },
-  {
-    id: 'SUB003',
-    customerName: 'Tom Wilson',
-    customerEmail: 'tom.w@email.com',
-    plan: 'Premium Yearly',
-    status: 'active' as const,
-    startDate: '2024-01-01',
-    endDate: '2025-01-01',
-    price: 1500,
-    usage: 45,
-    limit: 144,
-    nextBilling: '2025-01-01'
-  },
-  {
-    id: 'SUB004',
-    customerName: 'Sarah Davis',
-    customerEmail: 'sarah.d@email.com',
-    plan: 'Basic Monthly',
-    status: 'expired' as const,
-    startDate: '2023-12-01',
-    endDate: '2024-01-01',
-    price: 100,
-    usage: 12,
-    limit: 12,
-    nextBilling: '2024-01-01'
-  },
-  {
-    id: 'SUB005',
-    customerName: 'Mike Brown',
-    customerEmail: 'mike.b@email.com',
-    plan: 'Premium Weekly',
-    status: 'cancelled' as const,
-    startDate: '2024-01-01',
-    endDate: '2024-01-08',
-    price: 120,
-    usage: 2,
-    limit: 4,
-    nextBilling: '2024-01-08'
-  }
-];
-
-// Mock data for payments
-const payments = [
-  {
-    id: 'PAY001',
-    customerName: 'John Smith',
-    customerEmail: 'john.smith@email.com',
-    amount: 150,
-    method: 'Credit Card',
-    status: 'completed' as const,
-    date: '2024-01-01',
-    transactionId: 'TXN123456789',
-    description: 'Premium Monthly Subscription'
-  },
-  {
-    id: 'PAY002',
-    customerName: 'Mary Johnson',
-    customerEmail: 'mary.j@email.com',
-    amount: 80,
-    method: 'PayPal',
-    status: 'completed' as const,
-    date: '2024-01-05',
-    transactionId: 'TXN987654321',
-    description: 'Basic Weekly Subscription'
-  },
-  {
-    id: 'PAY003',
-    customerName: 'Tom Wilson',
-    customerEmail: 'tom.w@email.com',
-    amount: 1500,
-    method: 'Bank Transfer',
-    status: 'pending' as const,
-    date: '2024-01-01',
-    transactionId: 'TXN456789123',
-    description: 'Premium Yearly Subscription'
-  },
-  {
-    id: 'PAY004',
-    customerName: 'Sarah Davis',
-    customerEmail: 'sarah.d@email.com',
-    amount: 100,
-    method: 'Credit Card',
-    status: 'failed' as const,
-    date: '2023-12-01',
-    transactionId: 'TXN789123456',
-    description: 'Basic Monthly Subscription'
-  },
-  {
-    id: 'PAY005',
-    customerName: 'Mike Brown',
-    customerEmail: 'mike.b@email.com',
-    amount: 120,
-    method: 'PayPal',
-    status: 'refunded' as const,
-    date: '2024-01-01',
-    transactionId: 'TXN321654987',
-    description: 'Premium Weekly Subscription'
-  }
-];
-
-// Mock data for users
-const users = [
-  {
-    id: 'USR001',
-    name: 'John Smith',
-    email: 'john.smith@email.com',
-    phone: '+1-555-0123',
-    joinDate: '2024-01-01',
-    status: 'active' as const,
-    totalBookings: 15,
-    totalSpent: 2250,
-    lastActive: '2024-01-15'
-  },
-  {
-    id: 'USR002',
-    name: 'Mary Johnson',
-    email: 'mary.j@email.com',
-    phone: '+1-555-0124',
-    joinDate: '2024-01-05',
-    status: 'active' as const,
-    totalBookings: 8,
-    totalSpent: 640,
-    lastActive: '2024-01-14'
-  },
-  {
-    id: 'USR003',
-    name: 'Tom Wilson',
-    email: 'tom.w@email.com',
-    phone: '+1-555-0125',
-    joinDate: '2024-01-01',
-    status: 'active' as const,
-    totalBookings: 45,
-    totalSpent: 6750,
-    lastActive: '2024-01-15'
-  },
-  {
-    id: 'USR004',
-    name: 'Sarah Davis',
-    email: 'sarah.d@email.com',
-    phone: '+1-555-0126',
-    joinDate: '2023-12-01',
-    status: 'pending' as const,
-    totalBookings: 12,
-    totalSpent: 1200,
-    lastActive: '2024-01-10'
-  },
-  {
-    id: 'USR005',
-    name: 'Mike Brown',
-    email: 'mike.b@email.com',
-    phone: '+1-555-0127',
-    joinDate: '2024-01-01',
-    status: 'suspended' as const,
-    totalBookings: 2,
-    totalSpent: 240,
-    lastActive: '2024-01-08'
-  }
-];
-
-// Mock data for all maids
-const allMaids = [
-  {
-    id: 'MAID001',
-    name: 'Maria Garcia',
-    email: 'maria.g@email.com',
-    phone: '+1-555-1001',
-    address: '123 Worker St, City',
-    experience: '3 years',
-    specializations: ['Regular Cleaning', 'Deep Cleaning', 'Kitchen Cleaning'],
-    rating: 4.8,
-    status: 'active' as const,
-    totalBookings: 156,
-    joinDate: '2023-06-15'
-  },
-  {
-    id: 'MAID002',
-    name: 'Ana Rodriguez',
-    email: 'ana.r@email.com',
-    phone: '+1-555-1002',
-    address: '456 Service Ave, City',
-    experience: '5 years',
-    specializations: ['Deep Cleaning', 'Full House Cleaning', 'Carpet Cleaning'],
-    rating: 4.9,
-    status: 'active' as const,
-    totalBookings: 203,
-    joinDate: '2023-03-20'
-  },
-  {
-    id: 'MAID003',
-    name: 'Sofia Martinez',
-    email: 'sofia.m@email.com',
-    phone: '+1-555-1003',
-    address: '789 Clean Rd, City',
-    experience: '2 years',
-    specializations: ['Regular Cleaning', 'Bathroom Cleaning', 'Kitchen Cleaning'],
-    rating: 4.6,
-    status: 'active' as const,
-    totalBookings: 89,
-    joinDate: '2023-09-10'
-  },
-  {
-    id: 'MAID004',
-    name: 'Isabella Lopez',
-    email: 'isabella.l@email.com',
-    phone: '+1-555-1004',
-    address: '321 Maid St, City',
-    experience: '1 year',
-    specializations: ['Regular Cleaning', 'Kitchen Cleaning'],
-    rating: 4.3,
-    status: 'pending' as const,
-    totalBookings: 0,
-    joinDate: '2024-01-10'
-  },
-  {
-    id: 'MAID005',
-    name: 'Carmen Torres',
-    email: 'carmen.t@email.com',
-    phone: '+1-555-1005',
-    address: '654 Helper Ave, City',
-    experience: '4 years',
-    specializations: ['Deep Cleaning', 'Full House Cleaning', 'Carpet Cleaning', 'Bathroom Cleaning'],
-    rating: 4.7,
-    status: 'pending' as const,
-    totalBookings: 0,
-    joinDate: '2024-01-12'
-  }
-];
-
-// Available maids (only active ones)
-const availableMaids = allMaids.filter(maid => maid.status === 'active');
-
-// Analytics data
-const analyticsData = {
-  totalBookings: 156,
-  totalCustomers: 89,
-  totalMaids: 5,
-  totalRevenue: 23450,
-  monthlyGrowth: 12.5,
-  customerGrowth: 8.3,
-  maidGrowth: 25.0,
-  revenueGrowth: 15.7
-};
+// Maid interface from backend
+interface Maid {
+  id: string;
+  userId: string;
+  skills: string[];
+  languages: string[];
+  rating: number;
+  totalRatings: number;
+  status: 'PENDING_VERIFICATION' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  completedBookings: number;
+  user: User;
+}
 
 export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['bookings', 'subscriptions', 'payments', 'users', 'maids', 'analytics'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'subscriptions', 'payments', 'users', 'maids', 'plans'].includes(hash)) {
       return hash;
     }
-    return 'bookings';
+    return 'overview';
   });
 
-  // Sync tabs with URL hash
+  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [maids, setMaids] = useState<Maid[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [analyticsData, setAnalyticsData] = useState({
+    totalBookings: 0,
+    totalCustomers: 0,
+    totalMaids: 0,
+    totalRevenue: 0,
+    pendingBookings: 0,
+    activeSubscriptions: 0,
+    completedPayments: 0,
+    pendingPayments: 0
+  });
+
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['bookings', 'subscriptions', 'payments', 'users', 'maids', 'analytics'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'subscriptions', 'payments', 'users', 'maids', 'plans'].includes(hash)) {
       setActiveTab(hash);
-    } else if (!location.hash) {
-      // Default to bookings tab if no hash is set
-      setActiveTab('bookings');
     }
   }, [location.hash]);
 
+  useEffect(() => {
+    fetchAdminData();
+  }, []);
+
+  const fetchAdminData = async () => {
+    setLoading(true);
+    try {
+      // Fetch all admin data in parallel
+      const [usersResponse, subscriptionsResponse, paymentsResponse, plansResponse] = await Promise.allSettled([
+        apiRequest('/users', { method: HttpMethod.GET, requiresAuth: true }),
+        apiRequest('/admin/subscriptions', { method: HttpMethod.GET, requiresAuth: true }),
+        apiRequest('/admin/payments', { method: HttpMethod.GET, requiresAuth: true }),
+        SubscriptionService.getSubscriptionPlans()
+      ]);
+
+      // Handle users data
+      if (usersResponse.status === 'fulfilled' && usersResponse.value.success) {
+        const usersData = Array.isArray(usersResponse.value.data) ? 
+          usersResponse.value.data : 
+          usersResponse.value.data?.users || [];
+        setUsers(usersData);
+        
+        // Separate maids from users
+        const maidsData = usersData
+          .filter((user: User) => user.role === 'MAID')
+          .map((user: User) => ({
+            id: user.id,
+            userId: user.id,
+            user,
+            skills: [],
+            languages: ['English'],
+            rating: 0,
+            totalRatings: 0,
+            status: 'ACTIVE',
+            completedBookings: 0
+          }));
+        setMaids(maidsData);
+      }
+
+      // Handle subscriptions
+      if (subscriptionsResponse.status === 'fulfilled' && subscriptionsResponse.value.success) {
+        const subscriptionsData = Array.isArray(subscriptionsResponse.value.data) ? 
+          subscriptionsResponse.value.data : 
+          subscriptionsResponse.value.data?.subscriptions || [];
+        setSubscriptions(subscriptionsData);
+      }
+
+      // Handle payments
+      if (paymentsResponse.status === 'fulfilled' && paymentsResponse.value.success) {
+        const paymentsData = Array.isArray(paymentsResponse.value.data) ? 
+          paymentsResponse.value.data : 
+          paymentsResponse.value.data?.payments || [];
+        setPayments(paymentsData);
+      }
+
+      // Handle subscription plans
+      if (plansResponse.status === 'fulfilled' && plansResponse.value.success) {
+        const plansData = Array.isArray(plansResponse.value.data) ? 
+          plansResponse.value.data : 
+          plansResponse.value.data?.plans || [];
+        setSubscriptionPlans(plansData);
+      }
+
+      // Calculate analytics
+      calculateAnalytics();
+
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load admin data',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateAnalytics = () => {
+    const totalCustomers = users.filter(user => user.role === 'CUSTOMER').length;
+    const totalMaids = users.filter(user => user.role === 'MAID').length;
+    const totalBookings = bookings.length;
+    const pendingBookings = bookings.filter(b => b.status === 'PENDING').length;
+    const activeSubscriptions = subscriptions.filter(s => s.status === 'ACTIVE').length;
+    const completedPayments = payments.filter(p => p.status === 'COMPLETED').length;
+    const pendingPayments = payments.filter(p => p.status === 'PENDING').length;
+    const totalRevenue = payments
+      .filter(p => p.status === 'COMPLETED')
+      .reduce((sum, p) => sum + p.finalAmount, 0);
+
+    setAnalyticsData({
+      totalBookings,
+      totalCustomers,
+      totalMaids,
+      totalRevenue,
+      pendingBookings,
+      activeSubscriptions,
+      completedPayments,
+      pendingPayments
+    });
+  };
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    navigate(`/admin#${value}`);
+    navigate(`#${value}`);
   };
 
-  const handleAssignMaid = (bookingId: string, maidId: string) => {
-    // Mock function - in real app, this would update the booking
-    console.log(`Assigning maid ${maidId} to booking ${bookingId}`);
+  const updateUserStatus = async (userId: string, status: string) => {
+    try {
+      await apiRequest(`/users/${userId}/status`, {
+        method: HttpMethod.PUT,
+        body: { status },
+        requiresAuth: true
+      });
+      
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, status: status as any } : user
+      ));
+      
+      toast({
+        title: 'Success',
+        description: 'User status updated successfully'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update user status',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleAddMaid = (maidData: any) => {
-    // Mock function - in real app, this would add a new maid
-    console.log('Adding new maid:', maidData);
-  };
-
-  const handleVerifyMaid = (maidId: string) => {
-    // Mock function - in real app, this would verify the maid
-    console.log('Verifying maid:', maidId);
-  };
-
-  const handleVerifyUser = (userId: string) => {
-    // Mock function - in real app, this would verify the user
-    console.log('Verifying user:', userId);
-  };
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-            <p className="text-muted-foreground">
-              Manage bookings, customers, maids, and monitor platform performance
-            </p>
-          </div>
+        <div className="fade-in">
+          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            Comprehensive platform management and analytics
+          </p>
         </div>
 
-        {/* Statistics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
-              <p className="text-xs text-success flex items-center gap-1">
-                ↗️ {analyticsData.monthlyGrowth}% from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
-              <p className="text-xs text-success flex items-center gap-1">
-                ↗️ {analyticsData.customerGrowth}% from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Maids</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{analyticsData.totalMaids}</div>
-              <p className="text-xs text-success flex items-center gap-1">
-                ↗️ {analyticsData.maidGrowth}% from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
-              <p className="text-xs text-success flex items-center gap-1">
-                ↗️ {analyticsData.revenueGrowth}% from last month
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs Navigation */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="bookings">Bookings</TabsTrigger>
-            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="maids">Maids</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="plans">Plans</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="bookings">
-            <AdminBookingsSection
-              pendingBookings={pendingBookings}
-              confirmedBookings={confirmedBookings}
-              availableMaids={availableMaids}
-              onAssignMaid={handleAssignMaid}
-            />
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Analytics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {analyticsData.pendingBookings} pending approval
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {analyticsData.totalMaids} service providers
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {analyticsData.completedPayments} completed payments
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analyticsData.activeSubscriptions}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {subscriptions.length} total subscriptions
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activities */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Pending Bookings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {bookings.filter(b => b.status === 'PENDING').slice(0, 5).map((booking) => (
+                      <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{booking.service?.name || 'Service'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {booking.customer?.name || 'Customer'}
+                          </p>
+                        </div>
+                        <Badge variant="outline">{booking.status}</Badge>
+                      </div>
+                    ))}
+                    {bookings.filter(b => b.status === 'PENDING').length === 0 && (
+                      <p className="text-center text-muted-foreground py-4">No pending bookings</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Recent Payments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {payments.slice(0, 5).map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">₹{payment.finalAmount.toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {payment.paymentMethod} • {new Date(payment.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
+                          {payment.status}
+                        </Badge>
+                      </div>
+                    ))}
+                    {payments.length === 0 && (
+                      <p className="text-center text-muted-foreground py-4">No recent payments</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          <TabsContent value="subscriptions">
-            <AdminSubscriptionsSection subscriptions={subscriptions} />
+          {/* Bookings Tab */}
+          <TabsContent value="bookings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Bookings</CardTitle>
+                <CardDescription>Manage customer bookings and assignments</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Service</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bookings.slice(0, 10).map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{booking.customer?.name || 'N/A'}</p>
+                            <p className="text-sm text-muted-foreground">{booking.customer?.email || 'N/A'}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{booking.service?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          {new Date(booking.scheduledAt).toLocaleDateString()}
+                          <br />
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={booking.status === 'COMPLETED' ? 'default' : 'outline'}>
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>₹{booking.finalAmount?.toLocaleString() || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {bookings.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No bookings found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="payments">
-            <AdminPaymentsSection payments={payments} />
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Users</CardTitle>
+                <CardDescription>Manage customer accounts and profiles</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.slice(0, 10).map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.phone}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === 'CUSTOMER' ? 'secondary' : 'outline'}>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.status === 'ACTIVE' ? 'default' : 'destructive'}>
+                            {user.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => updateUserStatus(user.id, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                          >
+                            Toggle Status
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {users.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No users found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="users">
-            <AdminUsersSection users={users} onVerifyUser={handleVerifyUser} />
+          {/* Maids Tab */}
+          <TabsContent value="maids" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Service Providers</CardTitle>
+                <CardDescription>Manage maid profiles and performance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Completed Jobs</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {maids.slice(0, 10).map((maid) => (
+                      <TableRow key={maid.id}>
+                        <TableCell className="font-medium">{maid.user.name}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p>{maid.user.email}</p>
+                            <p className="text-sm text-muted-foreground">{maid.user.phone}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span>{maid.rating.toFixed(1)}</span>
+                            <span className="text-muted-foreground">({maid.totalRatings})</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{maid.completedBookings}</TableCell>
+                        <TableCell>
+                          <Badge variant={maid.status === 'ACTIVE' ? 'default' : 'outline'}>
+                            {maid.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="sm">
+                            View Profile
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {maids.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No service providers found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="maids">
-            <AdminMaidsSection
-              allMaids={allMaids}
-              onAddMaid={handleAddMaid}
-              onVerifyMaid={handleVerifyMaid}
-            />
+          {/* Subscriptions Tab */}
+          <TabsContent value="subscriptions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Subscriptions</CardTitle>
+                <CardDescription>Monitor subscription plans and billing</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Auto Renew</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subscriptions.slice(0, 10).map((subscription) => (
+                      <TableRow key={subscription.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{subscription.customer?.user?.name || 'N/A'}</p>
+                            <p className="text-sm text-muted-foreground">{subscription.customer?.user?.email || 'N/A'}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{subscription.plan?.name || 'N/A'}</TableCell>
+                        <TableCell>₹{subscription.amount.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge variant={subscription.status === 'ACTIVE' ? 'default' : 'outline'}>
+                            {subscription.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(subscription.startDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{new Date(subscription.endDate).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Badge variant={subscription.autoRenew ? 'default' : 'outline'}>
+                            {subscription.autoRenew ? 'Yes' : 'No'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {subscriptions.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No subscriptions found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="analytics">
-            <AdminAnalyticsSection analyticsData={analyticsData} />
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Transactions</CardTitle>
+                <CardDescription>Monitor all payment activities and revenue</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Transaction ID</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payments.slice(0, 10).map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{payment.customer?.name || 'N/A'}</p>
+                            <p className="text-sm text-muted-foreground">{payment.customer?.email || 'N/A'}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {payment.paymentType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>₹{payment.finalAmount.toLocaleString()}</TableCell>
+                        <TableCell>{payment.paymentMethod}</TableCell>
+                        <TableCell>
+                          <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
+                            {payment.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <code className="text-xs">{payment.transactionId || 'N/A'}</code>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {payments.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No payments found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Plans Tab */}
+          <TabsContent value="plans" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Subscription Plans</CardTitle>
+                <CardDescription>Manage available service plans and pricing</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {subscriptionPlans.map((plan) => (
+                    <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          {plan.name}
+                          {plan.isPopular && <Badge>Popular</Badge>}
+                        </CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="text-center">
+                            <div className="text-3xl font-bold">₹{plan.finalPrice.toLocaleString()}</div>
+                            <div className="text-sm text-muted-foreground">/{plan.duration} month(s)</div>
+                            {plan.discountPercent > 0 && (
+                              <div className="text-xs text-success">
+                                {plan.discountPercent}% off (₹{plan.basePrice.toLocaleString()} original)
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div>• {plan.sessionsPerWeek} sessions per week</div>
+                            <div>• {plan.sessionsPerMonth} sessions per month</div>
+                            <div>• {plan.service?.name || 'Service'} included</div>
+                            <div>• Professional cleaning staff</div>
+                          </div>
+                          <div className="flex items-center justify-between pt-2">
+                            <Badge variant={plan.isActive ? 'default' : 'outline'}>
+                              {plan.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                            <Button variant="outline" size="sm">
+                              Edit Plan
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {subscriptionPlans.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No subscription plans found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
   );
-} 
+}

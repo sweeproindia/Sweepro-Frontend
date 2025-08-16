@@ -1,7 +1,9 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Home, Calendar, CreditCard, Receipt, MessageCircle, LogOut, Sparkles, Users, Shield, BarChart3, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/hooks/use-toast';
 
 const customerNavigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -23,6 +25,9 @@ const adminNavigationItems = [
 
 export const DashboardSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useUser();
+  const { toast } = useToast();
   
   // Determine if user is on admin dashboard
   const isAdmin = location.pathname.startsWith('/admin');
@@ -44,6 +49,15 @@ export const DashboardSidebar = () => {
     return location.pathname === path;
   };
 
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account.",
+    });
+    navigate('/');
+  };
+
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
       <div className="flex min-h-0 flex-1 flex-col bg-card border-r border-border">
@@ -61,6 +75,35 @@ export const DashboardSidebar = () => {
             )}
           </div>
         </div>
+        
+        {/* User Info */}
+        {user && (
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-primary-foreground text-sm font-medium">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {user.name}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+            <div className="mt-2">
+              <Badge 
+                variant={user.status === 'active' ? 'default' : user.status === 'pending' ? 'secondary' : 'outline'}
+                className="text-xs"
+              >
+                {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+              </Badge>
+            </div>
+          </div>
+        )}
         
         {/* Navigation */}
         <div className="flex-1 flex flex-col overflow-y-auto">
@@ -91,10 +134,7 @@ export const DashboardSidebar = () => {
             <Button
               variant="ghost"
               className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                // Handle logout
-                window.location.href = '/';
-              }}
+              onClick={handleLogout}
             >
               <LogOut className="mr-3 h-5 w-5" />
               Logout
