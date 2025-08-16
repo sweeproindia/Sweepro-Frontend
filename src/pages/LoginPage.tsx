@@ -21,15 +21,23 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
-      const user = await login(formData.email, formData.password);
-      
-      toast({
-        title: "Login successful!",
-        description: `Welcome back to CleanEase, ${user.name}!`,
+      const response = await fetch('https://sweep-pro-backend-testing.onrender.com/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
       });
-      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Login failed');
+
+      toast({
+        title: 'Login successful!',
+        description: `Welcome back to CleanEase, ${data.name || data.email}!`,
+      });
+
       // Navigate based on user type
       switch (userType) {
         case 'user':
@@ -46,9 +54,9 @@ export default function LoginPage() {
       }
     } catch (error) {
       toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid credentials",
-        variant: "destructive",
+        title: 'Login failed',
+        description: error instanceof Error ? error.message : 'Invalid credentials',
+        variant: 'destructive',
       });
     }
   };

@@ -25,27 +25,43 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Password mismatch",
-        description: "Passwords do not match. Please check and try again.",
-        variant: "destructive"
+        title: 'Password mismatch',
+        description: 'Passwords do not match. Please check and try again.',
+        variant: 'destructive'
       });
       return;
     }
-    
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await fetch('https://sweep-pro-backend-testing.onrender.com/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword
+        })
+      });
+      const data = await response.json();
       setIsLoading(false);
+      if (!response.ok) throw new Error(data.message || 'Registration failed');
       toast({
-        title: "Account created successfully!",
-        description: "Welcome to CleanEase. Let's get your subscription set up.",
+        title: 'Account created successfully!',
+        description: 'Welcome to CleanEase. Let\'s get your subscription set up.',
       });
       navigate('/dashboard');
-    }, 1000);
+    } catch (error) {
+      setIsLoading(false);
+      toast({
+        title: 'Registration failed',
+        description: error instanceof Error ? error.message : 'Could not create account',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

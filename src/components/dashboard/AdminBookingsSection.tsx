@@ -182,9 +182,6 @@ export const AdminBookingsSection: React.FC<AdminBookingsSectionProps> = ({
                   <div className="flex-1">
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="font-medium">{booking.customerName}</p>
-                        <p className="text-sm text-muted-foreground">{booking.customerEmail}</p>
-                      </div>
                       <div>
                         <p className="text-sm font-medium">{booking.service}</p>
                         <p className="text-xs text-muted-foreground">

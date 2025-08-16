@@ -86,6 +86,12 @@ export default function SubscriptionPage() {
               <div className="text-center">
                 <div className="text-3xl font-bold text-success">47</div>
                 <div className="text-muted-foreground">Completed visits</div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">Update</Button>
+                  <Button variant="outline" size="sm" onClick={() => window.print()}>
+                    Download
+                  </Button>
+                </div>
               </div>
             </div>
 
