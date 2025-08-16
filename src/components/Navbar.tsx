@@ -6,6 +6,7 @@ import { useUser } from '@/contexts/UserContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
+
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -276,11 +277,18 @@ export const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  to="/login"
+                  
+                >
                   Login
                 </Link>
-                <Link to="/signup">
-                  <Button className="btn-hero">Get Started</Button>
+                <Link
+                  className="btn-hero px-4 py-2 rounded bg-blue-500 text-white font-semibold shadow hover:bg-blue-600 transition"
+                  to="/register"
+                >
+                  Get Started
                 </Link>
               </div>
             )}
