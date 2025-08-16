@@ -2,10 +2,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Lock, Mail, Phone, Sparkles, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Phone, Sparkles, User, Crown, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AuthService, RegisterData } from '@/services/authService';
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,8 +16,10 @@ export default function SignupPage() {
     name: '',
     email: '',
     phone: '',
+    role: 'CUSTOMER' as 'CUSTOMER' | 'MAID',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    address: ''
   });
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,32 +39,44 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     try {
-      const response = await fetch('https://sweep-pro-backend-testing.onrender.com/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword
-        })
-      });
-      const data = await response.json();
-      setIsLoading(false);
-      if (!response.ok) throw new Error(data.message || 'Registration failed');
-      toast({
-        title: 'Account created successfully!',
-        description: 'Welcome to CleanEase. Let\'s get your subscription set up.',
-      });
-      navigate('/dashboard');
-    } catch (error) {
-      setIsLoading(false);
+      const registerData: RegisterData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        role: formData.role,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        address: formData.address
+      };
+
+      const response = await AuthService.register(registerData);
+      
+      if (response.success) {
+        toast({
+          title: 'Account created successfully!',
+          description: `Welcome to CleanEase, ${response.data?.user.name}!`,
+        });
+        
+        // Navigate based on role
+        switch (response.data?.user.role) {
+          case 'ADMIN':
+            navigate('/admin-dashboard');
+            break;
+          case 'MAID':
+            navigate('/maid-dashboard');
+            break;
+          default:
+            navigate('/dashboard');
+        }
+      }
+    } catch (error: any) {
       toast({
         title: 'Registration failed',
-        description: error instanceof Error ? error.message : 'Could not create account',
+        description: error.res || error.msg || 'Could not create account',
         variant: 'destructive'
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,6 +84,13 @@ export default function SignupPage() {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value as 'CUSTOMER' | 'MAID'
     }));
   };
 
@@ -141,6 +164,46 @@ export default function SignupPage() {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Role Selection */}
+              <div className="space-y-3">
+                <Label>Account Type</Label>
+                <RadioGroup value={formData.role} onValueChange={handleRoleChange}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="CUSTOMER" id="customer" />
+                    <Label htmlFor="customer" className="flex items-center space-x-2 cursor-pointer">
+                      <User className="h-4 w-4" />
+                      <span>Customer - I need cleaning services</span>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="MAID" id="maid" />
+                    <Label htmlFor="maid" className="flex items-center space-x-2 cursor-pointer">
+                      <Shield className="h-4 w-4" />
+                      <span>Service Provider - I provide cleaning services</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Address Field */}
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <div className="relative">
+                  <Input
+                    id="address"
+                    name="address"
+                    type="text"
+                    placeholder="Enter your full address (minimum 10 characters)"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className=""
+                    required
+                    minLength={10}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Please provide a complete address for service delivery</p>
               </div>
 
               <div className="space-y-2">

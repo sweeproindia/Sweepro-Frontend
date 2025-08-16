@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserStatus } from '@/types/user';
+import { AuthService, User, LoginCredentials } from '@/services/authService';
 
 interface UserContextType {
   user: User | null;
@@ -7,123 +7,116 @@ interface UserContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Sample users for demonstration
-const sampleUsers: User[] = [
-  {
-    id: '1',
-    email: 'active@example.com',
-    name: 'John Active',
-    status: 'active',
-    subscription: {
-      id: 'sub_1',
-      planName: 'Standard',
-      planType: 'Standard',
-      price: 3499,
-      startDate: '2024-01-01',
-      endDate: '2024-12-31',
-      isActive: true,
-      autoRenewal: true,
-      nextBillingDate: '2024-12-15'
-    },
-    profile: {
-      name: 'John Active',
-      location: 'Mumbai',
-      pincode: '400001',
-      services: ['Regular Cleaning', 'Deep Cleaning'],
-      phoneNumber: '+91 9876543210'
-    }
-  },
-  {
-    id: '2',
-    email: 'inactive@example.com',
-    name: 'Jane Inactive',
-    status: 'inactive',
-    profile: {
-      name: 'Jane Inactive',
-      location: 'Delhi',
-      pincode: '110001',
-      services: [],
-      phoneNumber: '+91 9876543211'
-    }
-  },
-  {
-    id: '3',
-    email: 'pending@example.com',
-    name: 'Bob Pending',
-    status: 'pending',
-    subscription: {
-      id: 'sub_2',
-      planName: 'Premium',
-      planType: 'Premium',
-      price: 5999,
-      startDate: '2024-01-01',
-      endDate: '2024-11-30',
-      isActive: false,
-      autoRenewal: false,
-      nextBillingDate: '2024-11-30'
-    },
-    profile: {
-      name: 'Bob Pending',
-      location: 'Bangalore',
-      pincode: '560001',
-      services: ['Regular Cleaning', 'Deep Cleaning', 'Laundry'],
-      phoneNumber: '+91 9876543212'
-    }
-  }
-];
 
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check for stored user on mount
+  // Check for stored user and refresh auth on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const initializeAuth = async () => {
+      setIsLoading(true);
+      try {
+        const storedUser = AuthService.getStoredUser();
+        if (storedUser && AuthService.isAuthenticated()) {
+          setUser(storedUser);
+          setIsAuthenticated(true);
+          
+          // Try to refresh user data from server
+          try {
+            await AuthService.getCurrentUser();
+            const refreshedUser = AuthService.getStoredUser();
+            if (refreshedUser) {
+              setUser(refreshedUser);
+            }
+          } catch (error) {
+            console.error('Failed to refresh user data:', error);
+            // Keep using stored user data if refresh fails
+          }
+        } else {
+          // Clean up if not authenticated
+          AuthService.logout();
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        AuthService.logout();
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Find user by email (in real app, this would be an API call)
-    const foundUser = sampleUsers.find(u => u.email === email);
-    
-    if (!foundUser) {
-      throw new Error('Invalid email or password');
+    try {
+      const credentials: LoginCredentials = { email, password };
+      const response = await AuthService.login(credentials);
+      
+      if (response.success && response.data?.user) {
+        const loggedInUser = response.data.user;
+        setUser(loggedInUser);
+        setIsAuthenticated(true);
+        return loggedInUser;
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
+    } catch (error) {
+      setIsAuthenticated(false);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Store user in localStorage
-    localStorage.setItem('user', JSON.stringify(foundUser));
-    setUser(foundUser);
-    setIsLoading(false);
-    
-    return foundUser;
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
+    AuthService.logout();
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      AuthService.updateStoredUser(userData);
       setUser(updatedUser);
     }
   };
 
+  const refreshUser = async () => {
+    if (!isAuthenticated) return;
+    
+    setIsLoading(true);
+    try {
+      await AuthService.getCurrentUser();
+      const refreshedUser = AuthService.getStoredUser();
+      if (refreshedUser) {
+        setUser(refreshedUser);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+      // If refresh fails, logout the user
+      logout();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ user, login, logout, updateUser, isLoading }}>
+    <UserContext.Provider value={{ user, login, logout, updateUser, isLoading, isAuthenticated, refreshUser }}>
       {children}
     </UserContext.Provider>
   );

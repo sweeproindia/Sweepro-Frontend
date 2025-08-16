@@ -6,58 +6,59 @@ import { useToast } from '@/hooks/use-toast';
 import { Crown, Eye, EyeOff, Lock, Mail, Shield, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUser } from '@/contexts/UserContext';
+import { AuthService, LoginCredentials } from '@/services/authService';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState<'user' | 'maid' | 'admin'>('user');
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, isLoading } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    
     try {
-      const response = await fetch('https://sweep-pro-backend-testing.onrender.com/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Login failed');
+      const credentials: LoginCredentials = {
+        email: formData.email,
+        password: formData.password
+      };
 
-      toast({
-        title: 'Login successful!',
-        description: `Welcome back to CleanEase, ${data.name || data.email}!`,
-      });
+      const response = await AuthService.login(credentials);
+      
+      if (response.success && response.data?.user) {
+        const user = response.data.user;
+        
+        toast({
+          title: 'Login successful!',
+          description: `Welcome back to CleanEase, ${user.name}!`,
+        });
 
-      // Navigate based on user type
-      switch (userType) {
-        case 'user':
-          navigate('/dashboard');
-          break;
-        case 'maid':
-          navigate('/maid-dashboard');
-          break;
-        case 'admin':
-          navigate('/admin-dashboard');
-          break;
-        default:
-          navigate('/dashboard');
+        // Navigate based on user role from backend response
+        switch (user.role) {
+          case 'ADMIN':
+            navigate('/admin-dashboard');
+            break;
+          case 'MAID':
+            navigate('/maid-dashboard');
+            break;
+          case 'CUSTOMER':
+          default:
+            navigate('/dashboard');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Login failed',
-        description: error instanceof Error ? error.message : 'Invalid credentials',
+        description: error.response?.message || error.message || 'Invalid credentials',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -87,51 +88,15 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* User Type Selection */}
-            <div className="mb-6">
-              <Label className="text-sm font-medium mb-3 block">Login as</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  type="button"
-                  variant={userType === 'user' ? 'default' : 'outline'}
-                  className="flex flex-col items-center py-3 h-auto"
-                  onClick={() => setUserType('user')}
-                >
-                  <User className="h-5 w-5 mb-1" />
-                  <span className="text-xs">User</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={userType === 'maid' ? 'default' : 'outline'}
-                  className="flex flex-col items-center py-3 h-auto"
-                  onClick={() => setUserType('maid')}
-                >
-                  <Shield className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Maid</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant={userType === 'admin' ? 'default' : 'outline'}
-                  className="flex flex-col items-center py-3 h-auto"
-                  onClick={() => setUserType('admin')}
-                >
-                  <Crown className="h-5 w-5 mb-1" />
-                  <span className="text-xs">Admin</span>
-                </Button>
+            {/* Login Info */}
+            <div className="mb-6 p-4 bg-muted/30 rounded-lg">
+              <h4 className="font-semibold text-sm mb-2">Login Information:</h4>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div>• Role-based navigation will be determined automatically</div>
+                <div>• Your dashboard will match your account type</div>
+                <div>• Use your registered email and password</div>
               </div>
             </div>
-
-            {/* Sample Login Info */}
-            {userType === 'user' && (
-              <div className="mb-6 p-4 bg-muted/30 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2">Sample User Logins:</h4>
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  <div><strong>Active User:</strong> active@example.com / any password</div>
-                  <div><strong>Inactive User:</strong> inactive@example.com / any password</div>
-                  <div><strong>Pending User:</strong> pending@example.com / any password</div>
-                </div>
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">

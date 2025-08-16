@@ -68,13 +68,13 @@ const recentBookings = [
 ];
 
 export default function Dashboard() {
-  const { user, updateUser } = useUser();
+  const { user, updateUser, isAuthenticated } = useUser();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const { toast } = useToast();
 
   // Show subscription modal for inactive and pending users
   useEffect(() => {
-    if (user && (user.status === 'inactive' || user.status === 'pending')) {
+    if (user && (user.status === 'INACTIVE' || user.status === 'PENDING')) {
       setShowSubscriptionModal(true);
     }
   }, [user]);
@@ -106,8 +106,8 @@ export default function Dashboard() {
     }
   };
 
-  // If no user, show loading or redirect
-  if (!user) {
+  // If no user or not authenticated, show loading
+  if (!user || !isAuthenticated) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
@@ -118,15 +118,25 @@ export default function Dashboard() {
   }
 
   // Render different content based on user status
-  if (user.status === 'inactive') {
+  if (user.status === 'INACTIVE') {
     return (
       <DashboardLayout>
         <div className="space-y-6">
           {/* Welcome Section */}
           <div className="fade-in">
             <h1 className="text-3xl font-bold text-foreground">Welcome, {user.name}!</h1>
-            <p className="text-muted-foreground mt-2">
-              Complete your profile to start enjoying our premium cleaning services.
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+              <h3 className="font-semibold mb-2">Your Profile</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><span className="font-medium">Email:</span> {user.email}</div>
+                <div><span className="font-medium">Phone:</span> {user.phone}</div>
+                <div><span className="font-medium">Role:</span> {user.role}</div>
+                <div><span className="font-medium">Status:</span> <Badge variant="outline">{user.status}</Badge></div>
+                {user.address && <div className="md:col-span-2"><span className="font-medium">Address:</span> {user.address}</div>}
+              </div>
+            </div>
+            <p className="text-muted-foreground mt-4">
+              Complete your subscription to start enjoying our premium cleaning services.
             </p>
           </div>
 
@@ -168,15 +178,25 @@ export default function Dashboard() {
     );
   }
 
-  if (user.status === 'pending') {
+  if (user.status === 'PENDING') {
     return (
       <DashboardLayout>
         <div className="space-y-6">
           {/* Welcome Section */}
           <div className="fade-in">
             <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
-            <p className="text-muted-foreground mt-2">
-              Your subscription has expired. Renew to continue enjoying our services.
+            <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+              <h3 className="font-semibold mb-2">Your Profile</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><span className="font-medium">Email:</span> {user.email}</div>
+                <div><span className="font-medium">Phone:</span> {user.phone}</div>
+                <div><span className="font-medium">Role:</span> {user.role}</div>
+                <div><span className="font-medium">Status:</span> <Badge variant="destructive">{user.status}</Badge></div>
+                {user.address && <div className="md:col-span-2"><span className="font-medium">Address:</span> {user.address}</div>}
+              </div>
+            </div>
+            <p className="text-muted-foreground mt-4">
+              Your account status requires attention. Renew to continue enjoying our services.
             </p>
           </div>
 

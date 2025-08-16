@@ -1,20 +1,46 @@
 import { Button } from '@/components/ui/button';
-import { Bell, Menu, MessageCircle, Shield, Sparkles, User, X } from 'lucide-react';
+import { Bell, Menu, MessageCircle, Shield, Sparkles, User, X, LogOut, UserCircle, Settings } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-interface NavbarProps {
-  isAuthenticated?: boolean;
-  onAuthAction?: () => void;
-}
-
-export const Navbar = ({ isAuthenticated = false, onAuthAction }: NavbarProps) => {
+export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { user, logout, isAuthenticated } = useUser();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getDashboardRoute = () => {
+    if (!user) return '/dashboard';
+    switch (user.role) {
+      case 'ADMIN':
+        return '/admin-dashboard';
+      case 'MAID':
+        return '/maid-dashboard';
+      default:
+        return '/dashboard';
+    }
+  };
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -133,7 +159,7 @@ export const Navbar = ({ isAuthenticated = false, onAuthAction }: NavbarProps) =
               FAQ
             </a>
             
-            {isAuthenticated ? (
+            {isAuthenticated && user ? (
               <div className="flex items-center space-x-4">
                 {/* Notification Bell */}
                 <div className="relative" ref={notificationRef}>
@@ -201,9 +227,52 @@ export const Navbar = ({ isAuthenticated = false, onAuthAction }: NavbarProps) =
                   )}
                 </div>
 
-                <Link to="/dashboard">
-                  <Button variant="default">Dashboard</Button>
-                </Link>
+                {/* User Profile Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {getUserInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium">{user.name}</p>
+                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                          {user.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {user.role.toLowerCase()}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to={getDashboardRoute()} className="flex items-center">
+                        <UserCircle className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Profile Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:text-red-600 cursor-pointer"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
@@ -264,10 +333,31 @@ export const Navbar = ({ isAuthenticated = false, onAuthAction }: NavbarProps) =
               FAQ
             </a>
             
-            {isAuthenticated ? (
-              <Link to="/dashboard" onClick={toggleMenu}>
-                <Button variant="default" className="w-full">Dashboard</Button>
-              </Link>
+            {isAuthenticated && user ? (
+              <div className="space-y-2 pt-2">
+                <div className="px-2 py-2 text-sm text-muted-foreground">
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-xs">{user.email}</p>
+                  <p className="text-xs capitalize">{user.role.toLowerCase()}</p>
+                </div>
+                <Link to={getDashboardRoute()} onClick={toggleMenu}>
+                  <Button variant="default" className="w-full">Dashboard</Button>
+                </Link>
+                <Link to="/profile" onClick={toggleMenu}>
+                  <Button variant="outline" className="w-full">Profile</Button>
+                </Link>
+                <Button 
+                  variant="outline" 
+                  className="w-full text-red-600 hover:text-red-600 hover:bg-red-50"
+                  onClick={() => {
+                    handleLogout();
+                    toggleMenu();
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
             ) : (
               <div className="space-y-2 pt-2">
                 <Link to="/login" onClick={toggleMenu}>
