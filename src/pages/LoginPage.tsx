@@ -181,7 +181,7 @@ export default function LoginPage() {
             <div className="text-center">
               <p className="text-blue-900/70">
                 Don't have an account?{' '}
-                <a href="#" className="text-blue-500 hover:text-blue-700 font-medium transition-colors duration-200">
+                <a href="/signup" className="text-blue-500 hover:text-blue-700 font-medium transition-colors duration-200">
                   Sign up for free
                 </a>
               </p>
