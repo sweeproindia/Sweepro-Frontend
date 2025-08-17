@@ -26,6 +26,8 @@ export interface Booking {
   discount?: number;
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
+  actualStartTime?: string;
   customer?: {
     id: string;
     name: string;
@@ -61,6 +63,28 @@ export interface PaymentData {
   amount: number;
 }
 
+export interface BookingStats {
+  total: number;
+  scheduled: number;
+  completed: number;
+  cancelled: number;
+}
+
+export interface BookingsResponse {
+  bookings: Booking[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalBookings: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  filters?: {
+    applied: string;
+    available: string[];
+  };
+}
+
 export class BookingService {
   /**
    * Create a new booking
@@ -79,14 +103,33 @@ export class BookingService {
   }
 
   /**
-   * Get user's bookings (for customers)
+   * Get user's bookings (for customers) with optional status filter
    */
-  static async getUserBookings(): Promise<ApiResponse<{ bookings: Booking[] }>> {
+  static async getUserBookings(status?: string): Promise<ApiResponse<Booking[]>> {
     try {
-      return await apiRequest<{ bookings: Booking[] }>(API_ENDPOINTS.BOOKINGS.MY_BOOKINGS, {
+      const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_BOOKINGS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_BOOKINGS;
+      
+      const response = await apiRequest<BookingsResponse>(url, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
+
+      // Handle both old and new response formats
+      if (response.success && response.data) {
+        // New format with wrapped response
+        if ('bookings' in response.data) {
+          return {
+            ...response,
+            data: response.data.bookings
+          };
+        }
+        // Old format - direct array or object with data property
+        if (Array.isArray(response.data)) {
+          return response as ApiResponse<Booking[]>;
+        }
+      }
+      
+      return response as ApiResponse<Booking[]>;
     } catch (error) {
       console.error('Get user bookings error:', error);
       throw error;
@@ -96,14 +139,46 @@ export class BookingService {
   /**
    * Get maid assignments (for service providers)
    */
-  static async getMaidBookings(): Promise<ApiResponse<{ bookings: Booking[] }>> {
+  static async getMaidBookings(status?: string): Promise<ApiResponse<Booking[]>> {
     try {
-      return await apiRequest<{ bookings: Booking[] }>(API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS, {
+      const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS;
+      
+      const response = await apiRequest<BookingsResponse>(url, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+
+      // Handle both old and new response formats
+      if (response.success && response.data) {
+        if ('bookings' in response.data) {
+          return {
+            ...response,
+            data: response.data.bookings
+          };
+        }
+        if (Array.isArray(response.data)) {
+          return response as ApiResponse<Booking[]>;
+        }
+      }
+      
+      return response as ApiResponse<Booking[]>;
+    } catch (error) {
+      console.error('Get maid bookings error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get booking statistics
+   */
+  static async getBookingStats(): Promise<ApiResponse<BookingStats>> {
+    try {
+      return await apiRequest<BookingStats>('/bookings/stats', {
         method: HttpMethod.GET,
         requiresAuth: true
       });
     } catch (error) {
-      console.error('Get maid bookings error:', error);
+      console.error('Get booking stats error:', error);
       throw error;
     }
   }
@@ -164,9 +239,10 @@ export class BookingService {
    */
   static async cancelBooking(bookingId: string, reason?: string): Promise<ApiResponse<{ booking: Booking }>> {
     try {
-      return await this.updateBookingStatus(bookingId, {
-        status: 'CANCELLED',
-        notes: reason
+      return await apiRequest<{ booking: Booking }>(`/bookings/${bookingId}/cancel`, {
+        method: HttpMethod.PUT,
+        body: { reason },
+        requiresAuth: true
       });
     } catch (error) {
       console.error('Cancel booking error:', error);
