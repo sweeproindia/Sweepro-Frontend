@@ -14,7 +14,7 @@ export const HeroSection = () => {
           {/* Content */}
           <div className="mb-12 lg:mb-0">
             <div className="mb-6 slide-in-left" style={{ animationDelay: '0.2s' }}>
-              <h2 className="text-3xl font-bold text-[#0011D9] mb-2">CleanEase</h2>
+              <h2 className="text-3xl font-bold text-[#0011D9] mb-2">SweepPro</h2>
             </div>
             <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6 slide-in-left" style={{ animationDelay: '0.4s' }}>
               Bring back the{' '}
@@ -71,7 +71,7 @@ export const HeroSection = () => {
                 <Quote className="h-5 w-5 text-[#0011D9] mt-1" />
                 <div>
                   <p className="text-sm text-gray-700 mb-2">
-                    Regular cleaning from CleanEase provides the best service to maintain cleanliness and health of my home.
+                    Regular cleaning from SweepPro provides the best service to maintain cleanliness and health of my home.
                   </p>
                   <p className="text-xs font-semibold text-[#0011D9]">Sarah Princeton</p>
                 </div>
@@ -82,7 +82,7 @@ export const HeroSection = () => {
                 <Quote className="h-5 w-5 text-[#0011D9] mt-1" />
                 <div>
                   <p className="text-sm text-gray-700 mb-2">
-                    Found the right place for cleaning services for my complicated home layout. Thankful for CleanEase!
+                    Found the right place for cleaning services for my complicated home layout. Thankful for SweepPro!
                   </p>
                   <p className="text-xs font-semibold text-[#0011D9]">Tamara Jules</p>
                 </div>

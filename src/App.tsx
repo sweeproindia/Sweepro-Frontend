@@ -6,7 +6,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import AdminDashboard from "./pages/AdminDashboard";
 import BookingsPage from "./pages/BookingsPage";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/UserDashboard";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import MaidBookingsPage from "./pages/MaidBookingsPage";

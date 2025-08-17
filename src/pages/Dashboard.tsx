@@ -100,7 +100,7 @@ export default function Dashboard() {
       updateUser(updatedUser);
       
       toast({
-        title: "Welcome to CleanEase!",
+        title: "Welcome to SweepPro!",
         description: "Your subscription has been activated successfully.",
       });
     }

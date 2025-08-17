@@ -1,62 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useUser } from '@/contexts/UserContext';
+import { BookingService, Booking } from '@/services/bookingService';
+import { SubscriptionService, Subscription } from '@/services/subscriptionService';
+import { useToast } from '@/hooks/use-toast';
 
-const bookings = [
-  {
-    id: 1,
-    date: '2024-12-16',
-    time: '10:00 AM',
-    duration: '3 hours',
-    cleaner: {
-      name: 'Sarah Johnson',
-      avatar: '/placeholder-avatar.jpg',
-      rating: 4.9
-    },
-    services: ['Regular Cleaning', 'Kitchen Deep Clean'],
-    status: 'scheduled',
-    address: '123 Main St, Apartment 4B'
-  },
-  {
-    id: 2,
-    date: '2024-12-18',
-    time: '2:00 PM',
-    duration: '3 hours',
-    cleaner: {
-      name: 'Maria Garcia',
-      avatar: '/placeholder-avatar.jpg',
-      rating: 4.8
-    },
-    services: ['Regular Cleaning', 'Bathroom Deep Clean'],
-    status: 'scheduled',
-    address: '123 Main St, Apartment 4B'
-  },
-  {
-    id: 3,
-    date: '2024-12-14',
-    time: '10:00 AM',
-    duration: '3 hours',
-    cleaner: {
-      name: 'Sarah Johnson',
-      avatar: '/placeholder-avatar.jpg',
-      rating: 4.9
-    },
-    services: ['Regular Cleaning'],
-    status: 'completed',
-    address: '123 Main St, Apartment 4B'
-  }
-];
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'completed':
+  switch (status.toUpperCase()) {
+    case 'COMPLETED':
       return 'bg-success text-success-foreground';
-    case 'scheduled':
+    case 'PENDING':
+    case 'CONFIRMED':
+    case 'ASSIGNED':
       return 'bg-primary text-primary-foreground';
-    case 'cancelled':
+    case 'IN_PROGRESS':
+      return 'bg-warning text-warning-foreground';
+    case 'CANCELLED':
       return 'bg-destructive text-destructive-foreground';
     default:
       return 'bg-muted text-muted-foreground';
@@ -64,15 +28,133 @@ const getStatusColor = (status: string) => {
 };
 
 export default function BookingsPage() {
+  const { user, isAuthenticated } = useUser();
+  const { toast } = useToast();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [stats, setStats] = useState({
+    totalBookings: 0,
+    completedBookings: 0,
+    upcomingBookings: 0,
+    nextUpcomingBooking: null as Booking | null
+  });
   
   // User's preferred time slot from subscription
-  const preferredTimeSlot = '10:00 AM';
-  const preferredDuration = '3 hours';
+  const preferredTimeSlot = subscription?.plan?.service?.baseDuration ? 
+    `${Math.floor(subscription.plan.service.baseDuration / 60)}:${(subscription.plan.service.baseDuration % 60).toString().padStart(2, '0')} Hours` : 
+    '10:00 AM';
+  const preferredDuration = subscription?.plan?.service?.baseDuration ? 
+    `${subscription.plan.service.baseDuration} minutes` : 
+    '3 hours';
+
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      fetchBookingData();
+    }
+  }, [user, isAuthenticated]);
+
+  const fetchBookingData = async () => {
+    setLoading(true);
+    try {
+      // Fetch bookings and subscription data in parallel
+      const [bookingsResponse, subscriptionResponse] = await Promise.allSettled([
+        BookingService.getUserBookings(),
+        SubscriptionService.getUserSubscription()
+      ]);
+
+      // Handle bookings
+      if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
+        const bookingsData = Array.isArray(bookingsResponse.value.data) ? 
+          bookingsResponse.value.data : 
+          bookingsResponse.value.data?.bookings || 
+          bookingsResponse.value.bookings || [];
+        setBookings(bookingsData);
+      }
+
+      // Handle subscription
+      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
+        const subscriptionData = subscriptionResponse.value.data || subscriptionResponse.value.subscription || null;
+        setSubscription(subscriptionData);
+      } else if (subscriptionResponse.status === 'rejected') {
+        console.log('No active subscription found');
+        setSubscription(null);
+      }
+
+      // Calculate stats after data is loaded
+      calculateStats();
+
+    } catch (error) {
+      console.error('Error fetching booking data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load booking data. Please try refreshing.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateStats = () => {
+    const totalBookings = bookings.length;
+    const completedBookings = bookings.filter(b => b.status === 'COMPLETED').length;
+    const upcomingBookings = bookings.filter(b => 
+      b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS' || b.status === 'ASSIGNED'
+    );
+    const nextUpcomingBooking = upcomingBookings
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
+    
+    setStats({
+      totalBookings,
+      completedBookings,
+      upcomingBookings: upcomingBookings.length,
+      nextUpcomingBooking
+    });
+  };
+
+  useEffect(() => {
+    if (bookings.length > 0) {
+      calculateStats();
+    }
+  }, [bookings]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!user || !isAuthenticated) {
+    return (
+      <DashboardLayout>
+        <div className="text-center p-8">
+          <p className="text-muted-foreground">Please log in to view your bookings.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const filteredBookings = bookings.filter(booking => {
     if (filter === 'all') return true;
-    return booking.status === filter;
+    // Map display filter values to API status values
+    switch (filter) {
+      case 'scheduled':
+        return booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED';
+      case 'completed':
+        return booking.status === 'COMPLETED';
+      case 'cancelled':
+        return booking.status === 'CANCELLED';
+      case 'in_progress':
+        return booking.status === 'IN_PROGRESS';
+      default:
+        return booking.status.toLowerCase() === filter.toLowerCase();
+    }
   });
 
   return (
@@ -126,25 +208,37 @@ export default function BookingsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-gradient-hero rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-                      {booking.cleaner.name.split(' ').map(n => n[0]).join('')}
+                      {booking.maid?.name ? booking.maid.name.split(' ').map(n => n[0]).join('') : 'TBD'}
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{booking.cleaner.name}</CardTitle>
-                      <div className="flex items-center space-x-1 mt-1">
-                        <div className="flex text-yellow-400">
-                          {[...Array(5)].map((_, i) => (
-                            <span key={i} className={i < Math.floor(booking.cleaner.rating) ? 'text-yellow-400' : 'text-gray-300'}>
-                              ⭐
-                            </span>
-                          ))}
+                      <CardTitle className="text-lg">{booking.service?.name || 'Cleaning Service'}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {booking.maid?.name ? `Assigned to: ${booking.maid.name}` : 'Maid to be assigned'}
+                      </p>
+                      {booking.maid?.rating && (
+                        <div className="flex items-center space-x-1 mt-1">
+                          <div className="flex text-yellow-400">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={i < Math.floor(booking.maid.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}>
+                                ⭐
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-sm text-muted-foreground">({booking.maid.rating})</span>
                         </div>
-                        <span className="text-sm text-muted-foreground">({booking.cleaner.rating})</span>
-                      </div>
+                      )}
                     </div>
                   </div>
-                  <Badge className={getStatusColor(booking.status)}>
-                    {booking.status}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge className={getStatusColor(booking.status)}>
+                      {booking.status}
+                    </Badge>
+                    {booking.finalAmount && (
+                      <span className="text-lg font-bold text-primary">
+                        ₹{booking.finalAmount.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               
@@ -153,37 +247,58 @@ export default function BookingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{new Date(booking.date).toLocaleDateString()}</span>
+                    <span className="text-sm">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{booking.time} ({booking.duration})</span>
+                    <span className="text-sm">
+                      {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
+                      {booking.estimatedDuration && ` (${booking.estimatedDuration} min)`}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{booking.address}</span>
+                    <span className="text-sm">{booking.serviceAddress}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{booking.services.length} services</span>
+                    <span className="text-sm">{booking.service?.name || 'Service'}</span>
                   </div>
                 </div>
 
-                {/* Services */}
+                {/* Service Details */}
                 <div>
-                  <h4 className="font-medium text-foreground mb-2">Services Included:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {booking.services.map((service, index) => (
-                      <Badge key={index} variant="secondary">
-                        {service}
+                  <h4 className="font-medium text-foreground mb-2">Service Details:</h4>
+                  <div className="space-y-2">
+                    <Badge variant="secondary" className="mr-2">
+                      {booking.service?.name || 'Cleaning Service'}
+                    </Badge>
+                    {booking.service?.category && (
+                      <Badge variant="outline" className="mr-2">
+                        {booking.service.category}
                       </Badge>
-                    ))}
+                    )}
+                    {booking.service?.description && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {booking.service.description}
+                      </p>
+                    )}
                   </div>
                 </div>
+                
+                {/* Special Instructions */}
+                {booking.specialInstructions && (
+                  <div>
+                    <h4 className="font-medium text-foreground mb-2">Special Instructions:</h4>
+                    <p className="text-sm text-muted-foreground p-3 bg-muted/30 rounded">
+                      {booking.specialInstructions}
+                    </p>
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                  {booking.status === 'scheduled' && (
+                  {(booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED') && (
                     <>
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-2" />
@@ -195,7 +310,7 @@ export default function BookingsPage() {
                       </Button>
                     </>
                   )}
-                  {booking.status === 'completed' && (
+                  {booking.status === 'COMPLETED' && (
                     <Button variant="outline" size="sm">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Rate & Review
@@ -256,13 +371,13 @@ export default function BookingsPage() {
                   {bookings.map((booking) => (
                     <tr key={booking.id} className="border-b border-border/50 hover:bg-muted/30">
                       <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {new Date(booking.date).toLocaleDateString()}
+                        {new Date(booking.scheduledAt).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-4 text-sm text-foreground">
-                        {booking.cleaner.name}
+                        {booking.maid?.name || 'TBD'}
                       </td>
                       <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {booking.duration}
+                        {booking.estimatedDuration ? `${booking.estimatedDuration} min` : 'N/A'}
                       </td>
                       <td className="py-3 px-4">
                         <Badge className={getStatusColor(booking.status)} variant="secondary">
@@ -270,7 +385,7 @@ export default function BookingsPage() {
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {booking.status === 'completed' ? 'Excellent service' : '-'}
+                        {booking.specialInstructions || (booking.status === 'COMPLETED' ? 'Service completed' : '-')}
                       </td>
                     </tr>
                   ))}

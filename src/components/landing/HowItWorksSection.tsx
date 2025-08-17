@@ -89,7 +89,7 @@ export const HowItWorksSection = () => {
               Ready to Get Started?
             </h3>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Join thousands of satisfied customers who have transformed their homes with CleanEase.
+              Join thousands of satisfied customers who have transformed their homes with SweepPro.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="#pricing" className="btn-hero inline-flex items-center justify-center px-8 py-3 text-base">

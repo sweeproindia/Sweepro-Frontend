@@ -92,7 +92,7 @@ const getProfileData = (role: 'user' | 'admin' | 'maid'): ProfileData => {
       return {
         ...baseData,
         name: 'Admin Manager',
-        email: 'admin@cleanease.com',
+        email: 'admin@sweeppro.com',
         phone: '+91 98765 43212',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         coverImage: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=300&fit=crop',

@@ -23,7 +23,7 @@ export const MaidDashboardSidebar = () => {
             <div className="bg-gradient-hero rounded-lg p-2">
               <Sparkles className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">CleanEase</span>
+            <span className="text-xl font-bold text-foreground">SweepPro</span>
           </div>
         </div>
         

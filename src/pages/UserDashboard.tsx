@@ -8,7 +8,7 @@ import { BookingService, Booking } from '@/services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign, Package, Users, Settings, Bell, Star } from 'lucide-react';
+import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign, Package, Users, Settings, Bell, Star, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // Service interface to match backend
@@ -40,7 +40,8 @@ export default function UserDashboard() {
     completedBookings: 0,
     totalSpent: 0,
     activeSubscription: false,
-    upcomingBookings: 0
+    upcomingBookings: 0,
+    nextUpcomingBooking: null as Booking | null
   });
 
   useEffect(() => {
@@ -121,7 +122,10 @@ export default function UserDashboard() {
     const completedBookings = bookings.filter(b => b.status === 'COMPLETED').length;
     const upcomingBookings = bookings.filter(b => 
       b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
-    ).length;
+    );
+    const nextUpcomingBooking = upcomingBookings
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
+    
     const totalSpent = payments
       .filter(p => p.status === 'COMPLETED')
       .reduce((sum, p) => sum + p.amount, 0);
@@ -132,7 +136,8 @@ export default function UserDashboard() {
       completedBookings,
       totalSpent,
       activeSubscription,
-      upcomingBookings
+      upcomingBookings: upcomingBookings.length,
+      nextUpcomingBooking
     });
   };
 
@@ -178,51 +183,6 @@ export default function UserDashboard() {
           <Card className="dashboard-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Bookings
-              </CardTitle>
-              <Calendar className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.totalBookings}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.upcomingBookings} upcoming
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Completed Services
-              </CardTitle>
-              <CheckCircle className="h-5 w-5 text-success" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.completedBookings}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.totalBookings > 0 ? Math.round((stats.completedBookings / stats.totalBookings) * 100) : 0}% completion rate
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Spent
-              </CardTitle>
-              <DollarSign className="h-5 w-5 text-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">₹{stats.totalSpent.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Across {payments.filter(p => p.status === 'COMPLETED').length} payments
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Subscription Status
               </CardTitle>
               <Package className="h-5 w-5 text-primary" />
@@ -236,304 +196,654 @@ export default function UserDashboard() {
               </p>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Profile Details */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Profile Information
+          
+          <Card className="dashboard-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Upcoming Booking
               </CardTitle>
-              <CardDescription>Your account details and status</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Name:</span>
-                  <span className="text-foreground">{user.name}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Email:</span>
-                  <span className="text-foreground text-sm">{user.email}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Phone:</span>
-                  <span className="text-foreground">{user.phone}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Role:</span>
-                  <Badge variant="secondary">{user.role}</Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Status:</span>
-                  <Badge variant={user.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                    {user.status}
-                  </Badge>
-                </div>
-                {user.address && (
-                  <div className="p-3 bg-muted/30 rounded-lg">
-                    <span className="font-medium">Address:</span>
-                    <p className="text-foreground mt-1">{user.address}</p>
-                  </div>
-                )}
-              </div>
-              <div className="pt-4">
-                <Link to="/profile">
-                  <Button className="w-full" variant="outline">
-                    Edit Profile
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Subscription Details */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Subscription Plan
-              </CardTitle>
-              <CardDescription>Your current subscription details</CardDescription>
+              <Calendar className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              {subscription ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-gradient-feature rounded-lg">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-lg">{subscription.plan?.name || 'Current Plan'}</h4>
-                      <Badge variant={subscription.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                        {subscription.status}
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground text-sm mb-3">
-                      {subscription.plan?.description || 'Premium cleaning services'}
-                    </p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Amount:</span>
-                        <p className="text-lg font-bold text-primary">₹{subscription.amount.toLocaleString()}</p>
-                        {subscription.discount > 0 && (
-                          <p className="text-xs text-success">-₹{subscription.discount.toLocaleString()} discount</p>
-                        )}
-                      </div>
-                      <div>
-                        <span className="font-medium">Duration:</span>
-                        <p>{subscription.plan?.duration || 1} month{(subscription.plan?.duration || 1) > 1 ? 's' : ''}</p>
-                        <p className="text-xs text-muted-foreground">{subscription.billingCycle.toLowerCase()} billing</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Sessions:</span>
-                        <p>{subscription.plan?.sessionsPerWeek || 0}/week</p>
-                        <p className="text-xs text-muted-foreground">{subscription.plan?.sessionsPerMonth || 0}/month</p>
-                      </div>
-                      <div>
-                        <span className="font-medium">Started:</span>
-                        <p>{new Date(subscription.startDate).toLocaleDateString()}</p>
-                        <p className="text-xs text-muted-foreground">Expires: {new Date(subscription.endDate).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    {subscription.nextBillDate && (
-                      <div className="mt-4 pt-4 border-t border-border">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">Next Billing:</span>
-                          <span className="text-sm font-bold">
-                            {new Date(subscription.nextBillDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center mt-1">
-                          <span className="text-sm font-medium">Auto Renewal:</span>
-                          <Badge variant={subscription.autoRenew ? 'default' : 'outline'}>
-                            {subscription.autoRenew ? 'Enabled' : 'Disabled'}
-                          </Badge>
-                        </div>
-                      </div>
-                    )}
+              {stats.nextUpcomingBooking ? (
+                <>
+                  <div className="text-lg font-bold text-foreground">
+                    {new Date(stats.nextUpcomingBooking.scheduledAt).toLocaleDateString()}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link to="/subscription">
-                      <Button className="w-full" variant="outline">
-                        Manage Plan
-                      </Button>
-                    </Link>
-                    <Button className="w-full" variant="outline">
-                      View History
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h4 className="font-semibold mb-2">No Active Subscription</h4>
-                  <p className="text-muted-foreground text-sm mb-4">
-                    Subscribe to a plan to start enjoying our services
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(stats.nextUpcomingBooking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </p>
-                  <Link to="/subscription">
-                    <Button className="btn-hero">
-                      Choose a Plan
-                    </Button>
-                  </Link>
-                </div>
+                  <p className="text-xs text-primary mt-1 font-medium">
+                    {stats.nextUpcomingBooking.service?.name || 'Service'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-foreground">None</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No upcoming bookings
+                  </p>
+                </>
               )}
             </CardContent>
           </Card>
+
+          <Card className="dashboard-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Visits
+              </CardTitle>
+              <CheckCircle className="h-5 w-5 text-success" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{stats.totalBookings}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stats.completedBookings} completed visits
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Next Payment
+              </CardTitle>
+              <DollarSign className="h-5 w-5 text-warning" />
+            </CardHeader>
+            <CardContent>
+              {subscription && subscription.nextBillDate ? (
+                <>
+                  <div className="text-lg font-bold text-foreground">
+                    {new Date(subscription.nextBillDate).toLocaleDateString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ₹{subscription.amount?.toLocaleString() || '0'}
+                  </p>
+                  <p className="text-xs text-primary mt-1 font-medium">
+                    {subscription.plan?.name || 'Subscription'}
+                  </p>
+                </>
+              ) : subscription && subscription.endDate ? (
+                <>
+                  <div className="text-lg font-bold text-foreground">
+                    {new Date(subscription.endDate).toLocaleDateString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Expiry Date
+                  </p>
+                  <p className="text-xs text-warning mt-1 font-medium">
+                    {subscription.plan?.name || 'Plan expires'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-foreground">None</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No active subscription
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          
         </div>
 
-        {/* Recent Bookings */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Booking Statistics */}
+          <Card className="dashboard-card slide-up">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Booking Analytics
+              </CardTitle>
+              <CardDescription>Your booking statistics and performance metrics</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gradient-feature rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">{stats.totalBookings}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Total Bookings</div>
+                  </div>
+                </div>
+                <div className="p-4 bg-gradient-feature rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-success">{stats.completedBookings}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Completed</div>
+                  </div>
+                </div>
+                <div className="p-4 bg-gradient-feature rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-warning">{stats.upcomingBookings}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Upcoming</div>
+                  </div>
+                </div>
+                <div className="p-4 bg-gradient-feature rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">
+                      {stats.totalBookings > 0 ? Math.round((stats.completedBookings / stats.totalBookings) * 100) : 0}%
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">Success Rate</div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Recent Booking Info */}
+              {stats.nextUpcomingBooking && (
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Next Booking Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Service:</span>
+                      <span className="text-foreground">{stats.nextUpcomingBooking.service?.name || 'Service'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Date:</span>
+                      <span className="text-foreground">{new Date(stats.nextUpcomingBooking.scheduledAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Time:</span>
+                      <span className="text-foreground">{new Date(stats.nextUpcomingBooking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Status:</span>
+                      <Badge variant="secondary">{stats.nextUpcomingBooking.status}</Badge>
+                    </div>
+                    {stats.nextUpcomingBooking.maid?.name && (
+                      <div className="flex items-center gap-2 md:col-span-2">
+                        <span className="font-medium">Assigned Maid:</span>
+                        <span className="text-foreground">{stats.nextUpcomingBooking.maid.name}</span>
+                      </div>
+                    )}
+                    {stats.nextUpcomingBooking.serviceAddress && (
+                      <div className="flex items-start gap-2 md:col-span-2">
+                        <span className="font-medium">Address:</span>
+                        <span className="text-foreground">{stats.nextUpcomingBooking.serviceAddress}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 gap-2 pt-4">
+                <Link to="/bookings">
+                  <Button className="w-full" variant="outline" size="sm">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    View All Bookings
+                  </Button>
+                </Link>
+               
+              </div>
+            </CardContent>
+          </Card>
+
+        {/* Quick Booking Section */}
+          <Card className="dashboard-card slide-up">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Quick Booking
+              </CardTitle>
+              <CardDescription>Book your maid services with your subscription plan</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Today Booking */}
+              <div className="p-4 bg-gradient-feature rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-foreground">Book for Today</h4>
+                  <Badge className="bg-success text-success-foreground">Available</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Schedule cleaning service for today based on your active plan
+                </p>
+                <Button className="btn-hero w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Book for Today
+                </Button>
+              </div>
+
+              {/* Tomorrow Booking */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-foreground">Book for Tomorrow</h4>
+                  {stats.nextUpcomingBooking && 
+                   new Date(stats.nextUpcomingBooking.scheduledAt).toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString() ? (
+                    <Badge variant="outline">Already Booked</Badge>
+                  ) : (
+                    <Badge className="bg-success text-success-foreground">Available</Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {stats.nextUpcomingBooking && 
+                   new Date(stats.nextUpcomingBooking.scheduledAt).toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString() ? (
+                    `${new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()} - ${stats.nextUpcomingBooking.service?.name || 'Service'}`
+                  ) : (
+                    `Schedule for ${new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()}`
+                  )}
+                </p>
+                {stats.nextUpcomingBooking && 
+                 new Date(stats.nextUpcomingBooking.scheduledAt).toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString() ? (
+                  <Button variant="outline" disabled className="w-full">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Booking Confirmed
+                  </Button>
+                ) : (
+                  <Button className="btn-hero w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Book for Tomorrow
+                  </Button>
+                )}
+              </div>
+              
+              <div className="space-y-2 gap-4 ">
+                <Link to="/bookings ">
+                  <Button className="w-full justify-start mt-4" variant="outline">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    View All Bookings
+                  </Button>
+                </Link>
+                
+                <Link to="/subscription ">
+                  <Button className="w-full justify-start mt-4" variant="outline">
+                    <Package className="h-4 w-4 mr-2" />
+                    Manage Subscription
+                  </Button>
+                </Link>
+              </div>
+              
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enhanced Recent Bookings */}
         <Card className="dashboard-card slide-up">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  Recent Bookings
+                  Total Bookings Overview
                 </CardTitle>
-                <CardDescription>Your recent and upcoming cleaning sessions</CardDescription>
+                <CardDescription>Comprehensive view of all your cleaning sessions with detailed information</CardDescription>
               </div>
-              <Link to="/bookings">
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="text-xs px-2 py-1">
+                  {stats.totalBookings} Total
+                </Badge>
+                <Link to="/bookings">
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {bookings.length > 0 ? (
               <div className="space-y-4">
-                {bookings.slice(0, 5).map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${
-                        booking.status === 'COMPLETED' ? 'bg-success' : 
-                        booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
-                        booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
-                      }`} />
-                      <div>
-                        <p className="font-medium">{booking.service?.name || 'Service'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(booking.scheduledAt).toLocaleDateString()} at {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </p>
-                        {booking.serviceAddress && (
-                          <p className="text-xs text-muted-foreground">{booking.serviceAddress}</p>
-                        )}
+                {/* Booking Statistics */}
+                <div className="grid grid-cols-4 gap-4 p-4 bg-gradient-feature rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">{stats.totalBookings}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Total Bookings</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-success">{stats.completedBookings}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Completed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-warning">{stats.upcomingBookings}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Upcoming</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">
+                      {stats.totalBookings > 0 ? Math.round((stats.completedBookings / stats.totalBookings) * 100) : 0}%
+                    </div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Success Rate</div>
+                  </div>
+                </div>
+
+                {/* Recent Bookings List */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Recent Activity
+                  </h4>
+                  {bookings.slice(0, 5).map((booking) => (
+                    <div key={booking.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4 flex-1">
+                          <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
+                            booking.status === 'COMPLETED' ? 'bg-success' : 
+                            booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
+                            booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
+                          }`} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-foreground">{booking.service?.name || 'Service'}</p>
+                              <Badge variant={
+                                booking.status === 'COMPLETED' ? 'default' :
+                                booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
+                                booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
+                              } size="sm">
+                                {booking.status}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>{new Date(booking.scheduledAt).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>{new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              </div>
+                            </div>
+                            {booking.serviceAddress && (
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full"></span>
+                                {booking.serviceAddress}
+                              </p>
+                            )}
+                            {booking.service?.description && (
+                              <p className="text-xs text-muted-foreground mt-2 italic">
+                                {booking.service.description}
+                              </p>
+                            )}
+                            {booking.specialInstructions && (
+                              <div className="mt-2 p-2 bg-muted/30 rounded text-xs">
+                                <span className="font-medium">Special Instructions: </span>
+                                <span className="text-muted-foreground">{booking.specialInstructions}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right ml-4">
+                          {booking.finalAmount && (
+                            <p className="font-bold text-lg text-primary">
+                              ₹{booking.finalAmount.toLocaleString()}
+                            </p>
+                          )}
+                          {booking.estimatedDuration && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              ~{booking.estimatedDuration} mins
+                            </p>
+                          )}
+                          {booking.maid?.name && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              by {booking.maid.name}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant={
-                        booking.status === 'COMPLETED' ? 'default' :
-                        booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
-                        booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
-                      }>
-                        {booking.status}
-                      </Badge>
-                      {booking.finalAmount && (
-                        <p className="text-sm font-medium mt-1">
-                          ₹{booking.finalAmount.toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                {/* Quick Actions */}
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button className="flex-1" variant="outline" size="sm">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Schedule Cleaning
+                  </Button>
+                  <Button className="flex-1" variant="outline" size="sm">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Report Issue
+                  </Button>
+                  <Link to="/bookings" className="flex-1">
+                    <Button className="w-full" size="sm">
+                      View All Bookings
+                    </Button>
+                  </Link>
+                </div>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h4 className="font-semibold mb-2">No Bookings Yet</h4>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Book your first cleaning service to get started
+              <div className="text-center py-12">
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h4 className="font-semibold text-lg mb-2">No Bookings Yet</h4>
+                <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
+                  Start your cleaning journey today! Book your first professional cleaning service and experience the SweepPro difference.
                 </p>
-                <Button className="btn-hero">
-                  Book Now
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button className="btn-hero">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Book Now
+                  </Button>
+                  <Link to="/subscription">
+                    <Button variant="outline">
+                      <Package className="h-4 w-4 mr-2" />
+                      View Plans
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Payment History */}
+        {/* Enhanced Payment History */}
         <Card className="dashboard-card slide-up">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5" />
-                  Payment History
+                  Payment Details Overview
                 </CardTitle>
-                <CardDescription>Your transaction history and payment details</CardDescription>
+                <CardDescription>Complete transaction history with comprehensive payment information from API responses</CardDescription>
               </div>
-              <Link to="/payments">
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <Badge variant="outline" className="text-xs px-2 py-1">
+                  {payments.length} Transactions
+                </Badge>
+                <Link to="/payments">
+                  <Button variant="outline" size="sm">
+                    View All
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {payments.length > 0 ? (
-              <div className="space-y-4">
-                {payments.slice(0, 5).map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${
-                        payment.status === 'COMPLETED' ? 'bg-success' :
-                        payment.status === 'PENDING' ? 'bg-warning' :
-                        payment.status === 'FAILED' ? 'bg-destructive' : 'bg-muted-foreground'
-                      }`} />
-                      <div>
-                        <p className="font-medium">
-                          {payment.bookingId ? 'Booking Payment' : payment.subscriptionId ? 'Subscription Payment' : 'Payment'}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(payment.createdAt).toLocaleDateString()} • {payment.paymentMethod}
-                        </p>
-                        {payment.description && (
-                          <p className="text-xs text-muted-foreground">{payment.description}</p>
-                        )}
-                      </div>
+              <div className="space-y-6">
+                {/* Payment Analytics */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gradient-feature rounded-lg border">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-success">
+                      ₹{payments.filter(p => p.status === 'COMPLETED').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-lg">₹{payment.amount.toLocaleString()}</p>
-                      <Badge variant={
-                        payment.status === 'COMPLETED' ? 'default' :
-                        payment.status === 'PENDING' ? 'outline' : 'destructive'
-                      }>
-                        {payment.status}
-                      </Badge>
-                    </div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Total Paid</div>
+                    <div className="text-xs text-success mt-1">{payments.filter(p => p.status === 'COMPLETED').length} payments</div>
                   </div>
-                ))}
-                <div className="pt-4 border-t border-border">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Paid</p>
-                      <p className="text-lg font-bold text-success">
-                        ₹{payments.filter(p => p.status === 'COMPLETED').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
-                      </p>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-warning">
+                      ₹{payments.filter(p => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Pending</p>
-                      <p className="text-lg font-bold text-warning">
-                        ₹{payments.filter(p => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
-                      </p>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Pending</div>
+                    <div className="text-xs text-warning mt-1">{payments.filter(p => p.status === 'PENDING').length} pending</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-destructive">
+                      ₹{payments.filter(p => p.status === 'FAILED').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Failed</p>
-                      <p className="text-lg font-bold text-destructive">
-                        ₹{payments.filter(p => p.status === 'FAILED').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
-                      </p>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Failed</div>
+                    <div className="text-xs text-destructive mt-1">{payments.filter(p => p.status === 'FAILED').length} failed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary">
+                      {payments.length > 0 ? Math.round((payments.filter(p => p.status === 'COMPLETED').length / payments.length) * 100) : 0}%
+                    </div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Success Rate</div>
+                    <div className="text-xs text-primary mt-1">payment success</div>
+                  </div>
+                </div>
+
+                {/* Recent Transactions */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Recent Transactions
+                  </h4>
+                  {payments.slice(0, 5).map((payment) => (
+                    <div key={payment.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4 flex-1">
+                          <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
+                            payment.status === 'COMPLETED' ? 'bg-success' :
+                            payment.status === 'PENDING' ? 'bg-warning' :
+                            payment.status === 'FAILED' ? 'bg-destructive' : 'bg-muted-foreground'
+                          }`} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <p className="font-semibold text-foreground">
+                                {payment.bookingId ? 'Booking Payment' : 
+                                 payment.subscriptionId ? 'Subscription Payment' : 
+                                 payment.type || 'Payment'}
+                              </p>
+                              <Badge variant={
+                                payment.status === 'COMPLETED' ? 'default' :
+                                payment.status === 'PENDING' ? 'outline' : 'destructive'
+                              } size="sm">
+                                {payment.status}
+                              </Badge>
+                            </div>
+                            
+                            {/* Payment Details Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>{new Date(payment.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <CreditCard className="h-4 w-4" />
+                                <span>{payment.paymentMethod || 'Card'}</span>
+                              </div>
+                              {payment.transactionId && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <span className="text-xs font-mono bg-muted px-2 py-1 rounded">
+                                    ID: {payment.transactionId.slice(-8)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {payment.description && (
+                              <p className="text-xs text-muted-foreground mt-2 italic">
+                                {payment.description}
+                              </p>
+                            )}
+                            
+                            {/* Additional payment details from API */}
+                            {(payment.gatewayResponse || payment.failureReason) && (
+                              <div className="mt-3 p-2 bg-muted/30 rounded text-xs">
+                                {payment.status === 'FAILED' && payment.failureReason && (
+                                  <div className="text-destructive">
+                                    <span className="font-medium">Failure Reason: </span>
+                                    <span>{payment.failureReason}</span>
+                                  </div>
+                                )}
+                                {payment.gatewayResponse && (
+                                  <div className="text-muted-foreground">
+                                    <span className="font-medium">Gateway: </span>
+                                    <span>{payment.gatewayResponse}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="text-right ml-4">
+                          <p className="font-bold text-xl text-primary mb-1">
+                            ₹{payment.amount.toLocaleString()}
+                          </p>
+                          {payment.tax && (
+                            <p className="text-xs text-muted-foreground">
+                              +₹{payment.tax.toLocaleString()} tax
+                            </p>
+                          )}
+                          {payment.discount && payment.discount > 0 && (
+                            <p className="text-xs text-success">
+                              -₹{payment.discount.toLocaleString()} saved
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(payment.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Payment Actions */}
+                      {payment.status === 'PENDING' && (
+                        <div className="mt-3 pt-3 border-t flex gap-2">
+                          <Button size="sm" variant="outline" className="text-xs">
+                            Retry Payment
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-xs">
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                      {payment.status === 'COMPLETED' && (
+                        <div className="mt-3 pt-3 border-t flex gap-2">
+                          <Button size="sm" variant="outline" className="text-xs">
+                            Download Receipt
+                          </Button>
+                          {payment.refundable && (
+                            <Button size="sm" variant="ghost" className="text-xs text-destructive">
+                              Request Refund
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Payment Summary & Actions */}
+                <div className="pt-4 border-t">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {Math.min(5, payments.length)} of {payments.length} transactions
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <DollarSign className="h-4 w-4 mr-2" />
+                        Download Statement
+                      </Button>
+                      <Link to="/payments">
+                        <Button size="sm">
+                          View All Payments
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h4 className="font-semibold mb-2">No Payment History</h4>
-                <p className="text-muted-foreground text-sm">
-                  Your payment transactions will appear here
+              <div className="text-center py-12">
+                <CreditCard className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h4 className="font-semibold text-lg mb-2">No Payment History</h4>
+                <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
+                  Your payment transactions will appear here once you start using our services. All payments are secure and processed through encrypted channels.
                 </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button className="btn-hero">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Make First Payment
+                  </Button>
+                  <Link to="/subscription">
+                    <Button variant="outline">
+                      <Package className="h-4 w-4 mr-2" />
+                      Choose Plan
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
           </CardContent>
