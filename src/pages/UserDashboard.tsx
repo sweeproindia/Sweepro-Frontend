@@ -10,6 +10,7 @@ import { PaymentService, Payment } from '@/services/paymentService';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign, Package, Users, Settings, Bell, Star, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { QuickBookingForm } from '@/components/forms/QuickBookingForm';
 
 // Service interface to match backend
 interface Service {
@@ -43,6 +44,10 @@ export default function UserDashboard() {
     upcomingBookings: 0,
     nextUpcomingBooking: null as Booking | null
   });
+
+  // Booking form state
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [bookingFormDate, setBookingFormDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (user && isAuthenticated) {
@@ -146,6 +151,26 @@ export default function UserDashboard() {
       calculateStats();
     }
   }, [bookings, payments, subscription]);
+
+  // Booking form handlers
+  const handleOpenBookingForm = (date?: Date) => {
+    setBookingFormDate(date);
+    setShowBookingForm(true);
+  };
+
+  const handleCloseBookingForm = () => {
+    setShowBookingForm(false);
+    setBookingFormDate(undefined);
+  };
+
+  const handleBookingSuccess = async () => {
+    // Refresh dashboard data after successful booking
+    await fetchUserDashboardData();
+    toast({
+      title: 'Booking Created!',
+      description: 'Your booking has been successfully created and is now visible in your dashboard.',
+    });
+  };
 
   if (loading) {
     return (
@@ -400,7 +425,10 @@ export default function UserDashboard() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Schedule cleaning service for today based on your active plan
                 </p>
-                <Button className="btn-hero w-full">
+                <Button 
+                  className="btn-hero w-full"
+                  onClick={() => handleOpenBookingForm(new Date())}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Book for Today
                 </Button>
@@ -432,7 +460,10 @@ export default function UserDashboard() {
                     Booking Confirmed
                   </Button>
                 ) : (
-                  <Button className="btn-hero w-full">
+                  <Button 
+                    className="btn-hero w-full"
+                    onClick={() => handleOpenBookingForm(new Date(Date.now() + 24 * 60 * 60 * 1000))}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Book for Tomorrow
                   </Button>
@@ -848,6 +879,15 @@ export default function UserDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Quick Booking Form Modal */}
+        <QuickBookingForm
+          isOpen={showBookingForm}
+          onClose={handleCloseBookingForm}
+          onSuccess={handleBookingSuccess}
+          prefilledDate={bookingFormDate}
+          userSubscription={subscription || undefined}
+        />
       </div>
     </DashboardLayout>
   );

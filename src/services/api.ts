@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = 'https://sweep-pro-backend-testing.onrender.com/api';
+export const API_BASE_URL = 'http://localhost:3000/api';
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -14,6 +14,11 @@ export const API_ENDPOINTS = {
     PROFILE: '/users/profile',
     UPDATE: '/users/update',
   },
+  // Services
+  SERVICES: {
+    ALL: '/services',
+    BY_ID: '/services/:id',
+  },
   // Bookings
   BOOKINGS: {
     CREATE: '/bookings',
@@ -21,6 +26,9 @@ export const API_ENDPOINTS = {
     MY_ASSIGNMENTS: '/bookings/my-assignments',
     UPDATE_STATUS: '/bookings/:id/status',
     COMPLETE_PAYMENT: '/bookings/complete-payment',
+    AVAILABLE_SLOTS: '/bookings/available-slots',
+    ESTIMATE_COST: '/bookings/estimate-cost',
+
   },
   // Subscriptions
   SUBSCRIPTIONS: {

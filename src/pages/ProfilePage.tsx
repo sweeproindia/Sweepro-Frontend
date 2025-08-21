@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BookingButton } from '@/components/buttons/BookingButton';
+import { useBookingForm } from '@/contexts/BookingFormContext';
 
 interface ProfileData {
   id: string;
@@ -146,8 +148,9 @@ const getProfileData = (role: 'user' | 'admin' | 'maid'): ProfileData => {
 };
 
 const ProfilePage: React.FC = () => {
-  const [userRole, setUserRole] = useState<'user' | 'admin' | 'maid'>('maid'); // Default to maid for demo
+  const [userRole, setUserRole] = useState<'user' | 'admin' | 'maid'>('user'); // Default to user for demo
   const profileData = getProfileData(userRole);
+  const { openBookingForm } = useBookingForm();
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -197,6 +200,16 @@ const ProfilePage: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Show booking button only for users */}
+              {profileData.role === 'user' && (
+                <BookingButton
+                  onClick={openBookingForm}
+                  text="Book Service"
+                  variant="default"
+                  size="sm"
+                  className="btn-hero"
+                />
+              )}
               <Button variant="outline" size="sm">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Profile
@@ -311,6 +324,38 @@ const ProfilePage: React.FC = () => {
                         <span className="text-sm text-gray-600">Total Earnings</span>
                       </div>
                       <span className="font-semibold">₹{profileData.totalEarnings.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {/* Quick Booking Section for Users */}
+                  {profileData.role === 'user' && (
+                    <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Quick Booking
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Need a cleaning service? Book directly from your profile.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <BookingButton
+                          onClick={() => openBookingForm(new Date())}
+                          text="Book for Today"
+                          className="btn-hero"
+                          size="sm"
+                          fullWidth
+                        />
+                        <BookingButton
+                          onClick={() => {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            openBookingForm(tomorrow);
+                          }}
+                          text="Book for Tomorrow"
+                          variant="outline"
+                          size="sm"
+                          fullWidth
+                        />
+                      </div>
                     </div>
                   )}
                 </CardContent>

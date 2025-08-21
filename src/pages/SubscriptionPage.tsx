@@ -2,7 +2,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Calendar, CreditCard, CheckCircle, ArrowUpRight, Settings, Package, AlertCircle } from 'lucide-react';
+import { Crown, Calendar, CreditCard, CheckCircle, ArrowUpRight, Settings, Package, AlertCircle, Plus } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
 import { PaymentService } from '@/services/paymentService';
@@ -10,11 +10,14 @@ import { BookingService } from '@/services/bookingService';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { BookingButton } from '@/components/buttons/BookingButton';
+import { useBookingForm, withBookingForm } from '@/contexts/BookingFormContext';
 
 
-export default function SubscriptionPage() {
+function SubscriptionPage() {
   const { user, isAuthenticated } = useUser();
   const { toast } = useToast();
+  const { openBookingForm } = useBookingForm();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -285,6 +288,46 @@ export default function SubscriptionPage() {
                 </div>
               </div>
 
+              {/* Quick Booking Section for Active Subscriptions */}
+              {subscription.status === 'ACTIVE' && (
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Ready to Book Your Next Service?
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Your subscription is active. Schedule your cleaning services instantly.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <BookingButton
+                      onClick={() => openBookingForm(new Date())}
+                      text="Book Today"
+                      className="btn-hero"
+                      size="sm"
+                      fullWidth
+                    />
+                    <BookingButton
+                      onClick={() => {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        openBookingForm(tomorrow);
+                      }}
+                      text="Book Tomorrow"
+                      variant="outline"
+                      size="sm"
+                      fullWidth
+                    />
+                    <BookingButton
+                      onClick={() => openBookingForm()}
+                      text="Schedule Later"
+                      variant="outline"
+                      size="sm"
+                      fullWidth
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-border">
                 <Link to="/payments">
                   <Button variant="outline">
@@ -319,12 +362,21 @@ export default function SubscriptionPage() {
               <p className="text-muted-foreground mb-6">
                 Choose from our flexible subscription plans to start enjoying professional cleaning services.
               </p>
-              <Link to="/">
-                <Button className="btn-hero">
-                  <Crown className="h-4 w-4 mr-2" />
-                  View Available Plans
-                </Button>
-              </Link>
+              <div className="space-y-3">
+                <Link to="/">
+                  <Button className="btn-hero w-full">
+                    <Crown className="h-4 w-4 mr-2" />
+                    View Available Plans
+                  </Button>
+                </Link>
+                <BookingButton
+                  onClick={() => openBookingForm()}
+                  text="Book One-Time Service"
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                />
+              </div>
             </CardContent>
           </Card>
         )}
@@ -519,11 +571,19 @@ export default function SubscriptionPage() {
                   <p className="text-muted-foreground text-sm">
                     Statistics will appear here once you start using our services.
                   </p>
-                  <Link to="/bookings">
-                    <Button variant="outline" size="sm" className="mt-2">
-                      Book Your First Service
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2 justify-center mt-2">
+                    <Link to="/bookings">
+                      <Button variant="outline" size="sm">
+                        View Bookings
+                      </Button>
+                    </Link>
+                    <BookingButton
+                      onClick={() => openBookingForm()}
+                      text="Book First Service"
+                      className="btn-hero"
+                      size="sm"
+                    />
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -533,3 +593,6 @@ export default function SubscriptionPage() {
     </DashboardLayout>
   );
 }
+
+// Export with BookingFormProvider wrapper
+export default withBookingForm(SubscriptionPage);

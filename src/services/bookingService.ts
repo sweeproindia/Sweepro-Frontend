@@ -1,14 +1,26 @@
 import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse } from './api';
 
-// Types for booking
+// Types for booking - matches backend API exactly
 export interface BookingData {
-  serviceType: string;
-  scheduledDate: string;
-  scheduledTime: string;
-  address: string;
-  specialInstructions?: string;
-  estimatedDuration?: number;
-  estimatedCost?: number;
+  scheduledDate: string; // YYYY-MM-DD format
+  timeSlot?: string; // User's preferred timeslot (e.g., "09:00-12:00")
+  serviceAddress?: string; // User's service address
+}
+
+// Service type matching backend schema
+export interface Service {
+  id: string;
+  name: string;
+  description: string;
+  category: 'CLEANING' | 'DEEP_CLEANING' | 'MAINTENANCE' | 'SPECIAL_EVENT';
+  baseDuration: number;
+  basePrice: number;
+  isActive: boolean;
+  bufferTime?: number;
+  maxDailyBookings?: number;
+  isSubscriptionService: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Booking {
@@ -17,6 +29,7 @@ export interface Booking {
   maidId?: string;
   serviceId: string;
   scheduledAt: string;
+  timeSlot?: string; // Customer's preferred timeslot (e.g., "09:00-12:00")
   serviceAddress: string;
   specialInstructions?: string;
   status: 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -26,6 +39,8 @@ export interface Booking {
   discount?: number;
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
+  actualStartTime?: string;
   customer?: {
     id: string;
     name: string;
@@ -61,6 +76,28 @@ export interface PaymentData {
   amount: number;
 }
 
+export interface BookingStats {
+  total: number;
+  scheduled: number;
+  completed: number;
+  cancelled: number;
+}
+
+export interface BookingsResponse {
+  bookings: Booking[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalBookings: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  filters?: {
+    applied: string;
+    available: string[];
+  };
+}
+
 export class BookingService {
   /**
    * Create a new booking
@@ -79,14 +116,39 @@ export class BookingService {
   }
 
   /**
-   * Get user's bookings (for customers)
+   * Get user's bookings (for customers) with optional status filter
    */
-  static async getUserBookings(): Promise<ApiResponse<{ bookings: Booking[] }>> {
+  static async getUserBookings(status?: string): Promise<ApiResponse<Booking[]>> {
     try {
-      return await apiRequest<{ bookings: Booking[] }>(API_ENDPOINTS.BOOKINGS.MY_BOOKINGS, {
+      const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_BOOKINGS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_BOOKINGS;
+      
+      const response = await apiRequest<BookingsResponse>(url, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
+
+      // Handle both old and new response formats
+      if (response.success && response.data) {
+        // New format with wrapped response
+        if ('bookings' in response.data) {
+            return {
+              ...response,
+              data: response.data.bookings
+            };
+        }
+        // Old format - direct array or object with data property
+          if (Array.isArray(response.data)) {
+            return {
+              ...response,
+              data: response.data as Booking[]
+            };
+          }
+      }
+        // If response format is unexpected, return empty array but preserve success and error info
+        return {
+          ...response,
+          data: []
+        };
     } catch (error) {
       console.error('Get user bookings error:', error);
       throw error;
@@ -96,14 +158,52 @@ export class BookingService {
   /**
    * Get maid assignments (for service providers)
    */
-  static async getMaidBookings(): Promise<ApiResponse<{ bookings: Booking[] }>> {
+  static async getMaidBookings(status?: string): Promise<ApiResponse<Booking[]>> {
     try {
-      return await apiRequest<{ bookings: Booking[] }>(API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS, {
+      const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS;
+      
+      const response = await apiRequest<BookingsResponse>(url, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+
+      // Handle both old and new response formats
+      if (response.success && response.data) {
+        if ('bookings' in response.data) {
+            return {
+              ...response,
+              data: response.data.bookings
+            };
+        }
+        if (Array.isArray(response.data)) {
+            return {
+              ...response,
+              data: response.data as Booking[]
+            };
+        }
+      }
+        // If response format is unexpected, return empty array but preserve success and error info
+        return {
+          ...response,
+          data: []
+        };
+    } catch (error) {
+      console.error('Get maid bookings error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get booking statistics
+   */
+  static async getBookingStats(): Promise<ApiResponse<BookingStats>> {
+    try {
+      return await apiRequest<BookingStats>('/bookings/stats', {
         method: HttpMethod.GET,
         requiresAuth: true
       });
     } catch (error) {
-      console.error('Get maid bookings error:', error);
+      console.error('Get booking stats error:', error);
       throw error;
     }
   }
@@ -164,9 +264,10 @@ export class BookingService {
    */
   static async cancelBooking(bookingId: string, reason?: string): Promise<ApiResponse<{ booking: Booking }>> {
     try {
-      return await this.updateBookingStatus(bookingId, {
-        status: 'CANCELLED',
-        notes: reason
+      return await apiRequest<{ booking: Booking }>(`/bookings/${bookingId}/cancel`, {
+        method: HttpMethod.PUT,
+        body: { reason },
+        requiresAuth: true
       });
     } catch (error) {
       console.error('Cancel booking error:', error);
@@ -192,9 +293,9 @@ export class BookingService {
   /**
    * Get service types and pricing
    */
-  static async getServiceTypes(): Promise<ApiResponse<{ services: any[] }>> {
+  static async getServiceTypes(): Promise<ApiResponse<Service[]>> {
     try {
-      return await apiRequest<{ services: any[] }>('/services', {
+      return await apiRequest<Service[]>(API_ENDPOINTS.SERVICES.ALL, {
         method: HttpMethod.GET,
         requiresAuth: false
       });

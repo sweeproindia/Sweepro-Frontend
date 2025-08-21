@@ -8,6 +8,8 @@ import { Link } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useToast } from '@/hooks/use-toast';
+import { BookingButton, BookTodayButton, BookTomorrowButton } from '@/components/buttons/BookingButton';
+import { useBookingForm } from '@/contexts/BookingFormContext';
 
 const stats = [
   {
@@ -71,6 +73,7 @@ export default function Dashboard() {
   const { user, updateUser, isAuthenticated } = useUser();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const { toast } = useToast();
+  const { openBookingForm } = useBookingForm();
 
   // Show subscription modal for inactive and pending users
   useEffect(() => {
@@ -325,10 +328,10 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Schedule cleaning service for today at your preferred time
                 </p>
-                <Button className="btn-hero w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Book for Today
-                </Button>
+                <BookTodayButton
+                  onClick={openBookingForm}
+                  className="btn-hero w-full"
+                />
               </div>
 
               {/* Tomorrow Booking */}
@@ -368,9 +371,12 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Book additional sessions for special occasions or deep cleaning.
                   </p>
-                  <Button size="sm" className="btn-hero">
-                    Book One-Time Service
-                  </Button>
+                <BookingButton
+                  onClick={openBookingForm}
+                  text="Book One-Time Service"
+                  size="sm"
+                  className="btn-hero"
+                />
                 </div>
               </div>
             </CardContent>

@@ -51,10 +51,14 @@ export default function LoginPage() {
             navigate('/dashboard');
         }
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Invalid credentials';
+      
       toast({
         title: 'Login failed',
-        description: error.response?.message || error.message || 'Invalid credentials',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -62,7 +66,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value

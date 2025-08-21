@@ -6,6 +6,8 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
 import {
   BarChart3,
@@ -17,7 +19,12 @@ import {
   Shield,
   Star,
   TrendingUp,
-  Users
+  Users,
+  UserPlus,
+  AlertCircle,
+  UserCheck,
+  MapPin,
+  Filter
 } from 'lucide-react';
 import { BookingService, Booking } from '../services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '../services/subscriptionService';
@@ -33,6 +40,7 @@ interface User {
   role: 'CUSTOMER' | 'MAID' | 'ADMIN';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLACKLISTED';
   address?: string;
+  timeSlot?: string;
   createdAt: string;
 }
 
@@ -55,7 +63,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'subscriptions', 'payments', 'users', 'maids', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'subscriptions', 'payments', 'customers', 'maids', 'plans'].includes(hash)) {
       return hash;
     }
     return 'overview';
@@ -63,6 +71,8 @@ export default function AdminDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
+  const [availableMaids, setAvailableMaids] = useState<Maid[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [maids, setMaids] = useState<Maid[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
@@ -78,10 +88,12 @@ export default function AdminDashboard() {
     completedPayments: 0,
     pendingPayments: 0
   });
+  const [subscriptionFilter, setSubscriptionFilter] = useState('');
+  const [assigningBooking, setAssigningBooking] = useState<string | null>(null);
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'subscriptions', 'payments', 'users', 'maids', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'subscriptions', 'payments', 'customers', 'maids', 'plans'].includes(hash)) {
       setActiveTab(hash);
     }
   }, [location.hash]);
@@ -94,11 +106,15 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       // Fetch all admin data in parallel
-      const [usersResponse, subscriptionsResponse, paymentsResponse, plansResponse] = await Promise.allSettled([
+      const [usersResponse, bookingsResponse, pendingBookingsResponse, subscriptionsResponse, paymentsResponse, plansResponse, statsResponse, availableMaidsResponse] = await Promise.allSettled([
         apiRequest('/users', { method: HttpMethod.GET, requiresAuth: true }),
+        apiRequest('/bookings', { method: HttpMethod.GET, requiresAuth: true }),
+        apiRequest('/admin/pending-bookings', { method: HttpMethod.GET, requiresAuth: true }),
         apiRequest('/admin/subscriptions', { method: HttpMethod.GET, requiresAuth: true }),
         apiRequest('/admin/payments', { method: HttpMethod.GET, requiresAuth: true }),
-        SubscriptionService.getSubscriptionPlans()
+        SubscriptionService.getSubscriptionPlans(),
+        apiRequest('/admin/stats', { method: HttpMethod.GET, requiresAuth: true }),
+        apiRequest('/admin/available-maids', { method: HttpMethod.GET, requiresAuth: true })
       ]);
 
       // Handle users data
@@ -125,6 +141,30 @@ export default function AdminDashboard() {
         setMaids(maidsData);
       }
 
+      // Handle bookings data
+      if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
+        const bookingsData = Array.isArray(bookingsResponse.value.data) ? 
+          bookingsResponse.value.data : 
+          bookingsResponse.value.data?.bookings || [];
+        setBookings(bookingsData);
+      }
+
+      // Handle pending bookings data
+      if (pendingBookingsResponse.status === 'fulfilled' && pendingBookingsResponse.value) {
+        const pendingBookingsData = Array.isArray(pendingBookingsResponse.value) ? 
+          pendingBookingsResponse.value : 
+          pendingBookingsResponse.value?.data || [];
+        setPendingBookings(pendingBookingsData);
+      }
+
+      // Handle available maids data
+      if (availableMaidsResponse.status === 'fulfilled' && availableMaidsResponse.value) {
+        const availableMaidsData = Array.isArray(availableMaidsResponse.value) ? 
+          availableMaidsResponse.value : 
+          availableMaidsResponse.value?.data || [];
+        setAvailableMaids(availableMaidsData);
+      }
+
       // Handle subscriptions
       if (subscriptionsResponse.status === 'fulfilled' && subscriptionsResponse.value.success) {
         const subscriptionsData = Array.isArray(subscriptionsResponse.value.data) ? 
@@ -149,8 +189,23 @@ export default function AdminDashboard() {
         setSubscriptionPlans(plansData);
       }
 
-      // Calculate analytics
-      calculateAnalytics();
+      // Handle stats data
+      if (statsResponse.status === 'fulfilled' && statsResponse.value.success) {
+        const stats = statsResponse.value.data.overview;
+        setAnalyticsData({
+          totalBookings: stats.totalBookings || 0,
+          totalCustomers: stats.totalCustomers || 0,
+          totalMaids: stats.totalMaids || 0,
+          totalRevenue: stats.totalRevenue || 0,
+          pendingBookings: stats.pendingBookings || 0,
+          activeSubscriptions: stats.activeSubscriptions || 0,
+          completedPayments: stats.completedPayments || 0,
+          pendingPayments: stats.pendingPayments || 0
+        });
+      } else {
+        // Fallback to calculate analytics from loaded data
+        calculateAnalytics();
+      }
 
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -218,6 +273,53 @@ export default function AdminDashboard() {
     }
   };
 
+  const assignMaidToBooking = async (bookingId: string, maidId: string) => {
+    setAssigningBooking(bookingId);
+    try {
+      const response = await apiRequest('/admin/assign-maid', {
+        method: HttpMethod.POST,
+        body: { bookingId, maidId },
+        requiresAuth: true
+      });
+
+      if (response.success) {
+        // Remove from pending bookings
+        setPendingBookings(prev => prev.filter(b => b.id !== bookingId));
+        
+        // Refresh bookings data
+        const bookingsResponse = await apiRequest('/bookings', { 
+          method: HttpMethod.GET, 
+          requiresAuth: true 
+        });
+        if (bookingsResponse.success) {
+          const bookingsData = Array.isArray(bookingsResponse.data) ? 
+            bookingsResponse.data : 
+            bookingsResponse.data?.bookings || [];
+          setBookings(bookingsData);
+        }
+
+        toast({
+          title: 'Success',
+          description: 'Maid assigned to booking successfully'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to assign maid to booking',
+        variant: 'destructive'
+      });
+    } finally {
+      setAssigningBooking(null);
+    }
+  };
+
+  const filteredSubscriptions = subscriptions.filter(sub => {
+    if (!subscriptionFilter) return true;
+    return sub.plan?.name.toLowerCase().includes(subscriptionFilter.toLowerCase()) ||
+           sub.customer?.user?.name.toLowerCase().includes(subscriptionFilter.toLowerCase());
+  });
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -239,9 +341,10 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="pending-bookings">Pending</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="maids">Maids</TabsTrigger>
             <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
@@ -268,7 +371,7 @@ export default function AdminDashboard() {
 
               <Card className="dashboard-card">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -366,6 +469,134 @@ export default function AdminDashboard() {
             </div>
           </TabsContent>
 
+          {/* Pending Bookings Tab */}
+          <TabsContent value="pending-bookings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  Pending Bookings Assignment
+                </CardTitle>
+                <CardDescription>
+                  Assign available maids to confirmed bookings waiting for assignment
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {pendingBookings.length > 0 ? (
+                    pendingBookings.map((booking) => (
+                      <Card key={booking.id} className="border-l-4 border-l-orange-500">
+                        <CardContent className="pt-6">
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Booking Details */}
+                            <div className="lg:col-span-2">
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <h3 className="font-semibold text-lg">{booking.service?.name || 'Service'}</h3>
+                                  <p className="text-muted-foreground">
+                                    Booking ID: {booking.id}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                                  Awaiting Assignment
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Customer</h4>
+                                  <p className="font-medium">{booking.customer?.name || 'N/A'}</p>
+                                  <p className="text-sm text-muted-foreground">{booking.customer?.email}</p>
+                                  <p className="text-sm text-muted-foreground">{booking.customer?.phone}</p>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Schedule</h4>
+                                  <p className="font-medium">
+                                    {new Date(booking.scheduledAt).toLocaleDateString()}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  </p>
+                                  {booking.timeSlot && (
+                                    <p className="text-sm text-muted-foreground">Slot: {booking.timeSlot}</p>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {booking.customer?.address && (
+                                <div className="mb-4">
+                                  <h4 className="font-medium text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    Service Address
+                                  </h4>
+                                  <p className="text-sm">{booking.customer.address}</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Maid Assignment */}
+                            <div className="border-l lg:border-l-2 lg:pl-6">
+                              <h4 className="font-medium mb-3">Assign Maid</h4>
+                              <div className="space-y-3">
+                                {availableMaids.length > 0 ? (
+                                  <>
+                                    <Select
+                                      onValueChange={(maidId) => {
+                                        if (maidId && !assigningBooking) {
+                                          assignMaidToBooking(booking.id, maidId);
+                                        }
+                                      }}
+                                      disabled={assigningBooking === booking.id}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select a maid" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {availableMaids.map((maid) => (
+                                          <SelectItem key={maid.id} value={maid.id}>
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-medium">{maid.name}</span>
+                                              <span className="text-muted-foreground">•</span>
+                                              <div className="flex items-center gap-1">
+                                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                                <span className="text-sm">{maid.rating || 0}</span>
+                                              </div>
+                                            </div>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    {assigningBooking === booking.id && (
+                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                        Assigning maid...
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <div className="text-center p-4 border border-dashed rounded-lg">
+                                    <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                                    <p className="text-sm text-muted-foreground">No available maids</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">All bookings assigned!</h3>
+                      <p className="text-muted-foreground">There are no pending bookings waiting for maid assignment.</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Bookings Tab */}
           <TabsContent value="bookings" className="space-y-6">
             <Card>
@@ -426,11 +657,11 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Users Tab */}
+          {/* Users Tab - Only Customers */}
           <TabsContent value="users" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>All Users</CardTitle>
+                <CardTitle>Customer Accounts</CardTitle>
                 <CardDescription>Manage customer accounts and profiles</CardDescription>
               </CardHeader>
               <CardContent>
@@ -440,21 +671,23 @@ export default function AdminDashboard() {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
-                      <TableHead>Role</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead>Time Slot</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.slice(0, 10).map((user) => (
+                    {users.filter(user => user.role === 'CUSTOMER').slice(0, 10).map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.phone}</TableCell>
+                        <TableCell className="max-w-xs truncate">{user.address || 'Not provided'}</TableCell>
                         <TableCell>
-                          <Badge variant={user.role === 'CUSTOMER' ? 'secondary' : 'outline'}>
-                            {user.role}
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {user.timeSlot || 'Not set'}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -476,9 +709,9 @@ export default function AdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
-                {users.length === 0 && (
+                {users.filter(user => user.role === 'CUSTOMER').length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No users found</p>
+                    <p className="text-muted-foreground">No customers found</p>
                   </div>
                 )}
               </CardContent>
@@ -553,6 +786,20 @@ export default function AdminDashboard() {
                 <CardDescription>Monitor subscription plans and billing</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Filter by customer name or plan..."
+                      value={subscriptionFilter}
+                      onChange={(e) => setSubscriptionFilter(e.target.value)}
+                      className="max-w-sm"
+                    />
+                  </div>
+                  <Badge variant="outline">
+                    {filteredSubscriptions.length} of {subscriptions.length} subscriptions
+                  </Badge>
+                </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -566,7 +813,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {subscriptions.slice(0, 10).map((subscription) => (
+                    {filteredSubscriptions.slice(0, 10).map((subscription) => (
                       <TableRow key={subscription.id}>
                         <TableCell>
                           <div>
@@ -592,9 +839,11 @@ export default function AdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
-                {subscriptions.length === 0 && (
+                {filteredSubscriptions.length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No subscriptions found</p>
+                    <p className="text-muted-foreground">
+                      {subscriptionFilter ? 'No subscriptions match your filter' : 'No subscriptions found'}
+                    </p>
                   </div>
                 )}
               </CardContent>

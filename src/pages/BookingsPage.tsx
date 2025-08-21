@@ -1,161 +1,122 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useUser } from '@/contexts/UserContext';
-import { BookingService, Booking } from '@/services/bookingService';
-import { SubscriptionService, Subscription } from '@/services/subscriptionService';
+import { useBookings, BookingFilter } from '@/hooks/useBookings';
 import { useToast } from '@/hooks/use-toast';
-
+import { BookingButton, BookTomorrowButton } from '@/components/buttons/BookingButton';
+import { useBookingForm } from '@/contexts/BookingFormContext';
+import { useUser } from '@/contexts/UserContext';
 
 const getStatusColor = (status: string) => {
-  switch (status.toUpperCase()) {
-    case 'COMPLETED':
-      return 'bg-success text-success-foreground';
-    case 'PENDING':
-    case 'CONFIRMED':
-    case 'ASSIGNED':
-      return 'bg-primary text-primary-foreground';
-    case 'IN_PROGRESS':
-      return 'bg-warning text-warning-foreground';
-    case 'CANCELLED':
-      return 'bg-destructive text-destructive-foreground';
+  switch (status.toLowerCase()) {
+    case 'completed':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+    case 'confirmed':
+    case 'assigned':
+    case 'in_progress':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100';
   }
 };
 
-export default function BookingsPage() {
-  const { user, isAuthenticated } = useUser();
-  const { toast } = useToast();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    completedBookings: 0,
-    upcomingBookings: 0,
-    nextUpcomingBooking: null as Booking | null
+const getStatusLabel = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'confirmed':
+    case 'assigned':
+    case 'in_progress':
+      return 'Scheduled';
+    case 'completed':
+      return 'Completed';
+    case 'cancelled':
+      return 'Cancelled';
+    case 'pending':
+      return 'Pending';
+    default:
+      return status;
+  }
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
   });
+};
+
+const formatTime = (dateString: string) => {
+  return new Date(dateString).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export default function BookingsPage() {
+  const { toast } = useToast();
+  const { openBookingForm } = useBookingForm();
+  const { user } = useUser();
   
-  // User's preferred time slot from subscription
-  const preferredTimeSlot = subscription?.plan?.service?.baseDuration ? 
-    `${Math.floor(subscription.plan.service.baseDuration / 60)}:${(subscription.plan.service.baseDuration % 60).toString().padStart(2, '0')} Hours` : 
-    '10:00 AM';
-  const preferredDuration = subscription?.plan?.service?.baseDuration ? 
-    `${subscription.plan.service.baseDuration} minutes` : 
-    '3 hours';
+  // Use the custom hook for managing bookings state
+  const {
+    bookings,
+    stats,
+    loading,
+    error,
+    filter,
+    setFilter,
+    refreshBookings,
+    cancelBooking: handleCancelBooking,
+  } = useBookings('CUSTOMER');
 
-  useEffect(() => {
-    if (user && isAuthenticated) {
-      fetchBookingData();
+  // User's preferred time slot from user profile
+  const preferredTimeSlot = user?.timeSlot || 'Not set';
+  const preferredDuration = '3 hours'; // This could be calculated from timeslot
+
+  // Handle booking cancellation with confirmation
+  const onCancelBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to cancel this booking?')) {
+      return;
     }
-  }, [user, isAuthenticated]);
 
-  const fetchBookingData = async () => {
-    setLoading(true);
     try {
-      // Fetch bookings and subscription data in parallel
-      const [bookingsResponse, subscriptionResponse] = await Promise.allSettled([
-        BookingService.getUserBookings(),
-        SubscriptionService.getUserSubscription()
-      ]);
-
-      // Handle bookings
-      if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
-        const bookingsData = Array.isArray(bookingsResponse.value.data) ? 
-          bookingsResponse.value.data : 
-          bookingsResponse.value.data?.bookings || 
-          bookingsResponse.value.bookings || [];
-        setBookings(bookingsData);
-      }
-
-      // Handle subscription
-      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const subscriptionData = subscriptionResponse.value.data || subscriptionResponse.value.subscription || null;
-        setSubscription(subscriptionData);
-      } else if (subscriptionResponse.status === 'rejected') {
-        console.log('No active subscription found');
-        setSubscription(null);
-      }
-
-      // Calculate stats after data is loaded
-      calculateStats();
-
-    } catch (error) {
-      console.error('Error fetching booking data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load booking data. Please try refreshing.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
+      await handleCancelBooking(bookingId, 'Cancelled by customer');
+    } catch (err) {
+      // Error handling is done in the hook
     }
   };
 
-  const calculateStats = () => {
-    const totalBookings = bookings.length;
-    const completedBookings = bookings.filter(b => b.status === 'COMPLETED').length;
-    const upcomingBookings = bookings.filter(b => 
-      b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS' || b.status === 'ASSIGNED'
-    );
-    const nextUpcomingBooking = upcomingBookings
-      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
-    
-    setStats({
-      totalBookings,
-      completedBookings,
-      upcomingBookings: upcomingBookings.length,
-      nextUpcomingBooking
-    });
+  // Handle quick booking for tomorrow
+  const handleQuickBooking = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    openBookingForm(tomorrow);
   };
-
-  useEffect(() => {
-    if (bookings.length > 0) {
-      calculateStats();
-    }
-  }, [bookings]);
+  
+  const handleBookingSuccess = async () => {
+    // Refresh bookings after successful booking
+    await refreshBookings();
+  };
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading bookings...</span>
+          </div>
         </div>
       </DashboardLayout>
     );
   }
-
-  if (!user || !isAuthenticated) {
-    return (
-      <DashboardLayout>
-        <div className="text-center p-8">
-          <p className="text-muted-foreground">Please log in to view your bookings.</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const filteredBookings = bookings.filter(booking => {
-    if (filter === 'all') return true;
-    // Map display filter values to API status values
-    switch (filter) {
-      case 'scheduled':
-        return booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED';
-      case 'completed':
-        return booking.status === 'COMPLETED';
-      case 'cancelled':
-        return booking.status === 'CANCELLED';
-      case 'in_progress':
-        return booking.status === 'IN_PROGRESS';
-      default:
-        return booking.status.toLowerCase() === filter.toLowerCase();
-    }
-  });
 
   return (
     <DashboardLayout>
@@ -168,11 +129,81 @@ export default function BookingsPage() {
               Your preferred time: {preferredTimeSlot} ({preferredDuration}) • Click below to book for tomorrow
             </p>
           </div>
-          <Button className="btn-hero">
-            <Plus className="h-4 w-4 mr-2" />
-            Book Service for Tomorrow
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refreshBookings}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <BookTomorrowButton
+              onClick={handleQuickBooking}
+              className="btn-hero"
+            />
+            <BookingButton
+              onClick={() => openBookingForm()}
+              text="New Booking"
+              variant="outline"
+              size="sm"
+            />
+          </div>
         </div>
+
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 slide-up">
+            <Card className="dashboard-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total</p>
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                  </div>
+                  <Calendar className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="dashboard-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Scheduled</p>
+                    <p className="text-2xl font-bold text-blue-600">{stats.scheduled}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="dashboard-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="dashboard-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
+                    <p className="text-2xl font-bold text-red-600">{stats.cancelled}</p>
+                  </div>
+                  <Trash2 className="h-8 w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="dashboard-card slide-up">
@@ -181,7 +212,7 @@ export default function BookingsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {['all', 'scheduled', 'completed', 'cancelled'].map((status) => (
+              {(['all', 'scheduled', 'completed', 'cancelled'] as const).map((status) => (
                 <Button
                   key={status}
                   variant={filter === status ? 'default' : 'outline'}
@@ -190,15 +221,43 @@ export default function BookingsPage() {
                   className="capitalize"
                 >
                   {status === 'all' ? 'All Bookings' : status}
+                  {stats && (
+                    <span className="ml-1">
+                      ({status === 'all' ? stats.total : 
+                        status === 'scheduled' ? stats.scheduled :
+                        status === 'completed' ? stats.completed :
+                        stats.cancelled})
+                    </span>
+                  )}
                 </Button>
               ))}
             </div>
           </CardContent>
         </Card>
 
+        {/* Error State */}
+        {error && (
+          <Card className="dashboard-card border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2 text-red-600">
+                <span className="font-medium">Error:</span>
+                <span>{error}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refreshBookings()}
+                  className="ml-auto"
+                >
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Bookings List */}
         <div className="space-y-4 slide-up">
-          {filteredBookings.map((booking, index) => (
+          {bookings.map((booking, index) => (
             <Card 
               key={booking.id} 
               className="dashboard-card"
@@ -207,38 +266,35 @@ export default function BookingsPage() {
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-gradient-hero rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-                      {booking.maid?.name ? booking.maid.name.split(' ').map(n => n[0]).join('') : 'TBD'}
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      {booking.maid ? 
+                        booking.maid.name.split(' ').map(n => n[0]).join('') : 
+                        'TBD'
+                      }
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{booking.service?.name || 'Cleaning Service'}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {booking.maid?.name ? `Assigned to: ${booking.maid.name}` : 'Maid to be assigned'}
-                      </p>
-                      {booking.maid?.rating && (
-                        <div className="flex items-center space-x-1 mt-1">
-                          <div className="flex text-yellow-400">
-                            {[...Array(5)].map((_, i) => (
-                              <span key={i} className={i < Math.floor(booking.maid.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}>
-                                ⭐
-                              </span>
-                            ))}
-                          </div>
-                          <span className="text-sm text-muted-foreground">({booking.maid.rating})</span>
-                        </div>
-                      )}
+                      <CardTitle className="text-lg">
+                        {booking.maid?.name || 'Maid to be assigned'}
+                      </CardTitle>
+                      <div className="flex items-center space-x-1 mt-1">
+                        {booking.maid?.rating && (
+                          <>
+                            <div className="flex text-yellow-400">
+                              {[...Array(5)].map((_, i) => (
+                                <span key={i} className={i < Math.floor(booking.maid!.rating!) ? 'text-yellow-400' : 'text-gray-300'}>
+                                  ⭐
+                                </span>
+                              ))}
+                            </div>
+                            <span className="text-sm text-muted-foreground">({booking.maid.rating})</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge className={getStatusColor(booking.status)}>
-                      {booking.status}
-                    </Badge>
-                    {booking.finalAmount && (
-                      <span className="text-lg font-bold text-primary">
-                        ₹{booking.finalAmount.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
+                  <Badge className={getStatusColor(booking.status)}>
+                    {getStatusLabel(booking.status)}
+                  </Badge>
                 </div>
               </CardHeader>
               
@@ -247,64 +303,91 @@ export default function BookingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
+                    <span className="text-sm">{formatDate(booking.scheduledAt)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-primary" />
                     <span className="text-sm">
-                      {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 
-                      {booking.estimatedDuration && ` (${booking.estimatedDuration} min)`}
+                      {booking.timeSlot || formatTime(booking.scheduledAt)}
+                      {booking.estimatedDuration && ` (${Math.round(booking.estimatedDuration / 60)}h ${booking.estimatedDuration % 60}m)`}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{booking.serviceAddress}</span>
+                    <span className="text-sm truncate" title={booking.serviceAddress}>
+                      {booking.serviceAddress}
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{booking.service?.name || 'Service'}</span>
+                    <span className="text-sm">
+                      {booking.service?.name || 'Service'}
+                    </span>
                   </div>
                 </div>
 
                 {/* Service Details */}
-                <div>
-                  <h4 className="font-medium text-foreground mb-2">Service Details:</h4>
-                  <div className="space-y-2">
-                    <Badge variant="secondary" className="mr-2">
-                      {booking.service?.name || 'Cleaning Service'}
-                    </Badge>
-                    {booking.service?.category && (
-                      <Badge variant="outline" className="mr-2">
-                        {booking.service.category}
+                {booking.service && (
+                  <div>
+                    <h4 className="font-medium text-foreground mb-2">Service Details:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary">
+                        {booking.service.name}
                       </Badge>
-                    )}
-                    {booking.service?.description && (
+                      {booking.service.category && (
+                        <Badge variant="outline">
+                          {booking.service.category}
+                        </Badge>
+                      )}
+                    </div>
+                    {booking.service.description && (
                       <p className="text-sm text-muted-foreground mt-2">
                         {booking.service.description}
                       </p>
                     )}
                   </div>
-                </div>
-                
+                )}
+
                 {/* Special Instructions */}
                 {booking.specialInstructions && (
                   <div>
-                    <h4 className="font-medium text-foreground mb-2">Special Instructions:</h4>
-                    <p className="text-sm text-muted-foreground p-3 bg-muted/30 rounded">
+                    <h4 className="font-medium text-foreground mb-1">Special Instructions:</h4>
+                    <p className="text-sm text-muted-foreground">
                       {booking.specialInstructions}
                     </p>
                   </div>
                 )}
 
+                {/* Pricing Info */}
+                {(booking.totalAmount > 0 || booking.finalAmount > 0) && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Amount:</span>
+                    <div className="flex items-center space-x-2">
+                      {booking.discount && booking.discount > 0 && (
+                        <span className="line-through text-muted-foreground">
+                          ₹{booking.totalAmount}
+                        </span>
+                      )}
+                      <span className="font-medium">
+                        {booking.finalAmount > 0 ? `₹${booking.finalAmount}` : 'Free (Subscription)'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                  {(booking.status === 'PENDING' || booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED') && (
+                  {['CONFIRMED', 'ASSIGNED', 'PENDING'].includes(booking.status) && (
                     <>
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-2" />
                         Reschedule
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => onCancelBooking(booking.id)}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Cancel
                       </Button>
@@ -326,7 +409,7 @@ export default function BookingsPage() {
         </div>
 
         {/* Empty State */}
-        {filteredBookings.length === 0 && (
+        {!loading && bookings.length === 0 && (
           <Card className="dashboard-card text-center py-12">
             <CardContent>
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -338,7 +421,7 @@ export default function BookingsPage() {
                 }
               </p>
               {filter === 'all' && (
-                <Button className="btn-hero">
+                <Button className="btn-hero" onClick={handleQuickBooking}>
                   <Plus className="h-4 w-4 mr-2" />
                   Schedule Your First Cleaning
                 </Button>
@@ -347,56 +430,8 @@ export default function BookingsPage() {
           </Card>
         )}
 
-        {/* Booking History */}
-        <Card className="dashboard-card slide-up">
-          <CardHeader>
-            <CardTitle>Booking History</CardTitle>
-            <CardDescription>
-              Complete history of your cleaning services
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-medium text-foreground">Date</th>
-                    <th className="text-left py-3 px-4 font-medium text-foreground">Cleaner</th>
-                    <th className="text-left py-3 px-4 font-medium text-foreground">Duration</th>
-                    <th className="text-left py-3 px-4 font-medium text-foreground">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-foreground">Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map((booking) => (
-                    <tr key={booking.id} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {new Date(booking.scheduledAt).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-foreground">
-                        {booking.maid?.name || 'TBD'}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {booking.estimatedDuration ? `${booking.estimatedDuration} min` : 'N/A'}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge className={getStatusColor(booking.status)} variant="secondary">
-                          {booking.status}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {booking.specialInstructions || (booking.status === 'COMPLETED' ? 'Service completed' : '-')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Quick Booking Card */}
-        <Card className="dashboard-card slide-up bg-gradient-feature">
+        <Card className="dashboard-card slide-up bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
           <CardHeader>
             <CardTitle>Quick Booking</CardTitle>
             <CardDescription>
@@ -405,7 +440,7 @@ export default function BookingsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="btn-hero">
+              <Button className="btn-hero" onClick={handleQuickBooking}>
                 <Plus className="h-4 w-4 mr-2" />
                 Book for Tomorrow ({new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()})
               </Button>

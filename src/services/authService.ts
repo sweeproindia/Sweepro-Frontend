@@ -22,6 +22,7 @@ export interface User {
   email: string;
   phone: string;
   address?: string;
+  timeSlot?: string;
   role: 'CUSTOMER' | 'MAID' | 'ADMIN';
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
   createdAt: string;
