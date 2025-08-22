@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { DashboardLayout } from '../components/dashboard/DashboardLayout';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -24,12 +22,24 @@ import {
   AlertCircle,
   UserCheck,
   MapPin,
-  Filter
+  Filter,
+  Home,
+  BookOpen,
+  UserCog,
+  Settings,
+  Bell,
+  User,
+  LogOut,
+  MessageCircle
 } from 'lucide-react';
 import { BookingService, Booking } from '../services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '../services/subscriptionService';
 import { PaymentService, Payment } from '../services/paymentService';
 import { apiRequest, HttpMethod } from '../services/api';
+import { useUser } from '../contexts/UserContext';
+import { Link } from 'react-router-dom';
+import EditPlanDialog from '../components/admin/EditPlanDialog';
+import EditUserDialog from '../components/admin/EditUserDialog';
 
 // User interface from backend
 interface User {
@@ -61,9 +71,11 @@ export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState(() => {
+  const { user, logout } = useUser();
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'subscriptions', 'payments', 'customers', 'maids', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'subscriptions', 'payments', 'plans'].includes(hash)) {
       return hash;
     }
     return 'overview';
@@ -90,11 +102,22 @@ export default function AdminDashboard() {
   });
   const [subscriptionFilter, setSubscriptionFilter] = useState('');
   const [assigningBooking, setAssigningBooking] = useState<string | null>(null);
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
+  const [isEditPlanDialogOpen, setIsEditPlanDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  
+  // Admin notifications
+  const notifications = [
+    { id: 1, title: 'New Booking Pending', message: 'A new booking requires maid assignment', time: '5 minutes ago', unread: true },
+    { id: 2, title: 'Payment Received', message: '₹1,200 payment received from customer', time: '1 hour ago', unread: true },
+    { id: 3, title: 'Maid Registration', message: 'New maid registration awaiting approval', time: '2 hours ago', unread: false },
+  ];
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'subscriptions', 'payments', 'customers', 'maids', 'plans'].includes(hash)) {
-      setActiveTab(hash);
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'subscriptions', 'payments', 'plans'].includes(hash)) {
+      setActiveSection(hash);
     }
   }, [location.hash]);
 
@@ -243,8 +266,8 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
+  const handleSectionChange = (value: string) => {
+    setActiveSection(value);
     navigate(`#${value}`);
   };
 
@@ -320,40 +343,254 @@ export default function AdminDashboard() {
            sub.customer?.user?.name.toLowerCase().includes(subscriptionFilter.toLowerCase());
   });
 
+  const handleEditPlan = (plan: SubscriptionPlan) => {
+    setEditingPlan(plan);
+    setIsEditPlanDialogOpen(true);
+  };
+
+  const handleEditPlanSuccess = () => {
+    fetchAdminData(); // Refresh data
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setIsEditUserDialogOpen(true);
+  };
+
+  const handleEditUserSuccess = () => {
+    fetchAdminData(); // Refresh data
+  };
+
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
+      <div className="flex h-screen bg-background items-center justify-center">
+        <div className="flex items-center space-x-2">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="text-muted-foreground">Loading admin dashboard...</span>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Comprehensive platform management and analytics
-          </p>
+    <div className="flex h-screen bg-background">
+      {/* Sidebar Navigation */}
+      <div className="w-64 bg-card border-r border-border flex flex-col">
+        <div className="p-6 border-b border-border">
+          <h2 className="text-xl font-bold text-foreground">Admin Panel</h2>
+          <p className="text-sm text-muted-foreground mt-1">Management Console</p>
         </div>
+        
+        <nav className="flex-1 p-4 space-y-2">
+          <button
+            onClick={() => handleSectionChange('overview')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'overview'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Home className="h-4 w-4" />
+            Overview
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('bookings')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'bookings'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            Bookings
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('pending-bookings')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'pending-bookings'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Clock className="h-4 w-4" />
+            Pending
+            {analyticsData.pendingBookings > 0 && (
+              <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0.5">
+                {analyticsData.pendingBookings}
+              </Badge>
+            )}
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('users')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'users'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            Users
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('maids')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'maids'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <UserCog className="h-4 w-4" />
+            Maids
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('subscriptions')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'subscriptions'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Package className="h-4 w-4" />
+            Subscriptions
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('payments')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'payments'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <CreditCard className="h-4 w-4" />
+            Payments
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('plans')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'plans'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            Plans
+          </button>
+        </nav>
+      </div>
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Admin Header */}
+        <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
+          <div className="fade-in">
+            <h1 className="text-2xl font-bold text-foreground">
+              {activeSection === 'overview' && 'Dashboard Overview'}
+              {activeSection === 'bookings' && 'All Bookings'}
+              {activeSection === 'pending-bookings' && 'Pending Bookings'}
+              {activeSection === 'users' && 'User Management'}
+              {activeSection === 'maids' && 'Maid Management'}
+              {activeSection === 'subscriptions' && 'Subscriptions'}
+              {activeSection === 'payments' && 'Payment Management'}
+              {activeSection === 'plans' && 'Subscription Plans'}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
+              {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
+              {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
+              {activeSection === 'users' && 'Manage customer accounts and profiles'}
+              {activeSection === 'maids' && 'Manage service providers and performance'}
+              {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
+              {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
+              {activeSection === 'plans' && 'Manage available service plans and pricing'}
+            </p>
+          </div>
+          
+          {/* Header Actions */}
+          <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <div className="relative">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)} 
+                className="relative"
+              >
+                <Bell className="h-5 w-5" />
+                {notifications.filter(n => n.unread).length > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {notifications.filter(n => n.unread).length}
+                  </span>
+                )}
+              </Button>
+              
+              {isNotificationOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-card rounded-lg shadow-lg border border-border z-50 max-h-96 overflow-y-auto">
+                  <div className="p-4 border-b border-border">
+                    <h3 className="text-lg font-semibold text-foreground">Admin Notifications</h3>
+                    <p className="text-sm text-muted-foreground">{notifications.filter(n => n.unread).length} unread</p>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {notifications.map((notification) => (
+                      <div key={notification.id} className={`p-4 hover:bg-muted transition-colors ${
+                        notification.unread ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                      }`}>
+                        <div className="flex items-start space-x-3">
+                          <AlertCircle className="h-4 w-4 text-orange-500 mt-1" />
+                          <div className="flex-1">
+                            <p className={`text-sm font-medium ${
+                              notification.unread ? 'text-foreground' : 'text-muted-foreground'
+                            }`}>
+                              {notification.title}
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                            <p className="text-xs text-muted-foreground mt-2">{notification.time}</p>
+                          </div>
+                          {notification.unread && <span className="h-2 w-2 bg-blue-500 rounded-full mt-2"></span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Profile Menu */}
+            <div className="flex items-center space-x-2">
+              <Link to="/profile">
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span className="hidden md:block text-sm font-medium">
+                    {user?.name || 'Admin'}
+                  </span>
+                </Button>
+              </Link>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={logout}
+                className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden md:block text-sm">Logout</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-auto p-6">
+          <div className="space-y-6">
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-            <TabsTrigger value="pending-bookings">Pending</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="maids">Maids</TabsTrigger>
-            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="plans">Plans</TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
+          {/* Overview Section */}
+          {activeSection === 'overview' && (
+            <>
             {/* Analytics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="dashboard-card">
@@ -413,14 +650,23 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Pending Bookings
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Latest Pending Bookings
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleSectionChange('pending-bookings')}
+                    >
+                      View All
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {bookings.filter(b => b.status === 'PENDING').slice(0, 5).map((booking) => (
+                    {pendingBookings.slice(0, 2).map((booking) => (
                       <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium">{booking.service?.name || 'Service'}</p>
@@ -428,10 +674,17 @@ export default function AdminDashboard() {
                             {booking.customer?.name || 'Customer'}
                           </p>
                         </div>
-                        <Badge variant="outline">{booking.status}</Badge>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {new Date(booking.scheduledAt).toLocaleDateString()}
+                          </p>
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                            Pending
+                          </Badge>
+                        </div>
                       </div>
                     ))}
-                    {bookings.filter(b => b.status === 'PENDING').length === 0 && (
+                    {pendingBookings.length === 0 && (
                       <p className="text-center text-muted-foreground py-4">No pending bookings</p>
                     )}
                   </div>
@@ -467,10 +720,138 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+            </>
+          )}
+          
+          {/* Updated Maid Section */}
+          {activeSection === 'maids' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Service Providers Management</CardTitle>
+                <CardDescription>
+                  Comprehensive maid profiles, performance metrics, and assignment management
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Maid Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Total Maids</p>
+                          <p className="text-2xl font-bold">{analyticsData.totalMaids}</p>
+                        </div>
+                        <UserCog className="h-8 w-8 text-primary" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Available Now</p>
+                          <p className="text-2xl font-bold text-green-600">{availableMaids.length}</p>
+                        </div>
+                        <UserCheck className="h-8 w-8 text-green-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Avg Rating</p>
+                          <p className="text-2xl font-bold text-yellow-600">4.8★</p>
+                        </div>
+                        <Star className="h-8 w-8 text-yellow-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Maid Info</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Performance</TableHead>
+                      <TableHead>Availability</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {maids.slice(0, 10).map((maid) => (
+                      <TableRow key={maid.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
+                              {maid.user.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div>
+                              <p className="font-medium">{maid.user.name}</p>
+                              <p className="text-sm text-muted-foreground">ID: {maid.id.slice(-8)}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="text-sm">{maid.user.email}</p>
+                            <p className="text-sm text-muted-foreground">{maid.user.phone}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium">{maid.rating.toFixed(1)}</span>
+                              <span className="text-muted-foreground text-sm">({maid.totalRatings})</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{maid.completedBookings} jobs completed</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={availableMaids.some(am => am.id === maid.id) ? 'default' : 'outline'}>
+                            {availableMaids.some(am => am.id === maid.id) ? 'Available' : 'Busy'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={maid.status === 'ACTIVE' ? 'default' : 'destructive'}>
+                            {maid.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">
+                              View Profile
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateUserStatus(maid.userId, maid.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                            >
+                              {maid.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {maids.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No service providers found</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Pending Bookings Tab */}
-          <TabsContent value="pending-bookings" className="space-y-6">
+          {/* Pending Bookings Section */}
+          {activeSection === 'pending-bookings' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -595,10 +976,10 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          {/* Bookings Tab */}
-          <TabsContent value="bookings" className="space-y-6">
+          {/* Bookings Section */}
+          {activeSection === 'bookings' && (
             <Card>
               <CardHeader>
                 <CardTitle>All Bookings</CardTitle>
@@ -655,10 +1036,10 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          {/* Users Tab - Only Customers */}
-          <TabsContent value="users" className="space-y-6">
+          {/* Users Section - Only Customers */}
+          {activeSection === 'users' && (
             <Card>
               <CardHeader>
                 <CardTitle>Customer Accounts</CardTitle>
@@ -697,13 +1078,22 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => updateUserStatus(user.id, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                          >
-                            Toggle Status
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => updateUserStatus(user.id, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                            >
+                              {user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -716,70 +1106,11 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          {/* Maids Tab */}
-          <TabsContent value="maids" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Service Providers</CardTitle>
-                <CardDescription>Manage maid profiles and performance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Completed Jobs</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {maids.slice(0, 10).map((maid) => (
-                      <TableRow key={maid.id}>
-                        <TableCell className="font-medium">{maid.user.name}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p>{maid.user.email}</p>
-                            <p className="text-sm text-muted-foreground">{maid.user.phone}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span>{maid.rating.toFixed(1)}</span>
-                            <span className="text-muted-foreground">({maid.totalRatings})</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{maid.completedBookings}</TableCell>
-                        <TableCell>
-                          <Badge variant={maid.status === 'ACTIVE' ? 'default' : 'outline'}>
-                            {maid.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            View Profile
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {maids.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No service providers found</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Subscriptions Tab */}
-          <TabsContent value="subscriptions" className="space-y-6">
+          {/* Subscriptions Section */}
+          {activeSection === 'subscriptions' && (
             <Card>
               <CardHeader>
                 <CardTitle>Customer Subscriptions</CardTitle>
@@ -848,10 +1179,10 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          {/* Payments Tab */}
-          <TabsContent value="payments" className="space-y-6">
+          {/* Payments Section */}
+          {activeSection === 'payments' && (
             <Card>
               <CardHeader>
                 <CardTitle>Payment Transactions</CardTitle>
@@ -906,10 +1237,10 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
-          {/* Plans Tab */}
-          <TabsContent value="plans" className="space-y-6">
+          {/* Plans Section */}
+          {activeSection === 'plans' && (
             <Card>
               <CardHeader>
                 <CardTitle>Subscription Plans</CardTitle>
@@ -947,7 +1278,11 @@ export default function AdminDashboard() {
                             <Badge variant={plan.isActive ? 'default' : 'outline'}>
                               {plan.isActive ? 'Active' : 'Inactive'}
                             </Badge>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditPlan(plan)}
+                            >
                               Edit Plan
                             </Button>
                           </div>
@@ -963,9 +1298,32 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          )}
+          </div>
+        </div>
       </div>
-    </DashboardLayout>
+      
+      {/* Edit Plan Dialog */}
+      <EditPlanDialog
+        plan={editingPlan}
+        isOpen={isEditPlanDialogOpen}
+        onClose={() => {
+          setIsEditPlanDialogOpen(false);
+          setEditingPlan(null);
+        }}
+        onSuccess={handleEditPlanSuccess}
+      />
+      
+      {/* Edit User Dialog */}
+      <EditUserDialog
+        user={editingUser}
+        isOpen={isEditUserDialogOpen}
+        onClose={() => {
+          setIsEditUserDialogOpen(false);
+          setEditingUser(null);
+        }}
+        onSuccess={handleEditUserSuccess}
+      />
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import { useUser } from '@/contexts/UserContext';
 import { BookingService, Booking } from '@/services/bookingService';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // Service interface to match backend
@@ -268,8 +268,8 @@ export default function MaidDashboard() {
             <CardContent>
               {bookings.length > 0 ? (
                 <div className="space-y-4">
-                  {bookings.slice(0, 5).map((booking) => (
-                    <div key={booking.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  {bookings.slice(0, 2).map((booking) => (
+                    <div key={booking.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-4 flex-1">
                           <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
@@ -278,8 +278,8 @@ export default function MaidDashboard() {
                             booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
                           }`} />
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <p className="font-semibold text-foreground">
+                            <div className="flex items-center gap-2 mb-3">
+                              <p className="font-semibold text-foreground text-lg">
                                 {booking.service?.name || 'Cleaning Service'}
                               </p>
                               <Badge variant={
@@ -291,83 +291,147 @@ export default function MaidDashboard() {
                               </Badge>
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
-                                <span>{new Date(booking.scheduledAt).toLocaleDateString()}</span>
+                            {/* Enhanced Assignment Details */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Calendar className="h-4 w-4 text-primary" />
+                                  <span className="font-medium">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Clock className="h-4 w-4 text-primary" />
+                                  <span>{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                  {booking.estimatedDuration && (
+                                    <span className="text-muted-foreground">({booking.estimatedDuration} mins)</span>
+                                  )}
+                                </div>
+                                {booking.customer?.name && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <User className="h-4 w-4 text-primary" />
+                                    <span className="font-medium">{booking.customer.name}</span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Clock className="h-4 w-4" />
-                                <span>{new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              
+                              <div className="space-y-2">
+                                {booking.customer?.phone && (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="w-4 h-4 flex items-center justify-center">📞</span>
+                                    <span>{booking.customer.phone}</span>
+                                  </div>
+                                )}
+                                {booking.customer?.email && (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="w-4 h-4 flex items-center justify-center">✉️</span>
+                                    <span className="truncate">{booking.customer.email}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="w-4 h-4 flex items-center justify-center text-green-600">💰</span>
+                                  <span className="font-bold text-green-600">₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}</span>
+                                </div>
                               </div>
                             </div>
                             
-                            {booking.customer?.name && (
-                              <p className="text-sm text-muted-foreground mt-1">
-                                <User className="h-3 w-3 inline mr-1" />
-                                Client: {booking.customer.name}
-                              </p>
-                            )}
-                            
                             {booking.serviceAddress && (
-                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                <span className="w-2 h-2 bg-muted-foreground/50 rounded-full"></span>
-                                {booking.serviceAddress}
-                              </p>
+                              <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                                <div className="flex items-start gap-2 text-sm">
+                                  <MapPin className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <span className="font-medium text-blue-700 dark:text-blue-300">Service Location:</span>
+                                    <p className="text-blue-600 dark:text-blue-400">{booking.serviceAddress}</p>
+                                  </div>
+                                </div>
+                              </div>
                             )}
                             
                             {booking.specialInstructions && (
-                              <div className="mt-2 p-2 bg-muted/30 rounded text-xs">
-                                <span className="font-medium">Instructions: </span>
-                                <span className="text-muted-foreground">{booking.specialInstructions}</span>
+                              <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-l-4 border-yellow-400">
+                                <div className="flex items-start gap-2">
+                                  <MessageCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <span className="font-medium text-yellow-700 dark:text-yellow-300 text-sm">Special Instructions:</span>
+                                    <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-1">{booking.specialInstructions}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Assignment Status & Timeline */}
+                            {booking.assignedAt && (
+                              <div className="mb-3 p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>Assigned on {new Date(booking.assignedAt).toLocaleDateString()}</span>
+                                </div>
                               </div>
                             )}
                           </div>
                         </div>
-                        
-                        <div className="text-right ml-4">
-                          <p className="font-bold text-lg text-primary">
-                            ₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}
-                          </p>
-                          {booking.estimatedDuration && (
-                            <p className="text-xs text-muted-foreground">
-                              ~{booking.estimatedDuration} mins
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </p>
-                        </div>
                       </div>
                       
-                      {/* Action buttons for maid */}
-                      {booking.status === 'CONFIRMED' && (
-                        <div className="mt-3 pt-3 border-t flex gap-2">
-                          <Button size="sm" variant="outline" className="text-xs">
-                            Start Service
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-xs">
-                            Contact Client
-                          </Button>
-                        </div>
-                      )}
-                      {booking.status === 'IN_PROGRESS' && (
-                        <div className="mt-3 pt-3 border-t flex gap-2">
-                          <Button size="sm" className="text-xs">
-                            Complete Service
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-xs">
-                            Report Issue
-                          </Button>
-                        </div>
-                      )}
+                      {/* Enhanced Action buttons for maid */}
+                      <div className="mt-4 pt-4 border-t border-border">
+                        {booking.status === 'CONFIRMED' && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                              ▶️ Start Service
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              📞 Contact Client
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              📍 Get Directions
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-orange-600">
+                              ⚠️ Report Issue
+                            </Button>
+                          </div>
+                        )}
+                        {booking.status === 'IN_PROGRESS' && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                              ✅ Complete Service
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              ⏱️ Update Progress
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              📞 Contact Client
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-orange-600">
+                              ⚠️ Report Issue
+                            </Button>
+                          </div>
+                        )}
+                        {booking.status === 'PENDING' && (
+                          <div className="flex flex-wrap gap-2">
+                            <div className="flex items-center gap-2 text-sm text-orange-600">
+                              <Clock className="h-4 w-4 animate-pulse" />
+                              <span>Awaiting admin assignment...</span>
+                            </div>
+                          </div>
+                        )}
+                        {booking.status === 'COMPLETED' && (
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              ✅ Service Completed
+                            </Badge>
+                            {booking.completedAt && (
+                              <span className="text-sm text-muted-foreground">
+                                on {new Date(booking.completedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                   
                   <div className="pt-4 border-t">
                     <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
                       <div className="text-sm text-muted-foreground">
-                        Showing {Math.min(5, bookings.length)} of {bookings.length} assignments
+                        Showing {Math.min(2, bookings.length)} of {bookings.length} assignments
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm">
@@ -420,7 +484,7 @@ export default function MaidDashboard() {
                 <Link to="/maid-bookings">
                   <Button className="w-full justify-start" variant="outline">
                     <Calendar className="h-4 w-4 mr-2" />
-                    View All Bookings
+                    My Assignments
                   </Button>
                 </Link>
                 <Button className="w-full justify-start" variant="outline">
