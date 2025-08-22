@@ -12,7 +12,7 @@ export const Footer = () => {
               <div className="bg-gradient-hero rounded-lg p-2">
                 <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold" style={{ color: '#FFFFFF' }}>CleanEase</span>
+              <span className="text-xl font-bold" style={{ color: '#FFFFFF' }}>SweepPro</span>
             </Link>
             <p className="text-muted-foreground leading-relaxed" >
               Professional maid services made simple. Subscribe once and enjoy 
@@ -108,7 +108,7 @@ export const Footer = () => {
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-primary" />
-                <span className="text-muted-foreground">support@cleanease.com</span>
+                <span className="text-muted-foreground">support@sweeppro.com</span>
               </li>
               <li className="flex items-start space-x-3">
                 <MapPin className="h-4 w-4 text-primary mt-1" />
@@ -125,7 +125,7 @@ export const Footer = () => {
         <div className="border-t border-border mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-muted-foreground text-sm">
-              © 2024 CleanEase. All rights reserved.
+              © 2024 SweepPro. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">

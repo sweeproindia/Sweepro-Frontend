@@ -33,7 +33,7 @@ export default function SignupForm({ onSuccess, onClose }: { onSuccess?: () => v
       setIsLoading(false);
       toast({
         title: "Account created successfully!",
-        description: "Welcome to CleanEase. Let's get your subscription set up.",
+        description: "Welcome to SweepPro. Let's get your subscription set up.",
       });
       if (onSuccess) onSuccess();
       if (onClose) onClose();
@@ -54,7 +54,7 @@ export default function SignupForm({ onSuccess, onClose }: { onSuccess?: () => v
           <Sparkles className="h-8 w-8 text-white" />
         </div>
         <CardTitle className="text-3xl font-extrabold text-blue-900 mb-1 tracking-tight drop-shadow">Create Your Account</CardTitle>
-        <CardDescription className="text-blue-700/80 text-base font-medium mb-2">Join thousands of satisfied customers and get started with CleanEase</CardDescription>
+        <CardDescription className="text-blue-700/80 text-base font-medium mb-2">Join thousands of satisfied customers and get started with SweepPro</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-7 px-2 md:px-6 pb-6">

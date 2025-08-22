@@ -2,8 +2,13 @@
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Play, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { BookingButton } from '@/components/buttons/BookingButton';
+import { useBookingForm } from '@/contexts/BookingFormContext';
+import { useUser } from '@/contexts/UserContext';
 
 export const HeroSection = () => {
+  const { openBookingForm } = useBookingForm();
+  const { isAuthenticated } = useUser();
   return (
     <section className="relative py-20 lg:py-32 overflow-hidden bg-white">
       {/* Blue Glowing Cone Effect with animation */}
@@ -14,7 +19,7 @@ export const HeroSection = () => {
           {/* Content */}
           <div className="mb-12 lg:mb-0">
             <div className="mb-6 slide-in-left" style={{ animationDelay: '0.2s' }}>
-              <h2 className="text-3xl font-bold text-[#0011D9] mb-2">CleanEase</h2>
+              <h2 className="text-3xl font-bold text-[#0011D9] mb-2">SweepPro</h2>
             </div>
             <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6 slide-in-left" style={{ animationDelay: '0.4s' }}>
               Bring back the{' '}
@@ -28,11 +33,20 @@ export const HeroSection = () => {
               advanced technology, and affordable pricing with trusted, background-verified professionals.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-8 slide-in-left" style={{ animationDelay: '0.8s' }}>
-              <Link to="/signup">
-                <Button className="bg-[#0011D9] hover:bg-blue-700 text-white text-lg px-8 rounded-lg shadow-lg">
-                  Book Now
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <BookingButton
+                  onClick={openBookingForm}
+                  text="Book Now"
+                  className="bg-[#0011D9] hover:bg-blue-700 text-white text-lg px-8 rounded-lg shadow-lg"
+                  size="lg"
+                />
+              ) : (
+                <Link to="/signup">
+                  <Button className="bg-[#0011D9] hover:bg-blue-700 text-white text-lg px-8 rounded-lg shadow-lg">
+                    Book Now
+                  </Button>
+                </Link>
+              )}
               <Link to="/#how-it-works">
                 <Button variant="outline" size="lg" className="text-lg px-8 py-4 border-2 border-[#0011D9] text-[#0011D9] hover:bg-[#0011D9] hover:text-white transition-all flex items-center">
                   <Play className="h-5 w-5 mr-2" />
@@ -71,7 +85,7 @@ export const HeroSection = () => {
                 <Quote className="h-5 w-5 text-[#0011D9] mt-1" />
                 <div>
                   <p className="text-sm text-gray-700 mb-2">
-                    Regular cleaning from CleanEase provides the best service to maintain cleanliness and health of my home.
+                    Regular cleaning from SweepPro provides the best service to maintain cleanliness and health of my home.
                   </p>
                   <p className="text-xs font-semibold text-[#0011D9]">Sarah Princeton</p>
                 </div>
@@ -82,7 +96,7 @@ export const HeroSection = () => {
                 <Quote className="h-5 w-5 text-[#0011D9] mt-1" />
                 <div>
                   <p className="text-sm text-gray-700 mb-2">
-                    Found the right place for cleaning services for my complicated home layout. Thankful for CleanEase!
+                    Found the right place for cleaning services for my complicated home layout. Thankful for SweepPro!
                   </p>
                   <p className="text-xs font-semibold text-[#0011D9]">Tamara Jules</p>
                 </div>

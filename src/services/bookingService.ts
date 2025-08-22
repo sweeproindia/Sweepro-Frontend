@@ -1,14 +1,26 @@
 import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse } from './api';
 
-// Types for booking
+// Types for booking - matches backend API exactly
 export interface BookingData {
-  serviceType: string;
-  scheduledDate: string;
-  scheduledTime: string;
-  address: string;
-  specialInstructions?: string;
-  estimatedDuration?: number;
-  estimatedCost?: number;
+  scheduledDate: string; // YYYY-MM-DD format
+  timeSlot?: string; // User's preferred timeslot (e.g., "09:00-12:00")
+  serviceAddress?: string; // User's service address
+}
+
+// Service type matching backend schema
+export interface Service {
+  id: string;
+  name: string;
+  description: string;
+  category: 'CLEANING' | 'DEEP_CLEANING' | 'MAINTENANCE' | 'SPECIAL_EVENT';
+  baseDuration: number;
+  basePrice: number;
+  isActive: boolean;
+  bufferTime?: number;
+  maxDailyBookings?: number;
+  isSubscriptionService: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Booking {
@@ -17,6 +29,7 @@ export interface Booking {
   maidId?: string;
   serviceId: string;
   scheduledAt: string;
+  timeSlot?: string; // Customer's preferred timeslot (e.g., "09:00-12:00")
   serviceAddress: string;
   specialInstructions?: string;
   status: 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -118,18 +131,24 @@ export class BookingService {
       if (response.success && response.data) {
         // New format with wrapped response
         if ('bookings' in response.data) {
-          return {
-            ...response,
-            data: response.data.bookings
-          };
+            return {
+              ...response,
+              data: response.data.bookings
+            };
         }
         // Old format - direct array or object with data property
-        if (Array.isArray(response.data)) {
-          return response as ApiResponse<Booking[]>;
-        }
+          if (Array.isArray(response.data)) {
+            return {
+              ...response,
+              data: response.data as Booking[]
+            };
+          }
       }
-      
-      return response as ApiResponse<Booking[]>;
+        // If response format is unexpected, return empty array but preserve success and error info
+        return {
+          ...response,
+          data: []
+        };
     } catch (error) {
       console.error('Get user bookings error:', error);
       throw error;
@@ -151,17 +170,23 @@ export class BookingService {
       // Handle both old and new response formats
       if (response.success && response.data) {
         if ('bookings' in response.data) {
-          return {
-            ...response,
-            data: response.data.bookings
-          };
+            return {
+              ...response,
+              data: response.data.bookings
+            };
         }
         if (Array.isArray(response.data)) {
-          return response as ApiResponse<Booking[]>;
+            return {
+              ...response,
+              data: response.data as Booking[]
+            };
         }
       }
-      
-      return response as ApiResponse<Booking[]>;
+        // If response format is unexpected, return empty array but preserve success and error info
+        return {
+          ...response,
+          data: []
+        };
     } catch (error) {
       console.error('Get maid bookings error:', error);
       throw error;
@@ -268,9 +293,9 @@ export class BookingService {
   /**
    * Get service types and pricing
    */
-  static async getServiceTypes(): Promise<ApiResponse<{ services: any[] }>> {
+  static async getServiceTypes(): Promise<ApiResponse<Service[]>> {
     try {
-      return await apiRequest<{ services: any[] }>('/services', {
+      return await apiRequest<Service[]>(API_ENDPOINTS.SERVICES.ALL, {
         method: HttpMethod.GET,
         requiresAuth: false
       });

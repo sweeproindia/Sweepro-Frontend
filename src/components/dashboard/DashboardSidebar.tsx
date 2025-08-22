@@ -67,7 +67,7 @@ export const DashboardSidebar = () => {
             <div className="bg-gradient-hero rounded-lg p-2">
               <Sparkles className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">CleanEase</span>
+            <span className="text-xl font-bold text-foreground">SweepPro</span>
             {isAdmin && (
               <Badge variant="secondary" className="ml-2 text-xs">
                 Admin

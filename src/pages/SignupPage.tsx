@@ -54,7 +54,7 @@ export default function SignupPage() {
       if (response.success) {
         toast({
           title: 'Account created successfully!',
-          description: `Welcome to CleanEase, ${response.data?.user.name}!`,
+          description: `Welcome to SweepPro, ${response.data?.user.name}!`,
         });
         
         // Navigate based on role
@@ -102,7 +102,7 @@ export default function SignupPage() {
           <div className="bg-white rounded-lg p-2">
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
-          <span className="text-xl font-bold text-white">CleanEase</span>
+          <span className="text-xl font-bold text-white">SweepPro</span>
         </Link>
 
         <Card className="shadow-large border-0">

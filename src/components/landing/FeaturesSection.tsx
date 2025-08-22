@@ -41,7 +41,7 @@ export const FeaturesSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 fade-in">
           <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-            Why Choose CleanEase?
+            Why Choose SweepPro?
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             We make home cleaning simple, reliable, and affordable with our subscription-based service model.

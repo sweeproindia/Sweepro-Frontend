@@ -35,7 +35,7 @@ export default function LoginPage() {
         
         toast({
           title: 'Login successful!',
-          description: `Welcome back to CleanEase, ${user.name}!`,
+          description: `Welcome back to SweepPro, ${user.name}!`,
         });
 
         // Navigate based on user role from backend response
@@ -51,10 +51,14 @@ export default function LoginPage() {
             navigate('/dashboard');
         }
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Invalid credentials';
+      
       toast({
         title: 'Login failed',
-        description: error.response?.message || error.message || 'Invalid credentials',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -62,7 +66,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -84,7 +88,7 @@ export default function LoginPage() {
           <div className="bg-gradient-to-r from-blue-500 to-blue-400 rounded-lg p-2 shadow-lg">
             <Sparkles className="h-7 w-7 text-white" />
           </div>
-          <span className="text-2xl font-bold text-blue-900">CleanEase</span>
+          <span className="text-2xl font-bold text-blue-900">SweepPro</span>
         </div>
 
         <Card className="shadow-2xl border-0 bg-white/30 backdrop-blur-lg">

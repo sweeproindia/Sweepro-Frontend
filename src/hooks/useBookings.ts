@@ -41,9 +41,16 @@ export const useBookings = (userRole: 'CUSTOMER' | 'MAID' = 'CUSTOMER'): UseBook
       
       if (response.success && response.data) {
         // Handle array response or object with bookings property
+        console.log('API Response:', response);
+        console.log('Response Data:', response.data);
+        console.log('Is Array:', Array.isArray(response.data));
+        
         const bookingsData = Array.isArray(response.data) ? response.data : response.data;
+        console.log('Final bookings data:', bookingsData);
+        
         setBookings(bookingsData);
       } else {
+        console.log('API Error Response:', response);
         setError(response.message || 'Failed to load bookings');
         setBookings([]);
       }

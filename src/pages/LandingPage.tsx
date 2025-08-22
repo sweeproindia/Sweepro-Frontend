@@ -10,6 +10,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import LoginForm from '@/components/ui/LoginForm';
 import SignupForm from '@/components/ui/SignupForm';
 import { useState } from 'react';
+import { BookingFormProvider } from '@/contexts/BookingFormContext';
 
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
@@ -27,13 +28,16 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar onLoginClick={handleOpenLogin} onSignupClick={handleOpenSignup} />
-      <HeroSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <PricingSection />
-      <TestimonialsSection />
-      <FAQSection />
+      <Navbar />
+      {/* Wrap all booking-related sections in BookingFormProvider */}
+      <BookingFormProvider>
+        <HeroSection />
+        <FeaturesSection />
+        <HowItWorksSection />
+        <PricingSection />
+        <TestimonialsSection />
+        <FAQSection />
+      </BookingFormProvider>
       <Footer />
 
       {/* Unified Auth Modal */}

@@ -2,10 +2,13 @@ import React from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useBookings, BookingFilter } from '@/hooks/useBookings';
 import { useToast } from '@/hooks/use-toast';
+import { BookingButton, BookTomorrowButton } from '@/components/buttons/BookingButton';
+import { useBookingForm } from '@/contexts/BookingFormContext';
+import { useUser } from '@/contexts/UserContext';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -58,6 +61,8 @@ const formatTime = (dateString: string) => {
 
 export default function BookingsPage() {
   const { toast } = useToast();
+  const { openBookingForm } = useBookingForm();
+  const { user } = useUser();
   
   // Use the custom hook for managing bookings state
   const {
@@ -71,9 +76,10 @@ export default function BookingsPage() {
     cancelBooking: handleCancelBooking,
   } = useBookings('CUSTOMER');
 
-  // User's preferred time slot from subscription (you can get this from user context/subscription data)
-  const preferredTimeSlot = '10:00 AM';
-  const preferredDuration = '3 hours';
+  // User's preferred time slot from user profile
+  const preferredTimeSlot = user?.timeSlot || 'Not set';
+  const preferredDuration = '3 hours'; // Standard duration for cleaning slots
+  const hasPreferredSlot = user?.timeSlot && user.timeSlot !== 'Not set';
 
   // Handle booking cancellation with confirmation
   const onCancelBooking = async (bookingId: string) => {
@@ -90,12 +96,14 @@ export default function BookingsPage() {
 
   // Handle quick booking for tomorrow
   const handleQuickBooking = () => {
-    toast({
-      title: "Quick Booking",
-      description: "Redirecting to booking page...",
-    });
-    // Navigate to booking page
-    // router.push('/dashboard/book-service');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    openBookingForm(tomorrow);
+  };
+  
+  const handleBookingSuccess = async () => {
+    // Refresh bookings after successful booking
+    await refreshBookings();
   };
 
   if (loading) {
@@ -119,7 +127,11 @@ export default function BookingsPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
             <p className="text-muted-foreground mt-2">
-              Your preferred time: {preferredTimeSlot} ({preferredDuration}) • Click below to book for tomorrow
+              {hasPreferredSlot ? (
+                <>Your preferred time: <span className="font-medium text-primary">{preferredTimeSlot}</span> ({preferredDuration}) • Ready for quick booking!</>
+              ) : (
+                <>Set your preferred time slot in your profile to enable quick booking • <span className="text-amber-600">Profile setup recommended</span></>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -132,10 +144,16 @@ export default function BookingsPage() {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button className="btn-hero" onClick={handleQuickBooking}>
-              <Plus className="h-4 w-4 mr-2" />
-              Book Service for Tomorrow
-            </Button>
+            <BookTomorrowButton
+              onClick={handleQuickBooking}
+              className="btn-hero"
+            />
+            <BookingButton
+              onClick={() => openBookingForm()}
+              text="New Booking"
+              variant="outline"
+              size="sm"
+            />
           </div>
         </div>
 
@@ -295,8 +313,8 @@ export default function BookingsPage() {
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-primary" />
                     <span className="text-sm">
-                      {formatTime(booking.scheduledAt)} 
-                      {booking.estimatedDuration && ` (${booking.estimatedDuration}h)`}
+                      {booking.timeSlot || formatTime(booking.scheduledAt)}
+                      {booking.estimatedDuration && ` (${Math.round(booking.estimatedDuration / 60)}h ${booking.estimatedDuration % 60}m)`}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -417,28 +435,66 @@ export default function BookingsPage() {
           </Card>
         )}
 
-        {/* Quick Booking Card */}
+        {/* Enhanced Quick Booking Card */}
         <Card className="dashboard-card slide-up bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
           <CardHeader>
-            <CardTitle>Quick Booking</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Quick Booking</span>
+              {hasPreferredSlot && (
+                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                  ✓ Time Slot Set
+                </Badge>
+              )}
+            </CardTitle>
             <CardDescription>
-              Your next service will be scheduled at {preferredTimeSlot} for {preferredDuration}
+              {hasPreferredSlot ? (
+                <>Your next service will be scheduled at <span className="font-medium text-primary">{preferredTimeSlot}</span> for {preferredDuration}</>
+              ) : (
+                <>Set up your preferred time slot to enable one-click booking for faster service scheduling</>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="btn-hero" onClick={handleQuickBooking}>
-                <Plus className="h-4 w-4 mr-2" />
-                Book for Tomorrow ({new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()})
-              </Button>
-              <Button variant="outline">
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule for Specific Date
-              </Button>
+              {hasPreferredSlot ? (
+                <>
+                  <Button className="btn-hero" onClick={handleQuickBooking}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Book for Tomorrow ({new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()})
+                  </Button>
+                  <Button variant="outline" onClick={() => openBookingForm()}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Choose Different Time
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => openBookingForm()}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Select Time & Book Now
+                  </Button>
+                  <Button variant="ghost" className="text-amber-600">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Set Preferred Time
+                  </Button>
+                </>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground mt-3">
-              Need to change your preferred time slot? Contact support or update in subscription settings.
-            </p>
+            <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  <p className="font-medium">Available Time Slots</p>
+                  <p className="text-xs mt-1">
+                    We offer flexible 3-hour cleaning slots from 8:00 AM to 8:00 PM. 
+                    {hasPreferredSlot 
+                      ? 'Your preferred slot will be automatically selected for quick bookings.' 
+                      : 'Set a preferred slot to enable instant booking.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
