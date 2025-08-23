@@ -101,6 +101,7 @@ export default function AdminDashboard() {
     pendingPayments: 0
   });
   const [subscriptionFilter, setSubscriptionFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('');
   const [assigningBooking, setAssigningBooking] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [isEditPlanDialogOpen, setIsEditPlanDialogOpen] = useState(false);
@@ -142,18 +143,17 @@ export default function AdminDashboard() {
 
       // Handle users data
       if (usersResponse.status === 'fulfilled' && usersResponse.value.success) {
-        const usersData = Array.isArray(usersResponse.value.data) ? 
-          usersResponse.value.data : 
-          usersResponse.value.data?.users || [];
+        const rawUsers = usersResponse.value.data as any;
+        const usersData: User[] = Array.isArray(rawUsers) ? rawUsers : (rawUsers?.users || rawUsers?.data || []);
         setUsers(usersData);
         
         // Separate maids from users
-        const maidsData = usersData
-          .filter((user: User) => user.role === 'MAID')
-          .map((user: User) => ({
-            id: user.id,
-            userId: user.id,
-            user,
+        const maidsData: Maid[] = usersData
+          .filter((u: User) => u.role === 'MAID')
+          .map((u: User) => ({
+            id: u.id,
+            userId: u.id,
+            user: u,
             skills: [],
             languages: ['English'],
             rating: 0,
@@ -166,64 +166,79 @@ export default function AdminDashboard() {
 
       // Handle bookings data
       if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
-        const bookingsData = Array.isArray(bookingsResponse.value.data) ? 
-          bookingsResponse.value.data : 
-          bookingsResponse.value.data?.bookings || [];
+        const raw = bookingsResponse.value.data as any;
+        const bookingsData = Array.isArray(raw) ? raw : (raw?.bookings || raw?.data || []);
         setBookings(bookingsData);
       }
 
       // Handle pending bookings data
-      if (pendingBookingsResponse.status === 'fulfilled' && pendingBookingsResponse.value) {
-        const pendingBookingsData = Array.isArray(pendingBookingsResponse.value) ? 
-          pendingBookingsResponse.value : 
-          pendingBookingsResponse.value?.data || [];
+      if (pendingBookingsResponse.status === 'fulfilled' && pendingBookingsResponse.value && (pendingBookingsResponse.value as any).success !== false) {
+        const raw = (pendingBookingsResponse.value as any).data ?? (pendingBookingsResponse.value as any);
+        const pendingBookingsData = Array.isArray(raw) ? raw : (raw?.bookings || raw?.data || []);
         setPendingBookings(pendingBookingsData);
       }
 
-      // Handle available maids data
-      if (availableMaidsResponse.status === 'fulfilled' && availableMaidsResponse.value) {
-        const availableMaidsData = Array.isArray(availableMaidsResponse.value) ? 
-          availableMaidsResponse.value : 
-          availableMaidsResponse.value?.data || [];
-        setAvailableMaids(availableMaidsData);
+      // Handle available maids data (map to Maid shape)
+      if (availableMaidsResponse.status === 'fulfilled' && availableMaidsResponse.value && (availableMaidsResponse.value as any).success !== false) {
+        const raw = (availableMaidsResponse.value as any).data ?? (availableMaidsResponse.value as any);
+        const arr = Array.isArray(raw) ? raw : (raw?.maids || raw?.data || []);
+        const mapped: Maid[] = arr.map((u: any) => ({
+          id: u.id,
+          userId: u.id,
+          user: {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            role: 'MAID',
+            status: u.status || 'ACTIVE',
+            address: u.address,
+            timeSlot: u.timeSlot,
+            createdAt: u.createdAt,
+          } as User,
+          skills: u.maidProfile?.skills || [],
+          languages: u.maidProfile?.languages || ['English'],
+          rating: u.maidProfile?.rating || 0,
+          totalRatings: u.maidProfile?.totalRatings || 0,
+          status: (u.maidProfile?.status || 'ACTIVE') as any,
+          completedBookings: u.maidProfile?.completedBookings || 0,
+        }));
+        setAvailableMaids(mapped);
       }
 
       // Handle subscriptions
       if (subscriptionsResponse.status === 'fulfilled' && subscriptionsResponse.value.success) {
-        const subscriptionsData = Array.isArray(subscriptionsResponse.value.data) ? 
-          subscriptionsResponse.value.data : 
-          subscriptionsResponse.value.data?.subscriptions || [];
+        const raw = subscriptionsResponse.value.data as any;
+        const subscriptionsData = Array.isArray(raw) ? raw : (raw?.subscriptions || raw?.data || []);
         setSubscriptions(subscriptionsData);
       }
 
       // Handle payments
       if (paymentsResponse.status === 'fulfilled' && paymentsResponse.value.success) {
-        const paymentsData = Array.isArray(paymentsResponse.value.data) ? 
-          paymentsResponse.value.data : 
-          paymentsResponse.value.data?.payments || [];
+        const raw = paymentsResponse.value.data as any;
+        const paymentsData = Array.isArray(raw) ? raw : (raw?.payments || raw?.data || []);
         setPayments(paymentsData);
       }
 
       // Handle subscription plans
       if (plansResponse.status === 'fulfilled' && plansResponse.value.success) {
-        const plansData = Array.isArray(plansResponse.value.data) ? 
-          plansResponse.value.data : 
-          plansResponse.value.data?.plans || [];
+        const raw = plansResponse.value.data as any;
+        const plansData = Array.isArray(raw) ? raw : (raw?.plans || raw?.data || []);
         setSubscriptionPlans(plansData);
       }
 
       // Handle stats data
       if (statsResponse.status === 'fulfilled' && statsResponse.value.success) {
-        const stats = statsResponse.value.data.overview;
+        const stats = (statsResponse.value.data as any).overview;
         setAnalyticsData({
-          totalBookings: stats.totalBookings || 0,
-          totalCustomers: stats.totalCustomers || 0,
-          totalMaids: stats.totalMaids || 0,
-          totalRevenue: stats.totalRevenue || 0,
-          pendingBookings: stats.pendingBookings || 0,
-          activeSubscriptions: stats.activeSubscriptions || 0,
-          completedPayments: stats.completedPayments || 0,
-          pendingPayments: stats.pendingPayments || 0
+          totalBookings: stats?.totalBookings || 0,
+          totalCustomers: stats?.totalCustomers || 0,
+          totalMaids: stats?.totalMaids || 0,
+          totalRevenue: stats?.totalRevenue || 0,
+          pendingBookings: stats?.pendingBookings || 0,
+          activeSubscriptions: stats?.activeSubscriptions || 0,
+          completedPayments: stats?.completedPayments || 0,
+          pendingPayments: stats?.pendingPayments || 0,
         });
       } else {
         // Fallback to calculate analytics from loaded data
@@ -515,6 +530,14 @@ export default function AdminDashboard() {
           {/* Header Actions */}
           <div className="flex items-center space-x-4">
             {/* Notifications */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={fetchAdminData}
+              className="mr-2"
+            >
+              Refresh
+            </Button>
             <div className="relative">
               <Button 
                 variant="ghost" 
@@ -1042,8 +1065,23 @@ export default function AdminDashboard() {
           {activeSection === 'users' && (
             <Card>
               <CardHeader>
-                <CardTitle>Customer Accounts</CardTitle>
-                <CardDescription>Manage customer accounts and profiles</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Customer Accounts</CardTitle>
+                    <CardDescription>Manage customer accounts and profiles</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      placeholder="Search by name, email or phone"
+                      value={userFilter}
+                      onChange={(e) => setUserFilter(e.target.value)}
+                      className="w-64"
+                    />
+                    <Badge variant="outline">
+                      {users.filter(u => u.role === 'CUSTOMER').length} total
+                    </Badge>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -1060,7 +1098,19 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.filter(user => user.role === 'CUSTOMER').slice(0, 10).map((user) => (
+                    {users
+                      .filter(user => user.role === 'CUSTOMER')
+                      .filter(u => {
+                        const t = userFilter.trim().toLowerCase();
+                        if (!t) return true;
+                        return (
+                          u.name?.toLowerCase().includes(t) ||
+                          u.email?.toLowerCase().includes(t) ||
+                          u.phone?.toLowerCase().includes(t)
+                        );
+                      })
+                      .slice(0, 10)
+                      .map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell>{user.email}</TableCell>

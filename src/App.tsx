@@ -45,6 +45,7 @@ const App = () => (
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/bookings" element={<BookingsPage />} />
               <Route path="/subscription" element={<SubscriptionPage />} />
+             
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/support" element={<SupportPage />} />
               {/* Catch-all route */}

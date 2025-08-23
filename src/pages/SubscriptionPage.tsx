@@ -363,7 +363,7 @@ function SubscriptionPage() {
                 Choose from our flexible subscription plans to start enjoying professional cleaning services.
               </p>
               <div className="space-y-3">
-                <Link to="/">
+                <Link to="/subscription/basic">
                   <Button className="btn-hero w-full">
                     <Crown className="h-4 w-4 mr-2" />
                     View Available Plans
