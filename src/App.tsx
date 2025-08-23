@@ -20,6 +20,9 @@ import ProfilePage from "./pages/ProfilePage";
 import SignupPage from "./pages/SignupPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import SupportPage from "./pages/SupportPage";
+import SubscriptionDetailsPage from "./pages/SubscriptionDetailsPage";
+import PaymentOptionsPage from "./pages/PaymentOptionsPage";
+import ReviewPaymentPage from "./pages/ReviewPaymentPage";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +48,9 @@ const App = () => (
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/bookings" element={<BookingsPage />} />
               <Route path="/subscription" element={<SubscriptionPage />} />
+              <Route path="/subscription/:planId" element={<SubscriptionDetailsPage />}/>
+              <Route path="/payment-options" element={<PaymentOptionsPage/>}/>
+              <Route path="/review-payment" element={<ReviewPaymentPage/>}/>
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/support" element={<SupportPage />} />
               {/* Catch-all route */}

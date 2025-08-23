@@ -39,6 +39,18 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface AddressData {
+  address?: string;
+  pincode?: string;
+  locality?: string;
+  addressLine?: string;
+  city?: string;
+  state?: string;
+  landmark?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export class AuthService {
   /**
    * Register a new user
@@ -126,6 +138,25 @@ export class AuthService {
     const token = localStorage.getItem('authToken');
     const user = localStorage.getItem('user');
     return !!(token && user);
+  }
+
+  /**
+   * Update the user's address (and profile) on the backend
+   */
+  static async updateUserAddress(address: AddressData): Promise<ApiResponse<{ user: User }>> {
+    try {
+      const response = await apiRequest<{ user: User }>(API_ENDPOINTS.USER.UPDATE, {
+        method: HttpMethod.PUT,
+        body: address,
+        requiresAuth: true,
+      });
+      if (response.success && response.data?.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**

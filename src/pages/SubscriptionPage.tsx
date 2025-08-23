@@ -9,7 +9,7 @@ import { PaymentService } from '@/services/paymentService';
 import { BookingService } from '@/services/bookingService';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { useBookingForm, withBookingForm } from '@/contexts/BookingFormContext';
 
@@ -18,6 +18,7 @@ function SubscriptionPage() {
   const { user, isAuthenticated } = useUser();
   const { toast } = useToast();
   const { openBookingForm } = useBookingForm();
+  const navigate = useNavigate();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,28 +133,10 @@ function SubscriptionPage() {
     }
   };
 
-  const handleUpgradePlan = async (planId: string) => {
-    try {
-      await SubscriptionService.subscribeToPlan({
-        planId,
-        paymentMethod: 'RAZORPAY',
-        autoRenewal: subscription?.autoRenew || true
-      });
-      
-      toast({
-        title: 'Success',
-        description: 'Plan upgrade initiated. You will be redirected to payment.'
-      });
-      
-      // Refresh subscription data
-      await fetchSubscriptionData();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to upgrade plan. Please try again.',
-        variant: 'destructive'
-      });
-    }
+  // Updated handleUpgradePlan to navigate to subscription details page
+  const handleUpgradePlan = (planId: string) => {
+    // Navigate to subscription details page with the selected plan
+    navigate(`/subscription/${planId}`);
   };
 
   if (loading) {
