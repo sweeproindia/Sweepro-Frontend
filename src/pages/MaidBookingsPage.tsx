@@ -3,185 +3,56 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    AlertCircle,
-    Calendar,
-    CheckCircle,
-    Clock,
-    DollarSign,
-    Filter,
-    MapPin,
-    Plus,
-    Search,
-    User
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Filter,
+  MapPin,
+  RefreshCcw,
+  Search,
+  User,
 } from 'lucide-react';
-import { useState } from 'react';
-
-interface Booking {
-  id: number;
-  date: string;
-  time: string;
-  client: string;
-  address: string;
-  status: 'upcoming' | 'recent' | 'completed' | 'pending' | 'cancelled';
-  duration: string;
-  earnings: string;
-  clientPhone?: string;
-  specialInstructions?: string;
-  rating?: number;
-  review?: string;
-}
-
-const allBookings: Booking[] = [
-  // Upcoming Bookings
-  {
-    id: 1,
-    date: 'Tomorrow',
-    time: '10:00 AM',
-    client: 'Maria Garcia',
-    address: '456 Oak Ave, City',
-    status: 'upcoming',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43210',
-    specialInstructions: 'Focus on kitchen and bathroom cleaning'
-  },
-  {
-    id: 2,
-    date: 'Dec 18',
-    time: '2:00 PM',
-    client: 'David Wilson',
-    address: '789 Pine Rd, City',
-    status: 'upcoming',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43211'
-  },
-  {
-    id: 3,
-    date: 'Dec 20',
-    time: '10:00 AM',
-    client: 'Anna White',
-    address: '987 Cedar Ln, City',
-    status: 'upcoming',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43212'
-  },
-  {
-    id: 4,
-    date: 'Dec 22',
-    time: '2:00 PM',
-    client: 'Lisa Brown',
-    address: '321 Elm St, City',
-    status: 'upcoming',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43213'
-  },
-
-  // Recent Bookings
-  {
-    id: 5,
-    date: 'Today',
-    time: '2:00 PM',
-    client: 'John Smith',
-    address: '123 Main St, City',
-    status: 'recent',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43214',
-    rating: 5,
-    review: 'Excellent service! Very thorough cleaning.'
-  },
-  {
-    id: 6,
-    date: 'Yesterday',
-    time: '10:00 AM',
-    client: 'Mike Davis',
-    address: '654 Maple Dr, City',
-    status: 'recent',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43215',
-    rating: 4,
-    review: 'Good work, very professional.'
-  },
-
-  // Completed Bookings
-  {
-    id: 7,
-    date: 'Dec 15',
-    time: '2:00 PM',
-    client: 'Sarah Johnson',
-    address: '147 Oak St, City',
-    status: 'completed',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43216',
-    rating: 5,
-    review: 'Amazing service! Will book again.'
-  },
-  {
-    id: 8,
-    date: 'Dec 14',
-    time: '10:00 AM',
-    client: 'Robert Chen',
-    address: '258 Pine Ave, City',
-    status: 'completed',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43217',
-    rating: 4,
-    review: 'Very satisfied with the cleaning.'
-  },
-
-  // Pending Bookings
-  {
-    id: 9,
-    date: 'Dec 25',
-    time: '10:00 AM',
-    client: 'Emma Wilson',
-    address: '369 Cedar Rd, City',
-    status: 'pending',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43218'
-  },
-  {
-    id: 10,
-    date: 'Dec 27',
-    time: '2:00 PM',
-    client: 'James Miller',
-    address: '741 Elm Ave, City',
-    status: 'pending',
-    duration: '3 hours',
-    earnings: '₹450',
-    clientPhone: '+91 98765 43219'
-  }
-];
+import { useMemo, useState } from 'react';
+import { useBookings, BookingFilter } from '@/hooks/useBookings';
 
 export default function MaidBookingsPage() {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'upcoming' | 'recent' | 'completed' | 'pending'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const {
+    bookings,
+    stats,
+    loading,
+    error,
+    filter,
+    setFilter,
+    refreshBookings,
+    updateBookingStatus,
+  } = useBookings('MAID');
 
-  const filteredBookings = allBookings.filter(booking => {
-    const matchesFilter = selectedFilter === 'all' || booking.status === selectedFilter;
-    const matchesSearch = booking.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.address.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const filteredBookings = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return bookings;
+    return bookings.filter((b) => {
+      const name = b.customer?.name?.toLowerCase() || '';
+      const addr = b.serviceAddress?.toLowerCase() || '';
+      const service = b.service?.name?.toLowerCase() || '';
+      return name.includes(term) || addr.includes(term) || service.includes(term);
+    });
+  }, [bookings, searchTerm]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'upcoming':
-        return 'bg-primary-light text-primary';
-      case 'recent':
-        return 'bg-success-light text-success';
-      case 'completed':
-        return 'bg-success-light text-success';
-      case 'pending':
+      case 'CONFIRMED':
+      case 'ASSIGNED':
+        return 'bg-primary/15 text-primary';
+      case 'IN_PROGRESS':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300';
+      case 'COMPLETED':
+        return 'bg-success/15 text-success';
+      case 'PENDING':
         return 'bg-warning/20 text-warning';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'bg-destructive/20 text-destructive';
       default:
         return 'bg-muted text-muted-foreground';
@@ -190,28 +61,48 @@ export default function MaidBookingsPage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'upcoming':
+      case 'CONFIRMED':
+      case 'ASSIGNED':
         return <Calendar className="h-4 w-4" />;
-      case 'recent':
+      case 'IN_PROGRESS':
         return <Clock className="h-4 w-4" />;
-      case 'completed':
+      case 'COMPLETED':
         return <CheckCircle className="h-4 w-4" />;
-      case 'pending':
+      case 'PENDING':
+      case 'CANCELLED':
         return <AlertCircle className="h-4 w-4" />;
       default:
         return <Calendar className="h-4 w-4" />;
     }
   };
 
+  const onStartService = async (bookingId: string) => {
+    await updateBookingStatus(bookingId, 'IN_PROGRESS');
+  };
+
+  const onCompleteService = async (bookingId: string) => {
+    await updateBookingStatus(bookingId, 'COMPLETED');
+  };
+
+  const filterOptions: { key: BookingFilter; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'scheduled', label: 'Scheduled' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'cancelled', label: 'Cancelled' },
+  ];
+
   return (
     <MaidDashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage and track all your cleaning appointments
-          </p>
+        <div className="fade-in flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">My Assignments</h1>
+            <p className="text-muted-foreground mt-2">Manage and track all your cleaning appointments</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
+            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          </Button>
         </div>
 
         {/* Stats Overview */}
@@ -220,8 +111,8 @@ export default function MaidBookingsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Upcoming</p>
-                  <p className="text-2xl font-bold text-foreground">4</p>
+                  <p className="text-sm font-medium text-muted-foreground">Scheduled</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.scheduled ?? 0}</p>
                 </div>
                 <Calendar className="h-8 w-8 text-primary" />
               </div>
@@ -232,20 +123,8 @@ export default function MaidBookingsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">This Week</p>
-                  <p className="text-2xl font-bold text-foreground">6</p>
-                </div>
-                <Clock className="h-8 w-8 text-success" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
                   <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                  <p className="text-2xl font-bold text-foreground">127</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.completed ?? 0}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-success" />
               </div>
@@ -256,8 +135,20 @@ export default function MaidBookingsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Earnings</p>
-                  <p className="text-2xl font-bold text-foreground">₹12,450</p>
+                  <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.cancelled ?? 0}</p>
+                </div>
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold text-foreground">{stats?.total ?? 0}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-warning" />
               </div>
@@ -273,27 +164,27 @@ export default function MaidBookingsPage() {
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Filter by:</span>
                 <div className="flex space-x-2">
-                  {(['all', 'upcoming', 'recent', 'completed', 'pending'] as const).map((filter) => (
+                  {filterOptions.map((opt) => (
                     <Button
-                      key={filter}
-                      variant={selectedFilter === filter ? 'default' : 'outline'}
+                      key={opt.key}
+                      variant={filter === opt.key ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setSelectedFilter(filter)}
+                      onClick={() => setFilter(opt.key)}
                     >
-                      {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                      {opt.label}
                     </Button>
                   ))}
                 </div>
               </div>
 
-              <div className="relative">
+              <div className="relative w-full md:w-auto">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search by client or address..."
+                  placeholder="Search by customer, address or service..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full md:w-80 pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -307,91 +198,78 @@ export default function MaidBookingsPage() {
               <div>
                 <CardTitle>All Bookings</CardTitle>
                 <CardDescription>
-                  {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''} found
+                  {loading ? 'Loading...' : `${filteredBookings.length} booking${filteredBookings.length !== 1 ? 's' : ''} found`}
                 </CardDescription>
               </div>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Availability
+              <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
+                <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </Button>
             </div>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 rounded bg-destructive/10 text-destructive text-sm">{error}</div>
+            )}
             <div className="space-y-4">
-              {filteredBookings.map((booking) => (
+              {!loading && filteredBookings.map((booking) => (
                 <div key={booking.id} className="border border-border rounded-lg p-6 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-3">
                         <div className={`p-2 rounded-lg ${getStatusColor(booking.status)}`}>
                           {getStatusIcon(booking.status)}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-foreground">{booking.client}</h3>
-                          <p className="text-sm text-muted-foreground">{booking.date} at {booking.time}</p>
+                          <h3 className="font-semibold text-foreground">{booking.customer?.name || 'Customer'}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(booking.scheduledAt).toLocaleDateString()} at {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
                         <Badge className={getStatusColor(booking.status)}>
-                          {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          {booking.status.replace('_', ' ')}
                         </Badge>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div className="flex items-center space-x-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{booking.address}</span>
+                          <span className="text-sm">{booking.serviceAddress}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{booking.duration}</span>
+                          <span className="text-sm">{booking.timeSlot || `${booking.estimatedDuration || 180} mins`}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">{booking.earnings}</span>
+                          <span className="text-sm font-medium">₹{(booking.finalAmount ?? booking.totalAmount ?? 0).toLocaleString()}</span>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{booking.clientPhone}</span>
-                        </div>
+                        {booking.customer?.phone && (
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{booking.customer.phone}</span>
+                          </div>
+                        )}
                       </div>
 
                       {booking.specialInstructions && (
-                        <div className="mb-4 p-3 bg-muted/30 rounded-lg">
+                        <div className="mb-2 p-3 bg-muted/30 rounded-lg">
                           <p className="text-sm font-medium text-foreground mb-1">Special Instructions:</p>
                           <p className="text-sm text-muted-foreground">{booking.specialInstructions}</p>
                         </div>
                       )}
-
-                      {booking.rating && (
-                        <div className="mb-4 p-3 bg-success/10 rounded-lg">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-sm font-medium">Client Rating:</span>
-                            <div className="flex items-center space-x-1">
-                              {[...Array(5)].map((_, i) => (
-                                <span key={i} className={`text-sm ${i < booking.rating! ? 'text-yellow-500' : 'text-muted-foreground'}`}>
-                                  ★
-                                </span>
-                              ))}
-                              <span className="text-sm text-muted-foreground">({booking.rating}/5)</span>
-                            </div>
-                          </div>
-                          {booking.review && (
-                            <p className="text-sm text-muted-foreground italic">"{booking.review}"</p>
-                          )}
-                        </div>
-                      )}
                     </div>
 
-                    <div className="flex flex-col space-y-2 ml-4">
+                    <div className="flex flex-col space-y-2 min-w-[160px]">
                       <Button size="sm" variant="outline">
                         View Details
                       </Button>
-                      {booking.status === 'upcoming' && (
-                        <Button size="sm" variant="outline">
+                      {(booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED') && (
+                        <Button size="sm" variant="outline" onClick={() => onStartService(booking.id)}>
                           Start Service
                         </Button>
                       )}
-                      {booking.status === 'recent' && (
-                        <Button size="sm" variant="outline">
+                      {booking.status === 'IN_PROGRESS' && (
+                        <Button size="sm" variant="outline" onClick={() => onCompleteService(booking.id)}>
                           Mark Complete
                         </Button>
                       )}
@@ -400,13 +278,20 @@ export default function MaidBookingsPage() {
                 </div>
               ))}
 
-              {filteredBookings.length === 0 && (
+              {!loading && filteredBookings.length === 0 && (
                 <div className="text-center py-12">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">No bookings found</h3>
                   <p className="text-muted-foreground">
                     {searchTerm ? 'Try adjusting your search terms.' : 'No bookings match the selected filter.'}
                   </p>
+                </div>
+              )}
+
+              {loading && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-2 text-muted-foreground">Loading bookings...</span>
                 </div>
               )}
             </div>
@@ -439,4 +324,4 @@ export default function MaidBookingsPage() {
       </div>
     </MaidDashboardLayout>
   );
-} 
+}

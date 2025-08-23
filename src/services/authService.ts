@@ -1,6 +1,6 @@
 import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse, setAuthToken, removeAuthToken } from './api';
 
-// Types for authentication
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -217,6 +217,29 @@ export class AuthService {
       console.error('Auth refresh failed:', error);
       this.logout();
       return false;
+    }
+  }
+
+  /**
+   * Update user's main address (consolidates fields into address string)
+   */
+  static async updateUserAddress(address: AddressData & { timeSlot?: string }): Promise<ApiResponse<{ user: User }>> {
+    try {
+      const parts = [address.addressLine, address.locality, address.city, address.state, address.pincode, address.landmark]
+        .filter((p) => typeof p === 'string' && p && String(p).trim().length > 0) as string[];
+      const fullAddress = (address.address && address.address.trim().length > 0) ? address.address : parts.join(', ');
+      const body: any = { address: fullAddress };
+      if ((address as any).timeSlot) {
+        body.timeSlot = (address as any).timeSlot;
+      }
+      return await apiRequest<{ user: User }>(API_ENDPOINTS.USER.PROFILE, {
+        method: HttpMethod.PUT,
+        body,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Update address error:', error);
+      throw error;
     }
   }
 }

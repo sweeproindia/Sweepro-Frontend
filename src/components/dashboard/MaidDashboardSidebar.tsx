@@ -4,7 +4,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/maid-dashboard', icon: Home },
-  { name: 'My Bookings', href: '/maid-bookings', icon: Calendar },
+  { name: 'My Assignmants', href: '/maid-bookings', icon: Calendar },
   { name: 'Support', href: '/maid-support', icon: MessageCircle },
   
 ];
