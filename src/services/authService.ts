@@ -1,6 +1,6 @@
 import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse, setAuthToken, removeAuthToken } from './api';
 
-// Types for authentication
+
 export interface LoginCredentials {
   email: string;
   password: string;
