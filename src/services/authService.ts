@@ -141,6 +141,25 @@ export class AuthService {
   }
 
   /**
+   * Update the user's address (and profile) on the backend
+   */
+  static async updateUserAddress(address: AddressData): Promise<ApiResponse<{ user: User }>> {
+    try {
+      const response = await apiRequest<{ user: User }>(API_ENDPOINTS.USER.UPDATE, {
+        method: HttpMethod.PUT,
+        body: address,
+        requiresAuth: true,
+      });
+      if (response.success && response.data?.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Get stored user data
    */
   static getStoredUser(): User | null {
