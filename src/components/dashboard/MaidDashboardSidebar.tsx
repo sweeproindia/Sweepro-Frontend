@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { Calendar, Home, LogOut, MessageCircle, Sparkles } from 'lucide-react';
+import { Calendar, Home, LogOut, MessageCircle, Sparkles, Shield } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const navigationItems = [
   { name: 'Dashboard', href: '/maid-dashboard', icon: Home },
-  { name: 'My Assignmants', href: '/maid-bookings', icon: Calendar },
+  { name: 'My Assignments', href: '/maid-bookings', icon: Calendar },
+  { name: 'Verification', href: '/maid-verification', icon: Shield },
   { name: 'Support', href: '/maid-support', icon: MessageCircle },
-  
 ];
 
 export const MaidDashboardSidebar = () => {

@@ -7,8 +7,9 @@ import { useUser } from '@/contexts/UserContext';
 import { BookingService, Booking } from '@/services/bookingService';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle, MapPin } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle, MapPin, Shield, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Service interface to match backend
 interface Service {
@@ -54,6 +55,10 @@ export default function MaidDashboard() {
     totalReviews: 0,
     completionRate: 0
   });
+  
+  // Simulate verification status - in real app, this would come from user data
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED'>('NOT_SUBMITTED');
 
   useEffect(() => {
     if (user && isAuthenticated && user.role === 'MAID') {
@@ -176,6 +181,41 @@ export default function MaidDashboard() {
             Here's your comprehensive cleaning schedule, earnings overview, and performance metrics.
           </p>
         </div>
+
+        {/* Verification Banner for New/Unverified Maids */}
+        {!isVerified && verificationStatus === 'NOT_SUBMITTED' && (
+          <Alert className="border-2 border-warning bg-gradient-to-r from-warning/5 to-orange/5">
+            <Shield className="h-5 w-5 text-warning" />
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <h4 className="font-semibold text-lg mb-2">Complete Your Profile Verification</h4>
+                <AlertDescription className="text-base">
+                  To start receiving cleaning assignments and earn money, please complete your profile verification by uploading your documents (Aadhar card, PAN card, and electricity bill for address verification).
+                </AlertDescription>
+              </div>
+              <div className="flex gap-3 ml-4">
+                <Link to="/maid-verification">
+                  <Button className="bg-primary hover:bg-primary/90 text-white">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Verify Now
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Alert>
+        )}
+
+        {verificationStatus === 'PENDING' && (
+          <Alert className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50">
+            <Clock className="h-5 w-5 text-blue-600" />
+            <div>
+              <h4 className="font-semibold text-lg mb-2 text-blue-800">Verification Under Review</h4>
+              <AlertDescription className="text-blue-700">
+                Your verification documents are being reviewed by our admin team. This typically takes 24-48 hours. You'll receive a notification once the review is complete.
+              </AlertDescription>
+            </div>
+          </Alert>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 slide-up">
@@ -487,10 +527,20 @@ export default function MaidDashboard() {
                     My Assignments
                   </Button>
                 </Link>
-                <Button className="w-full justify-start" variant="outline">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Set Availability
-                </Button>
+                {!isVerified && (
+                  <Link to="/maid-verification">
+                    <Button className="w-full justify-start" variant="outline" className="border-warning text-warning hover:bg-warning/10">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Complete Verification
+                    </Button>
+                  </Link>
+                )}
+                {isVerified && (
+                  <Button className="w-full justify-start" variant="outline">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Set Availability
+                  </Button>
+                )}
                 <Button className="w-full justify-start" variant="outline">
                   <DollarSign className="h-4 w-4 mr-2" />
                   View Earnings

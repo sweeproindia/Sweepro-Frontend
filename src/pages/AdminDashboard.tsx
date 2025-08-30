@@ -40,6 +40,7 @@ import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
 import EditPlanDialog from '../components/admin/EditPlanDialog';
 import EditUserDialog from '../components/admin/EditUserDialog';
+import { AdminMaidVerificationSection } from '../components/dashboard/AdminMaidVerificationSection';
 
 // User interface from backend
 interface User {
@@ -75,7 +76,7 @@ export default function AdminDashboard() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'subscriptions', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'payments', 'plans'].includes(hash)) {
       return hash;
     }
     return 'overview';
@@ -107,6 +108,138 @@ export default function AdminDashboard() {
   const [isEditPlanDialogOpen, setIsEditPlanDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  
+  // Dummy maid verification data for testing - formatted to match component structure
+  const [maidVerifications] = useState([
+    {
+      id: 'mv001',
+      maidId: 'm001',
+      maidName: 'Priya Sharma',
+      maidEmail: 'priya.sharma@email.com',
+      maidPhone: '+91 98765 43210',
+      status: 'pending',
+      submittedAt: '2024-01-15T10:30:00Z',
+      documents: {
+        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
+        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: true },
+        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
+      },
+      personalInfo: {
+        fullName: 'Priya Sharma',
+        address: '123 MG Road, Bangalore, Karnataka 560001',
+        experience: '5 years',
+        skills: ['Regular Cleaning', 'Deep Cleaning', 'Kitchen Cleaning']
+      }
+    },
+    {
+      id: 'mv002',
+      maidId: 'm002',
+      maidName: 'Sunita Devi',
+      maidEmail: 'sunita.devi@email.com',
+      maidPhone: '+91 87654 32109',
+      status: 'pending',
+      submittedAt: '2024-01-14T14:45:00Z',
+      documents: {
+        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
+        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: false },
+        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
+      },
+      personalInfo: {
+        fullName: 'Sunita Devi',
+        address: '456 HSR Layout, Bangalore, Karnataka 560102',
+        experience: '3 years',
+        skills: ['Regular Cleaning', 'Laundry', 'Cooking']
+      }
+    },
+    {
+      id: 'mv003',
+      maidId: 'm003',
+      maidName: 'Lakshmi Reddy',
+      maidEmail: 'lakshmi.reddy@email.com',
+      maidPhone: '+91 76543 21098',
+      status: 'approved',
+      submittedAt: '2024-01-10T09:15:00Z',
+      reviewedAt: '2024-01-12T16:30:00Z',
+      reviewedBy: 'Admin User',
+      notes: 'All documents verified. Approved for regular and deep cleaning services.',
+      documents: {
+        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
+        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: true },
+        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
+      },
+      personalInfo: {
+        fullName: 'Lakshmi Reddy',
+        address: '789 Whitefield, Bangalore, Karnataka 560066',
+        experience: '4 years',
+        skills: ['Regular Cleaning', 'Deep Cleaning', 'Full House Cleaning']
+      },
+      assignedServices: ['Regular Cleaning', 'Deep Cleaning', 'Kitchen Cleaning']
+    },
+    {
+      id: 'mv004',
+      maidId: 'm004',
+      maidName: 'Meera Khan',
+      maidEmail: 'meera.khan@email.com',
+      maidPhone: '+91 98765 43213',
+      status: 'rejected',
+      submittedAt: '2024-01-08T11:20:00Z',
+      reviewedAt: '2024-01-09T13:45:00Z',
+      reviewedBy: 'Admin User',
+      rejectionReason: 'Incomplete documents',
+      notes: 'Missing PAN Card and Police Verification Certificate. Please resubmit with all required documents.',
+      documents: {
+        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
+        panCard: { url: '', uploaded: false },
+        electricityBill: { url: '', uploaded: false }
+      },
+      personalInfo: {
+        fullName: 'Meera Khan',
+        address: '321 Koramangala, Bangalore, Karnataka 560034',
+        experience: '1 year',
+        skills: ['Regular Cleaning']
+      }
+    },
+    {
+      id: 'mv005',
+      maidId: 'm005',
+      maidName: 'Kavitha Nair',
+      maidEmail: 'kavitha.nair@email.com',
+      maidPhone: '+91 87654 32109',
+      status: 'pending',
+      submittedAt: '2024-01-16T08:45:00Z',
+      documents: {
+        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
+        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: true },
+        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
+      },
+      personalInfo: {
+        fullName: 'Kavitha Nair',
+        address: '654 Electronic City, Bangalore, Karnataka 560100',
+        experience: '10+ years',
+        skills: ['Regular Cleaning', 'Elder Care', 'Cooking', 'Full House Cleaning']
+      }
+    },
+    {
+      id: 'mv006',
+      maidId: 'm006',
+      maidName: 'Rashida Begum',
+      maidEmail: 'rashida.begum@email.com',
+      maidPhone: '+91 76543 21098',
+      status: 'pending',
+      submittedAt: '2024-01-17T12:30:00Z',
+      documents: {
+        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
+        panCard: { url: '', uploaded: false },
+        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
+      },
+      personalInfo: {
+        fullName: 'Rashida Begum',
+        address: '987 Indiranagar, Bangalore, Karnataka 560038',
+        experience: '6 years',
+        skills: ['Deep Cleaning', 'Move-in/Move-out Cleaning', 'Commercial Cleaning']
+      }
+    }
+  ]);
   
   // Admin notifications
   const notifications = [
@@ -463,6 +596,18 @@ export default function AdminDashboard() {
           </button>
           
           <button
+            onClick={() => handleSectionChange('maid-verification')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'maid-verification'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Shield className="h-4 w-4" />
+            Maid Verification
+          </button>
+          
+          <button
             onClick={() => handleSectionChange('subscriptions')}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
               activeSection === 'subscriptions'
@@ -511,6 +656,7 @@ export default function AdminDashboard() {
               {activeSection === 'pending-bookings' && 'Pending Bookings'}
               {activeSection === 'users' && 'User Management'}
               {activeSection === 'maids' && 'Maid Management'}
+              {activeSection === 'maid-verification' && 'Maid Verification'}
               {activeSection === 'subscriptions' && 'Subscriptions'}
               {activeSection === 'payments' && 'Payment Management'}
               {activeSection === 'plans' && 'Subscription Plans'}
@@ -521,6 +667,7 @@ export default function AdminDashboard() {
               {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
               {activeSection === 'users' && 'Manage customer accounts and profiles'}
               {activeSection === 'maids' && 'Manage service providers and performance'}
+              {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
               {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
               {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
               {activeSection === 'plans' && 'Manage available service plans and pricing'}
@@ -1287,6 +1434,25 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* Maid Verification Section */}
+          {activeSection === 'maid-verification' && (
+            <AdminMaidVerificationSection
+              verifications={maidVerifications}
+              onApproveVerification={(verificationId, notes, services) => {
+                toast({
+                  title: 'Success',
+                  description: 'Maid verification approved successfully'
+                });
+              }}
+              onRejectVerification={(verificationId, reason, notes) => {
+                toast({
+                  title: 'Verification Rejected',
+                  description: 'Maid verification has been rejected'
+                });
+              }}
+            />
           )}
 
           {/* Plans Section */}

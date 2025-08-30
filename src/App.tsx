@@ -23,6 +23,7 @@ import SupportPage from "./pages/SupportPage";
 import SubscriptionDetailsPage from "./pages/SubscriptionDetailsPage";
 import PaymentOptionsPage from "./pages/PaymentOptionsPage";
 import ReviewPaymentPage from "./pages/ReviewPaymentPage";
+import MaidVerification from "./pages/MaidVerification";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/maid-dashboard" element={<MaidDashboard />} />
               <Route path="/maid-bookings" element={<MaidBookingsPage />} />
+              <Route path="/maid-verification" element={<MaidVerification />} />
               <Route path="/maid-support" element={<MaidSupportPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/admin" element={<AdminDashboard />} />
