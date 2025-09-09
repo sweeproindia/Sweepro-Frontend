@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { DocumentUpload } from '@/components/ui/document-upload';
+import  {DocumentUpload } from '@/components/ui/document-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,8 @@ import {
   AlertTriangle, 
   Upload,
   Clock,
-  XCircle
+  XCircle,
+  Loader2
 } from 'lucide-react';
 
 interface VerificationDocuments {
@@ -42,10 +43,54 @@ export default function MaidVerification() {
     electricityBill: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     isSubmitted: false,
     status: 'NOT_SUBMITTED'
   });
+
+  // Load existing verification status on component mount
+  useEffect(() => {
+    const loadVerificationStatus = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Test backend connection first
+        const healthResponse = await fetch('http://localhost:3000/health');
+        console.log('Backend health check:', healthResponse.status);
+        
+        const response = await fetch('http://localhost:3000/api/documents/verification-status', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const { isSubmitted, status, submittedAt } = result.data;
+            setVerificationStatus({
+              isSubmitted,
+              status,
+              submittedAt
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading verification status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadVerificationStatus();
+  }, []);
 
   const handleDocumentChange = (type: keyof VerificationDocuments) => (files: File[]) => {
     setDocuments(prev => ({
@@ -71,33 +116,105 @@ export default function MaidVerification() {
     }
 
     setIsSubmitting(true);
+    
     try {
+      console.log('Starting document upload...');
+      
+      // Check if backend is accessible
+      try {
+        const healthCheck = await fetch('http://localhost:3000/health');
+        console.log('Health check response:', healthCheck.status);
+        if (!healthCheck.ok) {
+          throw new Error('Backend server is not responding');
+        }
+      } catch (healthError) {
+        console.error('Backend health check failed:', healthError);
+        throw new Error('Cannot connect to server. Please ensure the backend is running.');
+      }
+
       // Create FormData for file uploads
       const formData = new FormData();
       
-      // Add user ID
-      formData.append('maidId', user?.id || '');
-      
-      // Add documents
+      // Add documents with correct field names matching backend
       if (documents.aadharCard[0]) {
         formData.append('aadharCard', documents.aadharCard[0]);
+        console.log('Added aadharCard:', documents.aadharCard[0].name);
       }
       if (documents.panCard[0]) {
         formData.append('panCard', documents.panCard[0]);
+        console.log('Added panCard:', documents.panCard[0].name);
       }
       if (documents.electricityBill[0]) {
         formData.append('electricityBill', documents.electricityBill[0]);
+        console.log('Added electricityBill:', documents.electricityBill[0].name);
       }
 
-      // Here you would make the API call to submit verification documents
-      // const response = await fetch('/api/maid/verification', {
-      //   method: 'POST',
-      //   body: formData
-      // });
+      // Get token from localStorage
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Making API request to upload documents...');
+      
+      // Try multiple URL approaches in case of proxy issues
+      let response;
+      const urls = [
+        'http://localhost:3000/api/documents/upload-verification', // Direct backend
+        '/api/documents/upload-verification' // Via proxy
+      ];
+      
+      let lastError;
+      for (const url of urls) {
+        try {
+          console.log(`Attempting upload to: ${url}`);
+          response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
+          
+          if (response.ok || response.status < 500) {
+            console.log(`Successfully connected to: ${url}`);
+            break;
+          }
+        } catch (err) {
+          console.log(`Failed to connect to ${url}:`, err.message);
+          lastError = err;
+          continue;
+        }
+      }
+      
+      if (!response) {
+        throw lastError || new Error('All connection attempts failed');
+      }
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Non-JSON response:', responseText);
+        throw new Error('Server returned non-JSON response: ' + responseText.substring(0, 200));
+      }
+
+      const result = await response.json();
+      console.log('Upload result:', result);
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to upload documents');
+      }
+
+      // Update verification status based on response
       setVerificationStatus({
         isSubmitted: true,
         status: 'PENDING',
@@ -106,15 +223,28 @@ export default function MaidVerification() {
 
       toast({
         title: 'Verification Submitted Successfully',
-        description: 'Your documents have been submitted for admin review. You will be notified once verified.',
+        description: `${result.data?.uploadedDocuments?.length || 3} document(s) have been uploaded successfully and submitted for admin review.`,
         variant: 'default'
       });
 
     } catch (error) {
       console.error('Error submitting verification:', error);
+      
+      let errorMessage = 'Failed to submit verification documents. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = 'Network error: Cannot connect to server. Please check if the backend is running on port 3000.';
+        } else if (error.message.includes('Authentication')) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Submission Failed',
-        description: 'Failed to submit verification documents. Please try again.',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {

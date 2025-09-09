@@ -24,6 +24,7 @@ import SubscriptionDetailsPage from "./pages/SubscriptionDetailsPage";
 import PaymentOptionsPage from "./pages/PaymentOptionsPage";
 import ReviewPaymentPage from "./pages/ReviewPaymentPage";
 import MaidVerification from "./pages/MaidVerification";
+import TestLoginPage from "./pages/TestLoginPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/test-login" element={<TestLoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/maid-dashboard" element={<MaidDashboard />} />
