@@ -2,11 +2,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Crown, Eye, EyeOff, Lock, Mail, Shield, Sparkles, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AuthService, LoginCredentials } from '@/services/authService';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function LoginPage() {
@@ -17,18 +17,44 @@ export default function LoginPage() {
     password: ''
   });
 
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.email.includes('@')) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter a valid email address',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       const credentials: LoginCredentials = {
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password
       };
 
+      console.log('🚀 Attempting login...');
       const response = await AuthService.login(credentials);
+      console.log('✅ Login response:', response);
       
       if (response.success && response.data?.user) {
         const user = response.data.user;
@@ -101,17 +127,18 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Login Info */}
-            <div className="mb-6 p-4 bg-muted/30 rounded-lg">
-              <h4 className="font-semibold text-sm mb-2">Login Information:</h4>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <div>• Role-based navigation will be determined automatically</div>
-                <div>• Your dashboard will match your account type</div>
-                <div>• Use your registered email and password</div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Login Info */}
+              <div className="mb-6 p-4 bg-muted/30 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Login Information:</h4>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  <div>• Role-based navigation will be determined automatically</div>
+                  <div>• Your dashboard will match your account type</div>
+                  <div>• Use your registered email and password</div>
+                </div>
               </div>
-            </div>
 
-            {/* Email Input */}
+              {/* Email Input */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-blue-900/80">Email</Label>
               <div className="relative">
@@ -165,21 +192,22 @@ export default function LoginPage() {
               </a>
             </div>
 
-            {/* Submit Button */}
-            <Button 
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white font-semibold py-2.5 shadow-lg hover:shadow-xl transition-all duration-200"
-              disabled={isLoading}
-              onClick={handleSubmit}
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Signing in...</span>
-                </div>
-              ) : (
-                'Sign In'
-              )}
-            </Button>
+              {/* Submit Button */}
+              <Button 
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white font-semibold py-2.5 shadow-lg hover:shadow-xl transition-all duration-200"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Signing in...</span>
+                  </div>
+                ) : (
+                  'Sign In'
+                )}
+              </Button>
+            </form>
 
             {/* Sign Up Link */}
             <div className="text-center">

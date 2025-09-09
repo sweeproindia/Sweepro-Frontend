@@ -82,21 +82,37 @@ export class AuthService {
    */
   static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
     try {
+      console.log('🔑 AuthService: Starting login process');
       const response = await apiRequest<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, {
         method: HttpMethod.POST,
         body: credentials,
         requiresAuth: false
       });
 
+      console.log('🔑 AuthService: Login API response received');
+      
       // Store token and user data on successful login
       if (response.success && response.data?.token) {
+        console.log('🔑 AuthService: Storing token and user data');
         setAuthToken(response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        console.log('🔑 AuthService: Login successful, data stored');
       }
 
       return response;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('🔑 AuthService: Login failed:', error);
+      
+      // Provide better error messages for common issues
+      if (error instanceof Error) {
+        if (error.message.includes('Unable to connect to server')) {
+          throw new Error('Cannot connect to server. Please ensure the backend is running on http://localhost:3000');
+        }
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Network error - please check your internet connection and ensure the backend server is running');
+        }
+      }
+      
       throw error;
     }
   }
@@ -140,24 +156,6 @@ export class AuthService {
     return !!(token && user);
   }
 
-  /**
-   * Update the user's address (and profile) on the backend
-   */
-  static async updateUserAddress(address: AddressData): Promise<ApiResponse<{ user: User }>> {
-    try {
-      const response = await apiRequest<{ user: User }>(API_ENDPOINTS.USER.UPDATE, {
-        method: HttpMethod.PUT,
-        body: address,
-        requiresAuth: true,
-      });
-      if (response.success && response.data?.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
 
   /**
    * Get stored user data

@@ -741,16 +741,17 @@ export default function AdminDashboard() {
                   </span>
                 </Button>
               </Link>
-              
+              <Link to="/">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={logout}
                 className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-              >
+                >
                 <LogOut className="h-4 w-4" />
                 <span className="hidden md:block text-sm">Logout</span>
               </Button>
+                </Link>
             </div>
           </div>
         </div>

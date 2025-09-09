@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Document Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .success {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Document Upload</h1>
+    
+    <div class="form-group">
+        <label>Authentication Token:</label>
+        <input type="text" id="authToken" placeholder="Enter your auth token" style="width: 100%; padding: 8px;">
+        <small>Get this from localStorage.getItem('authToken') in the browser console</small>
+    </div>
+
+    <form id="uploadForm">
+        <div class="form-group">
+            <label for="aadharCard">Aadhar Card:</label>
+            <input type="file" id="aadharCard" accept="image/*,application/pdf">
+        </div>
+
+        <div class="form-group">
+            <label for="panCard">PAN Card:</label>
+            <input type="file" id="panCard" accept="image/*,application/pdf">
+        </div>
+
+        <div class="form-group">
+            <label for="electricityBill">Electricity Bill:</label>
+            <input type="file" id="electricityBill" accept="image/*,application/pdf">
+        </div>
+
+        <button type="button" onclick="testConnection()">Test Backend Connection</button>
+        <button type="button" onclick="uploadDocuments()" id="uploadBtn">Upload Documents</button>
+    </form>
+
+    <div id="log" class="log">Ready to test...\n</div>
+
+    <script>
+        function log(message, isError = false) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isError ? 'error' : '';
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            if (isError) {
+                logDiv.innerHTML += '<span class="error">ERROR: Check details above</span>\n';
+            }
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function testConnection() {
+            log('Testing backend connection...');
+            
+            try {
+                const response = await fetch('http://localhost:3000/health');
+                log(`Health check: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log(`Health data: ${JSON.stringify(data)}`);
+                
+                const docTest = await fetch('http://localhost:3000/api/documents/test-verification');
+                log(`Document endpoint test: ${docTest.status} ${docTest.statusText}`);
+                
+                const docData = await docTest.json();
+                log(`Document test data: ${JSON.stringify(docData)}`);
+                log('✓ Backend connection successful!', false);
+                
+            } catch (error) {
+                log(`Connection test failed: ${error.message}`, true);
+            }
+        }
+
+        async function uploadDocuments() {
+            const token = document.getElementById('authToken').value.trim();
+            if (!token) {
+                log('Please enter authentication token', true);
+                return;
+            }
+
+            const aadharFile = document.getElementById('aadharCard').files[0];
+            const panFile = document.getElementById('panCard').files[0];
+            const electricityFile = document.getElementById('electricityBill').files[0];
+
+            if (!aadharFile || !panFile || !electricityFile) {
+                log('Please select all three required files', true);
+                return;
+            }
+
+            log('Starting document upload...');
+            log(`Files selected:
+- Aadhar: ${aadharFile.name} (${(aadharFile.size / 1024 / 1024).toFixed(2)}MB)
+- PAN: ${panFile.name} (${(panFile.size / 1024 / 1024).toFixed(2)}MB)
+- Electricity: ${electricityFile.name} (${(electricityFile.size / 1024 / 1024).toFixed(2)}MB)`);
+
+            const formData = new FormData();
+            formData.append('aadharCard', aadharFile);
+            formData.append('panCard', panFile);
+            formData.append('electricityBill', electricityFile);
+
+            document.getElementById('uploadBtn').disabled = true;
+
+            try {
+                log('Making request to upload endpoint...');
+                
+                const response = await fetch('http://localhost:3000/api/documents/upload-verification', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                log(`Response status: ${response.status} ${response.statusText}`);
+                log(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`Error response body: ${errorText}`, true);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+                log(`Success! Response: ${JSON.stringify(result, null, 2)}`, false);
+                log('✓ Documents uploaded successfully!');
+
+            } catch (error) {
+                log(`Upload failed: ${error.message}`, true);
+                log(`Error details: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`, true);
+            } finally {
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        }
+
+        // Auto-populate token if available in localStorage
+        window.addEventListener('load', () => {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    document.getElementById('authToken').value = token;
+                    log('Auth token loaded from localStorage');
+                }
+            } catch (e) {
+                log('No auth token found in localStorage');
+            }
+        });
+    </script>
+</body>
+</html>

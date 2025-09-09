@@ -117,91 +117,79 @@ export default function AdminMaidVerification() {
   const fetchVerifications = async () => {
     setLoading(true);
     try {
-      // Simulate API call - replace with actual API
-      const mockData: MaidVerification[] = [
-        {
-          id: 'ver_001',
-          maidId: 'maid_001',
-          maid: {
-            id: 'maid_001',
-            name: 'Priya Sharma',
-            email: 'priya.sharma@email.com',
-            phone: '+91 9876543210',
-            address: 'MG Road, Bangalore, Karnataka 560001',
-            joinedDate: '2024-01-15',
-            totalServices: 0,
-            rating: 0
-          },
-          documents: {
-            aadharCard: {
-              filename: 'aadhar_priya_sharma.pdf',
-              url: '/api/documents/aadhar_priya_sharma.pdf',
-              uploadedAt: '2024-01-20T10:30:00Z',
-              fileSize: 1024000
-            },
-            panCard: {
-              filename: 'pan_priya_sharma.jpg',
-              url: '/api/documents/pan_priya_sharma.jpg',
-              uploadedAt: '2024-01-20T10:32:00Z',
-              fileSize: 512000
-            },
-            electricityBill: {
-              filename: 'electricity_bill_priya.pdf',
-              url: '/api/documents/electricity_bill_priya.pdf',
-              uploadedAt: '2024-01-20T10:35:00Z',
-              fileSize: 768000
-            }
-          },
-          status: 'PENDING',
-          submittedAt: '2024-01-20T10:35:00Z'
-        },
-        {
-          id: 'ver_002',
-          maidId: 'maid_002',
-          maid: {
-            id: 'maid_002',
-            name: 'Sunita Devi',
-            email: 'sunita.devi@email.com',
-            phone: '+91 9876543211',
-            address: 'Koramangala, Bangalore, Karnataka 560034',
-            joinedDate: '2024-01-10',
-            totalServices: 5,
-            rating: 4.2
-          },
-          documents: {
-            aadharCard: {
-              filename: 'aadhar_sunita_devi.pdf',
-              url: '/api/documents/aadhar_sunita_devi.pdf',
-              uploadedAt: '2024-01-12T14:20:00Z',
-              fileSize: 1536000
-            },
-            panCard: {
-              filename: 'pan_sunita_devi.jpg',
-              url: '/api/documents/pan_sunita_devi.jpg',
-              uploadedAt: '2024-01-12T14:22:00Z',
-              fileSize: 512000
-            },
-            electricityBill: {
-              filename: 'electricity_bill_sunita.pdf',
-              url: '/api/documents/electricity_bill_sunita.pdf',
-              uploadedAt: '2024-01-12T14:25:00Z',
-              fileSize: 896000
-            }
-          },
-          status: 'APPROVED',
-          submittedAt: '2024-01-12T14:25:00Z',
-          reviewedAt: '2024-01-13T09:15:00Z',
-          reviewedBy: 'Admin User',
-          adminNotes: 'All documents verified successfully. Clear and valid documents provided.'
-        }
-      ];
+      // Get token from localStorage using the correct key
+      const token = localStorage.getItem('authToken');
+      console.log(token);
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
 
-      setVerifications(mockData);
+      // Make API call to get maid verification data
+      const response = await fetch('/documents/verification/admin', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      console.log(response.headers.get('authorization'));
+
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch verifications');
+      }
+
+      // Transform the API response to match our interface
+      const transformedData: MaidVerification[] = result.data.map((item: any) => ({
+        id: item.id,
+        maidId: item.maidId,
+        maid: {
+          id: item.maid.id,
+          name: item.maid.name,
+          email: item.maid.email,
+          phone: item.maid.phone,
+          address: item.maid.address,
+          joinedDate: item.maid.joinedDate,
+          totalServices: item.maid.totalServices || 0,
+          rating: item.maid.rating || 0
+        },
+        documents: {
+          aadharCard: item.documents.aadharCard ? {
+            filename: item.documents.aadharCard.filename,
+            url: `/api/documents/${item.documents.aadharCard.id}/download`,
+            uploadedAt: item.documents.aadharCard.uploadedAt,
+            fileSize: item.documents.aadharCard.fileSize
+          } : null,
+          panCard: item.documents.panCard ? {
+            filename: item.documents.panCard.filename,
+            url: `/api/documents/${item.documents.panCard.id}/download`,
+            uploadedAt: item.documents.panCard.uploadedAt,
+            fileSize: item.documents.panCard.fileSize
+          } : null,
+          electricityBill: item.documents.electricityBill ? {
+            filename: item.documents.electricityBill.filename,
+            url: `/api/documents/${item.documents.electricityBill.id}/download`,
+            uploadedAt: item.documents.electricityBill.uploadedAt,
+            fileSize: item.documents.electricityBill.fileSize
+          } : null
+        },
+        status: item.status,
+        submittedAt: item.submittedAt,
+        reviewedAt: item.reviewedAt,
+        reviewedBy: item.reviewedBy,
+        rejectionReason: item.rejectionReason,
+        adminNotes: item.adminNotes
+      }));
+
+      setVerifications(transformedData);
     } catch (error) {
       console.error('Error fetching verifications:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load maid verifications',
+        description: error instanceof Error ? error.message : 'Failed to load maid verifications',
         variant: 'destructive'
       });
     } finally {
@@ -241,14 +229,46 @@ export default function AdminMaidVerification() {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get token from localStorage using the correct key
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
+      }
 
+      // Prepare API endpoint based on action
+      const endpoint = `/api/documents/verification/${selectedVerification.id}/${reviewAction === 'APPROVE' ? 'approve' : 'reject'}`;
+      
+      // Prepare request body
+      const requestBody: any = {};
+      if (reviewAction === 'REJECT') {
+        requestBody.rejectionReason = rejectionReason;
+      }
+      if (adminNotes.trim()) {
+        requestBody.adminNotes = adminNotes;
+      }
+
+      // Make API call
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to update verification status');
+      }
+
+      // Update verification in state
       const updatedVerification = {
         ...selectedVerification,
         status: reviewAction === 'APPROVE' ? 'APPROVED' as const : 'REJECTED' as const,
         reviewedAt: new Date().toISOString(),
-        reviewedBy: 'Admin User',
+        reviewedBy: 'Admin User', // TODO: Get from user context
         rejectionReason: reviewAction === 'REJECT' ? rejectionReason : undefined,
         adminNotes: adminNotes || undefined
       };
@@ -268,9 +288,10 @@ export default function AdminMaidVerification() {
       setRejectionReason('');
       setAdminNotes('');
     } catch (error) {
+      console.error('Error updating verification status:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update verification status',
+        description: error instanceof Error ? error.message : 'Failed to update verification status',
         variant: 'destructive'
       });
     }

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Calendar, Home, LogOut, MessageCircle, Sparkles, Shield } from 'lucide-react';
+import { Calendar, Home, LogOut, MessageCircle, Sparkles, Shield, Link } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 const navigationItems = [
@@ -53,6 +53,8 @@ export const MaidDashboardSidebar = () => {
           
           {/* Logout Button */}
           <div className="p-2">
+            
+            
             <Button
               variant="ghost"
               className="w-full justify-start text-muted-foreground hover:text-foreground"
@@ -64,6 +66,7 @@ export const MaidDashboardSidebar = () => {
               <LogOut className="mr-3 h-5 w-5" />
               Logout
             </Button>
+            
           </div>
         </div>
       </div>

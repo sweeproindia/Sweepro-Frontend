@@ -141,13 +141,40 @@ export const apiRequest = async <T = any>(
     requestConfig.body = JSON.stringify(body);
   }
 
+  console.log(`🚀 API Request: ${method} ${url}`);
+  console.log('Request config:', requestConfig);
+
   try {
     const response = await fetch(url, requestConfig);
-    const data = await response.json();
+    
+    console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    // Handle different content types
+    let data;
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      console.log('Non-JSON response:', text);
+      
+      // Try to parse as JSON anyway
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: text || 'Empty response' };
+      }
+    }
+    
+    console.log('Response data:', data);
 
     if (!response.ok) {
+      const errorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
+      console.error(`❌ API Error:`, errorMessage);
       throw new ApiError(
-        data.message || `HTTP ${response.status}: ${response.statusText}`,
+        errorMessage,
         response.status,
         data
       );
@@ -156,9 +183,11 @@ export const apiRequest = async <T = any>(
     // Check if response has success field (auth endpoints), otherwise wrap raw data
     if (data && typeof data === 'object' && 'success' in data) {
       // Already wrapped response (from auth endpoints)
+      console.log('✅ API Success:', data.message);
       return data;
     } else {
       // Raw response data - wrap it
+      console.log('✅ API Success: Request completed');
       return {
         success: true,
         message: 'Request successful',
@@ -166,12 +195,26 @@ export const apiRequest = async <T = any>(
       };
     }
   } catch (error) {
+    console.error('🔥 API Request Failed:', error);
+    
     if (error instanceof ApiError) {
       throw error;
     }
+    
+    // Handle network errors (including CORS)
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.error('🚫 Network Error - Possible CORS issue or backend not running');
+      throw new ApiError(
+        'Unable to connect to server. Please check if the backend is running on http://localhost:3000',
+        0,
+        { originalError: error.message }
+      );
+    }
+    
     throw new ApiError(
       error instanceof Error ? error.message : 'Network error occurred',
-      500
+      500,
+      { originalError: error }
     );
   }
 };
