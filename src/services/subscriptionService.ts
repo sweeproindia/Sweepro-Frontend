@@ -15,6 +15,7 @@ export interface SubscriptionPlan {
   finalPrice: number;
   isActive: boolean;
   isPopular: boolean;
+  bufferDaysAllowed?: number;
   createdAt?: string;
   updatedAt?: string;
   service?: {
@@ -43,6 +44,21 @@ export interface Subscription {
   discount: number;
   autoRenew: boolean;
   nextBillDate?: string;
+  // New buffer period fields
+  currentCycleStart?: string;
+  currentCycleEnd?: string;
+  bufferDaysCount?: number;
+  bufferDaysUsed?: number;
+  isInBufferPeriod?: boolean;
+  bufferStartDate?: string;
+  bufferEndDate?: string;
+  isPaused?: boolean;
+  pausedAt?: string;
+  resumeAt?: string;
+  pauseReason?: string;
+  totalCycles?: number;
+  completedCycles?: number;
+  lastRenewalDate?: string;
   createdAt: string;
   updatedAt: string;
   plan?: {
@@ -88,6 +104,134 @@ export interface Subscription {
     specialInstructions?: string;
   };
   payments?: Payment[];
+}
+
+// New interfaces for monthly buffer system
+export interface SubscriptionCycle {
+  id: string;
+  subscriptionId: string;
+  cycleNumber: number;
+  startDate: string;
+  endDate: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED' | 'IN_BUFFER' | 'PAUSED';
+  totalServices: number;
+  completedServices: number;
+  skippedServices: number;
+  bufferDaysUsed: number;
+  isBufferActive: boolean;
+  bufferStartDate?: string;
+  bufferEndDate?: string;
+  renewalDate?: string;
+  paymentStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  amount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BufferPeriod {
+  id: string;
+  subscriptionId: string;
+  cycleId?: string;
+  startDate: string;
+  endDate: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
+  reason: 'END_OF_MONTH' | 'CUSTOMER_REQUEST' | 'ADMIN_PAUSE' | 'PAYMENT_ISSUE' | 'MAINTENANCE' | 'EMERGENCY';
+  daysCount: number;
+  servicesSkipped: number;
+  autoResumeDate: string;
+  resumedAt?: string;
+  isAutomatic: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MonthlySubscriptionStatus {
+  success: boolean;
+  hasActiveSubscription: boolean;
+  subscription?: Subscription & {
+    plan: SubscriptionPlan & {
+      service: any;
+    };
+  };
+  currentCycle?: SubscriptionCycle;
+  activeBuffer?: BufferPeriod;
+  daysUntilBuffer?: number;
+  upcomingBookings?: any[];
+  summary?: {
+    servicesThisMonth: number;
+    bufferPeriodActive: boolean;
+    nextBufferStart?: string;
+    cycleProgress: number;
+  };
+}
+
+export interface DashboardData {
+  success: boolean;
+  hasActiveSubscription: boolean;
+  subscription?: Subscription;
+  currentCycle?: SubscriptionCycle;
+  activeBuffer?: BufferPeriod;
+  summary?: {
+    servicesThisMonth: number;
+    bufferPeriodActive: boolean;
+    nextBufferStart?: string;
+    cycleProgress: number;
+  };
+  serviceStats?: {
+    totalBookings: number;
+    completedServices: number;
+    upcomingServices: number;
+    servicesThisMonth: number;
+  };
+  recentBookings?: any[];
+  upcomingBookings?: any[];
+  paymentHistory?: any[];
+  nextPayment?: {
+    date: string;
+    amount: number;
+    daysUntilDue: number;
+  };
+}
+
+export interface MonthlyCalendarData {
+  success: boolean;
+  month: {
+    year: number;
+    month: number;
+    name: string;
+  };
+  calendarData: {
+    date: string;
+    dayOfWeek: string;
+    bookings: {
+      id: string;
+      serviceName: string;
+      status: string;
+      scheduledTime: string;
+      maidName?: string;
+      duration: number;
+      isSubscriptionBased: boolean;
+      isBufferSkipped: boolean;
+    }[];
+    isInBufferPeriod: boolean;
+    bufferReason?: string;
+  }[];
+  monthSummary: {
+    totalBookings: number;
+    completedServices: number;
+    upcomingServices: number;
+    cancelledServices: number;
+    bufferDays: number;
+  };
+  bufferPeriods: {
+    id: string;
+    startDate: string;
+    endDate: string;
+    reason: string;
+    daysCount: number;
+    status: string;
+  }[];
 }
 
 export interface SubscribeData {
@@ -166,17 +310,132 @@ export class SubscriptionService {
   }
 
   /**
-   * Confirm next day service
+   * Get monthly subscription status with buffer information
    */
-  static async confirmNextDayService(confirmationData: { date: string, timeSlot: string }): Promise<ApiResponse<{ booking: any }>> {
+  static async getMonthlySubscriptionStatus(): Promise<ApiResponse<MonthlySubscriptionStatus>> {
     try {
-      return await apiRequest<{ booking: any }>(API_ENDPOINTS.SUBSCRIPTIONS.CONFIRM_SERVICE, {
-        method: HttpMethod.POST,
-        body: confirmationData,
+      return await apiRequest<MonthlySubscriptionStatus>(API_ENDPOINTS.SUBSCRIPTIONS.MONTHLY_STATUS, {
+        method: HttpMethod.GET,
         requiresAuth: true
       });
     } catch (error) {
-      console.error('Confirm next day service error:', error);
+      console.error('Get monthly subscription status error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Start buffer period manually
+   */
+  static async startBufferPeriod(reason?: string): Promise<ApiResponse<{ bufferPeriod: BufferPeriod }>> {
+    try {
+      return await apiRequest<{ bufferPeriod: BufferPeriod }>(API_ENDPOINTS.SUBSCRIPTIONS.BUFFER_START, {
+        method: HttpMethod.POST,
+        body: { reason: reason || 'CUSTOMER_REQUEST' },
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Start buffer period error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * End buffer period manually
+   */
+  static async endBufferPeriod(): Promise<ApiResponse<{ subscription: Subscription }>> {
+    try {
+      return await apiRequest<{ subscription: Subscription }>(API_ENDPOINTS.SUBSCRIPTIONS.BUFFER_END, {
+        method: HttpMethod.POST,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('End buffer period error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscription dashboard data
+   */
+  static async getSubscriptionDashboard(): Promise<ApiResponse<DashboardData>> {
+    try {
+      return await apiRequest<DashboardData>(API_ENDPOINTS.DASHBOARD.MAIN, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get subscription dashboard error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get monthly service calendar
+   */
+  static async getMonthlyServiceCalendar(year?: number, month?: number): Promise<ApiResponse<MonthlyCalendarData>> {
+    try {
+      const params = new URLSearchParams();
+      if (year) params.append('year', year.toString());
+      if (month) params.append('month', month.toString());
+      
+      const endpoint = params.toString() ? 
+        `${API_ENDPOINTS.DASHBOARD.CALENDAR}?${params.toString()}` : 
+        API_ENDPOINTS.DASHBOARD.CALENDAR;
+      
+      return await apiRequest<MonthlyCalendarData>(endpoint, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get monthly calendar error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get buffer period history
+   */
+  static async getBufferPeriodHistory(page = 1, limit = 10): Promise<ApiResponse<{ data: BufferPeriod[], pagination: any }>> {
+    try {
+      return await apiRequest<{ data: BufferPeriod[], pagination: any }>(
+        `${API_ENDPOINTS.DASHBOARD.BUFFER_HISTORY}?page=${page}&limit=${limit}`, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get buffer period history error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscription cycle history
+   */
+  static async getSubscriptionCycleHistory(page = 1, limit = 10): Promise<ApiResponse<{ data: SubscriptionCycle[], pagination: any }>> {
+    try {
+      return await apiRequest<{ data: SubscriptionCycle[], pagination: any }>(
+        `${API_ENDPOINTS.DASHBOARD.CYCLE_HISTORY}?page=${page}&limit=${limit}`, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get subscription cycle history error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get service preferences and history
+   */
+  static async getServicePreferences(): Promise<ApiResponse<any>> {
+    try {
+      return await apiRequest<any>(API_ENDPOINTS.DASHBOARD.PREFERENCES, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get service preferences error:', error);
       throw error;
     }
   }

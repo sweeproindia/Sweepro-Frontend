@@ -30,7 +30,8 @@ import {
   Bell,
   User,
   LogOut,
-  MessageCircle
+  MessageCircle,
+  Pause
 } from 'lucide-react';
 import { BookingService, Booking } from '../services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '../services/subscriptionService';
@@ -41,6 +42,7 @@ import { Link } from 'react-router-dom';
 import EditPlanDialog from '../components/admin/EditPlanDialog';
 import EditUserDialog from '../components/admin/EditUserDialog';
 import { AdminMaidVerificationSection } from '../components/dashboard/AdminMaidVerificationSection';
+import { AdminBufferManagementSection } from '../components/dashboard/AdminBufferManagementSection';
 
 // User interface from backend
 interface User {
@@ -76,7 +78,7 @@ export default function AdminDashboard() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'payments', 'plans'].includes(hash)) {
       return hash;
     }
     return 'overview';
@@ -250,7 +252,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'subscriptions', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'payments', 'plans'].includes(hash)) {
       setActiveSection(hash);
     }
   }, [location.hash]);
@@ -620,6 +622,18 @@ export default function AdminDashboard() {
           </button>
           
           <button
+            onClick={() => handleSectionChange('buffer-management')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'buffer-management'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Pause className="h-4 w-4" />
+            Buffer Management
+          </button>
+          
+          <button
             onClick={() => handleSectionChange('payments')}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
               activeSection === 'payments'
@@ -658,6 +672,7 @@ export default function AdminDashboard() {
               {activeSection === 'maids' && 'Maid Management'}
               {activeSection === 'maid-verification' && 'Maid Verification'}
               {activeSection === 'subscriptions' && 'Subscriptions'}
+              {activeSection === 'buffer-management' && 'Buffer Period Management'}
               {activeSection === 'payments' && 'Payment Management'}
               {activeSection === 'plans' && 'Subscription Plans'}
             </h1>
@@ -669,6 +684,7 @@ export default function AdminDashboard() {
               {activeSection === 'maids' && 'Manage service providers and performance'}
               {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
               {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
+              {activeSection === 'buffer-management' && 'Review buffer requests and manage service interruptions'}
               {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
               {activeSection === 'plans' && 'Manage available service plans and pricing'}
             </p>
@@ -1454,6 +1470,11 @@ export default function AdminDashboard() {
                 });
               }}
             />
+          )}
+
+          {/* Buffer Management Section */}
+          {activeSection === 'buffer-management' && (
+            <AdminBufferManagementSection />
           )}
 
           {/* Plans Section */}

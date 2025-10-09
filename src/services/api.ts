@@ -36,9 +36,19 @@ export const API_ENDPOINTS = {
     SUBSCRIBE: '/subscriptions/subscribe',
     MY_SUBSCRIPTION: '/subscriptions/my-subscription',
     STATUS: '/subscriptions/status',
-    CONFIRM_SERVICE: '/subscriptions/confirm-service',
+    MONTHLY_STATUS: '/subscriptions/monthly-status',
+    BUFFER_START: '/subscriptions/buffer/start',
+    BUFFER_END: '/subscriptions/buffer/end',
     COMPLETE_PAYMENT: '/subscriptions/complete-payment',
     CANCEL: '/subscriptions/cancel',
+  },
+  // Dashboard
+  DASHBOARD: {
+    MAIN: '/dashboard/dashboard',
+    CALENDAR: '/dashboard/calendar',
+    BUFFER_HISTORY: '/dashboard/buffer-history',
+    CYCLE_HISTORY: '/dashboard/cycle-history',
+    PREFERENCES: '/dashboard/preferences',
   },
   // Payments
   PAYMENTS: {
@@ -51,6 +61,20 @@ export const API_ENDPOINTS = {
       VERIFY: '/payments/razorpay/verify',
       FAILURE: '/payments/razorpay/failure',
       STATUS: '/payments/razorpay/status/:razorpayPaymentId',
+    }
+  },
+  // Buffer Management
+  BUFFER: {
+    REMAINING: '/buffer/subscription',
+    REQUEST: '/buffer/subscription',
+    HISTORY: '/buffer/subscription',
+    ADMIN: {
+      PENDING: '/buffer/admin/pending',
+      APPROVE: '/buffer/admin',
+      REJECT: '/buffer/admin',
+      ALL: '/buffer/admin/all',
+      STATISTICS: '/buffer/admin/statistics',
+      AFFECTED_SERVICES: '/buffer/admin/affected-services'
     }
   }
 };
