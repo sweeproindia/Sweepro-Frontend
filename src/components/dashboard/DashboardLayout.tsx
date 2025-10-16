@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, Menu, MessageCircle, Shield, User, X, Sparkles, LogOut } from 'lucide-react';
+import { Bell, MessageCircle, Shield, User, X, Sparkles, Menu } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { DashboardSidebar } from './DashboardSidebar';
 
 interface DashboardLayoutProps {
@@ -18,9 +18,10 @@ interface Notification {
   unread: boolean;
 }
 
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = true; // Later can come from context or auth state
@@ -91,87 +92,114 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden md:block">
-        <DashboardSidebar />
-      </div>
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      {/* Top navigation */}
+      <div className="relative z-10 flex-shrink-0 flex h-16 bg-card border-b border-border shadow-sm">
+        <div className="flex-1 px-4 flex justify-between items-center">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-2">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <span className="font-bold text-xl">SweepPro</span>
+          </Link>
 
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Mobile Sidebar - Top bar with menu */}
-        <div className="md:hidden">
-          <DashboardSidebar />
-        </div>
+          <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <div className="relative" ref={notificationRef}>
+              <Button variant="ghost" size="sm" onClick={toggleNotification} className="relative">
+                <Bell className="h-5 w-5" />
+                {notifications.filter((n) => n.unread).length > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {notifications.filter((n) => n.unread).length}
+                  </span>
+                )}
+              </Button>
 
-        {/* Top navigation */}
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-card border-b border-border shadow-sm">
-          <div className="flex-1 px-4 flex justify-between items-center">
-            <div className="flex-1" />
+              {isNotificationOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
+                  <div className="p-4 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                    <p className="text-sm text-gray-600">{notifications.filter((n) => n.unread).length} unread messages</p>
+                  </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <div className="relative" ref={notificationRef}>
-                <Button variant="ghost" size="sm" onClick={toggleNotification} className="relative">
-                  <Bell className="h-5 w-5" />
-                  {notifications.filter((n) => n.unread).length > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {notifications.filter((n) => n.unread).length}
-                    </span>
-                  )}
-                </Button>
-
-                {isNotificationOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-                      <p className="text-sm text-gray-600">{notifications.filter((n) => n.unread).length} unread messages</p>
-                    </div>
-
-                    <div className="divide-y divide-gray-100">
-                      {notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer border-l-4 ${getNotificationColor(notification.type)} ${
-                            notification.unread ? 'bg-blue-50' : ''
-                          }`}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className={`text-sm font-medium ${notification.unread ? 'text-gray-900' : 'text-gray-700'}`}>
-                                  {notification.title}
-                                </p>
-                                {notification.unread && <span className="h-2 w-2 bg-blue-500 rounded-full"></span>}
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                              <p className="text-xs text-gray-400 mt-2">{notification.time}</p>
+                  <div className="divide-y divide-gray-100">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer border-l-4 ${getNotificationColor(notification.type)} ${
+                          notification.unread ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className={`text-sm font-medium ${notification.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                                {notification.title}
+                              </p>
+                              {notification.unread && <span className="h-2 w-2 bg-blue-500 rounded-full"></span>}
                             </div>
+                            <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                            <p className="text-xs text-gray-400 mt-2">{notification.time}</p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-
-                    <div className="p-4 border-t border-gray-200">
-                      <button onClick={openAllNotifications} className="w-full text-sm text-primary hover:text-primary/80 font-medium">
-                        View All Notifications
-                      </button>
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
 
-              {/* Profile */}
-              <Link to="/profile">
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                  <User className="h-5 w-5" />
-                  <span className="hidden md:block text-sm font-medium">John Doe</span>
-                </Button>
-              </Link>
+                  <div className="p-4 border-t border-gray-200">
+                    <button onClick={openAllNotifications} className="w-full text-sm text-primary hover:text-primary/80 font-medium">
+                      View All Notifications
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Profile - Desktop Only */}
+            <Link to="/profile" className="hidden md:block">
+              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                <User className="h-5 w-5" />
+                <span className="text-sm font-medium">John Doe</span>
+              </Button>
+            </Link>
+
+            {/* Hamburger Menu - Mobile Only */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="md:hidden"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
         </div>
+      </div>
+
+      {/* Main content area with sidebar and page content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar - Desktop (always visible) */}
+        <div className="hidden md:block">
+          <DashboardSidebar />
+        </div>
+        
+        {/* Mobile Sidebar (controlled by navbar hamburger) */}
+        {isMobileSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            />
+            
+            {/* Sidebar */}
+            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+              <DashboardSidebar open={true} setOpen={setIsMobileSidebarOpen} />
+            </div>
+          </>
+        )}
 
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
@@ -237,3 +265,5 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     </div>
   );
 };
+
+export { DashboardLayout };

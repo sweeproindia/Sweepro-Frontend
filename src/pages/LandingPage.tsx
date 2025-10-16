@@ -1,10 +1,10 @@
 import { Footer } from '@/components/Footer';
 import { FAQSection } from '@/components/landing/FAQSection';
-import { FeaturesSection } from '@/components/landing/FeaturesSection';
+import FeaturesSection from '@/components/landing/FeaturesSection';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
-import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
+import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import LoginForm from '@/components/ui/LoginForm';

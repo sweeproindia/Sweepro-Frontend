@@ -1,143 +1,168 @@
+//HeroSection.tsx
 
-import { Button } from '@/components/ui/button';
-import { CheckCircle, Play, Quote } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { BookingButton } from '@/components/buttons/BookingButton';
-import { useBookingForm } from '@/contexts/BookingFormContext';
-import { useUser } from '@/contexts/UserContext';
+import heroImg from '@/assets/image.png';
+import { motion } from 'framer-motion';
+import { User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+const container = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.5, delayChildren: 0.3 },
+  },
+};
+
+const framerTitle = {
+  hidden: { opacity: 0, y: 60, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 1.0 } },
+};
+
+const imageVariant = {
+  hidden: { opacity: 0, y: 50, scale: 0.9 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.9 } },
+};
+
+const subtitleVariant = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
+};
+
+const ctaVariant = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7 } },
+};
 
 export const HeroSection = () => {
-  const { openBookingForm } = useBookingForm();
-  const { isAuthenticated } = useUser();
+  const navigate = useNavigate();
   return (
-    <section className="relative py-20 lg:py-32 overflow-hidden bg-white">
-      {/* Blue Glowing Cone Effect with animation */}
-      <div className="pointer-events-none absolute left-1/2 top-0 z-0 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-blue-500 opacity-30 blur-3xl glow-animated" />
+    <section
+      className="relative min-h-screen w-full overflow-hidden pt-24 md:pt-16 pb-0 flex flex-col md:flex-row items-start"
+      style={{
+        background: 'linear-gradient(135deg, #184FA1 0%, #1e293b 40%, #60a5fa 70%, #ffffff 100%)',
+        boxShadow: '0 0 120px 0 rgba(24,79,161,0.25), 0 0 220px 0 rgba(96,165,250,0.15)'
+      }}
+    >
+      {/* Removed grid background for cleaner look */}
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="lg:grid lg:grid-cols-2 lg:gap-12 items-center">
-          {/* Content */}
-          <div className="mb-12 lg:mb-0">
-            <div className="mb-6 slide-in-left" style={{ animationDelay: '0.2s' }}>
-              <h2 className="text-3xl font-bold text-[#0011D9] mb-2">SweepPro</h2>
-            </div>
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6 slide-in-left" style={{ animationDelay: '0.4s' }}>
-              Bring back the{' '}
-              <span className="bg-gradient-to-r from-[#0011D9] to-blue-600 bg-clip-text text-transparent">
-                cleanliness
-              </span>{' '}
-              and shine of your home
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed slide-in-left" style={{ animationDelay: '0.6s' }}>
-              We provide you various cleaning services from top to bottom using the best products,
-              advanced technology, and affordable pricing with trusted, background-verified professionals.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-8 slide-in-left" style={{ animationDelay: '0.8s' }}>
-              {isAuthenticated ? (
-                <BookingButton
-                  onClick={openBookingForm}
-                  text="Book Now"
-                  className="bg-[#0011D9] hover:bg-blue-700 text-white text-lg px-8 rounded-lg shadow-lg"
-                  size="lg"
-                />
-              ) : (
-                <Link to="/signup">
-                  <Button className="bg-[#0011D9] hover:bg-blue-700 text-white text-lg px-8 rounded-lg shadow-lg">
-                    Book Now
-                  </Button>
-                </Link>
-              )}
-              <Link to="/#how-it-works">
-                <Button variant="outline" size="lg" className="text-lg px-8 py-4 border-2 border-[#0011D9] text-[#0011D9] hover:bg-[#0011D9] hover:text-white transition-all flex items-center">
-                  <Play className="h-5 w-5 mr-2" />
-                  Watch Video
-                </Button>
-              </Link>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-6 text-sm text-gray-500 slide-in-left" style={{ animationDelay: '1.0s' }}>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-[#0011D9]" />
-                <span>Background Verified</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-[#0011D9]" />
-                <span>Flexible Scheduling</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-[#0011D9]" />
-                <span>Satisfaction Guaranteed</span>
-              </div>
-            </div>
-          </div>
+      <motion.div
+        className="container mx-auto px-2 sm:px-4 flex flex-col md:flex-row md:items-center gap-6 md:gap-10 w-full h-full relative z-10"
+        variants={container}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* TEXT */}
+        <div
+          className="flex-1 max-w-full md:max-w-2xl flex flex-col items-center md:items-start justify-center mx-auto pt-2 pb-2 text-center md:text-left min-h-[calc(100vh-340px)] md:min-h-[50vh] md:pl-12"
+        >
+          <motion.h1
+            className="text-white text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 leading-snug md:leading-[1.15]"
+            variants={framerTitle}
+          >
+            <span className="block text-4xl sm:text-5xl lg:text-6xl font-extrabold text-yellow-300 drop-shadow-[0_4px_24px_rgba(255,206,84,0.7)] mb-2 tracking-tight animate-gradient-sweep bg-gradient-to-r from-yellow-300 via-white to-yellow-400 bg-clip-text text-transparent">SweepPro</span>
+            <span className="block">Clean Tools. Clean Homes.</span>
+            <span className="block">Spotless Results.</span>
+          </motion.h1>
 
-          {/* Hero Image and Testimonials */}
-          <div className="relative slide-in-right" style={{ animationDelay: '1.2s' }}>
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl max-w-md mx-auto">
-              <img
-                src="src\assets\image.png"
-                alt="Professional maid service in modern home"
-                className="w-full h-auto object-cover shadow-2xl"
-              />
-            </div>
-            {/* Floating Testimonial Cards */}
-            <div className="absolute -top-8 -left-8 bg-white rounded-2xl p-4 border border-gray-100 max-w-xs shadow-lg float-continuous" style={{ animationDelay: '1.4s' }}>
-              <div className="flex items-start space-x-3">
-                <Quote className="h-5 w-5 text-[#0011D9] mt-1" />
-                <div>
-                  <p className="text-sm text-gray-700 mb-2">
-                    Regular cleaning from SweepPro provides the best service to maintain cleanliness and health of my home.
-                  </p>
-                  <p className="text-xs font-semibold text-[#0011D9]">Sarah Princeton</p>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -bottom-8 -right-8 bg-white rounded-2xl p-4 border border-gray-100 max-w-xs shadow-lg float-continuous" style={{ animationDelay: '1.6s' }}>
-              <div className="flex items-start space-x-3">
-                <Quote className="h-5 w-5 text-[#0011D9] mt-1" />
-                <div>
-                  <p className="text-sm text-gray-700 mb-2">
-                    Found the right place for cleaning services for my complicated home layout. Thankful for SweepPro!
-                  </p>
-                  <p className="text-xs font-semibold text-[#0011D9]">Tamara Jules</p>
-                </div>
-              </div>
-            </div>
-            {/* Floating Trust Badge */}
-            <div className="absolute top-4 right-4 bg-[#0011D9] text-white rounded-full p-3 shadow-lg" style={{ animationDelay: '1.8s' }}>
-              <CheckCircle className="h-6 w-6" />
-            </div>
-          </div>
+          <motion.p
+            className="text-[#cbe6fa] text-sm sm:text-base md:text-xl mb-4 sm:mb-8 max-w-xs sm:max-w-xl mx-auto md:mx-0"
+            variants={subtitleVariant}
+          >
+            Quality you can trust , service you can rely on.          
+</motion.p>
+
+          <motion.div
+            className="w-full flex flex-col sm:flex-row justify-center md:justify-start items-center mt-4 sm:mt-6 gap-3 sm:gap-4"
+            variants={ctaVariant}
+          >
+            <button
+              className="flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-[#184FA1] via-[#60a5fa] to-[#1856b6] text-white font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-blue-400/40 active:scale-95 border-2 border-white ring-2 ring-blue-200 focus:outline-none focus:ring-4 focus:ring-blue-400 animate-gradient-sweep min-w-[140px] sm:min-w-[180px]"
+              onClick={() => navigate('/be-hire')}
+              style={{ letterSpacing: '1px' }}
+            >
+              <User className="w-6 h-6 sm:w-7 sm:h-7 mr-1 sm:mr-2" />
+              Be Hire
+            </button>
+            <span className="w-4 sm:w-6"></span>
+            <button
+              className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-blue-700 font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-blue-400/40 active:scale-95 border-2 border-white ring-2 ring-blue-200 focus:outline-none focus:ring-4 focus:ring-blue-400 min-w-[140px] sm:min-w-[180px]"
+              onClick={() => navigate('/get-hire')}
+              style={{ letterSpacing: '1px' }}
+            >
+              <User className="w-6 h-6 sm:w-7 sm:h-7 mr-1 sm:mr-2 text-blue-700" />
+              Get Hire
+            </button>
+          </motion.div>
         </div>
 
-        {/* Statistics Section */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 slide-in-left" style={{ animationDelay: '1.4s' }}>
-          <div className="text-center">
-            <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl font-bold text-[#0011D9]">15+</span>
+        {/* IMAGE */}
+        <motion.div
+          className="flex-1 w-full flex justify-center md:justify-end items-end md:items-center pb-0 relative"
+          style={{ minHeight: '0', marginTop: '0' }}
+          variants={imageVariant}
+        >
+          {/* Glow effect behind heroImg */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] sm:w-[480px] sm:h-[480px] bg-gradient-to-br from-blue-300 via-blue-100 to-purple-200 rounded-full blur-3xl opacity-60 z-0"></div>
+          <img
+            src={heroImg}
+            alt="Security Guard"
+            className="w-full max-w-[220px] sm:max-w-[420px] md:max-w-[600px] lg:max-w-[700px] object-contain object-bottom relative z-10"
+            style={{ marginBottom: '0', marginTop: '0' }}
+          />
+          {/* Floating feature cards positioned around the model, not overlapping */}
+          <div className="absolute left-0 sm:-left-8 md:-left-32 top-[28%] sm:top-1/4 animate-floating-card" style={{animationDelay: '0.2s'}}>
+            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full shadow-lg px-2 sm:px-5 py-1 sm:py-2">
+              <span className="w-6 h-6 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-600">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 20l7-7-7-7 13 7-7 7 7-7"></path></svg>
+              </span>
+              <span className="font-semibold text-gray-900 text-[10px] sm:text-base">Illustration</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Special Services</h3>
-            <p className="text-gray-500 text-sm">Deep cleaning, move-in/out, post-construction</p>
           </div>
-          <div className="text-center">
-            <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl font-bold text-[#0011D9]">25+</span>
+          <div className="absolute right-0 sm:right-[-40px] md:right-[-120px] top-1/2 animate-floating-card" style={{animationDelay: '0.5s'}}>
+            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full shadow-lg px-2 sm:px-5 py-1 sm:py-2">
+              <span className="w-6 h-6 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-600">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7-7-7-7 7 7 7z"></path></svg>
+              </span>
+              <span className="font-semibold text-gray text-[10px] sm:text-base">Graphic Design</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Professional Cleaners</h3>
-            <p className="text-gray-500 text-sm">Background-verified, trained professionals</p>
           </div>
-          <div className="text-center">
-            <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl font-bold text-[#0011D9]">100%</span>
+          <div className="absolute right-0 md:right-[-80px] top-[18%] md:top-[16%] animate-floating-card" style={{animationDelay: '0.8s'}}>
+            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full shadow-lg px-2 sm:px-5 py-1 sm:py-2">
+              <span className="w-6 h-6 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-600">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14.2 18.5 21 12 17.8 5.5 21 7 14.2 2 9.3 9 8.5 12 2"></polygon></svg>
+              </span>
+              <span className="font-semibold text-gray-900 text-[10px] sm:text-base">Creative Branding</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Eco-Friendly Products</h3>
-            <p className="text-gray-500 text-sm">Safe, non-toxic cleaning solutions</p>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
+
+      <style>{`
+        @keyframes floating-cleaning-item {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-18px); }
+          100% { transform: translateY(0); }
+        }
+        .floating-cleaning-item {
+          animation: floating-cleaning-item 3.5s ease-in-out infinite;
+        }
+        @keyframes gradient-sweep {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-gradient-sweep {
+          background-size: 200% 200%;
+          animation: gradient-sweep 3s ease-in-out infinite;
+        }
+        @keyframes floating-card {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-16px); }
+        }
+        .animate-floating-card {
+          animation: floating-card 3.2s ease-in-out infinite;
+        }
+      `}</style>
     </section>
   );
 };
-
-// Add to your global CSS (e.g., index.css or App.css):
-// .slide-in-right { animation: slideInRight 0.8s ease-out forwards; }
-// @keyframes slideInRight { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }

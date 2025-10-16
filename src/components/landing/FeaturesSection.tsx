@@ -1,99 +1,154 @@
-import { Clock, CreditCard, Shield, Users } from 'lucide-react';
+import { Clock, CreditCard, Shield, Users } from "lucide-react";
 
 const features = [
   {
     icon: Shield,
-    title: 'Trusted Professionals',
-    description: 'All our maids are background-verified, insured, and trained to deliver exceptional service.',
-    color: 'text-success',
-    hasBackground: true,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none'%3E%3Cpath d='M100 40L140 60V100C140 140 120 160 100 180C80 160 60 140 60 100V60L100 40Z' stroke='%2310b981' stroke-width='4' fill='none'/%3E%3Cpath d='M100 60L120 70V100C120 120 110 130 100 140C90 130 80 120 80 100V70L100 60Z' fill='%2310b981' fill-opacity='0.1'/%3E%3Cpath d='M90 100L95 105L110 90' stroke='%2310b981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`
+    title: "Trusted Professionals",
+    description: "All our maids are background-verified, insured, and trained to deliver exceptional service.",
+    color: "emerald",
   },
   {
     icon: Clock,
-    title: 'Flexible Scheduling',
-    description: 'Book daily, weekly, or monthly visits. Reschedule anytime through our easy-to-use platform.',
-    color: 'text-primary',
-    hasBackground: true,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none'%3E%3Ccircle cx='100' cy='100' r='80' stroke='%2306b6d4' stroke-width='8' fill='none'/%3E%3Cpath d='M100 40V100L140 120' stroke='%2306b6d4' stroke-width='8' stroke-linecap='round'/%3E%3Ccircle cx='100' cy='100' r='8' fill='%2306b6d4'/%3E%3C/svg%3E")`
+    title: "Flexible Scheduling",
+    description: "Book daily, weekly, or monthly visits. Reschedule anytime through our easy-to-use platform.",
+    color: "blue",
   },
   {
     icon: Users,
-    title: 'Background Verified',
-    description: 'Every cleaner undergoes thorough background checks and identity verification for your peace of mind.',
-    color: 'text-warning',
-    hasBackground: true,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none'%3E%3Crect x='40' y='60' width='120' height='80' rx='8' fill='%23f59e0b'/%3E%3Crect x='50' y='70' width='100' height='15' rx='4' fill='white'/%3E%3Crect x='50' y='95' width='80' height='10' rx='4' fill='white'/%3E%3Crect x='50' y='115' width='60' height='10' rx='4' fill='white'/%3E%3Ccircle cx='160' cy='85' r='8' fill='%23f59e0b'/%3E%3Cpath d='M155 80L158 83L165 76' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`
+    title: "Background Verified",
+    description: "Every cleaner undergoes thorough background checks and identity verification for your peace of mind.",
+    color: "amber",
   },
   {
     icon: CreditCard,
-    title: 'Affordable Subscription',
-    description: 'Simple monthly subscriptions with transparent pricing. No hidden fees or surprise charges.',
-    color: 'text-primary',
-    hasBackground: true,
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none'%3E%3Crect x='40' y='80' width='120' height='80' rx='8' fill='%2306b6d4'/%3E%3Crect x='50' y='90' width='100' height='20' rx='4' fill='white'/%3E%3Crect x='50' y='120' width='60' height='30' rx='4' fill='white'/%3E%3Ccircle cx='160' cy='135' r='8' fill='%2306b6d4'/%3E%3C/svg%3E")`
-  }
+    title: "Pricing & Toolkit",
+    description: "No hidden fees or surprise charges—just everything you need in one powerful toolkit to manage, automate, and grow with confidence.",
+    color: "indigo",
+  },
 ];
 
-export const FeaturesSection = () => {
+const colorClasses = {
+  emerald: {
+    icon: "text-emerald-600",
+    bg: "bg-emerald-50 hover:bg-emerald-100",
+    ring: "ring-emerald-200 hover:ring-emerald-300",
+  },
+  blue: {
+    icon: "text-blue-600",
+    bg: "bg-blue-50 hover:bg-blue-100",
+    ring: "ring-blue-200 hover:ring-blue-300",
+  },
+  amber: {
+    icon: "text-amber-600",
+    bg: "bg-amber-50 hover:bg-amber-100",
+    ring: "ring-amber-200 hover:ring-amber-300",
+  },
+  indigo: {
+    icon: "text-indigo-600",
+    bg: "bg-indigo-50 hover:bg-indigo-100",
+    ring: "ring-indigo-200 hover:ring-indigo-300",
+  },
+};
+
+export default function FeaturesSection() {
   return (
-    <section id="services" className="py-20 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 fade-in">
-          <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-            Why Choose SweepPro?
+    <section
+      id="services"
+      className="relative min-h-[600px] sm:min-h-screen py-10 sm:py-24 bg-gradient-to-b from-slate-50 to-white overflow-hidden flex items-center"
+    >
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-40 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.1),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,206,84,0.1),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_40%,rgba(34,197,94,0.05),transparent_70%)]"></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 w-full">
+        {/* Header */}
+        <div className="text-center mb-10 sm:mb-20">
+          <div className="inline-block mb-4">
+            <span className="bg-blue-100 text-blue-700 px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium tracking-wide">
+              Why Choose Us
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
+            Professional Cleaning
+            <span className="block text-blue-600">Made Simple</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            We make home cleaning simple, reliable, and affordable with our subscription-based service model.
+          <p className="text-base sm:text-xl text-gray-600 max-w-xs sm:max-w-3xl mx-auto leading-relaxed">
+            Experience the difference with our trusted professionals and flexible service options
           </p>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, index) => (
-            <div 
-              key={feature.title}
-              className={`feature-card group text-center slide-up relative overflow-hidden ${
-                feature.hasBackground 
-                  ? feature.color === 'text-success' 
-                    ? 'bg-gradient-to-br from-success/5 to-success/10' 
-                    : feature.color === 'text-primary' 
-                      ? 'bg-gradient-to-br from-primary/5 to-primary/10' 
-                      : feature.color === 'text-warning' 
-                        ? 'bg-gradient-to-br from-warning/5 to-warning/10' 
-                        : 'bg-gradient-to-br from-primary/5 to-primary/10'
-                  : ''
-              }`}
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              {/* Background Image for all cards */}
-              {feature.hasBackground && (
-                <div className="absolute inset-0 opacity-10">
-                  <div 
-                    className="w-full h-full bg-cover bg-center bg-no-repeat"
-                    style={{
-                      backgroundImage: feature.backgroundImage
-                    }}
-                  />
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 w-full">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            const colors = colorClasses[feature.color];
+            return (
+              <div
+                key={feature.title}
+                className="group relative flex flex-col items-center justify-center h-full animate-feature-card"
+                style={{
+                  animationDelay: `${index * 0.2}s`,
+                  minHeight: '180px',
+                  height: '100%',
+                }}
+              >
+                <div className={`
+                  relative p-4 sm:p-8 rounded-xl border-2 transition-all duration-300 ease-out
+                  bg-white shadow-sm
+                  ${colors.ring} border-gray-100
+                  flex flex-col items-center justify-center h-full w-full
+                `} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                  {/* Icon centered */}
+                  <div className={`
+                    w-10 h-10 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center mb-3 sm:mb-6 mx-auto
+                    ${colors.bg} ring-2 transition-all duration-300
+                    ${colors.ring} floating-feature-bg
+                  `}>
+                    <Icon className={`w-5 h-5 sm:w-8 sm:h-8 ${colors.icon} transition-transform duration-300 mx-auto`} />
+                  </div>
+                  {/* Content */}
+                  <h3 className="text-sm sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-4 leading-tight text-center">
+                    {feature.title}
+                  </h3>
+                  <p className="text-xs sm:text-gray-600 sm:leading-relaxed sm:line-height-7 text-center">
+                    {feature.description}
+                  </p>
                 </div>
-              )}
-              
-              <div className="relative z-10">
-                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card border-2 border-border mb-6 group-hover:border-primary/30 transition-colors ${feature.color}`}>
-                  <feature.icon className="h-8 w-8" />
-                </div>
-                
-                <h3 className="text-xl font-semibold text-foreground mb-4">
-                  {feature.title}
-                </h3>
-                
-                <p className="text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
+
+      <style>{`
+        @keyframes feature-card-animate {
+          0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+          50% { opacity: 1; transform: translateY(-8px) scale(1.03); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-feature-card {
+          animation: feature-card-animate 1.2s cubic-bezier(.4,2,.3,1) both;
+        }
+        @keyframes floating-feature-bg {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-12px); }
+          100% { transform: translateY(0); }
+        }
+        .floating-feature-bg {
+          animation: floating-feature-bg 2.5s ease-in-out infinite;
+        }
+        @keyframes floating-feature-icon {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-12px); }
+          100% { transform: translateY(0); }
+        }
+        .floating-feature-icon {
+          animation: floating-feature-icon 2.5s ease-in-out infinite;
+        }
+      `}</style>
     </section>
   );
-};
+}
