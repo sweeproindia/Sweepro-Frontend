@@ -45,6 +45,11 @@ export interface Subscription {
   nextBillDate?: string;
   createdAt: string;
   updatedAt: string;
+  // Buffer period properties
+  isInBufferPeriod?: boolean;
+  bufferStartDate?: string;
+  bufferEndDate?: string;
+  bufferDaysUsed?: number;
   plan?: {
     id: string;
     name: string;

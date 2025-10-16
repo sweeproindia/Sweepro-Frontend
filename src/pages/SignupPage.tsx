@@ -181,7 +181,7 @@ export default function SignupPage() {
                     <RadioGroupItem value="MAID" id="maid" />
                     <Label htmlFor="maid" className="flex items-center space-x-2 cursor-pointer">
                       <Shield className="h-4 w-4" />
-                      <span>Service Provider - I provide cleaning services</span>
+                      <span>Maid - I provide cleaning services</span>
                     </Label>
                   </div>
                 </RadioGroup>

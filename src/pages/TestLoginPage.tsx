@@ -1,219 +1,216 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/contexts/UserContext';
+import { AuthService } from '@/services/authService';
+import { Loader2, User, Shield, Wrench } from 'lucide-react';
 
-export default function TestLoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
-  const [email, setEmail] = useState('admin@test.com');
-  const [password, setPassword] = useState('Admin123!');
+const TestLoginPage: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+  const [customEmail, setCustomEmail] = useState('');
+  const { toast } = useToast();
+  const { login } = useUser();
+  const navigate = useNavigate();
 
-  const createTestAdmin = async () => {
-    setIsLoading(true);
-    setTestResult(null);
-
-    try {
-      const response = await fetch('http://localhost:3000/api/auth/create-test-admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      setTestResult({ 
-        type: 'admin-creation', 
-        success: response.ok, 
-        data 
-      });
-    } catch (error) {
-      setTestResult({ 
-        type: 'admin-creation', 
-        success: false, 
-        error: error.message 
-      });
-    } finally {
-      setIsLoading(false);
+  const testAccounts = [
+    {
+      role: 'CUSTOMER',
+      email: 'customer@test.com',
+      password: 'password123',
+      name: 'Test Customer',
+      icon: User,
+      description: 'Test customer account with active subscription'
+    },
+    {
+      role: 'ADMIN',
+      email: 'admin@test.com',
+      password: 'password123',
+      name: 'Test Admin',
+      icon: Shield,
+      description: 'Admin account with full system access'
+    },
+    {
+      role: 'MAID',
+      email: 'maid@test.com',
+      password: 'password123',
+      name: 'Test Maid',
+      icon: Wrench,
+      description: 'Maid account for service assignments'
     }
-  };
+  ];
 
-  const testLogin = async () => {
-    setIsLoading(true);
-    setTestResult(null);
-
+  const handleTestLogin = async (email: string, password: string, role: string) => {
+    setLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Use the UserContext login function which handles everything
+      const user = await login(email, password);
+      
+      toast({
+        title: 'Login Successful',
+        description: `Logged in as ${role.toLowerCase()}`,
       });
 
-      const data = await response.json();
-      setTestResult({ 
-        type: 'login', 
-        success: response.ok, 
-        data, 
-        status: response.status 
-      });
-
-      // Store token if login successful
-      if (response.ok && data.data?.token) {
-        localStorage.setItem('authToken', data.data.token);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
+      // Redirect based on role
+      switch (role) {
+        case 'ADMIN':
+          navigate('/admin');
+          break;
+        case 'MAID':
+          navigate('/maid');
+          break;
+        default:
+          navigate('/dashboard');
       }
-    } catch (error) {
-      setTestResult({ 
-        type: 'login', 
-        success: false, 
-        error: error.message 
+    } catch (error: any) {
+      console.error('Test login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'Failed to login with test account',
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const testBackendConnection = async () => {
-    setIsLoading(true);
-    setTestResult(null);
-
-    try {
-      const response = await fetch('http://localhost:3000/health');
-      const data = await response.json();
-      setTestResult({ 
-        type: 'backend-connection', 
-        success: response.ok, 
-        data 
+  const handleCustomLogin = async () => {
+    if (!customEmail) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter an email address',
+        variant: 'destructive',
       });
-    } catch (error) {
-      setTestResult({ 
-        type: 'backend-connection', 
-        success: false, 
-        error: error.message 
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Use the UserContext login function
+      const user = await login(customEmail, 'password123');
+      
+      toast({
+        title: 'Login Successful',
+        description: `Logged in as ${customEmail}`,
+      });
+
+      // Redirect based on user role
+      switch (user.role) {
+        case 'ADMIN':
+          navigate('/admin');
+          break;
+        case 'MAID':
+          navigate('/maid');
+          break;
+        default:
+          navigate('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Custom login error:', error);
+      toast({
+        title: 'Login Failed',
+        description: error.message || 'Failed to login. Check if the account exists.',
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Test Login Portal
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Quick access to test accounts for development and testing
+          </p>
+        </div>
+
+        {/* Test Accounts */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {testAccounts.map((account) => {
+            const IconComponent = account.icon;
+            return (
+              <Card key={account.role} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="text-center">
+                  <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+                    <IconComponent className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">{account.name}</CardTitle>
+                  <CardDescription>{account.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    <p><strong>Email:</strong> {account.email}</p>
+                    <p><strong>Password:</strong> {account.password}</p>
+                    <p><strong>Role:</strong> {account.role}</p>
+                  </div>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => handleTestLogin(account.email, account.password, account.role)}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <IconComponent className="h-4 w-4 mr-2" />
+                    )}
+                    Login as {account.role}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Custom Login */}
         <Card>
           <CardHeader>
-            <CardTitle>Login Debug Tool</CardTitle>
+            <CardTitle>Custom Login</CardTitle>
             <CardDescription>
-              Test backend connection, create test users, and debug login issues
+              Login with any existing email (uses default password: password123)
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Backend Connection Test */}
-            <div className="space-y-2">
-              <h3 className="font-semibold">1. Test Backend Connection</h3>
-              <Button 
-                onClick={testBackendConnection} 
-                disabled={isLoading}
-                variant="outline"
-              >
-                {isLoading ? 'Testing...' : 'Test Backend Connection'}
-              </Button>
-            </div>
-
-            {/* Create Test Admin */}
-            <div className="space-y-2">
-              <h3 className="font-semibold">2. Create Test Admin User</h3>
-              <Button 
-                onClick={createTestAdmin} 
-                disabled={isLoading}
-                variant="outline"
-              >
-                {isLoading ? 'Creating...' : 'Create Test Admin'}
-              </Button>
-              <p className="text-sm text-gray-600">
-                Creates admin@test.com / Admin123! if it doesn't exist
-              </p>
-            </div>
-
-            {/* Test Login */}
-            <div className="space-y-2">
-              <h3 className="font-semibold">3. Test Login</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
+          <CardContent>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label htmlFor="customEmail">Email Address</Label>
+                <Input
+                  id="customEmail"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={customEmail}
+                  onChange={(e) => setCustomEmail(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCustomLogin()}
+                />
               </div>
-              <Button 
-                onClick={testLogin} 
-                disabled={isLoading}
-                variant="outline"
-              >
-                {isLoading ? 'Testing Login...' : 'Test Login'}
-              </Button>
-            </div>
-
-            {/* Results */}
-            {testResult && (
-              <div className="mt-6">
-                <h3 className="font-semibold mb-2">
-                  Test Result ({testResult.type}):
-                </h3>
-                <div className={`p-4 rounded-md border ${
-                  testResult.success 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-red-50 border-red-200'
-                }`}>
-                  <div className="font-medium mb-2">
-                    {testResult.success ? '✅ Success' : '❌ Failed'}
-                    {testResult.status && ` (Status: ${testResult.status})`}
-                  </div>
-                  <pre className="text-sm overflow-auto bg-gray-100 p-2 rounded">
-                    {JSON.stringify(testResult.data || testResult.error, null, 2)}
-                  </pre>
-                </div>
+              <div className="flex items-end">
+                <Button onClick={handleCustomLogin} disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Login
+                </Button>
               </div>
-            )}
-
-            {/* Current Configuration */}
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <h3 className="font-semibold mb-2">Current Configuration:</h3>
-              <div className="text-sm space-y-1">
-                <div><strong>Frontend:</strong> http://localhost:8080 (this page)</div>
-                <div><strong>Backend API:</strong> http://localhost:3000</div>
-                <div><strong>CORS:</strong> {window.location.origin} should be allowed</div>
-              </div>
-            </div>
-
-            {/* Instructions */}
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-              <h3 className="font-semibold mb-2">Instructions:</h3>
-              <ol className="text-sm space-y-1 list-decimal list-inside">
-                <li>First, test backend connection to ensure server is running on port 3000</li>
-                <li>Create a test admin user to have login credentials</li>
-                <li>Test login with the created credentials</li>
-                <li>If successful, go back to the main login page at /login</li>
-              </ol>
             </div>
           </CardContent>
         </Card>
+
+        {/* Back to Login */}
+        <div className="text-center">
+          <Button variant="outline" onClick={() => navigate('/login')}>
+            Back to Regular Login
+          </Button>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default TestLoginPage;

@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useBookings, BookingFilter } from '@/hooks/useBookings';
-import { useToast } from '@/hooks/use-toast';
-import { BookingButton, BookTomorrowButton } from '@/components/buttons/BookingButton';
-import { useBookingForm } from '@/contexts/BookingFormContext';
+import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
+import { useBookings } from '@/hooks/useBookings';
+import { useBookingForm } from '@/contexts/BookingFormContext';
+import { useBufferPeriod } from '@/hooks/useBufferPeriod';
+import { BookingButton } from '@/components/buttons/BookingButton';
+import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
+import { useToast } from '@/hooks/use-toast';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -64,6 +66,16 @@ export default function BookingsPage() {
   const { openBookingForm } = useBookingForm();
   const { user } = useUser();
   
+  // Use the buffer period hook
+  const {
+    isInBufferPeriod,
+    bufferEndDate,
+    shouldDisableBooking,
+    getBufferPeriodMessage,
+    getFormattedEndDate,
+    isLoading: checkingBuffer
+  } = useBufferPeriod();
+  
   // Use the custom hook for managing bookings state
   const {
     bookings,
@@ -81,6 +93,7 @@ export default function BookingsPage() {
   const preferredDuration = '3 hours'; // Standard duration for cleaning slots
   const hasPreferredSlot = user?.timeSlot && user.timeSlot !== 'Not set';
 
+
   // Handle booking cancellation with confirmation
   const onCancelBooking = async (bookingId: string) => {
     if (!confirm('Are you sure you want to cancel this booking?')) {
@@ -94,8 +107,19 @@ export default function BookingsPage() {
     }
   };
 
+
   // Handle quick booking for tomorrow
   const handleQuickBooking = () => {
+    if (shouldDisableBooking()) {
+      toast({
+        title: '🚫 Booking Services Paused',
+        description: getBufferPeriodMessage(),
+        variant: 'destructive',
+        duration: 10000, // Show for 10 seconds for better visibility
+      });
+      return;
+    }
+
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     openBookingForm(tomorrow);
@@ -122,12 +146,23 @@ export default function BookingsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Buffer Period Alert - Show prominently at the top */}
+        <BufferPeriodAlert 
+          isVisible={isInBufferPeriod}
+          endDate={getFormattedEndDate()}
+        />
+        
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 fade-in">
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
             <p className="text-muted-foreground mt-2">
-              {hasPreferredSlot ? (
+              {isInBufferPeriod ? (
+                <span className="text-orange-600 font-medium">
+                  <Pause className="h-4 w-4 inline mr-1" />
+                  {`Buffer period active until ${getFormattedEndDate()} • All booking services are paused during this time`}
+                </span>
+              ) : hasPreferredSlot ? (
                 <>Your preferred time: <span className="font-medium text-primary">{preferredTimeSlot}</span> ({preferredDuration}) • Ready for quick booking!</>
               ) : (
                 <>Set your preferred time slot in your profile to enable quick booking • <span className="text-amber-600">Profile setup recommended</span></>
@@ -144,10 +179,29 @@ export default function BookingsPage() {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <BookTomorrowButton
+            {/* Custom Book Tomorrow Button with Smart Buffer Period Logic */}
+            <Button
               onClick={handleQuickBooking}
-              className="btn-hero"
-            />
+              className={`btn-hero ${shouldDisableBooking() ? 'border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100' : ''}`}
+              disabled={shouldDisableBooking() || checkingBuffer}
+            >
+              {checkingBuffer ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Checking...
+                </>
+              ) : shouldDisableBooking() ? (
+                <>
+                  <Pause className="h-4 w-4 mr-2" />
+                  Services Paused (Until {getFormattedEndDate()})
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Book for Tomorrow
+                </>
+              )}
+            </Button>
             <BookingButton
               onClick={() => openBookingForm()}
               text="New Booking"

@@ -4,23 +4,40 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
+import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingService, Booking } from '@/services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
 import { PaymentService, Payment } from '@/services/paymentService';
+import { BufferService, BufferInfo, BufferPeriod } from '@/services/bufferService';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign, Package, Users } from 'lucide-react';
+import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign, Package, Users, Pause, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { QuickBookingForm } from '@/components/forms/QuickBookingForm';
+import { BufferDaysRequestDialog } from '@/components/forms/BufferDaysRequestDialog';
+import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
 
 export default function UserDashboard() {
   const { user, refreshUser, isAuthenticated } = useUser();
   const { toast } = useToast();
+  
+  // Use the buffer period hook for centralized buffer period management
+  const {
+    isInBufferPeriod,
+    shouldDisableBooking,
+    getBufferPeriodMessage,
+    getFormattedEndDate,
+    isLoading: bufferLoading
+  } = useBufferPeriod();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bufferInfo, setBufferInfo] = useState<BufferInfo | null>(null);
+  const [bufferHistory, setBufferHistory] = useState<BufferPeriod[]>([]);
+  const [isBufferRequestDialogOpen, setIsBufferRequestDialogOpen] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
   const [stats, setStats] = useState({
     totalBookings: 0,
     completedBookings: 0,
@@ -33,8 +50,23 @@ export default function UserDashboard() {
     if (user && isAuthenticated) {
       console.log('UserDashboard - Current User Data:', user);
       fetchUserDashboardData();
+      
+      // Set up periodic refresh for buffer data (every 30 seconds)
+      const interval = setInterval(() => {
+        if (subscription) {
+          refreshBufferData();
+        }
+      }, 30000);
+      
+      setRefreshInterval(interval);
+      
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
     }
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, subscription?.id]);
 
   const fetchUserDashboardData = async () => {
     setLoading(true);
@@ -84,6 +116,33 @@ export default function UserDashboard() {
         setSubscriptionPlans(plansData);
       }
 
+      // Fetch buffer data if subscription exists
+      let currentSubscription: Subscription | null = subscription;
+      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
+        const subscriptionData = subscriptionResponse.value.data;
+        const finalSubscription = subscriptionData?.subscription || subscriptionData || null;
+        currentSubscription = finalSubscription as Subscription | null;
+      }
+
+      if (currentSubscription) {
+        try {
+          const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
+            BufferService.getRemainingBufferDays(currentSubscription.id),
+            BufferService.getCustomerBufferHistory(currentSubscription.id, 1, 5)
+          ]);
+
+          if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
+            setBufferInfo(bufferInfoResponse.value.data);
+          }
+
+          if (bufferHistoryResponse.status === 'fulfilled' && bufferHistoryResponse.value.success) {
+            setBufferHistory(bufferHistoryResponse.value.data.history || []);
+          }
+        } catch (bufferError) {
+          console.error('Error fetching buffer data:', bufferError);
+        }
+      }
+
       // Calculate stats after data is loaded
       calculateStats();
 
@@ -125,6 +184,70 @@ export default function UserDashboard() {
     }
   }, [bookings, payments, subscription]);
 
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [refreshInterval]);
+
+  const refreshBufferData = async () => {
+    if (!subscription) return;
+    
+    try {
+      const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
+        BufferService.getRemainingBufferDays(subscription.id),
+        BufferService.getCustomerBufferHistory(subscription.id, 1, 5)
+      ]);
+
+      if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
+        setBufferInfo(bufferInfoResponse.value.data || null);
+      }
+
+      if (bufferHistoryResponse.status === 'fulfilled' && bufferHistoryResponse.value.success) {
+        setBufferHistory(bufferHistoryResponse.value.data?.history || []);
+      }
+    } catch (error) {
+      console.error('Error refreshing buffer data:', error);
+    }
+  };
+
+  const handleBookNowClick = () => {
+    console.log('🔍 HandleBookNowClick - Buffer Status:', {
+      isInBufferPeriod,
+      shouldDisableBooking: shouldDisableBooking(),
+      bufferLoading,
+      subscription: !!subscription
+    });
+
+    if (!subscription) {
+      toast({
+        title: 'Subscription Required',
+        description: 'You need an active subscription to book services.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Check if customer is currently in buffer period using the hook
+    if (shouldDisableBooking()) {
+      console.log('🚫 Booking blocked due to buffer period');
+      toast({
+        title: '🚫 Booking Services Paused',
+        description: getBufferPeriodMessage(),
+        variant: 'destructive',
+        duration: 10000, // Show for 10 seconds for better visibility
+      });
+      return;
+    }
+
+    console.log('✅ Opening booking modal - no buffer period detected');
+    // Open booking modal if no buffer period conflict
+    setIsBookingModalOpen(true);
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -147,6 +270,13 @@ export default function UserDashboard() {
 
   return (
     <DashboardLayout>
+      {/* Buffer Period Alert - Show prominently at the top */}
+      <BufferPeriodAlert 
+        isVisible={isInBufferPeriod}
+        endDate={getFormattedEndDate()}
+        className="mb-6"
+      />
+      
       <QuickBookingForm 
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
@@ -154,9 +284,23 @@ export default function UserDashboard() {
           setIsBookingModalOpen(false);
           fetchUserDashboardData();
         }}
-        userSubscription={subscription}
-        user={user}
       />
+      
+      {subscription && bufferInfo && (
+        <BufferDaysRequestDialog
+          isOpen={isBufferRequestDialogOpen}
+          onClose={() => setIsBufferRequestDialogOpen(false)}
+          onSuccess={() => {
+            setIsBufferRequestDialogOpen(false);
+            // Refresh buffer data immediately after request
+            refreshBufferData();
+            // Also refresh full dashboard data to update stats
+            fetchUserDashboardData();
+          }}
+          subscriptionId={subscription.id}
+          remainingBufferDays={bufferInfo.remaining}
+        />
+      )}
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="fade-in">
@@ -232,53 +376,114 @@ export default function UserDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Profile Details */}
+          {/* Buffer Days Management */}
           <Card className="dashboard-card slide-up">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Profile Information
+                <Pause className="h-5 w-5" />
+                Buffer Days
               </CardTitle>
-              <CardDescription>Your account details and status</CardDescription>
+              <CardDescription>Pause your cleaning services when needed</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Name:</span>
-                  <span className="text-foreground">{user.name}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Email:</span>
-                  <span className="text-foreground text-sm">{user.email}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Phone:</span>
-                  <span className="text-foreground">{user.phone}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Role:</span>
-                  <Badge variant="secondary">{user.role}</Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Status:</span>
-                  <Badge variant={user.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                    {user.status}
-                  </Badge>
-                </div>
-                {user.address && (
-                  <div className="p-3 bg-muted/30 rounded-lg">
-                    <span className="font-medium">Address:</span>
-                    <p className="text-foreground mt-1">{user.address}</p>
+              {bufferInfo ? (
+                <>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{bufferInfo.total}</div>
+                      <p className="text-xs text-muted-foreground">Total Days</p>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-warning">{bufferInfo.used}</div>
+                      <p className="text-xs text-muted-foreground">Used Days</p>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-success">{bufferInfo.remaining}</div>
+                      <p className="text-xs text-muted-foreground">Remaining</p>
+                    </div>
                   </div>
-                )}
-              </div>
-              <div className="pt-4">
-                <Link to="/profile">
-                  <Button className="w-full" variant="outline">
-                    Edit Profile
-                  </Button>
-                </Link>
-              </div>
+                  
+                  <div className="p-3 bg-gradient-feature rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">Next Reset:</span>
+                      <span className="text-sm">{new Date(bufferInfo.resetDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${((bufferInfo.total - bufferInfo.remaining) / bufferInfo.total) * 100}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Math.round(((bufferInfo.total - bufferInfo.remaining) / bufferInfo.total) * 100)}% used
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Button 
+                      className="w-full" 
+                      onClick={() => setIsBufferRequestDialogOpen(true)}
+                      disabled={bufferInfo.remaining === 0}
+                    >
+                      <Pause className="h-4 w-4 mr-2" />
+                      Request Buffer Days
+                    </Button>
+                    
+                    {bufferHistory.length > 0 && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">Recent Buffer Periods</h4>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={refreshBufferData}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Refresh
+                          </Button>
+                        </div>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {bufferHistory.slice(0, 3).map((period) => (
+                            <div key={period.id} className="flex items-center justify-between p-2 bg-muted/20 rounded text-sm">
+                              <div>
+                                <span className="font-medium">{period.daysCount} days</span>
+                                <span className="text-muted-foreground ml-2">
+                                  {new Date(period.startDate).toLocaleDateString()}
+                                </span>
+                                {period.status === 'PENDING' && (
+                                  <span className="text-xs text-muted-foreground block">
+                                    Awaiting approval
+                                  </span>
+                                )}
+                                {period.status === 'REJECTED' && period.rejectionReason && (
+                                  <span className="text-xs text-destructive block">
+                                    Rejected: {period.rejectionReason}
+                                  </span>
+                                )}
+                              </div>
+                              <Badge variant={
+                                period.status === 'PENDING' ? 'outline' :
+                                period.status === 'ACTIVE' ? 'default' :
+                                period.status === 'COMPLETED' ? 'secondary' : 'destructive'
+                              } className="text-xs">
+                                {period.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Pause className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h4 className="font-semibold mb-2">Buffer Days Not Available</h4>
+                  <p className="text-muted-foreground text-sm">
+                    Buffer days are available with active subscriptions
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -437,8 +642,27 @@ export default function UserDashboard() {
                 <p className="text-muted-foreground text-sm mb-4">
                   Book your first cleaning service to get started
                 </p>
-                <Button className="btn-hero">
-                  Book Now
+                <Button 
+                  className={`btn-hero ${shouldDisableBooking() ? 'border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100' : ''}`}
+                  onClick={handleBookNowClick}
+                  disabled={shouldDisableBooking() || bufferLoading}
+                >
+                  {bufferLoading ? (
+                    <>
+                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : shouldDisableBooking() ? (
+                    <>
+                      <Pause className="h-4 w-4 mr-2" />
+                      Services Paused (Until {getFormattedEndDate()})
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Book Now
+                    </>
+                  )}
                 </Button>
               </div>
             )}
@@ -446,7 +670,7 @@ export default function UserDashboard() {
         </Card>
 
         {/* Payment History */}
-        <Card className="dashboard-card slide-up">
+        {/* <Card className="dashboard-card slide-up">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -530,7 +754,7 @@ export default function UserDashboard() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </DashboardLayout>
   );

@@ -30,7 +30,8 @@ import {
   Bell,
   User,
   LogOut,
-  MessageCircle
+  MessageCircle,
+  Pause
 } from 'lucide-react';
 import { BookingService, Booking } from '../services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '../services/subscriptionService';
@@ -41,6 +42,11 @@ import { Link } from 'react-router-dom';
 import EditPlanDialog from '../components/admin/EditPlanDialog';
 import EditUserDialog from '../components/admin/EditUserDialog';
 import { AdminMaidVerificationSection } from '../components/dashboard/AdminMaidVerificationSection';
+import { AdminBufferDaysSection } from '../components/dashboard/AdminBufferDaysSection';
+import { AdminPendingAssignmentsSection } from '../components/dashboard/AdminPendingAssignmentsSection';
+import { AdminAssignedBookingsSection } from '../components/dashboard/AdminAssignedBookingsSection';
+import { AdminReassignmentSection } from '../components/dashboard/AdminReassignmentSection';
+
 
 // User interface from backend
 interface User {
@@ -76,7 +82,7 @@ export default function AdminDashboard() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'pending-assignments', 'assigned-bookings', 'reassignments', 'users', 'maids', 'maid-verification', 'subscriptions', 'payments', 'plans', 'buffer-days', 'cors-test'].includes(hash)) {
       return hash;
     }
     return 'overview';
@@ -250,7 +256,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'subscriptions', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'pending-assignments', 'assigned-bookings', 'reassignments', 'users', 'maids', 'maid-verification', 'subscriptions', 'payments', 'plans', 'buffer-days'].includes(hash)) {
       setActiveSection(hash);
     }
   }, [location.hash]);
@@ -572,6 +578,42 @@ export default function AdminDashboard() {
           </button>
           
           <button
+            onClick={() => handleSectionChange('pending-assignments')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'pending-assignments'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <UserCheck className="h-4 w-4" />
+            Pending Assignments
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('assigned-bookings')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'assigned-bookings'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <UserCheck className="h-4 w-4" />
+            Assigned Bookings
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('reassignments')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'reassignments'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <AlertCircle className="h-4 w-4" />
+            Reassignments
+          </button>
+          
+          <button
             onClick={() => handleSectionChange('users')}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
               activeSection === 'users'
@@ -642,6 +684,30 @@ export default function AdminDashboard() {
             <Settings className="h-4 w-4" />
             Plans
           </button>
+          
+          <button
+            onClick={() => handleSectionChange('buffer-days')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'buffer-days'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Pause className="h-4 w-4" />
+            Buffer Days
+          </button>
+          
+          <button
+            onClick={() => handleSectionChange('cors-test')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+              activeSection === 'cors-test'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            CORS Test
+          </button>
         </nav>
       </div>
       
@@ -654,23 +720,33 @@ export default function AdminDashboard() {
               {activeSection === 'overview' && 'Dashboard Overview'}
               {activeSection === 'bookings' && 'All Bookings'}
               {activeSection === 'pending-bookings' && 'Pending Bookings'}
+              {activeSection === 'pending-assignments' && 'Pending Assignments'}
+              {activeSection === 'assigned-bookings' && 'Assigned Bookings'}
+              {activeSection === 'reassignments' && 'Reassignment Management'}
               {activeSection === 'users' && 'User Management'}
               {activeSection === 'maids' && 'Maid Management'}
               {activeSection === 'maid-verification' && 'Maid Verification'}
               {activeSection === 'subscriptions' && 'Subscriptions'}
               {activeSection === 'payments' && 'Payment Management'}
               {activeSection === 'plans' && 'Subscription Plans'}
+              {activeSection === 'buffer-days' && 'Buffer Days Management'}
+              {activeSection === 'cors-test' && 'CORS Configuration Test'}
             </h1>
             <p className="text-muted-foreground mt-1">
               {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
               {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
               {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
+              {activeSection === 'pending-assignments' && 'Assign verified maids to customer bookings'}
+              {activeSection === 'assigned-bookings' && 'Track bookings assigned to maids and their responses'}
+              {activeSection === 'reassignments' && 'Manage bookings that need reassignment after rejection'}
               {activeSection === 'users' && 'Manage customer accounts and profiles'}
               {activeSection === 'maids' && 'Manage service providers and performance'}
               {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
               {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
               {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
               {activeSection === 'plans' && 'Manage available service plans and pricing'}
+              {activeSection === 'buffer-days' && 'Manage customer buffer day requests and service pauses'}
+              {activeSection === 'cors-test' && 'Test and debug CORS configuration between frontend and backend'}
             </p>
           </div>
           
@@ -751,7 +827,7 @@ export default function AdminDashboard() {
                 <LogOut className="h-4 w-4" />
                 <span className="hidden md:block text-sm">Logout</span>
               </Button>
-                </Link>
+                </Link>  
             </div>
           </div>
         </div>
@@ -1075,13 +1151,13 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                               
-                              {booking.customer?.address && (
+                              {booking.serviceAddress && (
                                 <div className="mb-4">
                                   <h4 className="font-medium text-sm text-muted-foreground mb-1 flex items-center gap-1">
                                     <MapPin className="h-3 w-3" />
                                     Service Address
                                   </h4>
-                                  <p className="text-sm">{booking.customer.address}</p>
+                                  <p className="text-sm">{booking.serviceAddress}</p>
                                 </div>
                               )}
                             </div>
@@ -1107,7 +1183,7 @@ export default function AdminDashboard() {
                                         {availableMaids.map((maid) => (
                                           <SelectItem key={maid.id} value={maid.id}>
                                             <div className="flex items-center gap-2">
-                                              <span className="font-medium">{maid.name}</span>
+                                              <span className="font-medium">{maid.user.name}</span>
                                               <span className="text-muted-foreground">•</span>
                                               <div className="flex items-center gap-1">
                                                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -1439,21 +1515,7 @@ export default function AdminDashboard() {
 
           {/* Maid Verification Section */}
           {activeSection === 'maid-verification' && (
-            <AdminMaidVerificationSection
-              verifications={maidVerifications}
-              onApproveVerification={(verificationId, notes, services) => {
-                toast({
-                  title: 'Success',
-                  description: 'Maid verification approved successfully'
-                });
-              }}
-              onRejectVerification={(verificationId, reason, notes) => {
-                toast({
-                  title: 'Verification Rejected',
-                  description: 'Maid verification has been rejected'
-                });
-              }}
-            />
+            <AdminMaidVerificationSection />
           )}
 
           {/* Plans Section */}
@@ -1515,6 +1577,33 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          )}
+
+          {/* Pending Assignments Section */}
+          {activeSection === 'pending-assignments' && (
+            <AdminPendingAssignmentsSection onRefresh={fetchAdminData} />
+          )}
+
+          {/* Assigned Bookings Section */}
+          {activeSection === 'assigned-bookings' && (
+            <AdminAssignedBookingsSection onRefresh={fetchAdminData} />
+          )}
+
+          {/* Reassignments Section */}
+          {activeSection === 'reassignments' && (
+            <AdminReassignmentSection onRefresh={fetchAdminData} />
+          )}
+
+          {/* Buffer Days Section */}
+          {activeSection === 'buffer-days' && (
+            <AdminBufferDaysSection />
+          )}
+
+          {/* CORS Test Section */}
+          {activeSection === 'cors-test' && (
+            <div className="flex justify-center">
+              <CorsTest />
+            </div>
           )}
           </div>
         </div>

@@ -1,5 +1,5 @@
-// API Configuration
-export const API_BASE_URL = 'http://localhost:3000/api';
+// API Configuration - Use proxy in development, direct URL in production
+export const API_BASE_URL ='http://localhost:3000/api';
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -52,6 +52,38 @@ export const API_ENDPOINTS = {
       FAILURE: '/payments/razorpay/failure',
       STATUS: '/payments/razorpay/status/:razorpayPaymentId',
     }
+  },
+  // Verification
+  VERIFICATION: {
+    // Admin endpoints
+    ALL: '/admin/verifications',
+    BY_ID: '/admin/verifications/:id',
+    APPROVE: '/admin/verifications/:id/approve',
+    REJECT: '/admin/verifications/:id/reject',
+    STATS: '/admin/verifications/stats',
+    // Maid endpoints
+    SUBMIT: '/maids/verification/submit',
+    MY_STATUS: '/maids/verification/status',
+  },
+  // Assignments
+  ASSIGNMENTS: {
+    // Maid endpoints
+    PENDING: '/assignments/pending',
+    MY_ASSIGNMENTS: '/assignments/my-assignments',
+    BY_ID: '/assignments/:id',
+    ACCEPT: '/assignments/:id/accept',
+    REJECT: '/assignments/:id/reject',
+    // Admin endpoints
+    ALL: '/assignments/admin/assignments',
+    CREATE: '/assignments/admin/assignments/create',
+    STATS: '/assignments/admin/assignments/stats',
+    CANCEL: '/assignments/admin/assignments/:id/cancel',
+    // New admin booking management endpoints
+    PENDING_ASSIGNMENTS: '/assignments/admin/pending-assignments',
+    ASSIGNED_BOOKINGS: '/assignments/admin/assigned-bookings',
+    REASSIGNMENT_BOOKINGS: '/assignments/admin/reassignment-bookings',
+    AVAILABLE_MAIDS: '/assignments/admin/available-maids/:bookingId',
+    SEND_ASSIGNMENT_REQUEST: '/assignments/admin/send-assignment-request',
   }
 };
 
@@ -204,10 +236,17 @@ export const apiRequest = async <T = any>(
     // Handle network errors (including CORS)
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       console.error('🚫 Network Error - Possible CORS issue or backend not running');
+      console.error('Current API_BASE_URL:', API_BASE_URL);
+      console.error('Frontend running on:', window.location.origin);
+      
       throw new ApiError(
-        'Unable to connect to server. Please check if the backend is running on http://localhost:3000',
+        `Unable to connect to server. Please check:\n1. Backend is running on http://localhost:3000\n2. Frontend is running on http://localhost:8080\n3. CORS is properly configured\n\nCurrent API URL: ${API_BASE_URL}`,
         0,
-        { originalError: error.message }
+        { 
+          originalError: error.message,
+          apiBaseUrl: API_BASE_URL,
+          frontendOrigin: window.location.origin
+        }
       );
     }
     
