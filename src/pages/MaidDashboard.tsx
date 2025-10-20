@@ -39,7 +39,6 @@ interface MaidStats {
   completionRate: number;
 }
 
-
 export default function MaidDashboard() {
   const { user, refreshUser, isAuthenticated } = useUser();
   const { toast } = useToast();
@@ -409,6 +408,7 @@ export default function MaidDashboard() {
           </Card>
         </div>
 
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Bookings */}
           <Card className="dashboard-card slide-up">
@@ -683,7 +683,7 @@ export default function MaidDashboard() {
           </Card>
         </div>
 
-        {/* Maid Profile & Support */}
+        {/* Additional Content Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Maid Profile */}
           <Card className="dashboard-card slide-up">
@@ -994,4 +994,4 @@ export default function MaidDashboard() {
       </div>
     </MaidDashboardLayout>
   );
-} 
+}

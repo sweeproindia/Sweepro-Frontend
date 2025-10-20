@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingService, Booking } from '@/services/bookingService';
-import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
+import { SubscriptionService, Subscription, SubscriptionPlan, MonthlySubscriptionStatus } from '@/services/subscriptionService';
 import { PaymentService, Payment } from '@/services/paymentService';
+import { MonthlySubscriptionCard } from '@/components/dashboard/MonthlySubscriptionCard';
 import { BufferService, BufferInfo, BufferPeriod } from '@/services/bufferService';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, DollarSign, Package, Users, Pause, Play } from 'lucide-react';
@@ -30,6 +31,7 @@ export default function UserDashboard() {
   } = useBufferPeriod();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [monthlySubscriptionStatus, setMonthlySubscriptionStatus] = useState<MonthlySubscriptionStatus | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
@@ -72,9 +74,10 @@ export default function UserDashboard() {
     setLoading(true);
     try {
       // Fetch all data in parallel
-      const [bookingsResponse, subscriptionResponse, paymentsResponse, plansResponse] = await Promise.allSettled([
+      const [bookingsResponse, subscriptionResponse, monthlyStatusResponse, paymentsResponse, plansResponse] = await Promise.allSettled([
         BookingService.getUserBookings(),
         SubscriptionService.getUserSubscription(),
+        SubscriptionService.getMonthlySubscriptionStatus(),
         PaymentService.getUserPayments(),
         SubscriptionService.getSubscriptionPlans()
       ]);
@@ -92,10 +95,20 @@ export default function UserDashboard() {
 
       // Handle subscription
       if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        // Backend returns subscription directly in data field (wrapped by api.ts)
-        const subscriptionData = subscriptionResponse.value.data;
-        const finalSubscription = subscriptionData?.subscription || subscriptionData || null;
-        setSubscription(finalSubscription as Subscription | null);
+        console.log('Subscription response data:', subscriptionResponse.value.data);
+        // Backend returns subscription in the 'subscription' property of the data
+        const subscriptionData = subscriptionResponse.value.data?.subscription || null;
+        setSubscription(subscriptionData);
+      }
+
+      // Handle monthly subscription status
+      if (monthlyStatusResponse.status === 'fulfilled' && monthlyStatusResponse.value.success) {
+        console.log('Monthly subscription status response data:', monthlyStatusResponse.value.data);
+        // Backend returns status in the 'data' property
+        const statusData = monthlyStatusResponse.value.data || null;
+        setMonthlySubscriptionStatus(statusData);
+      } else if (monthlyStatusResponse.status === 'rejected') {
+        console.error('Error fetching monthly subscription status:', monthlyStatusResponse.reason);
       }
 
       // Handle payments
@@ -373,6 +386,15 @@ export default function UserDashboard() {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Monthly Subscription Section */}
+        <div className="slide-up">
+          <MonthlySubscriptionCard
+            subscriptionStatus={monthlySubscriptionStatus}
+            onRefresh={fetchUserDashboardData}
+            loading={loading}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

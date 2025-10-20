@@ -1,178 +1,168 @@
-"use client";
+//HeroSection.tsx
 
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import heroImg from '@/assets/image.png';
+import { motion } from 'framer-motion';
+import { User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-// Typing effect hook
-const useTypingEffect = (text: string, speed = 80) => {
-  const [displayedText, setDisplayedText] = useState("");
-
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      setDisplayedText(text.slice(0, i + 1));
-      i++;
-      if (i === text.length) clearInterval(interval);
-    }, speed);
-
-    return () => clearInterval(interval);
-  }, [text, speed]);
-
-  return displayedText;
+const container = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.5, delayChildren: 0.3 },
+  },
 };
 
-// Counter animation hook
-const useCounter = (end: number, duration = 2000) => {
-  const [count, setCount] = useState(0);
+const framerTitle = {
+  hidden: { opacity: 0, y: 60, scale: 0.95 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 1.0 } },
+};
 
-  useEffect(() => {
-    let start = 0;
-    const increment = end / (duration / 16);
+const imageVariant = {
+  hidden: { opacity: 0, y: 50, scale: 0.9 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.9 } },
+};
 
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        setCount(end);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 16);
+const subtitleVariant = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8 } },
+};
 
-    return () => clearInterval(timer);
-  }, [end, duration]);
-
-  return count;
+const ctaVariant = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7 } },
 };
 
 export const HeroSection = () => {
-  const heading = useTypingEffect("Welcome to Sweep Pro");
-  const subHeading = useTypingEffect(
-    "Sweep Pro is your smart assistant for managing subscriptions and automating repetitive tasks. Whether it’s monthly payments, reminders, or scheduling activities, Sweep Pro takes care of it so you can focus on what matters most.",
-    10                                             
-  );
-
-  const projects = useCounter(650);
-  const clients = useCounter(99);
-  const artworks = useCounter(240);
-
-  // Split heading to highlight "Sweep Pro"
-  const highlightedHeading = heading.replace("Sweep Pro", "");
-
+  const navigate = useNavigate();
   return (
-    <section className="relative py-16 lg:py-24 overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-blue-100 pt-30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between">
-        {/* Left Content */}
-        <motion.div
-          className="flex-1 w-full lg:w-1/2 pt-8 lg:pt-0"
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1 }}
+    <section
+      className="relative min-h-screen w-full overflow-hidden pt-24 md:pt-16 pb-0 flex flex-col md:flex-row items-start"
+      style={{
+        background: 'linear-gradient(135deg, #184FA1 0%, #1e293b 40%, #60a5fa 70%, #ffffff 100%)',
+        boxShadow: '0 0 120px 0 rgba(24,79,161,0.25), 0 0 220px 0 rgba(96,165,250,0.15)'
+      }}
+    >
+      {/* Removed grid background for cleaner look */}
+
+      <motion.div
+        className="container mx-auto px-2 sm:px-4 flex flex-col md:flex-row md:items-center gap-6 md:gap-10 w-full h-full relative z-10"
+        variants={container}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* TEXT */}
+        <div
+          className="flex-1 max-w-full md:max-w-2xl flex flex-col items-center md:items-start justify-center mx-auto pt-2 pb-2 text-center md:text-left min-h-[calc(100vh-340px)] md:min-h-[50vh] md:pl-12"
         >
-          <h1 className="text-4xl lg:text-6xl font-extrabold leading-tight mb-6 h-[120px]">
-            {highlightedHeading}
-            {heading.includes("Sweep Pro") && (
-              <span className="text-transparent bg-gradient-to-r from-blue-600 to-purple-500 bg-clip-text">
-                Sweep Pro
-              </span>
-            )}
-          </h1>
-
-          <p className="text-lg text-gray-700 mb-8 h-[100px]">
-            <span className=" font-semibold">
-              {subHeading}
-            </span>
-          </p>
-
-          <div className="flex items-center gap-6 mb-20">
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg px-8 py-3 rounded-full shadow-lg font-semibold">
-              Get Started
-            </Button>
-            <a
-              href="#"
-              className="text-gray-800 text-lg font-medium flex items-center gap-2 hover:underline border-2 rounded-full px-2 py-1"
-            >
-              Learn More <span className="text-xl">↗</span>
-            </a>
-          </div>
-
-    
-          <div className="flex gap-12 mt-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {projects}+
-              </div>
-              <div className="text-gray-600 text-sm">Tasks Automated</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {clients}%
-              </div>
-              <div className="text-gray-600 text-sm">Success Rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {artworks}+
-              </div>
-              <div className="text-gray-600 text-sm">Active Schedules</div>
-            </div>
-          </div> 
-
-          {/* Extra Theme Content */}
-         
-        </motion.div>
-
-        {/* Right Content - Animated Image */}
-        <motion.div
-          className="flex-1 w-full lg:w-1/2 flex items-center justify-center relative mt-12 lg:mt-0"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2 }}
-        >
-          <motion.div
-            className="relative w-[420px] h-[420px] flex items-center justify-center"
-            animate={{ rotate: [0, 0, 0, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          <motion.h1
+            className="text-white text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 leading-snug md:leading-[1.15]"
+            variants={framerTitle}
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-gradient-radial from-blue-900 via-blue-700 to-blue-600"></div>
-              <svg
-                width="420"
-                height="420"
-                viewBox="0 0 420 420"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="absolute"
-              >
-                <circle
-                  cx="210"
-                  cy="210"
-                  r="180"
-                  stroke="#ffffff22"
-                  strokeWidth="2"
-                />
-                <circle
-                  cx="210"
-                  cy="210"
-                  r="120"
-                  stroke="#ffffff18"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
+            <span className="block text-4xl sm:text-5xl lg:text-6xl font-extrabold text-yellow-300 drop-shadow-[0_4px_24px_rgba(255,206,84,0.7)] mb-2 tracking-tight animate-gradient-sweep bg-gradient-to-r from-yellow-300 via-white to-yellow-400 bg-clip-text text-transparent">SweepPro</span>
+            <span className="block">Clean Tools. Clean Homes.</span>
+            <span className="block">Spotless Results.</span>
+          </motion.h1>
 
-            <motion.img
-              src="https://homemaidbetter.com/wp-content/uploads/2018/10/house-cleaning-1.jpg"
-              alt="Sweep Pro Automation"
-              className="relative z-10 w-[320px] h-[400px] object-cover rounded-2xl shadow-2xl "
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 1.5 }}
-            />
+          <motion.p
+            className="text-[#cbe6fa] text-sm sm:text-base md:text-xl mb-4 sm:mb-8 max-w-xs sm:max-w-xl mx-auto md:mx-0"
+            variants={subtitleVariant}
+          >
+            Quality you can trust , service you can rely on.          
+</motion.p>
+
+          <motion.div
+            className="w-full flex flex-col sm:flex-row justify-center md:justify-start items-center mt-4 sm:mt-6 gap-3 sm:gap-4"
+            variants={ctaVariant}
+          >
+            <button
+              className="flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-[#184FA1] via-[#60a5fa] to-[#1856b6] text-white font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-blue-400/40 active:scale-95 border-2 border-white ring-2 ring-blue-200 focus:outline-none focus:ring-4 focus:ring-blue-400 animate-gradient-sweep min-w-[140px] sm:min-w-[180px]"
+              onClick={() => navigate('/be-hire')}
+              style={{ letterSpacing: '1px' }}
+            >
+              <User className="w-6 h-6 sm:w-7 sm:h-7 mr-1 sm:mr-2" />
+              Be Hire
+            </button>
+            <span className="w-4 sm:w-6"></span>
+            <button
+              className="flex items-center justify-center gap-2 sm:gap-3 bg-white text-blue-700 font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-blue-400/40 active:scale-95 border-2 border-white ring-2 ring-blue-200 focus:outline-none focus:ring-4 focus:ring-blue-400 min-w-[140px] sm:min-w-[180px]"
+              onClick={() => navigate('/get-hire')}
+              style={{ letterSpacing: '1px' }}
+            >
+              <User className="w-6 h-6 sm:w-7 sm:h-7 mr-1 sm:mr-2 text-blue-700" />
+              Get Hire
+            </button>
           </motion.div>
+        </div>
+
+        {/* IMAGE */}
+        <motion.div
+          className="flex-1 w-full flex justify-center md:justify-end items-end md:items-center pb-0 relative"
+          style={{ minHeight: '0', marginTop: '0' }}
+          variants={imageVariant}
+        >
+          {/* Glow effect behind heroImg */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] sm:w-[480px] sm:h-[480px] bg-gradient-to-br from-blue-300 via-blue-100 to-purple-200 rounded-full blur-3xl opacity-60 z-0"></div>
+          <img
+            src={heroImg}
+            alt="Security Guard"
+            className="w-full max-w-[220px] sm:max-w-[420px] md:max-w-[600px] lg:max-w-[700px] object-contain object-bottom relative z-10"
+            style={{ marginBottom: '0', marginTop: '0' }}
+          />
+          {/* Floating feature cards positioned around the model, not overlapping */}
+          <div className="absolute left-0 sm:-left-8 md:-left-32 top-[28%] sm:top-1/4 animate-floating-card" style={{animationDelay: '0.2s'}}>
+            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full shadow-lg px-2 sm:px-5 py-1 sm:py-2">
+              <span className="w-6 h-6 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-600">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 20l7-7-7-7 13 7-7 7 7-7"></path></svg>
+              </span>
+              <span className="font-semibold text-gray-900 text-[10px] sm:text-base">Illustration</span>
+            </div>
+          </div>
+          <div className="absolute right-0 sm:right-[-40px] md:right-[-120px] top-1/2 animate-floating-card" style={{animationDelay: '0.5s'}}>
+            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full shadow-lg px-2 sm:px-5 py-1 sm:py-2">
+              <span className="w-6 h-6 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-600">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7-7-7-7 7 7 7z"></path></svg>
+              </span>
+              <span className="font-semibold text-gray text-[10px] sm:text-base">Graphic Design</span>
+            </div>
+          </div>
+          <div className="absolute right-0 md:right-[-80px] top-[18%] md:top-[16%] animate-floating-card" style={{animationDelay: '0.8s'}}>
+            <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-full shadow-lg px-2 sm:px-5 py-1 sm:py-2">
+              <span className="w-6 h-6 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-600">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14.2 18.5 21 12 17.8 5.5 21 7 14.2 2 9.3 9 8.5 12 2"></polygon></svg>
+              </span>
+              <span className="font-semibold text-gray-900 text-[10px] sm:text-base">Creative Branding</span>
+            </div>
+          </div>
         </motion.div>
-      </div>
+      </motion.div>
+
+      <style>{`
+        @keyframes floating-cleaning-item {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-18px); }
+          100% { transform: translateY(0); }
+        }
+        .floating-cleaning-item {
+          animation: floating-cleaning-item 3.5s ease-in-out infinite;
+        }
+        @keyframes gradient-sweep {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-gradient-sweep {
+          background-size: 200% 200%;
+          animation: gradient-sweep 3s ease-in-out infinite;
+        }
+        @keyframes floating-card {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-16px); }
+        }
+        .animate-floating-card {
+          animation: floating-card 3.2s ease-in-out infinite;
+        }
+      `}</style>
     </section>
   );
 };

@@ -1,3 +1,6 @@
+//FAQSection.tsx
+
+
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useState } from 'react';
 

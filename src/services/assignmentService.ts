@@ -1,4 +1,4 @@
-import { apiRequest, HttpMethod, ApiResponse } from './api';
+import { apiRequest, HttpMethod, ApiResponse, API_ENDPOINTS } from './api';
 
 // Assignment interfaces
 export interface AssignmentRequest {
@@ -107,7 +107,7 @@ class AssignmentService {
   // Get pending assignments for a maid
   async getPendingAssignments(): Promise<ApiResponse<AssignmentRequest[]>> {
     try {
-      return await apiRequest<AssignmentRequest[]>('/assignments/pending', {
+      return await apiRequest<AssignmentRequest[]>(API_ENDPOINTS.ASSIGNMENTS.PENDING, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -120,7 +120,7 @@ class AssignmentService {
   // Get all assignments for a maid
   async getMyAssignments(): Promise<ApiResponse<AssignmentRequest[]>> {
     try {
-      return await apiRequest<AssignmentRequest[]>('/assignments/my-assignments', {
+      return await apiRequest<AssignmentRequest[]>(API_ENDPOINTS.ASSIGNMENTS.MY_ASSIGNMENTS, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -246,7 +246,7 @@ class AssignmentService {
     expiresIn?: number;
   }): Promise<ApiResponse<AssignmentRequest>> {
     try {
-      return await apiRequest('/assignments/admin/send-assignment-request', {
+      return await apiRequest(API_ENDPOINTS.ASSIGNMENTS.SEND_ASSIGNMENT_REQUEST, {
         method: HttpMethod.POST,
         body: data,
         requiresAuth: true
@@ -260,7 +260,7 @@ class AssignmentService {
   // Get pending assignment bookings (admin)
   async getPendingAssignmentBookings(): Promise<ApiResponse<BookingForAssignment[]>> {
     try {
-      return await apiRequest('/assignments/admin/pending-assignments', {
+      return await apiRequest(API_ENDPOINTS.ASSIGNMENTS.PENDING_ASSIGNMENTS, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -273,7 +273,7 @@ class AssignmentService {
   // Get assigned bookings (admin)
   async getAssignedBookings(): Promise<ApiResponse<BookingForAssignment[]>> {
     try {
-      return await apiRequest('/assignments/admin/assigned-bookings', {
+      return await apiRequest(API_ENDPOINTS.ASSIGNMENTS.ASSIGNED_BOOKINGS, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -286,7 +286,7 @@ class AssignmentService {
   // Get reassignment bookings (admin)
   async getReassignmentBookings(): Promise<ApiResponse<BookingForAssignment[]>> {
     try {
-      return await apiRequest('/assignments/admin/reassignment-bookings', {
+      return await apiRequest(API_ENDPOINTS.ASSIGNMENTS.REASSIGNMENT_BOOKINGS, {
         method: HttpMethod.GET,
         requiresAuth: true
       });

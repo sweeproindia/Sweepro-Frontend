@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, CreditCard, MessageCircle, LogOut, User, Settings, Clock, Star, Shield, Zap } from 'lucide-react';
+import { Home, Calendar, CreditCard, Receipt, Users, Shield, BarChart3, Package, LogOut, Sparkles, Clock, Settings, Pause, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
@@ -7,63 +7,73 @@ import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-si
 import { useState } from 'react';
 import { motion } from 'motion/react';
 
-interface MaidDashboardSidebarProps {
+interface AdminDashboardSidebarProps {
   open?: boolean;
   setOpen?: (open: boolean) => void;
   forceOpen?: boolean;
-  upcomingBookingsCount?: number;
+  pendingBookingsCount?: number;
 }
 
-const maidNavigationItems = [
+const adminNavigationItems = [
   { 
-    name: 'Dashboard', 
-    href: '/maid-dashboard', 
+    name: 'Overview', 
+    href: '/admin#overview', 
     icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
-    name: 'My Assignments', 
-    href: '/maid-bookings', 
-    icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+    name: 'Bookings', 
+    href: '/admin#bookings', 
+    icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  },
+  { 
+    name: 'Pending', 
+    href: '/admin#pending-bookings', 
+    icon: <Clock className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     showBadge: true
   },
   { 
-    name: 'Auto Requests', 
-    href: '/maid-auto-requests', 
-    icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+    name: 'Users', 
+    href: '/admin#users', 
+    icon: <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
-    name: 'Availability', 
-    href: '/maid-availability', 
-    icon: <Clock className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
-  },
-  { 
-    name: 'Earnings', 
-    href: '/maid-earnings', 
-    icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
-  },
-  { 
-    name: 'Ratings', 
-    href: '/maid-ratings', 
-    icon: <Star className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
-  },
-  { 
-    name: 'Support', 
-    href: '/maid-support', 
-    icon: <MessageCircle className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
-  },
-  { 
-    name: 'Verification', 
-    href: '/maid-verification', 
+    name: 'Maids', 
+    href: '/admin#maids', 
     icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
-    name: 'Profile', 
-    href: '/profile', 
-    icon: <User className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+    name: 'Maid Verification', 
+    href: '/admin#maid-verification', 
+    icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  },
+  { 
+    name: 'Subscriptions', 
+    href: '/admin#subscriptions', 
+    icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  },
+  { 
+    name: 'Buffer Management', 
+    href: '/admin#buffer-management', 
+    icon: <Pause className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  },
+  { 
+    name: 'Auto Assignments', 
+    href: '/admin#automatic-assignments', 
+    icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  },
+  { 
+    name: 'Payments', 
+    href: '/admin#payments', 
+    icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  },
+  { 
+    name: 'Plans', 
+    href: '/admin#plans', 
+    icon: <Settings className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
 ];
 
-export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBookingsCount = 0 }: MaidDashboardSidebarProps) => {
+export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBookingsCount = 0 }: AdminDashboardSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useUser();
@@ -78,11 +88,11 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
     navigate('/');
   };
 
-  const links = maidNavigationItems.map(item => ({
+  const links = adminNavigationItems.map(item => ({
     label: item.name,
     href: item.href,
     icon: item.icon,
-    badge: item.showBadge && upcomingBookingsCount > 0 ? upcomingBookingsCount : undefined,
+    badge: item.showBadge && pendingBookingsCount > 0 ? pendingBookingsCount : undefined,
   }));
 
   // If forceOpen is true, always pass true to the Sidebar component
@@ -99,8 +109,8 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
                 <SidebarLink link={link} />
                 {link.badge && sidebarOpen && (
                   <Badge 
-                    variant="default" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 bg-green-500"
+                    variant="destructive" 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5"
                   >
                     {link.badge}
                   </Badge>
@@ -120,7 +130,7 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
                   className="p-4 border-t border-neutral-200 dark:border-neutral-700"
                 >
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-orange-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-medium">
                         {user.name.charAt(0).toUpperCase()}
                       </span>
@@ -141,8 +151,8 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
                     >
                       {user.status?.charAt(0).toUpperCase() + user.status?.slice(1)}
                     </Badge>
-                    <Badge variant="secondary" className="ml-2 text-xs bg-green-500">
-                      Maid
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      Admin
                     </Badge>
                   </div>
                 </motion.div>

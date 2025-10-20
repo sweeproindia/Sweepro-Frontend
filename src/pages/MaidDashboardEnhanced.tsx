@@ -12,6 +12,7 @@ import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, Messa
 import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidBookingRequestsSection } from '@/components/dashboard/MaidBookingRequestsSection';
+import { MaidAssignmentRequestsSection } from '@/components/dashboard/MaidAssignmentRequestsSection';
 
 // Service interface to match backend
 interface Service {
@@ -411,7 +412,7 @@ export default function MaidDashboardEnhanced() {
         </div>
 
         {/* Assignment Requests Section - Prominently displayed for verified maids */}
-        {isVerified && (
+        {/* {isVerified && (
           <div className="slide-up">
             <Card className="dashboard-card border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50 dark:to-blue-950/20">
               <CardHeader>
@@ -435,7 +436,32 @@ export default function MaidDashboardEnhanced() {
               </CardContent>
             </Card>
           </div>
-        )}
+        )} */}
+
+        {/* Customer Assignment Requests Section */}
+        <div className="mb-8">
+          <Card className="dashboard-card slide-up">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <User className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Customer Assignment Requests</CardTitle>
+                    <CardDescription>New customer assignment requests waiting for your response</CardDescription>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-600">
+                  New
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <MaidAssignmentRequestsSection onRefresh={fetchMaidDashboardData} />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Recent Bookings and Quick Actions Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,3 +1,5 @@
+//TestimonalsSection
+
 import React from 'react';
 
 interface Testimonial {
@@ -61,51 +63,84 @@ const testimonials: Testimonial[] = [
 ];
 
 const TestimonialCard: React.FC<{ testimonial: Testimonial; isEven: boolean }> = ({ testimonial, isEven }) => (
-  <div className={`rounded-2xl p-8 transition-all duration-300 ease-in-out mb-4 hover:scale-105 hover:-rotate-1 hover:shadow-xl hover:z-10 ${
+  <div className={`rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-300 ease-in-out mb-4 hover:scale-105 hover:-rotate-1 hover:shadow-xl hover:z-10 ${
     isEven 
       ? 'bg-[#1455FD] text-white' 
       : 'bg-[#F5F5F5] text-gray-800'
   }`}>
-    <div className="flex items-center mb-4">
+    <div className="flex items-center mb-3 sm:mb-4">
       <img 
         src={testimonial.avatar} 
         alt={testimonial.name} 
-        className="w-15 h-15 rounded-full mr-4 object-cover border-2 border-white/20"
+        className="w-12 h-12 sm:w-14 sm:h-14 md:w-15 md:h-15 rounded-full mr-3 sm:mr-4 object-cover border-2 border-white/20"
       />
       <div>
-        <h3 className="text-xl font-semibold mb-1">{testimonial.name}</h3>
-        <p className="text-sm opacity-90">{testimonial.role}</p>
+        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-1">{testimonial.name}</h3>
+        <p className="text-xs sm:text-sm opacity-90">{testimonial.role}</p>
       </div>
     </div>
-    <div className="flex gap-1 mb-4 text-[#FFB800]">
+    <div className="flex gap-1 mb-3 sm:mb-4 text-[#FFB800] text-sm sm:text-base">
       {[...Array(testimonial.rating)].map((_, i) => (
         <span key={i}>★</span>
       ))}
     </div>
-    <p className="text-base leading-relaxed">{testimonial.content}</p>
+    <p className="text-sm sm:text-base leading-relaxed">{testimonial.content}</p>
   </div>
 );
 
-export const TestimonialsSection: React.FC = () => {
+export default function TestimonialsSection() {
   // Double the testimonials array for continuous scrolling
   const doubledTestimonials = [...testimonials, ...testimonials];
 
   return (
-    <div id="testimonials" className="py-16 px-8 bg-white overflow-hidden">
-      <div className="max-w-7xl mx-auto mb-12 flex justify-between items-start md:flex-row flex-col md:items-start items-center md:text-left text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-black max-w-lg leading-tight">
+    <div id="testimonials" className="py-12 sm:py-16 px-4 sm:px-6 md:px-8 bg-white overflow-hidden">
+      <style>{`
+        @keyframes scrollUp {
+          0% {
+            transform: translateY(0);
+          }
+          100% {
+            transform: translateY(-50%);
+          }
+        }
+        
+        @keyframes scrollDown {
+          0% {
+            transform: translateY(-50%);
+          }
+          100% {
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-scroll-up {
+          animation: scrollUp 40s linear infinite;
+        }
+        
+        .animate-scroll-down {
+          animation: scrollDown 40s linear infinite;
+        }
+        
+        .animate-scroll-up:hover,
+        .animate-scroll-down:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto mb-8 sm:mb-12 flex justify-between items-start md:flex-row flex-col md:items-start items-center md:text-left text-center gap-6 md:gap-0">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-black max-w-lg leading-tight">
           They Satisfied With Our Service
         </h1>
-        <div className="md:text-right text-center md:mt-0 mt-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1455FD] mb-2 md:mr-40 mr-0">Testimonials</h2>
-          <p className="text-gray-600">"Have many related needs, we present a suitable package for you needs"</p>
+        <div className="md:text-right text-center">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1455FD] mb-2">Testimonials</h2>
+          <p className="text-sm sm:text-base text-gray-600 max-w-xs mx-auto md:mx-0">"Have many related needs, we present a suitable package for you needs"</p>
         </div>
       </div>
 
-      <div className="flex gap-4 md:gap-8 max-w-7xl mx-auto h-[400px] md:h-[600px] overflow-hidden">
+      <div className="flex gap-4 md:gap-8 max-w-7xl mx-auto h-[500px] md:h-[600px] overflow-hidden">
         {/* Column 1 - Scroll Up */}
         <div className="flex-1 relative h-full overflow-hidden">
-          <div className="animate-scroll-up flex flex-col gap-4 hover:pause">
+          <div className="animate-scroll-up flex flex-col gap-4">
             {doubledTestimonials.map((testimonial, index) => (
               <TestimonialCard 
                 key={`col1-${testimonial.id}-${index}`} 
@@ -116,9 +151,9 @@ export const TestimonialsSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Column 2 - Scroll Down */}
-        <div className="flex-1 relative h-full overflow-hidden">
-          <div className="animate-scroll-down flex flex-col gap-4 hover:pause">
+        {/* Column 2 - Scroll Down (Hidden on mobile) */}
+        <div className="hidden sm:flex flex-1 relative h-full overflow-hidden">
+          <div className="animate-scroll-down flex flex-col gap-4 w-full">
             {doubledTestimonials.slice().reverse().map((testimonial, index) => (
               <TestimonialCard 
                 key={`col2-${testimonial.id}-${index}`} 
@@ -129,9 +164,9 @@ export const TestimonialsSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Column 3 - Scroll Up */}
-        <div className="flex-1 relative h-full overflow-hidden">
-          <div className="animate-scroll-up flex flex-col gap-4 hover:pause">
+        {/* Column 3 - Scroll Up (Hidden on mobile and tablet) */}
+        <div className="hidden lg:flex flex-1 relative h-full overflow-hidden">
+          <div className="animate-scroll-up flex flex-col gap-4 w-full">
             {[...doubledTestimonials].slice(3).map((testimonial, index) => (
               <TestimonialCard 
                 key={`col3-${testimonial.id}-${index}`} 
@@ -144,4 +179,4 @@ export const TestimonialsSection: React.FC = () => {
       </div>
     </div>
   );
-}; 
+}

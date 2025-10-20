@@ -1,5 +1,5 @@
 // API Configuration - Use proxy in development, direct URL in production
-export const API_BASE_URL ='http://localhost:3000/api';
+export const API_BASE_URL = import.meta.env.DEV ? '/api' : 'http://localhost:3000/api';
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -36,9 +36,19 @@ export const API_ENDPOINTS = {
     SUBSCRIBE: '/subscriptions/subscribe',
     MY_SUBSCRIPTION: '/subscriptions/my-subscription',
     STATUS: '/subscriptions/status',
-    CONFIRM_SERVICE: '/subscriptions/confirm-service',
+    MONTHLY_STATUS: '/subscriptions/monthly-status',
+    BUFFER_START: '/subscriptions/buffer/start',
+    BUFFER_END: '/subscriptions/buffer/end',
     COMPLETE_PAYMENT: '/subscriptions/complete-payment',
     CANCEL: '/subscriptions/cancel',
+  },
+  // Dashboard
+  DASHBOARD: {
+    MAIN: '/dashboard/dashboard',
+    CALENDAR: '/dashboard/calendar',
+    BUFFER_HISTORY: '/dashboard/buffer-history',
+    CYCLE_HISTORY: '/dashboard/cycle-history',
+    PREFERENCES: '/dashboard/preferences',
   },
   // Payments
   PAYMENTS: {
@@ -84,6 +94,62 @@ export const API_ENDPOINTS = {
     REASSIGNMENT_BOOKINGS: '/assignments/admin/reassignment-bookings',
     AVAILABLE_MAIDS: '/assignments/admin/available-maids/:bookingId',
     SEND_ASSIGNMENT_REQUEST: '/assignments/admin/send-assignment-request',
+  },
+  // Buffer Management
+  BUFFER: {
+    REMAINING: '/buffer/remaining',
+    REQUEST: '/buffer/request',
+    HISTORY: '/buffer/history',
+    ADMIN: {
+      PENDING: '/buffer/admin/pending',
+      APPROVE: '/buffer/admin/approve',
+      REJECT: '/buffer/admin/reject',
+      ALL: '/buffer/admin/all',
+      STATISTICS: '/buffer/admin/statistics',
+      AFFECTED_SERVICES: '/buffer/admin/affected-services',
+    }
+  },
+  // Customer-Maid Assignments
+  CUSTOMER_ASSIGNMENTS: {
+    ASSIGN_MAID: '/admin/customer-assignments/assign',
+    GET_ASSIGNMENT: '/admin/customer-assignments/:customerId',
+    UPDATE_ASSIGNMENT: '/admin/customer-assignments/:customerId/update',
+    GET_ALL: '/admin/customer-assignments',
+    GET_CUSTOMER_STATUS: '/admin/customer-assignments/status/:customerId',
+    // Assignment request endpoints
+    GET_MAID_REQUESTS: '/admin/customer-assignments/requests/maid',
+    ACCEPT_REQUEST: '/admin/customer-assignments/requests/:requestId/accept',
+    REJECT_REQUEST: '/admin/customer-assignments/requests/:requestId/reject',
+    GET_ALL_REQUESTS: '/admin/customer-assignments/requests/all',
+  },
+  // Automatic Bookings
+  AUTOMATIC_BOOKINGS: {
+    // Admin endpoints
+    GET_ALL: '/admin/automatic-bookings',
+    PENDING_ASSIGNMENT: '/admin/automatic-bookings/pending-assignment',
+    REASSIGNMENT: '/admin/automatic-bookings/reassignment',
+    SEND_TO_MAID: '/admin/automatic-bookings/:bookingId/send-to-maid',
+    REASSIGN: '/admin/automatic-bookings/:bookingId/reassign',
+    SCHEDULE_OVERVIEW: '/admin/automatic-bookings/schedule-overview',
+    PAUSE: '/admin/automatic-bookings/:customerId/pause',
+    RESUME: '/admin/automatic-bookings/:customerId/resume',
+    SETTINGS: '/admin/automatic-bookings/settings/:customerId',
+    // Customer endpoints
+    MY_UPCOMING: '/automatic-bookings/my-upcoming',
+    MY_ASSIGNMENTS: '/automatic-bookings/my-assignments',
+    ACCEPT: '/automatic-bookings/:bookingId/accept',
+    REJECT: '/automatic-bookings/:bookingId/reject',
+    CANCEL: '/automatic-bookings/:bookingId/cancel',
+    GET_SETTINGS: '/automatic-bookings/settings/:customerId',
+  },
+  // Automatic Assignments
+  AUTOMATIC_ASSIGNMENTS: {
+    // Admin endpoints
+    PROCESS: '/automatic-assignments/process',
+    UPCOMING: '/automatic-assignments/upcoming',
+    STATISTICS: '/automatic-assignments/statistics',
+    CUSTOMER_TIMESLOTS: '/automatic-assignments/customer-timeslots',
+    TEST_TIMESLOT: '/automatic-assignments/test-timeslot',
   }
 };
 

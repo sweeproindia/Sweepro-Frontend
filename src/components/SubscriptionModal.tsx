@@ -36,13 +36,30 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     setStep('payment');
   };
 
-  const handlePaymentComplete = () => {
-    // In a real app, this would update the user's subscription
-    onSubscriptionComplete();
-    onClose();
-    setStep('plans');
-    setSelectedPlan(null);
-    setUserProfile(null);
+    const handlePaymentComplete = async () => {
+      if (!selectedPlan) return;
+      try {
+        // Call backend to save subscription
+        const subscribeData = {
+          planId: selectedPlan.id,
+          paymentMethod: 'CARD', // or get from payment form
+          autoRenewal: true,
+          startDate: new Date().toISOString(),
+          // Optionally include userProfile fields if backend expects them
+        };
+        // You may want to merge userProfile data if needed
+        await import('@/services/subscriptionService').then(({ SubscriptionService }) =>
+          SubscriptionService.subscribeToPlan(subscribeData)
+        );
+        onSubscriptionComplete();
+        onClose();
+        setStep('plans');
+        setSelectedPlan(null);
+        setUserProfile(null);
+      } catch (error) {
+        // Handle error (show toast, etc.)
+        console.error('Subscription save failed:', error);
+      }
   };
 
   const getModalTitle = () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -31,7 +31,10 @@ import {
   User,
   LogOut,
   MessageCircle,
-  Pause
+  Pause,
+  Menu,
+  Sparkles,
+  X
 } from 'lucide-react';
 import { BookingService, Booking } from '../services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '../services/subscriptionService';
@@ -42,11 +45,15 @@ import { Link } from 'react-router-dom';
 import EditPlanDialog from '../components/admin/EditPlanDialog';
 import EditUserDialog from '../components/admin/EditUserDialog';
 import { AdminMaidVerificationSection } from '../components/dashboard/AdminMaidVerificationSection';
-import { AdminBufferDaysSection } from '../components/dashboard/AdminBufferDaysSection';
-import { AdminPendingAssignmentsSection } from '../components/dashboard/AdminPendingAssignmentsSection';
-import { AdminAssignedBookingsSection } from '../components/dashboard/AdminAssignedBookingsSection';
-import { AdminReassignmentSection } from '../components/dashboard/AdminReassignmentSection';
-
+import { AdminBufferManagementSection } from '../components/dashboard/AdminBufferManagementSection';
+import { AdminUsersSection } from '../components/dashboard/AdminUsersSection';
+import { AdminMaidsSection } from '../components/dashboard/AdminMaidsSection';
+import { AdminAutomaticAssignmentsSection } from '../components/dashboard/AdminAutomaticAssignmentsSection';
+import { EnhancedAdminBookingsSection } from '../components/dashboard/AdminBookingsSection';
+import { AdminSubscriptionsSection } from '../components/dashboard/AdminSubscriptionsSection';
+import { AdminPaymentsSection } from '../components/dashboard/AdminPaymentsSection';
+import { AdminAutomaticBookingsSection } from '../components/dashboard/AdminAutomaticBookingsSection';
+import { AdminDashboardSidebar } from './AdminDashboardSidebar';
 
 // User interface from backend
 interface User {
@@ -74,15 +81,30 @@ interface Maid {
   user: User;
 }
 
+interface Notification {
+  id: number;
+  type: 'admin' | 'user' | 'maid';
+  title: string;
+  message: string;
+  time: string;
+  unread: boolean;
+}
+
 export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useUser();
+  
+  // State for mobile sidebar and notifications
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
   const [activeSection, setActiveSection] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'pending-assignments', 'assigned-bookings', 'reassignments', 'users', 'maids', 'maid-verification', 'subscriptions', 'payments', 'plans', 'buffer-days', 'cors-test'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'automatic-assignments', 'payments', 'plans'].includes(hash)) {
       return hash;
     }
     return 'overview';
@@ -248,15 +270,63 @@ export default function AdminDashboard() {
   ]);
   
   // Admin notifications
-  const notifications = [
-    { id: 1, title: 'New Booking Pending', message: 'A new booking requires maid assignment', time: '5 minutes ago', unread: true },
-    { id: 2, title: 'Payment Received', message: '₹1,200 payment received from customer', time: '1 hour ago', unread: true },
-    { id: 3, title: 'Maid Registration', message: 'New maid registration awaiting approval', time: '2 hours ago', unread: false },
+  const notifications: Notification[] = [
+    { id: 1, type: 'user', title: 'New Booking Pending', message: 'A new booking requires maid assignment', time: '5 minutes ago', unread: true },
+    { id: 2, type: 'admin', title: 'Payment Received', message: '₹1,200 payment received from customer', time: '1 hour ago', unread: true },
+    { id: 3, type: 'maid', title: 'Maid Registration', message: 'New maid registration awaiting approval', time: '2 hours ago', unread: false },
+    { id: 4, type: 'user', title: 'Service Reminder', message: "Don't forget your scheduled cleaning service tomorrow", time: '1 day ago', unread: false },
+    { id: 5, type: 'admin', title: 'System Update', message: 'System maintenance scheduled for tonight', time: '2 days ago', unread: false },
   ];
+
+  const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
+
+  const openAllNotifications = () => {
+    setShowAllNotifications(true);
+    setIsNotificationOpen(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    if (isNotificationOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isNotificationOpen]);
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'admin':
+        return <Shield className="h-4 w-4 text-blue-600" />;
+      case 'user':
+        return <User className="h-4 w-4 text-green-600" />;
+      case 'maid':
+        return <MessageCircle className="h-4 w-4 text-orange-600" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'admin':
+        return 'border-l-blue-500 bg-blue-50';
+      case 'user':
+        return 'border-l-green-500 bg-green-50';
+      case 'maid':
+        return 'border-l-orange-500 bg-orange-50';
+      default:
+        return 'border-l-gray-500 bg-gray-50';
+    }
+  };
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'pending-assignments', 'assigned-bookings', 'reassignments', 'users', 'maids', 'maid-verification', 'subscriptions', 'payments', 'plans', 'buffer-days'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'payments', 'plans'].includes(hash)) {
       setActiveSection(hash);
     }
   }, [location.hash]);
@@ -515,6 +585,15 @@ export default function AdminDashboard() {
     fetchAdminData(); // Refresh data
   };
 
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of your account.",
+    });
+    navigate('/');
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen bg-background items-center justify-center">
@@ -527,1088 +606,570 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar Navigation */}
-      <div className="w-64 bg-card border-r border-border flex flex-col">
-        <div className="p-6 border-b border-border">
-          <h2 className="text-xl font-bold text-foreground">Admin Panel</h2>
-          <p className="text-sm text-muted-foreground mt-1">Management Console</p>
-        </div>
-        
-        <nav className="flex-1 p-4 space-y-2">
-          <button
-            onClick={() => handleSectionChange('overview')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'overview'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Home className="h-4 w-4" />
-            Overview
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('bookings')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'bookings'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Calendar className="h-4 w-4" />
-            Bookings
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('pending-bookings')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'pending-bookings'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Clock className="h-4 w-4" />
-            Pending
-            {analyticsData.pendingBookings > 0 && (
-              <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0.5">
-                {analyticsData.pendingBookings}
-              </Badge>
-            )}
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('pending-assignments')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'pending-assignments'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <UserCheck className="h-4 w-4" />
-            Pending Assignments
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('assigned-bookings')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'assigned-bookings'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <UserCheck className="h-4 w-4" />
-            Assigned Bookings
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('reassignments')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'reassignments'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <AlertCircle className="h-4 w-4" />
-            Reassignments
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('users')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'users'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Users className="h-4 w-4" />
-            Users
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('maids')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'maids'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <UserCog className="h-4 w-4" />
-            Maids
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('maid-verification')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'maid-verification'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Shield className="h-4 w-4" />
-            Maid Verification
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('subscriptions')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'subscriptions'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Package className="h-4 w-4" />
-            Subscriptions
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('payments')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'payments'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <CreditCard className="h-4 w-4" />
-            Payments
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('plans')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'plans'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Settings className="h-4 w-4" />
-            Plans
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('buffer-days')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'buffer-days'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Pause className="h-4 w-4" />
-            Buffer Days
-          </button>
-          
-          <button
-            onClick={() => handleSectionChange('cors-test')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-              activeSection === 'cors-test'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Settings className="h-4 w-4" />
-            CORS Test
-          </button>
-        </nav>
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+  {/* Top Navigation - Inspired by customer dashboard */}
+  <div className="relative z-10 flex-shrink-0 flex h-16 bg-card border-b border-border shadow-sm">
+    <div className="flex-1 px-4 flex justify-between items-center">
+      {/* Left side: Logo */}
+      <div className="flex items-center space-x-4">
+        {/* Logo in Navbar */}
+        <Link to="/admin" className="flex items-center space-x-2">
+          <div className="bg-gradient-to-r from-red-500 to-orange-600 rounded-lg p-2">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+          <span className="font-bold text-xl">SweepPro Admin</span>
+        </Link>
       </div>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Admin Header */}
-        <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
-          <div className="fade-in">
-            <h1 className="text-2xl font-bold text-foreground">
-              {activeSection === 'overview' && 'Dashboard Overview'}
-              {activeSection === 'bookings' && 'All Bookings'}
-              {activeSection === 'pending-bookings' && 'Pending Bookings'}
-              {activeSection === 'pending-assignments' && 'Pending Assignments'}
-              {activeSection === 'assigned-bookings' && 'Assigned Bookings'}
-              {activeSection === 'reassignments' && 'Reassignment Management'}
-              {activeSection === 'users' && 'User Management'}
-              {activeSection === 'maids' && 'Maid Management'}
-              {activeSection === 'maid-verification' && 'Maid Verification'}
-              {activeSection === 'subscriptions' && 'Subscriptions'}
-              {activeSection === 'payments' && 'Payment Management'}
-              {activeSection === 'plans' && 'Subscription Plans'}
-              {activeSection === 'buffer-days' && 'Buffer Days Management'}
-              {activeSection === 'cors-test' && 'CORS Configuration Test'}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
-              {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
-              {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
-              {activeSection === 'pending-assignments' && 'Assign verified maids to customer bookings'}
-              {activeSection === 'assigned-bookings' && 'Track bookings assigned to maids and their responses'}
-              {activeSection === 'reassignments' && 'Manage bookings that need reassignment after rejection'}
-              {activeSection === 'users' && 'Manage customer accounts and profiles'}
-              {activeSection === 'maids' && 'Manage service providers and performance'}
-              {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
-              {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
-              {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
-              {activeSection === 'plans' && 'Manage available service plans and pricing'}
-              {activeSection === 'buffer-days' && 'Manage customer buffer day requests and service pauses'}
-              {activeSection === 'cors-test' && 'Test and debug CORS configuration between frontend and backend'}
-            </p>
-          </div>
-          
-          {/* Header Actions */}
-          <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={fetchAdminData}
-              className="mr-2"
-            >
-              Refresh
-            </Button>
-            <div className="relative">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setIsNotificationOpen(!isNotificationOpen)} 
-                className="relative"
-              >
-                <Bell className="h-5 w-5" />
-                {notifications.filter(n => n.unread).length > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {notifications.filter(n => n.unread).length}
-                  </span>
-                )}
-              </Button>
-              
-              {isNotificationOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-card rounded-lg shadow-lg border border-border z-50 max-h-96 overflow-y-auto">
-                  <div className="p-4 border-b border-border">
-                    <h3 className="text-lg font-semibold text-foreground">Admin Notifications</h3>
-                    <p className="text-sm text-muted-foreground">{notifications.filter(n => n.unread).length} unread</p>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {notifications.map((notification) => (
-                      <div key={notification.id} className={`p-4 hover:bg-muted transition-colors ${
-                        notification.unread ? 'bg-blue-50 dark:bg-blue-950/20' : ''
-                      }`}>
-                        <div className="flex items-start space-x-3">
-                          <AlertCircle className="h-4 w-4 text-orange-500 mt-1" />
-                          <div className="flex-1">
-                            <p className={`text-sm font-medium ${
-                              notification.unread ? 'text-foreground' : 'text-muted-foreground'
-                            }`}>
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                            <p className="text-xs text-muted-foreground mt-2">{notification.time}</p>
-                          </div>
-                          {notification.unread && <span className="h-2 w-2 bg-blue-500 rounded-full mt-2"></span>}
+
+      {/* Right side: Notifications, Refresh, Profile and Mobile Menu */}
+      <div className="flex items-center space-x-4">
+        {/* Notifications */}
+        <div className="relative" ref={notificationRef}>
+          <Button variant="ghost" size="sm" onClick={toggleNotification} className="relative">
+            <Bell className="h-5 w-5" />
+            {notifications.filter((n) => n.unread).length > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                {notifications.filter((n) => n.unread).length}
+              </span>
+            )}
+          </Button>
+
+          {isNotificationOpen && (
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Admin Notifications</h3>
+                <p className="text-sm text-gray-600">{notifications.filter((n) => n.unread).length} unread messages</p>
+              </div>
+
+              <div className="divide-y divide-gray-100">
+                {notifications.slice(0, 5).map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer border-l-4 ${getNotificationColor(notification.type)} ${
+                      notification.unread ? 'bg-blue-50' : ''
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className={`text-sm font-medium ${notification.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                            {notification.title}
+                          </p>
+                          {notification.unread && <span className="h-2 w-2 bg-blue-500 rounded-full"></span>}
                         </div>
+                        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                        <p className="text-xs text-gray-400 mt-2">{notification.time}</p>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
+
+              <div className="p-4 border-t border-gray-200">
+                <button onClick={openAllNotifications} className="w-full text-sm text-primary hover:text-primary/80 font-medium">
+                  View All Notifications
+                </button>
+              </div>
             </div>
-            
-            {/* Profile Menu */}
-            <div className="flex items-center space-x-2">
-              <Link to="/profile">
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                  <User className="h-5 w-5" />
-                  <span className="hidden md:block text-sm font-medium">
-                    {user?.name || 'Admin'}
-                  </span>
-                </Button>
-              </Link>
-              <Link to="/">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={logout}
-                className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden md:block text-sm">Logout</span>
-              </Button>
-                </Link>  
-            </div>
-          </div>
+          )}
+        </div>
+
+        {/* Refresh Button - Hidden on Mobile */}
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={fetchAdminData}
+          className="hidden md:flex"
+        >
+          Refresh
+        </Button>
+
+        {/* Profile - Desktop Only */}
+        <div className="hidden md:flex items-center space-x-2">
+          <Link to="/profile">
+            <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+              <User className="h-5 w-5" />
+              <span className="text-sm font-medium">
+                {user?.name || 'Admin'}
+              </span>
+            </Button>
+          </Link>
+         
+        </div>
+
+        {/* Hamburger Menu - Mobile Only (Now on right side) */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="md:hidden"
+          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
+  </div>
+
+      {/* Main content area with sidebar and page content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar - Desktop (always visible) */}
+        <div className="hidden md:block">
+          <AdminDashboardSidebar pendingBookingsCount={analyticsData.pendingBookings} />
         </div>
         
-        <div className="flex-1 overflow-auto p-6">
-          <div className="space-y-6">
-
-          {/* Overview Section */}
-          {activeSection === 'overview' && (
-            <>
-            {/* Analytics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="dashboard-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {analyticsData.pendingBookings} pending approval
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="dashboard-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {analyticsData.totalMaids} service providers
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="dashboard-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {analyticsData.completedPayments} completed payments
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="dashboard-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analyticsData.activeSubscriptions}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {subscriptions.length} total subscriptions
-                  </p>
-                </CardContent>
-              </Card>
+        {/* Mobile Sidebar (controlled by navbar hamburger) */}
+        {isMobileSidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            />
+            
+            {/* Sidebar */}
+            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+              <AdminDashboardSidebar open={true} setOpen={setIsMobileSidebarOpen} forceOpen={true} pendingBookingsCount={analyticsData.pendingBookings} />
             </div>
+          </>
+        )}
 
-            {/* Recent Activities */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      Latest Pending Bookings
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleSectionChange('pending-bookings')}
-                    >
-                      View All
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {pendingBookings.slice(0, 2).map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{booking.service?.name || 'Service'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {booking.customer?.name || 'Customer'}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
-                            {new Date(booking.scheduledAt).toLocaleDateString()}
-                          </p>
-                          <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                            Pending
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                    {pendingBookings.length === 0 && (
-                      <p className="text-center text-muted-foreground py-4">No pending bookings</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+        {/* Page content */}
+        <main className="flex-1 relative overflow-y-auto focus:outline-none">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Page Header */}
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-foreground">
+                  {activeSection === 'overview' && 'Dashboard Overview'}
+                  {activeSection === 'bookings' && 'All Bookings'}
+                  {activeSection === 'pending-bookings' && 'Pending Bookings'}
+                  {activeSection === 'users' && 'User Management'}
+                  {activeSection === 'maids' && 'Maid Management'}
+                  {activeSection === 'maid-verification' && 'Maid Verification'}
+                  {activeSection === 'subscriptions' && 'Subscriptions'}
+                  {activeSection === 'buffer-management' && 'Buffer Period Management'}
+                  {activeSection === 'automatic-assignments' && 'Automatic Assignment System'}
+                  {activeSection === 'payments' && 'Payment Management'}
+                  {activeSection === 'plans' && 'Subscription Plans'}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
+                  {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
+                  {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
+                  {activeSection === 'users' && 'Manage customer accounts and profiles'}
+                  {activeSection === 'maids' && 'Manage service providers and performance'}
+                  {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
+                  {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
+                  {activeSection === 'buffer-management' && 'Review buffer requests and manage service interruptions'}
+                  {activeSection === 'automatic-assignments' && 'Monitor and manage automatic assignment requests based on customer time slots'}
+                  {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
+                  {activeSection === 'plans' && 'Manage available service plans and pricing'}
+                </p>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Recent Payments
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {payments.slice(0, 5).map((payment) => (
-                      <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">₹{payment.finalAmount.toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {payment.paymentMethod} • {new Date(payment.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
-                          {payment.status}
-                        </Badge>
-                      </div>
-                    ))}
-                    {payments.length === 0 && (
-                      <p className="text-center text-muted-foreground py-4">No recent payments</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            </>
-          )}
-          
-          {/* Updated Maid Section */}
-          {activeSection === 'maids' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Service Providers Management</CardTitle>
-                <CardDescription>
-                  Comprehensive maid profiles, performance metrics, and assignment management
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {/* Maid Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Total Maids</p>
-                          <p className="text-2xl font-bold">{analyticsData.totalMaids}</p>
-                        </div>
-                        <UserCog className="h-8 w-8 text-primary" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Available Now</p>
-                          <p className="text-2xl font-bold text-green-600">{availableMaids.length}</p>
-                        </div>
-                        <UserCheck className="h-8 w-8 text-green-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Avg Rating</p>
-                          <p className="text-2xl font-bold text-yellow-600">4.8★</p>
-                        </div>
-                        <Star className="h-8 w-8 text-yellow-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Maid Info</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Performance</TableHead>
-                      <TableHead>Availability</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {maids.slice(0, 10).map((maid) => (
-                      <TableRow key={maid.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
-                              {maid.user.name.split(' ').map(n => n[0]).join('')}
-                            </div>
-                            <div>
-                              <p className="font-medium">{maid.user.name}</p>
-                              <p className="text-sm text-muted-foreground">ID: {maid.id.slice(-8)}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="text-sm">{maid.user.email}</p>
-                            <p className="text-sm text-muted-foreground">{maid.user.phone}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="flex items-center gap-1 mb-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              <span className="font-medium">{maid.rating.toFixed(1)}</span>
-                              <span className="text-muted-foreground text-sm">({maid.totalRatings})</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{maid.completedBookings} jobs completed</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={availableMaids.some(am => am.id === maid.id) ? 'default' : 'outline'}>
-                            {availableMaids.some(am => am.id === maid.id) ? 'Available' : 'Busy'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={maid.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                            {maid.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              View Profile
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => updateUserStatus(maid.userId, maid.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                            >
-                              {maid.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {maids.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No service providers found</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+              {/* Main Content */}
+              <div className="space-y-6">
+                {/* Overview Section */}
+                {activeSection === 'overview' && (
+                  <>
+                  {/* Analytics Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card className="dashboard-card">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {analyticsData.pendingBookings} pending approval
+                        </p>
+                      </CardContent>
+                    </Card>
 
-          {/* Pending Bookings Section */}
-          {activeSection === 'pending-bookings' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-orange-500" />
-                  Pending Bookings Assignment
-                </CardTitle>
-                <CardDescription>
-                  Assign available maids to confirmed bookings waiting for assignment
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {pendingBookings.length > 0 ? (
-                    pendingBookings.map((booking) => (
-                      <Card key={booking.id} className="border-l-4 border-l-orange-500">
-                        <CardContent className="pt-6">
-                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Booking Details */}
-                            <div className="lg:col-span-2">
-                              <div className="flex items-start justify-between mb-4">
-                                <div>
-                                  <h3 className="font-semibold text-lg">{booking.service?.name || 'Service'}</h3>
-                                  <p className="text-muted-foreground">
-                                    Booking ID: {booking.id}
-                                  </p>
-                                </div>
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                                  Awaiting Assignment
-                                </Badge>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div>
-                                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Customer</h4>
-                                  <p className="font-medium">{booking.customer?.name || 'N/A'}</p>
-                                  <p className="text-sm text-muted-foreground">{booking.customer?.email}</p>
-                                  <p className="text-sm text-muted-foreground">{booking.customer?.phone}</p>
-                                </div>
-                                <div>
-                                  <h4 className="font-medium text-sm text-muted-foreground mb-1">Schedule</h4>
-                                  <p className="font-medium">
-                                    {new Date(booking.scheduledAt).toLocaleDateString()}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                  </p>
-                                  {booking.timeSlot && (
-                                    <p className="text-sm text-muted-foreground">Slot: {booking.timeSlot}</p>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {booking.serviceAddress && (
-                                <div className="mb-4">
-                                  <h4 className="font-medium text-sm text-muted-foreground mb-1 flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    Service Address
-                                  </h4>
-                                  <p className="text-sm">{booking.serviceAddress}</p>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Maid Assignment */}
-                            <div className="border-l lg:border-l-2 lg:pl-6">
-                              <h4 className="font-medium mb-3">Assign Maid</h4>
-                              <div className="space-y-3">
-                                {availableMaids.length > 0 ? (
-                                  <>
-                                    <Select
-                                      onValueChange={(maidId) => {
-                                        if (maidId && !assigningBooking) {
-                                          assignMaidToBooking(booking.id, maidId);
-                                        }
-                                      }}
-                                      disabled={assigningBooking === booking.id}
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select a maid" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {availableMaids.map((maid) => (
-                                          <SelectItem key={maid.id} value={maid.id}>
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-medium">{maid.user.name}</span>
-                                              <span className="text-muted-foreground">•</span>
-                                              <div className="flex items-center gap-1">
-                                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                                <span className="text-sm">{maid.rating || 0}</span>
-                                              </div>
-                                            </div>
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    {assigningBooking === booking.id && (
-                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
-                                        Assigning maid...
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <div className="text-center p-4 border border-dashed rounded-lg">
-                                    <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                                    <p className="text-sm text-muted-foreground">No available maids</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">All bookings assigned!</h3>
-                      <p className="text-muted-foreground">There are no pending bookings waiting for maid assignment.</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    <Card className="dashboard-card">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {analyticsData.totalMaids} service providers
+                        </p>
+                      </CardContent>
+                    </Card>
 
-          {/* Bookings Section */}
-          {activeSection === 'bookings' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>All Bookings</CardTitle>
-                <CardDescription>Manage customer bookings and assignments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Service</TableHead>
-                      <TableHead>Date & Time</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {bookings.slice(0, 10).map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{booking.customer?.name || 'N/A'}</p>
-                            <p className="text-sm text-muted-foreground">{booking.customer?.email || 'N/A'}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{booking.service?.name || 'N/A'}</TableCell>
-                        <TableCell>
-                          {new Date(booking.scheduledAt).toLocaleDateString()}
-                          <br />
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={booking.status === 'COMPLETED' ? 'default' : 'outline'}>
-                            {booking.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>₹{booking.finalAmount?.toLocaleString() || 'N/A'}</TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {bookings.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No bookings found</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                    <Card className="dashboard-card">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {analyticsData.completedPayments} completed payments
+                        </p>
+                      </CardContent>
+                    </Card>
 
-          {/* Users Section - Only Customers */}
-          {activeSection === 'users' && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Customer Accounts</CardTitle>
-                    <CardDescription>Manage customer accounts and profiles</CardDescription>
+                    <Card className="dashboard-card">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{analyticsData.activeSubscriptions}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {subscriptions.length} total subscriptions
+                        </p>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Input 
-                      placeholder="Search by name, email or phone"
-                      value={userFilter}
-                      onChange={(e) => setUserFilter(e.target.value)}
-                      className="w-64"
-                    />
-                    <Badge variant="outline">
-                      {users.filter(u => u.role === 'CUSTOMER').length} total
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Address</TableHead>
-                      <TableHead>Time Slot</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users
-                      .filter(user => user.role === 'CUSTOMER')
-                      .filter(u => {
-                        const t = userFilter.trim().toLowerCase();
-                        if (!t) return true;
-                        return (
-                          u.name?.toLowerCase().includes(t) ||
-                          u.email?.toLowerCase().includes(t) ||
-                          u.phone?.toLowerCase().includes(t)
-                        );
-                      })
-                      .slice(0, 10)
-                      .map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.phone}</TableCell>
-                        <TableCell className="max-w-xs truncate">{user.address || 'Not provided'}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {user.timeSlot || 'Not set'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={user.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                            {user.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => updateUserStatus(user.id, user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
-                            >
-                              {user.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {users.filter(user => user.role === 'CUSTOMER').length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No customers found</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
-
-          {/* Subscriptions Section */}
-          {activeSection === 'subscriptions' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Subscriptions</CardTitle>
-                <CardDescription>Monitor subscription plans and billing</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Filter by customer name or plan..."
-                      value={subscriptionFilter}
-                      onChange={(e) => setSubscriptionFilter(e.target.value)}
-                      className="max-w-sm"
-                    />
-                  </div>
-                  <Badge variant="outline">
-                    {filteredSubscriptions.length} of {subscriptions.length} subscriptions
-                  </Badge>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Plan</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Auto Renew</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSubscriptions.slice(0, 10).map((subscription) => (
-                      <TableRow key={subscription.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{subscription.customer?.user?.name || 'N/A'}</p>
-                            <p className="text-sm text-muted-foreground">{subscription.customer?.user?.email || 'N/A'}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{subscription.plan?.name || 'N/A'}</TableCell>
-                        <TableCell>₹{subscription.amount.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge variant={subscription.status === 'ACTIVE' ? 'default' : 'outline'}>
-                            {subscription.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(subscription.startDate).toLocaleDateString()}</TableCell>
-                        <TableCell>{new Date(subscription.endDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Badge variant={subscription.autoRenew ? 'default' : 'outline'}>
-                            {subscription.autoRenew ? 'Yes' : 'No'}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {filteredSubscriptions.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      {subscriptionFilter ? 'No subscriptions match your filter' : 'No subscriptions found'}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Payments Section */}
-          {activeSection === 'payments' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Transactions</CardTitle>
-                <CardDescription>Monitor all payment activities and revenue</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Transaction ID</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.slice(0, 10).map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{payment.customer?.name || 'N/A'}</p>
-                            <p className="text-sm text-muted-foreground">{payment.customer?.email || 'N/A'}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {payment.paymentType}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>₹{payment.finalAmount.toLocaleString()}</TableCell>
-                        <TableCell>{payment.paymentMethod}</TableCell>
-                        <TableCell>
-                          <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
-                            {payment.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(payment.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <code className="text-xs">{payment.transactionId || 'N/A'}</code>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {payments.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No payments found</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Maid Verification Section */}
-          {activeSection === 'maid-verification' && (
-            <AdminMaidVerificationSection />
-          )}
-
-          {/* Plans Section */}
-          {activeSection === 'plans' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription Plans</CardTitle>
-                <CardDescription>Manage available service plans and pricing</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {subscriptionPlans.map((plan) => (
-                    <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
+                  {/* Recent Activities */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
-                          {plan.name}
-                          {plan.isPopular && <Badge>Popular</Badge>}
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-5 w-5" />
+                            Latest Pending Bookings
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleSectionChange('pending-bookings')}
+                          >
+                            View All
+                          </Button>
                         </CardTitle>
-                        <CardDescription>{plan.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3">
-                          <div className="text-center">
-                            <div className="text-3xl font-bold">₹{plan.finalPrice.toLocaleString()}</div>
-                            <div className="text-sm text-muted-foreground">/{plan.duration} month(s)</div>
-                            {plan.discountPercent > 0 && (
-                              <div className="text-xs text-success">
-                                {plan.discountPercent}% off (₹{plan.basePrice.toLocaleString()} original)
+                          {pendingBookings.slice(0, 2).map((booking) => (
+                            <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div>
+                                <p className="font-medium">{booking.service?.name || 'Service'}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {booking.customer?.name || 'Customer'}
+                                </p>
                               </div>
-                            )}
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div>• {plan.sessionsPerWeek} sessions per week</div>
-                            <div>• {plan.sessionsPerMonth} sessions per month</div>
-                            <div>• {plan.service?.name || 'Service'} included</div>
-                            <div>• Professional cleaning staff</div>
-                          </div>
-                          <div className="flex items-center justify-between pt-2">
-                            <Badge variant={plan.isActive ? 'default' : 'outline'}>
-                              {plan.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditPlan(plan)}
-                            >
-                              Edit Plan
-                            </Button>
-                          </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium">
+                                  {new Date(booking.scheduledAt).toLocaleDateString()}
+                                </p>
+                                <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                                  Pending
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                          {pendingBookings.length === 0 && (
+                            <p className="text-center text-muted-foreground py-4">No pending bookings</p>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-                {subscriptionPlans.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No subscription plans found</p>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <TrendingUp className="h-5 w-5" />
+                          Recent Payments
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {payments.slice(0, 5).map((payment) => (
+                            <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div>
+                                <p className="font-medium">₹{payment.finalAmount.toLocaleString()}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {payment.paymentMethod} • {new Date(payment.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
+                                {payment.status}
+                              </Badge>
+                            </div>
+                          ))}
+                          {payments.length === 0 && (
+                            <p className="text-center text-muted-foreground py-4">No recent payments</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
+                  </>
                 )}
-              </CardContent>
-            </Card>
-          )}
+                
+                {/* Maids Section */}
+                {activeSection === 'maids' && (
+                  <AdminMaidsSection
+                    allMaids={maids.map(m => ({
+                      id: m.id,
+                      name: m.user.name,
+                      email: m.user.email,
+                      phone: m.user.phone,
+                      address: m.user.address || '',
+                      experience: `${m.completedBookings} bookings completed`,
+                      specializations: m.skills,
+                      rating: m.rating,
+                      status: m.status === 'ACTIVE' ? 'active' : 'pending',
+                      totalBookings: m.completedBookings,
+                      joinDate: m.user.createdAt
+                    }))}
+                    onAddMaid={(maidData) => {
+                      toast({
+                        title: 'Maid Added',
+                        description: 'New maid has been added successfully'
+                      });
+                    }}
+                    onVerifyMaid={(maidId) => updateUserStatus(maidId, 'ACTIVE')}
+                  />
+                )}
 
-          {/* Pending Assignments Section */}
-          {activeSection === 'pending-assignments' && (
-            <AdminPendingAssignmentsSection onRefresh={fetchAdminData} />
-          )}
+                {/* Automatic Bookings Section */}
+                {activeSection === 'pending-bookings' && (
+                  <AdminAutomaticBookingsSection
+                    availableMaids={maids.map(m => ({
+                      id: m.id,
+                      name: m.user.name,
+                      email: m.user.email,
+                      phone: m.user.phone,
+                      rating: m.rating,
+                      skills: m.skills,
+                      completedBookings: m.completedBookings
+                    }))}
+                    onRefreshData={fetchAdminData}
+                  />
+                )}
 
-          {/* Assigned Bookings Section */}
-          {activeSection === 'assigned-bookings' && (
-            <AdminAssignedBookingsSection onRefresh={fetchAdminData} />
-          )}
+                {/* Bookings Section */}
+                {activeSection === 'bookings' && (
+                  <EnhancedAdminBookingsSection
+                    bookings={bookings}
+                    availableMaids={availableMaids}
+                    onAssignMaid={assignMaidToBooking}
+                    onRefreshBookings={fetchAdminData}
+                  />
+                )}
 
-          {/* Reassignments Section */}
-          {activeSection === 'reassignments' && (
-            <AdminReassignmentSection onRefresh={fetchAdminData} />
-          )}
+                {/* Users Section */}
+                {activeSection === 'users' && (
+                  <AdminUsersSection 
+                    users={users.filter(u => u.role === 'CUSTOMER').map(u => ({
+                      id: u.id,
+                      name: u.name,
+                      email: u.email,
+                      phone: u.phone,
+                      joinDate: u.createdAt,
+                      status: u.status === 'ACTIVE' ? 'active' : u.status === 'INACTIVE' ? 'suspended' : 'pending',
+                      totalBookings: 0, // This would need to be calculated from bookings
+                      totalSpent: 0, // This would need to be calculated from payments
+                      lastActive: u.createdAt
+                    }))}
+                    availableMaids={maids.map(m => ({
+                      id: m.id,
+                      name: m.user.name,
+                      email: m.user.email,
+                      phone: m.user.phone,
+                      rating: m.rating,
+                      skills: m.skills,
+                      completedBookings: m.completedBookings
+                    }))}
+                    onVerifyUser={(userId) => updateUserStatus(userId, 'ACTIVE')}
+                    onRefreshData={fetchAdminData}
+                  />
+                )}
 
-          {/* Buffer Days Section */}
-          {activeSection === 'buffer-days' && (
-            <AdminBufferDaysSection />
-          )}
+                {/* Subscriptions Section */}
+                {activeSection === 'subscriptions' && (
+                  <AdminSubscriptionsSection
+                    subscriptions={subscriptions.map(s => ({
+                      id: s.id,
+                      customerName: s.customer?.user?.name || 'N/A',
+                      customerEmail: s.customer?.user?.email || 'N/A',
+                      plan: s.plan?.name || 'N/A',
+                      status: s.status === 'ACTIVE' ? 'active' : s.status === 'EXPIRED' ? 'expired' : 'cancelled',
+                      startDate: s.startDate,
+                      endDate: s.endDate,
+                      price: s.amount,
+                      usage: 0, // This would need to be calculated
+                      limit: s.plan?.sessionsPerMonth || 0,
+                      nextBilling: s.endDate
+                    }))}
+                  />
+                )}
 
-          {/* CORS Test Section */}
-          {activeSection === 'cors-test' && (
-            <div className="flex justify-center">
-              <CorsTest />
+                {/* Payments Section */}
+                {activeSection === 'payments' && (
+                  <AdminPaymentsSection
+                    payments={payments.map(p => ({
+                      id: p.id,
+                      customerName: p.customer?.name || 'N/A',
+                      customerEmail: p.customer?.email || 'N/A',
+                      amount: p.finalAmount,
+                      method: p.paymentMethod,
+                      status: p.status === 'COMPLETED' ? 'completed' : p.status === 'PENDING' ? 'pending' : p.status === 'FAILED' ? 'failed' : 'refunded',
+                      date: p.createdAt,
+                      transactionId: p.transactionId || 'N/A',
+                      description: p.paymentType || 'Payment'
+                    }))}
+                  />
+                )}
+
+                {/* Maid Verification Section */}
+                {activeSection === 'maid-verification' && (
+                  <AdminMaidVerificationSection
+                    verifications={maidVerifications}
+                    onApproveVerification={(verificationId, notes, services) => {
+                      toast({
+                        title: 'Success',
+                        description: 'Maid verification approved successfully'
+                      });
+                    }}
+                    onRejectVerification={(verificationId, reason, notes) => {
+                      toast({
+                        title: 'Verification Rejected',
+                        description: 'Maid verification has been rejected'
+                      });
+                    }}
+                  />
+                )}
+
+                {/* Buffer Management Section */}
+                {activeSection === 'buffer-management' && (
+                  <AdminBufferManagementSection />
+                )}
+
+                {/* Automatic Assignments Section */}
+                {activeSection === 'automatic-assignments' && (
+                  <AdminAutomaticAssignmentsSection />
+                )}
+
+                {/* Plans Section */}
+                {activeSection === 'plans' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Subscription Plans</CardTitle>
+                      <CardDescription>Manage available service plans and pricing</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {subscriptionPlans.map((plan) => (
+                          <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
+                            <CardHeader>
+                              <CardTitle className="flex items-center justify-between">
+                                {plan.name}
+                                {plan.isPopular && <Badge>Popular</Badge>}
+                              </CardTitle>
+                              <CardDescription>{plan.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div className="text-center">
+                                  <div className="text-3xl font-bold">₹{plan.finalPrice.toLocaleString()}</div>
+                                  <div className="text-sm text-muted-foreground">/{plan.duration} month(s)</div>
+                                  {plan.discountPercent > 0 && (
+                                    <div className="text-xs text-success">
+                                      {plan.discountPercent}% off (₹{plan.basePrice.toLocaleString()} original)
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                  <div>• {plan.sessionsPerWeek} sessions per week</div>
+                                  <div>• {plan.sessionsPerMonth} sessions per month</div>
+                                  <div>• {plan.service?.name || 'Service'} included</div>
+                                  <div>• Professional cleaning staff</div>
+                                </div>
+                                <div className="flex items-center justify-between pt-2">
+                                  <Badge variant={plan.isActive ? 'default' : 'outline'}>
+                                    {plan.isActive ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleEditPlan(plan)}
+                                  >
+                                    Edit Plan
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                      {subscriptionPlans.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">No subscription plans found</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
-          )}
+          </div>
+        </main>
+      </div>
+
+      {/* All Notifications Modal */}
+      {showAllNotifications && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">All Notifications</h2>
+              <button onClick={() => setShowAllNotifications(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
+              <div className="divide-y divide-gray-100">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-6 hover:bg-gray-50 transition-colors border-l-4 ${getNotificationColor(notification.type)} ${
+                      notification.unread ? 'bg-blue-50' : ''
+                    }`}
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className={`text-lg font-medium ${notification.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                            {notification.title}
+                          </p>
+                          {notification.unread && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              New
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-gray-600 mt-2">{notification.message}</p>
+                        <p className="text-sm text-gray-400 mt-3">{notification.time}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">Showing {notifications.length} notifications</p>
+                <button onClick={() => setShowAllNotifications(false)} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
+      )}
+
       {/* Edit Plan Dialog */}
       <EditPlanDialog
         plan={editingPlan}
