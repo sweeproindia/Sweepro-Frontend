@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, CreditCard, Receipt, Users, Shield, BarChart3, Package, LogOut, Sparkles, Clock, Settings, Pause } from 'lucide-react';
+import { Home, Calendar, CreditCard, Receipt, Users, Shield, BarChart3, Package, LogOut, Sparkles, Clock, Settings, Pause, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +55,11 @@ const adminNavigationItems = [
     name: 'Buffer Management', 
     href: '/admin#buffer-management', 
     icon: <Pause className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  },
+  { 
+    name: 'Auto Assignments', 
+    href: '/admin#automatic-assignments', 
+    icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
     name: 'Payments', 

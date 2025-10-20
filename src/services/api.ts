@@ -1,5 +1,5 @@
-// API Configuration
-export const API_BASE_URL = 'http://localhost:3000/api';
+// API Configuration - Use proxy in development, direct URL in production
+export const API_BASE_URL = import.meta.env.DEV ? '/api' : 'http://localhost:3000/api';
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -63,19 +63,93 @@ export const API_ENDPOINTS = {
       STATUS: '/payments/razorpay/status/:razorpayPaymentId',
     }
   },
+  // Verification
+  VERIFICATION: {
+    // Admin endpoints
+    ALL: '/admin/verifications',
+    BY_ID: '/admin/verifications/:id',
+    APPROVE: '/admin/verifications/:id/approve',
+    REJECT: '/admin/verifications/:id/reject',
+    STATS: '/admin/verifications/stats',
+    // Maid endpoints
+    SUBMIT: '/maids/verification/submit',
+    MY_STATUS: '/maids/verification/status',
+  },
+  // Assignments
+  ASSIGNMENTS: {
+    // Maid endpoints
+    PENDING: '/assignments/pending',
+    MY_ASSIGNMENTS: '/assignments/my-assignments',
+    BY_ID: '/assignments/:id',
+    ACCEPT: '/assignments/:id/accept',
+    REJECT: '/assignments/:id/reject',
+    // Admin endpoints
+    ALL: '/assignments/admin/assignments',
+    CREATE: '/assignments/admin/assignments/create',
+    STATS: '/assignments/admin/assignments/stats',
+    CANCEL: '/assignments/admin/assignments/:id/cancel',
+    // New admin booking management endpoints
+    PENDING_ASSIGNMENTS: '/assignments/admin/pending-assignments',
+    ASSIGNED_BOOKINGS: '/assignments/admin/assigned-bookings',
+    REASSIGNMENT_BOOKINGS: '/assignments/admin/reassignment-bookings',
+    AVAILABLE_MAIDS: '/assignments/admin/available-maids/:bookingId',
+    SEND_ASSIGNMENT_REQUEST: '/assignments/admin/send-assignment-request',
+  },
   // Buffer Management
   BUFFER: {
-    REMAINING: '/buffer/subscription',
-    REQUEST: '/buffer/subscription',
-    HISTORY: '/buffer/subscription',
+    REMAINING: '/buffer/remaining',
+    REQUEST: '/buffer/request',
+    HISTORY: '/buffer/history',
     ADMIN: {
       PENDING: '/buffer/admin/pending',
-      APPROVE: '/buffer/admin',
-      REJECT: '/buffer/admin',
+      APPROVE: '/buffer/admin/approve',
+      REJECT: '/buffer/admin/reject',
       ALL: '/buffer/admin/all',
       STATISTICS: '/buffer/admin/statistics',
-      AFFECTED_SERVICES: '/buffer/admin/affected-services'
+      AFFECTED_SERVICES: '/buffer/admin/affected-services',
     }
+  },
+  // Customer-Maid Assignments
+  CUSTOMER_ASSIGNMENTS: {
+    ASSIGN_MAID: '/admin/customer-assignments/assign',
+    GET_ASSIGNMENT: '/admin/customer-assignments/:customerId',
+    UPDATE_ASSIGNMENT: '/admin/customer-assignments/:customerId/update',
+    GET_ALL: '/admin/customer-assignments',
+    GET_CUSTOMER_STATUS: '/admin/customer-assignments/status/:customerId',
+    // Assignment request endpoints
+    GET_MAID_REQUESTS: '/admin/customer-assignments/requests/maid',
+    ACCEPT_REQUEST: '/admin/customer-assignments/requests/:requestId/accept',
+    REJECT_REQUEST: '/admin/customer-assignments/requests/:requestId/reject',
+    GET_ALL_REQUESTS: '/admin/customer-assignments/requests/all',
+  },
+  // Automatic Bookings
+  AUTOMATIC_BOOKINGS: {
+    // Admin endpoints
+    GET_ALL: '/admin/automatic-bookings',
+    PENDING_ASSIGNMENT: '/admin/automatic-bookings/pending-assignment',
+    REASSIGNMENT: '/admin/automatic-bookings/reassignment',
+    SEND_TO_MAID: '/admin/automatic-bookings/:bookingId/send-to-maid',
+    REASSIGN: '/admin/automatic-bookings/:bookingId/reassign',
+    SCHEDULE_OVERVIEW: '/admin/automatic-bookings/schedule-overview',
+    PAUSE: '/admin/automatic-bookings/:customerId/pause',
+    RESUME: '/admin/automatic-bookings/:customerId/resume',
+    SETTINGS: '/admin/automatic-bookings/settings/:customerId',
+    // Customer endpoints
+    MY_UPCOMING: '/automatic-bookings/my-upcoming',
+    MY_ASSIGNMENTS: '/automatic-bookings/my-assignments',
+    ACCEPT: '/automatic-bookings/:bookingId/accept',
+    REJECT: '/automatic-bookings/:bookingId/reject',
+    CANCEL: '/automatic-bookings/:bookingId/cancel',
+    GET_SETTINGS: '/automatic-bookings/settings/:customerId',
+  },
+  // Automatic Assignments
+  AUTOMATIC_ASSIGNMENTS: {
+    // Admin endpoints
+    PROCESS: '/automatic-assignments/process',
+    UPCOMING: '/automatic-assignments/upcoming',
+    STATISTICS: '/automatic-assignments/statistics',
+    CUSTOMER_TIMESLOTS: '/automatic-assignments/customer-timeslots',
+    TEST_TIMESLOT: '/automatic-assignments/test-timeslot',
   }
 };
 
@@ -228,10 +302,17 @@ export const apiRequest = async <T = any>(
     // Handle network errors (including CORS)
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       console.error('🚫 Network Error - Possible CORS issue or backend not running');
+      console.error('Current API_BASE_URL:', API_BASE_URL);
+      console.error('Frontend running on:', window.location.origin);
+      
       throw new ApiError(
-        'Unable to connect to server. Please check if the backend is running on http://localhost:3000',
+        `Unable to connect to server. Please check:\n1. Backend is running on http://localhost:3000\n2. Frontend is running on http://localhost:8080\n3. CORS is properly configured\n\nCurrent API URL: ${API_BASE_URL}`,
         0,
-        { originalError: error.message }
+        { 
+          originalError: error.message,
+          apiBaseUrl: API_BASE_URL,
+          frontendOrigin: window.location.origin
+        }
       );
     }
     

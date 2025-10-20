@@ -62,6 +62,15 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
         const available = response.data.slots || [];
         setAvailableSlots(available);
 
+        // Check if date is in buffer period
+        if (response.data.isBufferPeriod) {
+          toast({
+            title: 'Buffer Period Active',
+            description: response.data.message || 'No slots available during buffer period.',
+            variant: 'destructive'
+          });
+        }
+
         if (showAllSlots) {
           // For admin view - show all slots with their status
           const slotsInfo = standardSlots.map(slot => ({
@@ -77,13 +86,24 @@ export const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({
       }
     } catch (error: any) {
       console.error('Error fetching available slots:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load available time slots. Please try again.',
-        variant: 'destructive'
-      });
-      // Fallback - show all standard slots as potentially available
-      setAvailableSlots(standardSlots);
+      
+      // Handle buffer period specific errors
+      if (error.isBufferPeriodError) {
+        toast({
+          title: 'Buffer Period Active',
+          description: `Your services are paused until ${new Date(error.bufferEndDate).toLocaleDateString()}. Please choose a date after your buffer period ends.`,
+          variant: 'destructive'
+        });
+        setAvailableSlots([]);
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to load available time slots. Please try again.',
+          variant: 'destructive'
+        });
+        // Fallback - show all standard slots as potentially available
+        setAvailableSlots(standardSlots);
+      }
     } finally {
       setLoading(false);
     }

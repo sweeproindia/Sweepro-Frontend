@@ -104,13 +104,28 @@ export class BookingService {
    */
   static async createBooking(bookingData: BookingData): Promise<ApiResponse<{ booking: Booking }>> {
     try {
-      return await apiRequest<{ booking: Booking }>(API_ENDPOINTS.BOOKINGS.CREATE, {
+      const response = await apiRequest<{ booking: Booking }>(API_ENDPOINTS.BOOKINGS.CREATE, {
         method: HttpMethod.POST,
         body: bookingData,
         requiresAuth: true
       });
+      
+      return response;
     } catch (error) {
       console.error('Create booking error:', error);
+      
+      // Handle buffer period specific errors
+      if (error.response?.data?.isInBufferPeriod) {
+        const errorData = error.response.data;
+        throw {
+          ...error,
+          isBufferPeriodError: true,
+          bufferEndDate: errorData.bufferEndDate,
+          bufferDaysRemaining: errorData.bufferDaysRemaining,
+          bufferStartDate: errorData.bufferStartDate
+        };
+      }
+      
       throw error;
     }
   }
@@ -278,9 +293,33 @@ export class BookingService {
   /**
    * Get available time slots for a date
    */
-  static async getAvailableSlots(date: string): Promise<ApiResponse<{ slots: string[] }>> {
+  static async getAvailableSlots(date: string): Promise<ApiResponse<{ 
+    slots: string[]; 
+    isBufferPeriod?: boolean; 
+    message?: string;
+    bufferPeriod?: {
+      startDate: string;
+      endDate: string;
+    };
+    date?: string;
+    totalSlots?: number;
+    bookedSlots?: number;
+    availableSlots?: number;
+  }>> {
     try {
-      return await apiRequest<{ slots: string[] }>(`/bookings/available-slots?date=${date}`, {
+      return await apiRequest<{ 
+        slots: string[]; 
+        isBufferPeriod?: boolean; 
+        message?: string;
+        bufferPeriod?: {
+          startDate: string;
+          endDate: string;
+        };
+        date?: string;
+        totalSlots?: number;
+        bookedSlots?: number;
+        availableSlots?: number;
+      }>(`/bookings/available-slots?date=${date}`, {
         method: HttpMethod.GET,
         requiresAuth: true
       });

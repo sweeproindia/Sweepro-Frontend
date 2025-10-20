@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingService } from '@/services/bookingService';
-import { Loader2, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { BufferService } from '@/services/bufferService';
+import { SubscriptionService } from '@/services/subscriptionService';
+import { Loader2, Calendar as CalendarIcon, Clock, AlertTriangle, Pause } from 'lucide-react';
 import { format } from 'date-fns';
 import { useUser } from '@/contexts/UserContext';
 import { TimeSlotSelector } from '@/components/booking/TimeSlotSelector';
+import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
 
 interface QuickBookingFormProps {
   isOpen: boolean;
@@ -25,6 +29,16 @@ export const QuickBookingForm: React.FC<QuickBookingFormProps> = ({
   const { user } = useUser();
   const [submitting, setSubmitting] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+  
+  // Use buffer period hook for centralized buffer period management
+  const {
+    isInBufferPeriod,
+    shouldDisableBooking,
+    getBufferPeriodMessage,
+    getFormattedEndDate,
+    checkBufferPeriodWithFallback,
+    isLoading: bufferLoading
+  } = useBufferPeriod();
 
   // Auto-populate booking data from user profile
   const bookingDate = prefilledDate || new Date();
@@ -37,8 +51,44 @@ export const QuickBookingForm: React.FC<QuickBookingFormProps> = ({
     }
   }, [user?.timeSlot]);
 
+  // Debug buffer period status when form opens and trigger fallback check
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔍 QuickBookingForm opened - Buffer Status:', {
+        isInBufferPeriod,
+        shouldDisableBooking: shouldDisableBooking(),
+        bufferLoading,
+        getFormattedEndDate: getFormattedEndDate()
+      });
+      
+      // Trigger fallback check when form opens to ensure we have the latest status
+      setTimeout(() => {
+        console.log('🔍 Triggering fallback buffer check from QuickBookingForm...');
+        checkBufferPeriodWithFallback();
+      }, 500);
+    }
+  }, [isOpen, isInBufferPeriod, shouldDisableBooking, bufferLoading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('🔍 QuickBookingForm handleSubmit called - Buffer Status:', {
+      isInBufferPeriod,
+      shouldDisableBooking: shouldDisableBooking(),
+      bufferLoading
+    });
+    
+    // Check buffer period status first using the hook
+    if (shouldDisableBooking()) {
+      console.log('🚫 Blocking booking submission due to buffer period');
+      toast({
+        title: '🚫 Booking Services Paused',
+        description: getBufferPeriodMessage(),
+        variant: 'destructive',
+        duration: 10000,
+      });
+      return;
+    }
     
     if (!selectedTimeSlot) {
       toast({
@@ -52,6 +102,31 @@ export const QuickBookingForm: React.FC<QuickBookingFormProps> = ({
     setSubmitting(true);
     
     try {
+      // Double-check buffer period status with backend API as fallback
+      console.log('🔍 Double-checking buffer status with backend API...');
+      const subscriptionResponse = await SubscriptionService.getUserSubscription();
+      
+      if (subscriptionResponse.success && subscriptionResponse.data?.subscription) {
+        const subscription = subscriptionResponse.data.subscription;
+        const bufferStatusResponse = await BufferService.checkCurrentBufferStatus(subscription.id);
+        
+        if (bufferStatusResponse.success && bufferStatusResponse.data.isInBufferPeriod) {
+          console.log('🚫 Backend API confirms buffer period is active - blocking booking');
+          const bufferPeriod = bufferStatusResponse.data.activeBufferPeriod;
+          const endDate = new Date(bufferPeriod.endDate).toLocaleDateString();
+          
+          toast({
+            title: '🚫 Booking Services Paused',
+            description: `Your services are currently paused due to an active buffer period until ${endDate}. Please wait until your buffer period ends to book new services.`,
+            variant: 'destructive',
+            duration: 10000,
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      console.log('✅ No buffer period detected, proceeding with booking...');
       const bookingData = {
         scheduledDate: format(bookingDate, 'yyyy-MM-dd'),
         timeSlot: selectedTimeSlot,
@@ -72,11 +147,22 @@ export const QuickBookingForm: React.FC<QuickBookingFormProps> = ({
       }
     } catch (error: any) {
       console.error('Booking creation error:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create booking. Please try again.',
-        variant: 'destructive',
-      });
+      
+      // Handle buffer period specific errors
+      if (error.isBufferPeriodError) {
+        const endDate = new Date(error.bufferEndDate).toLocaleDateString();
+        toast({
+          title: 'Booking Blocked - Buffer Period',
+          description: `Your services are paused until ${endDate}. Please choose a date after your buffer period ends.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to create booking. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -97,6 +183,13 @@ export const QuickBookingForm: React.FC<QuickBookingFormProps> = ({
             }
           </DialogDescription>
         </DialogHeader>
+
+        {/* Buffer Period Alert - Show prominently in the form */}
+        <BufferPeriodAlert 
+          isVisible={isInBufferPeriod}
+          endDate={getFormattedEndDate()}
+          className="mb-4"
+        />
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
@@ -163,13 +256,23 @@ export const QuickBookingForm: React.FC<QuickBookingFormProps> = ({
             </Button>
             <Button
               type="submit"
-              disabled={submitting || !selectedTimeSlot}
-              className="flex-1"
+              disabled={submitting || !selectedTimeSlot || shouldDisableBooking() || bufferLoading}
+              className={`flex-1 ${shouldDisableBooking() ? 'border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100' : ''}`}
             >
-              {submitting ? (
+              {bufferLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Checking Buffer Status...
+                </>
+              ) : submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating Booking...
+                </>
+              ) : shouldDisableBooking() ? (
+                <>
+                  <Pause className="mr-2 h-4 w-4" />
+                  Services Paused (Until {getFormattedEndDate()})
                 </>
               ) : !selectedTimeSlot ? (
                 'Select Time Slot First'

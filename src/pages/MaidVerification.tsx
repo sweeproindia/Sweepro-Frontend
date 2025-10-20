@@ -18,7 +18,8 @@ import {
   Upload,
   Clock,
   XCircle,
-  Loader2
+  Loader2,
+  Calendar
 } from 'lucide-react';
 
 interface VerificationDocuments {
@@ -27,11 +28,25 @@ interface VerificationDocuments {
   electricityBill: File[];
 }
 
+interface DocumentStatus {
+  id: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string;
+  filename?: string;
+  uploadedAt?: string;
+  canReupload: boolean;
+}
+
 interface VerificationStatus {
   isSubmitted: boolean;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_SUBMITTED';
   submittedAt?: string;
   rejectionReason?: string;
+  documents: {
+    aadharCard?: DocumentStatus;
+    panCard?: DocumentStatus;
+    electricityBill?: DocumentStatus;
+  };
 }
 
 export default function MaidVerification() {
@@ -46,7 +61,8 @@ export default function MaidVerification() {
   const [isLoading, setIsLoading] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     isSubmitted: false,
-    status: 'NOT_SUBMITTED'
+    status: 'NOT_SUBMITTED',
+    documents: {}
   });
 
   // Load existing verification status on component mount
@@ -59,11 +75,8 @@ export default function MaidVerification() {
           return;
         }
 
-        // Test backend connection first
-        const healthResponse = await fetch('http://localhost:3000/health');
-        console.log('Backend health check:', healthResponse.status);
-        
-        const response = await fetch('http://localhost:3000/api/documents/verification-status', {
+        // Use the new API endpoint for maid verification status
+        const response = await fetch('/api/documents/maid-verification-status', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -74,11 +87,39 @@ export default function MaidVerification() {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
-            const { isSubmitted, status, submittedAt } = result.data;
+            const data = result.data;
+            
+            // Transform backend data to frontend format
+            const transformedDocuments: any = {};
+            
+            if (data.documents) {
+              // Map backend document types to frontend
+              const docMapping = {
+                'AADHAR_CARD': 'aadharCard',
+                'PAN_CARD': 'panCard', 
+                'ADDRESS_PROOF': 'electricityBill'
+              };
+              
+              data.documents.forEach((doc: any) => {
+                const frontendKey = docMapping[doc.type as keyof typeof docMapping];
+                if (frontendKey) {
+                  transformedDocuments[frontendKey] = {
+                    id: doc.id,
+                    status: doc.verificationStatus,
+                    rejectionReason: doc.rejectionReason,
+                    filename: doc.fileName,
+                    uploadedAt: doc.createdAt,
+                    canReupload: doc.verificationStatus === 'REJECTED'
+                  };
+                }
+              });
+            }
+            
             setVerificationStatus({
-              isSubmitted,
-              status,
-              submittedAt
+              isSubmitted: data.hasDocuments,
+              status: data.overallStatus,
+              submittedAt: data.submittedAt,
+              documents: transformedDocuments
             });
           }
         }
@@ -97,6 +138,31 @@ export default function MaidVerification() {
       ...prev,
       [type]: files
     }));
+  };
+
+  const handleReuploadDocument = (documentType: keyof VerificationDocuments) => {
+    // Reset the verification status to allow re-upload
+    setVerificationStatus(prev => ({
+      ...prev,
+      isSubmitted: false,
+      status: 'NOT_SUBMITTED',
+      documents: {
+        ...prev.documents,
+        [documentType]: undefined // Remove the rejected document status
+      }
+    }));
+    
+    // Clear the document selection for this type
+    setDocuments(prev => ({
+      ...prev,
+      [documentType]: []
+    }));
+
+    toast({
+      title: "Ready for Re-upload",
+      description: `You can now upload a new ${documentType.replace(/([A-Z])/g, ' $1').toLowerCase()} document.`,
+      variant: "default"
+    });
   };
 
   const isFormValid = () => {
@@ -218,7 +284,8 @@ export default function MaidVerification() {
       setVerificationStatus({
         isSubmitted: true,
         status: 'PENDING',
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
+        documents: {}
       });
 
       toast({
@@ -310,9 +377,9 @@ export default function MaidVerification() {
               {verificationStatus.status === 'PENDING' && 
                 'Your verification documents have been submitted and are being reviewed by our admin team.'}
               {verificationStatus.status === 'APPROVED' && 
-                'Congratulations! Your profile has been verified. You can now receive service assignments.'}
+                '🎉 Congratulations! Your profile has been verified and you are now part of the Sweep Pro family! You can now receive service assignments and start earning.'}
               {verificationStatus.status === 'REJECTED' && 
-                'Your verification was rejected. Please check the reason below and resubmit.'}
+                'Your verification was rejected. Please review the feedback below and upload corrected documents to continue.'}
             </p>
           </motion.div>
 
@@ -343,20 +410,128 @@ export default function MaidVerification() {
                   </Alert>
                 )}
 
-                {verificationStatus.status === 'REJECTED' && verificationStatus.rejectionReason && (
-                  <Alert variant="destructive">
-                    <XCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Rejection Reason:</strong> {verificationStatus.rejectionReason}
-                    </AlertDescription>
-                  </Alert>
+                {verificationStatus.status === 'REJECTED' && (
+                  <div className="space-y-3">
+                    {verificationStatus.rejectionReason && (
+                      <Alert variant="destructive">
+                        <XCircle className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>General Rejection Reason:</strong> {verificationStatus.rejectionReason}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {/* Individual document statuses */}
+                    {verificationStatus.documents && (
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm">Document Status Details:</h4>
+                        
+                        {/* Aadhar Card Status */}
+                        <div className={`p-3 border rounded-lg ${
+                          verificationStatus.documents.aadharCard?.status === 'APPROVED' ? 'bg-green-50 border-green-200' :
+                          verificationStatus.documents.aadharCard?.status === 'REJECTED' ? 'bg-red-50 border-red-200' :
+                          verificationStatus.documents.aadharCard?.status === 'PENDING' ? 'bg-yellow-50 border-yellow-200' :
+                          'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-sm">Aadhar Card</p>
+                            <Badge variant={
+                              verificationStatus.documents.aadharCard?.status === 'APPROVED' ? 'default' :
+                              verificationStatus.documents.aadharCard?.status === 'REJECTED' ? 'destructive' : 'secondary'
+                            }>
+                              {verificationStatus.documents.aadharCard?.status || 'Not Uploaded'}
+                            </Badge>
+                          </div>
+                          {verificationStatus.documents.aadharCard?.rejectionReason && (
+                            <p className="text-red-600 text-sm mt-2">{verificationStatus.documents.aadharCard.rejectionReason}</p>
+                          )}
+                          {verificationStatus.documents.aadharCard?.canReupload && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="mt-2"
+                              onClick={() => handleReuploadDocument('aadharCard')}
+                            >
+                              <Upload className="h-3 w-3 mr-1" />
+                              Re-upload
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* PAN Card Status */}
+                        <div className={`p-3 border rounded-lg ${
+                          verificationStatus.documents.panCard?.status === 'APPROVED' ? 'bg-green-50 border-green-200' :
+                          verificationStatus.documents.panCard?.status === 'REJECTED' ? 'bg-red-50 border-red-200' :
+                          verificationStatus.documents.panCard?.status === 'PENDING' ? 'bg-yellow-50 border-yellow-200' :
+                          'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-sm">PAN Card</p>
+                            <Badge variant={
+                              verificationStatus.documents.panCard?.status === 'APPROVED' ? 'default' :
+                              verificationStatus.documents.panCard?.status === 'REJECTED' ? 'destructive' : 'secondary'
+                            }>
+                              {verificationStatus.documents.panCard?.status || 'Not Uploaded'}
+                            </Badge>
+                          </div>
+                          {verificationStatus.documents.panCard?.rejectionReason && (
+                            <p className="text-red-600 text-sm mt-2">{verificationStatus.documents.panCard.rejectionReason}</p>
+                          )}
+                          {verificationStatus.documents.panCard?.canReupload && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="mt-2"
+                              onClick={() => handleReuploadDocument('panCard')}
+                            >
+                              <Upload className="h-3 w-3 mr-1" />
+                              Re-upload
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Address Proof Status */}
+                        <div className={`p-3 border rounded-lg ${
+                          verificationStatus.documents.electricityBill?.status === 'APPROVED' ? 'bg-green-50 border-green-200' :
+                          verificationStatus.documents.electricityBill?.status === 'REJECTED' ? 'bg-red-50 border-red-200' :
+                          verificationStatus.documents.electricityBill?.status === 'PENDING' ? 'bg-yellow-50 border-yellow-200' :
+                          'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-sm">Address Proof</p>
+                            <Badge variant={
+                              verificationStatus.documents.electricityBill?.status === 'APPROVED' ? 'default' :
+                              verificationStatus.documents.electricityBill?.status === 'REJECTED' ? 'destructive' : 'secondary'
+                            }>
+                              {verificationStatus.documents.electricityBill?.status || 'Not Uploaded'}
+                            </Badge>
+                          </div>
+                          {verificationStatus.documents.electricityBill?.rejectionReason && (
+                            <p className="text-red-600 text-sm mt-2">{verificationStatus.documents.electricityBill.rejectionReason}</p>
+                          )}
+                          {verificationStatus.documents.electricityBill?.canReupload && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="mt-2"
+                              onClick={() => handleReuploadDocument('electricityBill')}
+                            >
+                              <Upload className="h-3 w-3 mr-1" />
+                              Re-upload
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {verificationStatus.status === 'APPROVED' && (
-                  <Alert>
-                    <CheckCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Your profile is now verified! You can start receiving service assignments and earning money.
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      <strong>🎉 Welcome to Sweep Pro!</strong><br/>
+                      Your profile is now verified! You can start receiving service assignments and earning money. Your account is fully active and ready to go!
                     </AlertDescription>
                   </Alert>
                 )}
@@ -366,9 +541,27 @@ export default function MaidVerification() {
                 <Button variant="outline" onClick={() => window.location.href = '/maid-dashboard'}>
                   Back to Dashboard
                 </Button>
+                {verificationStatus.status === 'APPROVED' && (
+                  <Button onClick={() => window.location.href = '/maid-bookings'} className="bg-green-600 hover:bg-green-700">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    View Available Jobs
+                  </Button>
+                )}
                 {verificationStatus.status === 'REJECTED' && (
-                  <Button onClick={() => setVerificationStatus({ isSubmitted: false, status: 'NOT_SUBMITTED' })}>
-                    Resubmit Documents
+                  <Button 
+                    onClick={() => {
+                      setVerificationStatus({ isSubmitted: false, status: 'NOT_SUBMITTED', documents: {} });
+                      // Reset document selection to allow re-upload
+                      setDocuments({
+                        aadharCard: [],
+                        panCard: [],
+                        electricityBill: []
+                      });
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload New Documents
                   </Button>
                 )}
               </div>

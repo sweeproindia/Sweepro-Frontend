@@ -48,16 +48,25 @@ interface MaidVerification {
   notes?: string;
   documents: {
     aadharCard: {
+      id: string;
       url: string;
       uploaded: boolean;
+      status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      filename?: string;
     };
-    panCard: {
+    policeVerification: {
+      id: string;
       url: string;
       uploaded: boolean;
+      status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      filename?: string;
     };
-    electricityBill: {
+    photo: {
+      id: string;
       url: string;
       uploaded: boolean;
+      status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      filename?: string;
     };
   };
   personalInfo: {
@@ -84,10 +93,10 @@ interface BackendMaidData {
     name: string;
     email: string;
     phone: string;
-    address: string;
     joinedDate: string;
     totalServices: number;
     rating: number;
+    address?: string; // Optional address field
   };
   documents: {
     aadharCard?: {
@@ -96,21 +105,21 @@ interface BackendMaidData {
       uploadedAt: string;
       fileSize: number;
       status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    };
-    panCard?: {
+    } | null;
+    policeVerification?: {
       id: string;
       filename: string;
       uploadedAt: string;
       fileSize: number;
       status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    };
-    electricityBill?: {
+    } | null;
+    photo?: {
       id: string;
       filename: string;
       uploadedAt: string;
       fileSize: number;
       status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    };
+    } | null;
   };
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_SUBMITTED';
   submittedAt?: string;
@@ -149,6 +158,12 @@ export const AdminMaidVerificationSection: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<{url: string, title: string} | null>(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
+  
+  // Track processed verifications to prevent them from reappearing after refresh
+  const [processedVerificationIds, setProcessedVerificationIds] = useState<Set<string>>(new Set());
+  
+  // Individual document approval state
+  const [documentActionLoading, setDocumentActionLoading] = useState<string | null>(null);
 
   const itemsPerPage = 10;
 
@@ -177,21 +192,30 @@ export const AdminMaidVerificationSection: React.FC = () => {
       notes: backendData.adminNotes,
         documents: {
         aadharCard: {
+          id: backendData.documents.aadharCard?.id || '',
           url: backendData.documents.aadharCard?.id || '',
-          uploaded: !!backendData.documents.aadharCard
+          uploaded: !!backendData.documents.aadharCard,
+          status: backendData.documents.aadharCard?.status || 'PENDING',
+          filename: backendData.documents.aadharCard?.filename
         },
-        panCard: {
-          url: backendData.documents.panCard?.id || '',
-          uploaded: !!backendData.documents.panCard
+        policeVerification: {
+          id: backendData.documents.policeVerification?.id || '',
+          url: backendData.documents.policeVerification?.id || '',
+          uploaded: !!backendData.documents.policeVerification,
+          status: backendData.documents.policeVerification?.status || 'PENDING',
+          filename: backendData.documents.policeVerification?.filename
         },
-        electricityBill: {
-          url: backendData.documents.electricityBill?.id || '',
-          uploaded: !!backendData.documents.electricityBill
+        photo: {
+          id: backendData.documents.photo?.id || '',
+          url: backendData.documents.photo?.id || '',
+          uploaded: !!backendData.documents.photo,
+          status: backendData.documents.photo?.status || 'PENDING',
+          filename: backendData.documents.photo?.filename
         }
       },
       personalInfo: {
         fullName: backendData.maid.name,
-        address: backendData.maid.address,
+        address: backendData.maid.address || 'Address not provided',
         experience: 'Not specified', // Backend doesn't have this field yet
         skills: [] // Backend doesn't have this field yet
       }
@@ -209,11 +233,20 @@ export const AdminMaidVerificationSection: React.FC = () => {
         requiresAuth: true
       });
       
-      console.log('Backend verifications response:', data);
-      
       if (data.success && Array.isArray(data.data)) {
         const transformedVerifications = data.data.map((item: BackendMaidData) => transformBackendData(item));
-        setVerifications(transformedVerifications);
+        
+        // Filter out processed verifications to prevent them from reappearing
+        const filteredVerifications = transformedVerifications.filter(v => 
+          !processedVerificationIds.has(v.id)
+        );
+        
+        // Merge with existing processed verifications to maintain optimistic updates
+        const existingProcessed = verifications.filter(v => 
+          processedVerificationIds.has(v.id)
+        );
+        
+        setVerifications([...existingProcessed, ...filteredVerifications]);
         
         toast({
           title: "Success",
@@ -241,10 +274,70 @@ export const AdminMaidVerificationSection: React.FC = () => {
     }
   };
 
-  // Approve verification
+  // Smart refresh that only updates statistics without overwriting processed verifications
+  const refreshStatisticsOnly = async () => {
+    try {
+      // This could fetch updated statistics without affecting the main verification list
+      // For now, we'll just skip the full refresh to maintain optimistic updates
+    } catch (error) {
+      console.error('Error refreshing statistics:', error);
+    }
+  };
+
+  // Individual document approval/rejection
+  const handleDocumentAction = async (documentId: string, action: 'approve' | 'reject', rejectionReason?: string, adminNotes?: string) => {
+    try {
+      setDocumentActionLoading(documentId);
+      
+      const data = await apiRequest(`/documents/verify/${documentId}`, {
+        method: HttpMethod.PATCH,
+        body: {
+          action,
+          rejectionReason,
+          adminNotes
+        },
+        requiresAuth: true
+      });
+      
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: `Document ${action}d successfully`,
+          duration: 3000,
+        });
+        
+        // Refresh the verification data to show updated document status
+        await fetchVerifications();
+      } else {
+        throw new Error(data.message || `Failed to ${action} document`);
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing document:`, error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : `Failed to ${action} document`,
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setDocumentActionLoading(null);
+    }
+  };
+
+  // Approve verification with optimistic updates
   const handleApproveVerification = async (verificationId: string, notes?: string, services?: string[]) => {
     try {
       setActionLoading(verificationId);
+      
+      // Optimistic update - immediately update the UI
+      setVerifications(prev => prev.map(v => 
+        v.id === verificationId 
+          ? { ...v, status: 'approved' as const, notes: notes || '' }
+          : v
+      ));
+      
+      // Track this verification as processed
+      setProcessedVerificationIds(prev => new Set(prev).add(verificationId));
       
       const data = await apiRequest(`/documents/approve/${verificationId}`, {
         method: HttpMethod.POST,
@@ -255,7 +348,6 @@ export const AdminMaidVerificationSection: React.FC = () => {
         requiresAuth: true
       });
       
-      console.log('Approve response:', data);
       
       if (data.success) {
         toast({
@@ -264,9 +356,20 @@ export const AdminMaidVerificationSection: React.FC = () => {
           duration: 3000,
         });
         
-        // Refresh the data
-        await fetchVerifications();
+        // Smart refresh - only refresh statistics, maintain UI state
+        await refreshStatisticsOnly();
       } else {
+        // Revert optimistic update on failure
+        setVerifications(prev => prev.map(v => 
+          v.id === verificationId 
+            ? { ...v, status: 'pending' as const, notes: '' }
+            : v
+        ));
+        setProcessedVerificationIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(verificationId);
+          return newSet;
+        });
         throw new Error(data.message || 'Approval failed');
       }
     } catch (error) {
@@ -282,12 +385,22 @@ export const AdminMaidVerificationSection: React.FC = () => {
     }
   };
 
-  // Reject verification
+  // Reject verification with optimistic updates
   const handleRejectVerification = async (verificationId: string, reason: string, notes?: string) => {
     try {
       setActionLoading(verificationId);
       
-      const data = await apiRequest(`/api/documents/reject/${verificationId}`, {
+      // Optimistic update - immediately update the UI
+      setVerifications(prev => prev.map(v => 
+        v.id === verificationId 
+          ? { ...v, status: 'rejected' as const, rejectionReason: reason, notes: notes || '' }
+          : v
+      ));
+      
+      // Track this verification as processed
+      setProcessedVerificationIds(prev => new Set(prev).add(verificationId));
+      
+      const data = await apiRequest(`/documents/reject/${verificationId}`, {
         method: HttpMethod.POST,
         body: {
           rejectionReason: reason,
@@ -296,7 +409,6 @@ export const AdminMaidVerificationSection: React.FC = () => {
         requiresAuth: true
       });
       
-      console.log('Reject response:', data);
       
       if (data.success) {
         toast({
@@ -305,9 +417,20 @@ export const AdminMaidVerificationSection: React.FC = () => {
           duration: 3000,
         });
         
-        // Refresh the data
-        await fetchVerifications();
+        // Smart refresh - only refresh statistics, maintain UI state
+        await refreshStatisticsOnly();
       } else {
+        // Revert optimistic update on failure
+        setVerifications(prev => prev.map(v => 
+          v.id === verificationId 
+            ? { ...v, status: 'pending' as const, rejectionReason: '', notes: '' }
+            : v
+        ));
+        setProcessedVerificationIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(verificationId);
+          return newSet;
+        });
         throw new Error(data.message || 'Rejection failed');
       }
     } catch (error) {
@@ -551,92 +674,218 @@ export const AdminMaidVerificationSection: React.FC = () => {
               <div className="border rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <Label className="font-medium">Aadhar Card</Label>
-                  {verification.documents.aadharCard.uploaded ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={verification.documents.aadharCard.status === 'APPROVED' ? 'default' : 
+                              verification.documents.aadharCard.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {verification.documents.aadharCard.status}
+                    </Badge>
+                    {verification.documents.aadharCard.uploaded ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
                 </div>
                 {verification.documents.aadharCard.uploaded && (
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleDocumentPreview(verification.documents.aadharCard.url, 'Aadhar Card')}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Preview
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDocumentDownload(verification.documents.aadharCard.url, 'aadhar_card.jpg')}
-                    >
-                      <Download className="h-3 w-3" />
-                    </Button>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleDocumentPreview(verification.documents.aadharCard.url, 'Aadhar Card')}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDocumentDownload(verification.documents.aadharCard.url, 'aadhar_card.jpg')}
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    {verification.documents.aadharCard.status === 'PENDING' && (
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => handleDocumentAction(verification.documents.aadharCard.id, 'approve')}
+                          disabled={documentActionLoading === verification.documents.aadharCard.id}
+                        >
+                          {documentActionLoading === verification.documents.aadharCard.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Check className="h-3 w-3 mr-1" />
+                          )}
+                          Approve
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() => handleDocumentAction(verification.documents.aadharCard.id, 'reject', 'Document quality issues')}
+                          disabled={documentActionLoading === verification.documents.aadharCard.id}
+                        >
+                          {documentActionLoading === verification.documents.aadharCard.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <X className="h-3 w-3 mr-1" />
+                          )}
+                          Reject
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
               <div className="border rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <Label className="font-medium">Pan Card</Label>
-                  {verification.documents.panCard.uploaded ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
-                  )}
+                  <Label className="font-medium">PAN Card</Label>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={verification.documents.policeVerification.status === 'APPROVED' ? 'default' : 
+                              verification.documents.policeVerification.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {verification.documents.policeVerification.status}
+                    </Badge>
+                    {verification.documents.policeVerification.uploaded ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
                 </div>
-                {verification.documents.panCard.uploaded && (
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleDocumentPreview(verification.documents.panCard.url, 'Pan Card')}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Preview
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDocumentDownload(verification.documents.panCard.url, 'pan_card.jpg')}
-                    >
-                      <Download className="h-3 w-3" />
-                    </Button>
+                {verification.documents.policeVerification.uploaded && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleDocumentPreview(verification.documents.policeVerification.url, 'PAN Card')}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDocumentDownload(verification.documents.policeVerification.url, 'pan_card.jpg')}
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    {verification.documents.policeVerification.status === 'PENDING' && (
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => handleDocumentAction(verification.documents.policeVerification.id, 'approve')}
+                          disabled={documentActionLoading === verification.documents.policeVerification.id}
+                        >
+                          {documentActionLoading === verification.documents.policeVerification.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Check className="h-3 w-3 mr-1" />
+                          )}
+                          Approve
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() => handleDocumentAction(verification.documents.policeVerification.id, 'reject', 'Document quality issues')}
+                          disabled={documentActionLoading === verification.documents.policeVerification.id}
+                        >
+                          {documentActionLoading === verification.documents.policeVerification.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <X className="h-3 w-3 mr-1" />
+                          )}
+                          Reject
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
               <div className="border rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <Label className="font-medium">Electricity Bill</Label>
-                  {verification.documents.electricityBill.uploaded ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
-                  )}
+                  <Label className="font-medium">Address Proof</Label>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={verification.documents.photo.status === 'APPROVED' ? 'default' : 
+                              verification.documents.photo.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {verification.documents.photo.status}
+                    </Badge>
+                    {verification.documents.photo.uploaded ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
                 </div>
-                {verification.documents.electricityBill.uploaded && (
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleDocumentPreview(verification.documents.electricityBill.url, 'Electricity Bill')}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Preview
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDocumentDownload(verification.documents.electricityBill.url, 'electricity_bill.jpg')}
-                    >
-                      <Download className="h-3 w-3" />
-                    </Button>
+                {verification.documents.photo.uploaded && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleDocumentPreview(verification.documents.photo.url, 'Address Proof')}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDocumentDownload(verification.documents.photo.url, 'address_proof.jpg')}
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    {verification.documents.photo.status === 'PENDING' && (
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => handleDocumentAction(verification.documents.photo.id, 'approve')}
+                          disabled={documentActionLoading === verification.documents.photo.id}
+                        >
+                          {documentActionLoading === verification.documents.photo.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Check className="h-3 w-3 mr-1" />
+                          )}
+                          Approve
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          className="flex-1"
+                          onClick={() => handleDocumentAction(verification.documents.photo.id, 'reject', 'Document quality issues')}
+                          disabled={documentActionLoading === verification.documents.photo.id}
+                        >
+                          {documentActionLoading === verification.documents.photo.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <X className="h-3 w-3 mr-1" />
+                          )}
+                          Reject
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -854,25 +1103,24 @@ export const AdminMaidVerificationSection: React.FC = () => {
                       ) : (
                         <XCircle className="h-4 w-4 text-red-500" />
                       )}
-                      {verification.documents.panCard.uploaded ? (
+                      {verification.documents.policeVerification.uploaded ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
                         <XCircle className="h-4 w-4 text-red-500" />
                       )}
-                      {verification.documents.electricityBill.uploaded ? (
+                      {verification.documents.photo.uploaded ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
                         <XCircle className="h-4 w-4 text-red-500" />
                       )}
                       <span className="text-xs text-muted-foreground ml-2">
-                        {[verification.documents.aadharCard.uploaded, verification.documents.panCard.uploaded, verification.documents.electricityBill.uploaded].filter(Boolean).length}/3
+                        {[verification.documents.aadharCard.uploaded, verification.documents.policeVerification.uploaded, verification.documents.photo.uploaded].filter(Boolean).length}/3
                       </span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center gap-2 justify-end">
                       <DocumentPreviewDialog verification={verification} />
-                      
                       {verification.status === 'pending' && (
                         <>
                           <Button 

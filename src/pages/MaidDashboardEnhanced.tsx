@@ -8,10 +8,12 @@ import { BookingService, Booking } from '@/services/bookingService';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { verificationService } from '@/services/verificationService';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle, MapPin, Shield, Upload } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle, MapPin, Shield, Upload, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidBookingRequestsSection } from '@/components/dashboard/MaidBookingRequestsSection';
+import { MaidAssignmentRequestsSection } from '@/components/dashboard/MaidAssignmentRequestsSection';
+
 // Service interface to match backend
 interface Service {
   id: string;
@@ -39,7 +41,7 @@ interface MaidStats {
   completionRate: number;
 }
 
-export default function MaidDashboard() {
+export default function MaidDashboardEnhanced() {
   const { user, refreshUser, isAuthenticated } = useUser();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -225,6 +227,7 @@ export default function MaidDashboard() {
       </MaidDashboardLayout>
     );
   }
+
   return (
     <MaidDashboardLayout>
       <div className="space-y-6">
@@ -408,7 +411,59 @@ export default function MaidDashboard() {
           </Card>
         </div>
 
-        {/* Main Content Grid */}
+        {/* Assignment Requests Section - Prominently displayed for verified maids */}
+        {/* {isVerified && (
+          <div className="slide-up">
+            <Card className="dashboard-card border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50 dark:to-blue-950/20">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Bell className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">Assignment Requests</CardTitle>
+                      <CardDescription>New cleaning assignments waiting for your response</CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                    Active
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <MaidBookingRequestsSection onRefresh={fetchMaidDashboardData} />
+              </CardContent>
+            </Card>
+          </div>
+        )} */}
+
+        {/* Customer Assignment Requests Section */}
+        <div className="mb-8">
+          <Card className="dashboard-card slide-up">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <User className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Customer Assignment Requests</CardTitle>
+                    <CardDescription>New customer assignment requests waiting for your response</CardDescription>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-600">
+                  New
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <MaidAssignmentRequestsSection onRefresh={fetchMaidDashboardData} />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Bookings and Quick Actions Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Bookings */}
           <Card className="dashboard-card slide-up">
@@ -489,12 +544,6 @@ export default function MaidDashboard() {
                                     <span>{booking.customer.phone}</span>
                                   </div>
                                 )}
-                                {booking.customer?.email && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span className="w-4 h-4 flex items-center justify-center">✉️</span>
-                                    <span className="truncate">{booking.customer.email}</span>
-                                  </div>
-                                )}
                                 <div className="flex items-center gap-2 text-sm">
                                   <span className="w-4 h-4 flex items-center justify-center text-green-600">💰</span>
                                   <span className="font-bold text-green-600">₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}</span>
@@ -513,108 +562,11 @@ export default function MaidDashboard() {
                                 </div>
                               </div>
                             )}
-                            
-                            {booking.specialInstructions && (
-                              <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-l-4 border-yellow-400">
-                                <div className="flex items-start gap-2">
-                                  <MessageCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                  <div>
-                                    <span className="font-medium text-yellow-700 dark:text-yellow-300 text-sm">Special Instructions:</span>
-                                    <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-1">{booking.specialInstructions}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Assignment Status & Timeline */}
-                            {booking.createdAt && (
-                              <div className="mb-3 p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <span>Assigned on {new Date(booking.createdAt).toLocaleDateString()}</span>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Enhanced Action buttons for maid */}
-                      <div className="mt-4 pt-4 border-t border-border">
-                        {booking.status === 'CONFIRMED' && (
-                          <div className="flex flex-wrap gap-2">
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                              ▶️ Start Service
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              📞 Contact Client
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              📍 Get Directions
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-orange-600">
-                              ⚠️ Report Issue
-                            </Button>
-                          </div>
-                        )}
-                        {booking.status === 'IN_PROGRESS' && (
-                          <div className="flex flex-wrap gap-2">
-                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                              ✅ Complete Service
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              ⏱️ Update Progress
-                            </Button>
-                            <Button size="sm" variant="outline">
-                              📞 Contact Client
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-orange-600">
-                              ⚠️ Report Issue
-                            </Button>
-                          </div>
-                        )}
-                        {booking.status === 'PENDING' && (
-                          <div className="flex flex-wrap gap-2">
-                            <div className="flex items-center gap-2 text-sm text-orange-600">
-                              <Clock className="h-4 w-4 animate-pulse" />
-                              <span>Awaiting admin assignment...</span>
-                            </div>
-                          </div>
-                        )}
-                        {booking.status === 'COMPLETED' && (
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="default" className="bg-green-100 text-green-800">
-                              ✅ Service Completed
-                            </Badge>
-                            {booking.completedAt && (
-                              <span className="text-sm text-muted-foreground">
-                                on {new Date(booking.completedAt).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
                     </div>
                   ))}
-                  
-                  <div className="pt-4 border-t">
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-                      <div className="text-sm text-muted-foreground">
-                        Showing {Math.min(2, bookings.length)} of {bookings.length} assignments
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Set Availability
-                        </Button>
-                        <Link to="/maid-bookings">
-                          <Button size="sm">
-                            View All Assignments
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12">
@@ -623,16 +575,6 @@ export default function MaidDashboard() {
                   <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
                     You'll see your cleaning assignments here once customers book your services. Make sure your availability is up to date!
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button className="btn-hero">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Set Availability
-                    </Button>
-                    <Button variant="outline">
-                      <User className="h-4 w-4 mr-2" />
-                      Update Profile
-                    </Button>
-                  </div>
                 </div>
               )}
             </CardContent>
@@ -682,315 +624,6 @@ export default function MaidDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Additional Content Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Maid Profile */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Maid Profile
-              </CardTitle>
-              <CardDescription>Your professional information and performance metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-4 p-4 bg-gradient-feature rounded-lg border border-primary/20">
-                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-                  <User className="h-8 w-8 text-primary-foreground" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground text-xl">{user.name}</h4>
-                  <p className="text-sm text-muted-foreground">{user.role} • Professional Cleaner</p>
-                  <div className="flex items-center space-x-1 mt-1">
-                    <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-medium">{stats.averageRating}</span>
-                    <span className="text-xs text-muted-foreground">({stats.totalReviews} reviews)</span>
-                  </div>
-                  <Badge variant="outline" className="mt-2">
-                    {user.status}
-                  </Badge>
-                </div>
-              </div>
-              
-              {/* Profile Stats Grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground">Total Jobs</p>
-                  <p className="text-lg font-bold text-primary">{stats.completedBookings}</p>
-                  <p className="text-xs text-muted-foreground">{stats.completionRate}% success</p>
-                </div>
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground">Lifetime Earnings</p>
-                  <p className="text-lg font-bold text-primary">₹{stats.totalEarnings.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">All time</p>
-                </div>
-              </div>
-              
-              {/* Profile Details */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Email:</span>
-                  <span className="text-foreground text-sm">{user.email}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                  <span className="font-medium">Phone:</span>
-                  <span className="text-foreground">{user.phone}</span>
-                </div>
-                {user.address && (
-                  <div className="p-3 bg-muted/30 rounded-lg">
-                    <span className="font-medium">Address:</span>
-                    <p className="text-foreground mt-1 text-sm">{user.address}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <Link to="/profile">
-                  <Button className="w-full justify-start" variant="outline">
-                    <User className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                </Link>
-                <Button className="w-full justify-start" variant="outline">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Set Availability
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Support Chat */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <CardTitle>Support Chat</CardTitle>
-              <CardDescription>Get help with bookings and technical issues</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-gradient-feature rounded-lg p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground">Live Support</h4>
-                    <p className="text-sm text-muted-foreground">Available 24/7</p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Need help with your bookings, payments, or have any questions? Our support team is here to help you.
-                </p>
-                <Button className="btn-hero w-full">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Start Chat
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
-                      <CheckCircle className="h-4 w-4 text-success-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Booking Issue</p>
-                      <p className="text-xs text-muted-foreground">Resolved 2 hours ago</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs">Resolved</Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-warning rounded-full flex items-center justify-center">
-                      <Clock className="h-4 w-4 text-warning-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Payment Query</p>
-                      <p className="text-xs text-muted-foreground">Waiting for response</p>
-                    </div>
-                  </div>
-                  <Badge className="text-xs">Pending</Badge>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t border-border">
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <h4 className="font-semibold text-foreground mb-2">Quick Actions</h4>
-                  <div className="space-y-2">
-                    <Button size="sm" variant="outline" className="w-full justify-start">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Report Issue
-                    </Button>
-                    <Button size="sm" variant="outline" className="w-full justify-start">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Payment Help
-                    </Button>
-                    <Button size="sm" variant="outline" className="w-full justify-start">
-                      <User className="h-4 w-4 mr-2" />
-                      Account Settings
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Enhanced Earnings Overview */}
-        <Card className="dashboard-card slide-up">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Earnings Analytics
-                </CardTitle>
-                <CardDescription>Comprehensive performance metrics and earnings breakdown from API data</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Badge variant="outline" className="text-xs px-2 py-1">
-                  {payments.filter(p => p.status === 'COMPLETED').length} Payments
-                </Badge>
-                <Button variant="outline" size="sm">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  View Details
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {payments.length > 0 ? (
-              <div className="space-y-6">
-                {/* Earnings Analytics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="bg-gradient-feature rounded-lg p-4 border border-primary/20">
-                    <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
-                      This Month
-                    </h4>
-                    <p className="text-2xl font-bold text-primary">₹{stats.monthlyEarnings.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {bookings.filter(b => {
-                        const bookingDate = new Date(b.scheduledAt);
-                        const currentMonth = new Date().getMonth();
-                        const currentYear = new Date().getFullYear();
-                        return b.status === 'COMPLETED' && 
-                               bookingDate.getMonth() === currentMonth &&
-                               bookingDate.getFullYear() === currentYear;
-                      }).length} bookings completed
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-feature rounded-lg p-4 border border-primary/20">
-                    <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                      <Star className="h-4 w-4" />
-                      Average Rating
-                    </h4>
-                    <p className="text-2xl font-bold text-primary">{stats.averageRating}★</p>
-                    <p className="text-sm text-muted-foreground">{stats.totalReviews} reviews</p>
-                  </div>
-                  
-                  <div className="bg-gradient-feature rounded-lg p-4 border border-primary/20">
-                    <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4" />
-                      Completion Rate
-                    </h4>
-                    <p className="text-2xl font-bold text-primary">{stats.completionRate}%</p>
-                    <p className="text-sm text-muted-foreground">
-                      {stats.completedBookings}/{stats.totalBookings} bookings
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-feature rounded-lg p-4 border border-primary/20">
-                    <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Total Earnings
-                    </h4>
-                    <p className="text-2xl font-bold text-primary">₹{stats.totalEarnings.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">Lifetime earnings</p>
-                  </div>
-                </div>
-                
-                {/* Payment Breakdown */}
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    Payment Breakdown
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-success">
-                        ₹{payments.filter(p => p.status === 'COMPLETED').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Received</div>
-                      <div className="text-xs text-success mt-1">
-                        {payments.filter(p => p.status === 'COMPLETED').length} payments
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-warning">
-                        ₹{payments.filter(p => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Pending</div>
-                      <div className="text-xs text-warning mt-1">
-                        {payments.filter(p => p.status === 'PENDING').length} pending
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-muted-foreground">
-                        ₹{Math.round(stats.totalEarnings / Math.max(stats.completedBookings, 1)).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Avg per Job</div>
-                      <div className="text-xs text-muted-foreground mt-1">Per booking</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-primary">
-                        {stats.completedBookings > 0 ? Math.round(stats.monthlyEarnings / stats.completedBookings * 30 / new Date().getDate()) : 0}
-                      </div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Projected</div>
-                      <div className="text-xs text-primary mt-1">Monthly goal</div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 border-t">
-                  <Button variant="outline">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    View Detailed Earnings
-                  </Button>
-                  <Button variant="outline">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Performance Analytics
-                  </Button>
-                  <Button variant="outline">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Payment History
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <DollarSign className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h4 className="font-semibold text-lg mb-2">No Earnings Yet</h4>
-                <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
-                  Your earnings and performance metrics will appear here once you complete your first cleaning assignment.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button className="btn-hero">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Set Availability
-                  </Button>
-                  <Button variant="outline">
-                    <User className="h-4 w-4 mr-2" />
-                    Complete Profile
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </MaidDashboardLayout>
   );

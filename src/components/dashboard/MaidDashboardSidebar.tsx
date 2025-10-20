@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, CreditCard, MessageCircle, LogOut, User, Settings, Clock, Star, Shield } from 'lucide-react';
+import { Home, Calendar, CreditCard, MessageCircle, LogOut, User, Settings, Clock, Star, Shield, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,11 @@ const maidNavigationItems = [
     href: '/maid-bookings', 
     icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     showBadge: true
+  },
+  { 
+    name: 'Auto Requests', 
+    href: '/maid-auto-requests', 
+    icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
     name: 'Availability', 

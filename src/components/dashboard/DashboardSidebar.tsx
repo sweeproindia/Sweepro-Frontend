@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, CreditCard, Receipt, MessageCircle, LogOut, Users, Shield, BarChart3, Package } from 'lucide-react';
+import { Home, Calendar, CreditCard, Receipt, MessageCircle, LogOut, Users, Shield, BarChart3, Package, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +9,7 @@ import { motion } from 'motion/react';
 const customerNavigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'My Bookings', href: '/bookings', icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
+  { name: 'Auto Service', href: '/auto-service', icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Subscription', href: '/subscription', icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Monthly Buffer', href: '/monthly-subscription', icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Payment History', href: '/payments', icon: <Receipt className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
