@@ -4,25 +4,25 @@ const features = [
   {
     icon: Shield,
     title: "Trusted Professionals",
-    description: "All our maids are background-verified, insured, and trained to deliver exceptional service.",
+    description: "All our care partners are background-verified, insured, and trained to deliver exceptional service.",
     color: "emerald",
   },
   {
     icon: Clock,
-    title: "Flexible Scheduling",
-    description: "Book daily, weekly, or monthly visits. Reschedule anytime through our easy-to-use platform.",
+    title: "Consistent & Reliable",
+    description: "Enjoy uninterrupted service with well-structured schedules, backup support, and transparent communication.",
     color: "blue",
   },
   {
     icon: Users,
-    title: "Background Verified",
-    description: "Every cleaner undergoes thorough background checks and identity verification for your peace of mind.",
+    title: "Designed for Modern Homes",
+    description: "From compact apartments to spacious villas, our plans adapt to your home's needs and lifestyle.",
     color: "amber",
   },
   {
     icon: CreditCard,
-    title: "Pricing & Toolkit",
-    description: "No hidden fees or surprise charges—just everything you need in one powerful toolkit to manage, automate, and grow with confidence.",
+    title: "Sweepro Kit",
+    description: "We equip our team with a curated cleaning kit to ensure effective, hygienic, and consistent results – every single time",
     color: "indigo",
   },
 ];

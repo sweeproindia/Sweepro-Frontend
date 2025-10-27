@@ -100,14 +100,14 @@ export const HowItWorksSection = () => {
               {/* Icon Circle with Sequential Fill and floating effect on the full circle */}
               <div className="relative mb-6">
                 <motion.div
-                  className="inline-flex items-center justify-center w-24 h-24 rounded-full border-2 border-primary/30 mb-4 relative overflow-hidden floating-icon"
-                  style={{ background: `conic-gradient(from 0deg, var(--gradient-hero) ${activeStep === index ? 360 : 0}deg, white ${activeStep === index ? 360 : 0}deg, white 360deg)` }}
+                  className="inline-flex items-center justify-center w-24 h-24 rounded-full border-2 mb-4 relative overflow-hidden floating-icon"
+                  style={{ borderColor: activeStep === index ? '#2563eb' : '#93c5fd', background: 'white' }}
                 >
                   <motion.div 
-                    className="w-20 h-20 rounded-full bg-white flex items-center justify-center relative z-10"
-                    style={{ backgroundColor: activeStep === index ? 'transparent' : 'white' }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center relative z-10"
+                    style={{ backgroundColor: 'white' }}
                   >
-                    <step.icon className="h-8 w-8 text-primary transition-colors duration-300" />
+                    <step.icon className={`h-8 w-8 ${activeStep === index || allVisible ? 'text-blue-600' : 'text-blue-300'} transition-colors duration-300`} />
                   </motion.div>
                 </motion.div>
               </div>

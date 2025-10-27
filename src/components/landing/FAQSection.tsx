@@ -1,6 +1,3 @@
-//FAQSection.tsx
-
-
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -108,13 +105,6 @@ export const FAQSection: React.FC = () => {
                 </div>
               ))}
             </div>
-
-            {/* CTA Button */}
-            <div className="mt-8">
-              <button className="bg-primary text-white px-8 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors duration-200">
-                Contact Support
-              </button>
-            </div>
           </div>
 
           {/* Right Side - Image */}
@@ -125,26 +115,6 @@ export const FAQSection: React.FC = () => {
                 alt="Professional cleaning service" 
                 className="w-full h-[500px] object-cover rounded-2xl shadow-soft"
               />
-            </div>
-            
-            {/* Decorative Elements */}
-            <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/10 rounded-full"></div>
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-success/10 rounded-full"></div>
-            
-            {/* Floating Card */}
-            <div className="absolute bottom-8 -left-8 bg-white p-6 rounded-xl shadow-large max-w-xs">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-12 h-12 bg-success/20 rounded-full flex items-center justify-center">
-                  <span className="text-success text-xl">★</span>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Trusted Service</p>
-                  <p className="text-sm text-gray-600">4.9/5 Rating</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">
-                "Amazing service! My home has never been cleaner. Highly recommend!"
-              </p>
             </div>
           </div>
         </div>

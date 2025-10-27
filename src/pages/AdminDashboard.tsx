@@ -54,6 +54,7 @@ import { AdminSubscriptionsSection } from '../components/dashboard/AdminSubscrip
 import { AdminPaymentsSection } from '../components/dashboard/AdminPaymentsSection';
 import { AdminAutomaticBookingsSection } from '../components/dashboard/AdminAutomaticBookingsSection';
 import { AdminDashboardSidebar } from './AdminDashboardSidebar';
+import { NotificationBell } from '../components/notifications/NotificationBell';
 
 // User interface from backend
 interface User {
@@ -371,6 +372,9 @@ export default function AdminDashboard() {
             completedBookings: 0
           }));
         setMaids(maidsData);
+      } else if (usersResponse.status === 'rejected') {
+        console.error('Failed to fetch users');
+        setUsers([]);
       }
 
       // Handle bookings data
@@ -378,6 +382,9 @@ export default function AdminDashboard() {
         const raw = bookingsResponse.value.data as any;
         const bookingsData = Array.isArray(raw) ? raw : (raw?.bookings || raw?.data || []);
         setBookings(bookingsData);
+      } else if (bookingsResponse.status === 'rejected') {
+        console.error('Failed to fetch bookings');
+        setBookings([]);
       }
 
       // Handle pending bookings data
@@ -385,6 +392,9 @@ export default function AdminDashboard() {
         const raw = (pendingBookingsResponse.value as any).data ?? (pendingBookingsResponse.value as any);
         const pendingBookingsData = Array.isArray(raw) ? raw : (raw?.bookings || raw?.data || []);
         setPendingBookings(pendingBookingsData);
+      } else if (pendingBookingsResponse.status === 'rejected') {
+        console.error('Failed to fetch pending bookings');
+        setPendingBookings([]);
       }
 
       // Handle available maids data (map to Maid shape)
@@ -623,57 +633,8 @@ export default function AdminDashboard() {
 
       {/* Right side: Notifications, Refresh, Profile and Mobile Menu */}
       <div className="flex items-center space-x-4">
-        {/* Notifications */}
-        <div className="relative" ref={notificationRef}>
-          <Button variant="ghost" size="sm" onClick={toggleNotification} className="relative">
-            <Bell className="h-5 w-5" />
-            {notifications.filter((n) => n.unread).length > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                {notifications.filter((n) => n.unread).length}
-              </span>
-            )}
-          </Button>
-
-          {isNotificationOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Admin Notifications</h3>
-                <p className="text-sm text-gray-600">{notifications.filter((n) => n.unread).length} unread messages</p>
-              </div>
-
-              <div className="divide-y divide-gray-100">
-                {notifications.slice(0, 5).map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer border-l-4 ${getNotificationColor(notification.type)} ${
-                      notification.unread ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className={`text-sm font-medium ${notification.unread ? 'text-gray-900' : 'text-gray-700'}`}>
-                            {notification.title}
-                          </p>
-                          {notification.unread && <span className="h-2 w-2 bg-blue-500 rounded-full"></span>}
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-2">{notification.time}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-4 border-t border-gray-200">
-                <button onClick={openAllNotifications} className="w-full text-sm text-primary hover:text-primary/80 font-medium">
-                  View All Notifications
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Notifications - Using NotificationBell Component */}
+        <NotificationBell />
 
         {/* Refresh Button - Hidden on Mobile */}
         <Button 
