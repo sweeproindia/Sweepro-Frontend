@@ -292,7 +292,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                           <div className="lg:col-span-2">
                             <div className="flex items-start justify-between mb-4">
                               <div>
-                                <h3 className="font-semibold text-lg">{booking.service.name}</h3>
+                                <h3 className="font-semibold text-lg">{booking.service?.name ?? '(no service)'}</h3>
                                 <p className="text-muted-foreground">
                                   Booking ID: {booking.id.slice(-8)}
                                 </p>
@@ -308,20 +308,20 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                             <div className="grid grid-cols-2 gap-4 mb-4">
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Customer</h4>
-                                <p className="font-medium">{booking.customer.name}</p>
-                                <p className="text-sm text-muted-foreground">{booking.customer.email}</p>
-                                <p className="text-sm text-muted-foreground">{booking.customer.phone}</p>
+                                <p className="font-medium">{booking.customer?.name ?? '(no customer)'}</p>
+                                <p className="text-sm text-muted-foreground">{booking.customer?.email ?? '-'}</p>
+                                <p className="text-sm text-muted-foreground">{booking.customer?.phone ?? '-'}</p>
                               </div>
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Assigned Maid</h4>
                                 <div className="flex items-center gap-2">
                                   <User className="h-4 w-4 text-green-600" />
-                                  <span className="font-medium">{booking.maid.name}</span>
+                                  <span className="font-medium">{booking.maid?.name ?? '(no maid)'}</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                  Rating: {booking.maid.rating.toFixed(1)}★
+                                  Rating: {booking.maid?.rating?.toFixed(1) ?? 'N/A'}★
                                 </p>
-                                <p className="text-sm text-muted-foreground">{booking.maid.phone}</p>
+                                <p className="text-sm text-muted-foreground">{booking.maid?.phone ?? '-'}</p>
                               </div>
                             </div>
 
@@ -338,13 +338,13 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                               </p>
                             </div>
 
-                            {booking.customer.address && (
+                            {booking.customer?.address && (
                               <div className="mb-4">
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1 flex items-center gap-1">
                                   <MapPin className="h-3 w-3" />
                                   Service Address
                                 </h4>
-                                <p className="text-sm">{booking.customer.address}</p>
+                                <p className="text-sm">{booking.customer?.address ?? '-'}</p>
                               </div>
                             )}
                           </div>
@@ -366,7 +366,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                                 ) : (
                                   <>
                                     <Send className="h-4 w-4 mr-2" />
-                                    Send to {booking.maid.name}
+                                    Send to {booking.maid?.name ?? '(no maid)'}
                                   </>
                                 )}
                               </Button>
@@ -423,7 +423,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                           <div className="lg:col-span-2">
                             <div className="flex items-start justify-between mb-4">
                               <div>
-                                <h3 className="font-semibold text-lg">{booking.service.name}</h3>
+                                <h3 className="font-semibold text-lg">{booking.service?.name ?? '(no service)'}</h3>
                                 <p className="text-muted-foreground">
                                   Booking ID: {booking.id.slice(-8)}
                                 </p>
@@ -441,12 +441,12 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                             <div className="grid grid-cols-2 gap-4 mb-4">
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Customer</h4>
-                                <p className="font-medium">{booking.customer.name}</p>
-                                <p className="text-sm text-muted-foreground">{booking.customer.email}</p>
+                                <p className="font-medium">{booking.customer?.name ?? '(no customer)'}</p>
+                                <p className="text-sm text-muted-foreground">{booking.customer?.email ?? '-'}</p>
                               </div>
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Previous Maid</h4>
-                                <p className="font-medium text-red-600">{booking.maid.name}</p>
+                                <p className="font-medium text-red-600">{booking.maid?.name ?? '(no maid)'}</p>
                                 <p className="text-sm text-muted-foreground">Rejected this booking</p>
                               </div>
                             </div>
@@ -531,20 +531,20 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                     <TableRow key={booking.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{booking.customer.name}</p>
-                          <p className="text-sm text-muted-foreground">{booking.customer.email}</p>
+                          <p className="font-medium">{booking.customer?.name ?? '(no customer)'}</p>
+                          <p className="text-sm text-muted-foreground">{booking.customer?.email ?? '-'}</p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{booking.maid.name}</p>
+                          <p className="font-medium">{booking.maid?.name ?? '(no maid)'}</p>
                           <p className="text-sm text-muted-foreground">
-                            {booking.maid.rating.toFixed(1)}★
+                            {booking.maid?.rating?.toFixed(1) ?? 'N/A'}★
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{booking.service.name}</p>
+                        <p className="font-medium">{booking.service?.name ?? '(no service)'}</p>
                       </TableCell>
                       <TableCell>
                         <div>
@@ -606,9 +606,9 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
           {reassignDialog.booking && (
             <div className="space-y-4">
               <div className="p-3 bg-muted rounded-lg">
-                <p className="font-medium">{reassignDialog.booking.service.name}</p>
+                <p className="font-medium">{reassignDialog.booking.service?.name ?? '(no service)'}</p>
                 <p className="text-sm text-muted-foreground">
-                  {reassignDialog.booking.customer.name} • {new Date(reassignDialog.booking.scheduledAt).toLocaleDateString()}
+                  {reassignDialog.booking.customer?.name ?? '(no customer)'} • {new Date(reassignDialog.booking.scheduledAt).toLocaleDateString()}
                 </p>
               </div>
 

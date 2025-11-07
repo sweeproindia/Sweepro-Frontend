@@ -463,6 +463,31 @@ export default function MaidDashboardEnhanced() {
           </Card>
         </div>
 
+        {/* Add automatic booking assignment requests for maids */}
+        <div className="mb-8">
+          <Card className="dashboard-card slide-up">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Bell className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Automatic Booking Assignment Requests</CardTitle>
+                    <CardDescription>Accept or reject automatic bookings assigned to you</CardDescription>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="bg-green-100 text-green-600">
+                  Auto
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <MaidBookingRequestsSection onRefresh={fetchMaidDashboardData} />
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Recent Bookings and Quick Actions Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Bookings */}

@@ -109,11 +109,18 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
       if (response.success) {
         const bookingsData = Array.isArray(response.data) ? response.data : [];
         // Filter bookings that need reassignment (rejected by maids or expired)
+        const now = new Date();
         const filteredBookings = bookingsData.filter((booking: BookingForAssignment) => 
           !processedBookingIds.has(booking.id) && 
-          (booking.assignmentStatus === 'REJECTED' || 
-           (booking.status === 'CANCELLED' && booking.rejectionReason))
-        );
+          booking.assignmentStatus === 'REJECTED' && booking.status != "CONFIRMED" && booking.status != "ACCEPTED" &&
+          new Date(booking.scheduledAt) > now // Only future bookings get in list
+        ).map(booking => {
+          // Mark as expired if past
+          if (new Date(booking.scheduledAt) < now) {
+            return { ...booking, status: 'expired' };
+          }
+          return booking;
+        });
         
         console.log('🔍 AdminReassignmentSection - Raw bookings:', bookingsData.length);
         console.log('🔍 AdminReassignmentSection - Filtered bookings:', filteredBookings.length);

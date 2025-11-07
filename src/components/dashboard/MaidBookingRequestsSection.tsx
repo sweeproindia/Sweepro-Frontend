@@ -54,9 +54,14 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
       const response = await assignmentService.getPendingAssignments();
 
       if (response.success) {
-        const requestsData = Array.isArray(response.data) ? response.data : [];
+        let requestsData: AssignmentRequest[] = [];
+        if (Array.isArray(response.data)) {
+          requestsData = response.data;
+        } else if (response.data && Array.isArray((response.data as any).pendingOnly)) {
+          requestsData = (response.data as any).pendingOnly;
+        }
         // Filter out processed requests to prevent reappearing
-        const filteredRequests = requestsData.filter((request: AssignmentRequest) => 
+        const filteredRequests = requestsData.filter((request: AssignmentRequest) =>
           !processedRequestIds.has(request.id) && request.status === 'pending'
         );
         setAssignmentRequests(filteredRequests);
