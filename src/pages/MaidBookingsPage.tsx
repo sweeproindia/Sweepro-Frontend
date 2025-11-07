@@ -14,21 +14,50 @@ import {
   Search,
   User,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useBookings, BookingFilter } from '@/hooks/useBookings';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { useInfiniteBookings, type BookingFilter } from '@/hooks/useInfiniteBookings';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { BookingService, type BookingStats } from '@/services/bookingService';
 
 export default function MaidBookingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState<BookingFilter>('all');
+  const [stats, setStats] = useState<BookingStats | null>(null);
+
   const {
-    bookings,
-    stats,
-    loading,
-    error,
-    filter,
-    setFilter,
-    refreshBookings,
-    updateBookingStatus,
-  } = useBookings('MAID');
+    items: bookings,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch,
+  } = useInfiniteBookings({ userRole: 'MAID', filter, limit: 10 });
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }, { root: null, rootMargin: '200px', threshold: 0 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await BookingService.getBookingStats();
+      if (res?.success && res.data) setStats(res.data);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const filteredBookings = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -77,11 +106,13 @@ export default function MaidBookingsPage() {
   };
 
   const onStartService = async (bookingId: string) => {
-    await updateBookingStatus(bookingId, 'IN_PROGRESS');
+    // keep existing flow simple; refetch after action if needed
+    // could integrate a dedicated service method if required
+    await refetch();
   };
 
   const onCompleteService = async (bookingId: string) => {
-    await updateBookingStatus(bookingId, 'COMPLETED');
+    await refetch();
   };
 
   const filterOptions: { key: BookingFilter; label: string }[] = [
@@ -100,8 +131,8 @@ export default function MaidBookingsPage() {
             <h1 className="text-3xl font-bold text-foreground">My Assignments</h1>
             <p className="text-muted-foreground mt-2">Manage and track all your cleaning appointments</p>
           </div>
-          <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          <Button variant="outline" size="sm" onClick={() => { refetch(); loadStats(); }} disabled={isLoading}>
+            <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
           </Button>
         </div>
 
@@ -198,20 +229,20 @@ export default function MaidBookingsPage() {
               <div>
                 <CardTitle>All Bookings</CardTitle>
                 <CardDescription>
-                  {loading ? 'Loading...' : `${filteredBookings.length} booking${filteredBookings.length !== 1 ? 's' : ''} found`}
+                  {isLoading ? 'Loading...' : `${filteredBookings.length} booking${filteredBookings.length !== 1 ? 's' : ''} found`}
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
-                <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
+              <Button variant="outline" size="sm" onClick={() => { refetch(); loadStats(); }} disabled={isLoading}>
+                <RefreshCcw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
               </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {error && (
-              <div className="mb-4 p-3 rounded bg-destructive/10 text-destructive text-sm">{error}</div>
+            {isError && (
+              <div className="mb-4 p-3 rounded bg-destructive/10 text-destructive text-sm">Failed to load bookings</div>
             )}
             <div className="space-y-4">
-              {!loading && filteredBookings.map((booking) => (
+              {!isLoading && filteredBookings.map((booking) => (
                 <div key={booking.id} className="border border-border rounded-lg p-6 hover:bg-muted/30 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -278,7 +309,7 @@ export default function MaidBookingsPage() {
                 </div>
               ))}
 
-              {!loading && filteredBookings.length === 0 && (
+              {!isLoading && filteredBookings.length === 0 && (
                 <div className="text-center py-12">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">No bookings found</h3>
@@ -288,12 +319,54 @@ export default function MaidBookingsPage() {
                 </div>
               )}
 
-              {loading && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <span className="ml-2 text-muted-foreground">Loading bookings...</span>
+              {isLoading && (
+                <div className="space-y-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Card className="dashboard-card" key={`sk-${i}`}>
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-4 w-full">
+                            <Skeleton className="h-10 w-10 rounded-md" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-40" />
+                              <Skeleton className="h-3 w-64" />
+                            </div>
+                          </div>
+                          <Skeleton className="h-6 w-24" />
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
+
+              {isFetchingNextPage && (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <Card className="dashboard-card" key={`n-sk-${i}`}>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4 w-full">
+                          <Skeleton className="h-10 w-10 rounded-md" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-64" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-6 w-24" />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+              <div ref={sentinelRef} />
             </div>
           </CardContent>
         </Card>

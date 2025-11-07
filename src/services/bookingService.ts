@@ -98,6 +98,20 @@ export interface BookingsResponse {
   };
 }
 
+export interface PaginatedBookingsResponse {
+  success: boolean;
+  data: Booking[];
+  pageInfo?: {
+    nextCursor: string | null;
+    hasNextPage: boolean;
+    pageSize: number;
+  };
+  filters?: {
+    applied: string;
+    available: string[];
+  };
+}
+
 export class BookingService {
   /**
    * Create a new booking
@@ -125,9 +139,32 @@ export class BookingService {
           bufferStartDate: errorData.bufferStartDate
         };
       }
-      
       throw error;
     }
+  }
+
+  /**
+   * Get a page of maid's bookings using cursor pagination
+   */
+  static async getMaidBookingsPage(params: { status?: string; cursor?: string | null; limit?: number }): Promise<PaginatedBookingsResponse> {
+    const { status, cursor, limit = 10 } = params || {};
+    const qs = new URLSearchParams();
+    if (status) qs.set('status', status);
+    if (cursor) qs.set('cursor', cursor);
+    if (limit) qs.set('limit', String(limit));
+    const url = `${API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS}${qs.toString() ? `?${qs.toString()}` : ''}`;
+
+    const response = await apiRequest<PaginatedBookingsResponse>(url, {
+      method: HttpMethod.GET,
+      requiresAuth: true,
+    });
+
+    return {
+      success: !!response.success,
+      data: (response.data as any)?.data || (response.data as any) || [],
+      pageInfo: (response.data as any)?.pageInfo,
+      filters: (response.data as any)?.filters,
+    } as PaginatedBookingsResponse;
   }
 
   /**
@@ -168,6 +205,30 @@ export class BookingService {
       console.error('Get user bookings error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get a page of user's bookings using cursor pagination
+   */
+  static async getUserBookingsPage(params: { status?: string; cursor?: string | null; limit?: number }): Promise<PaginatedBookingsResponse> {
+    const { status, cursor, limit = 10 } = params || {};
+    const qs = new URLSearchParams();
+    if (status) qs.set('status', status);
+    if (cursor) qs.set('cursor', cursor);
+    if (limit) qs.set('limit', String(limit));
+    const url = `${API_ENDPOINTS.BOOKINGS.MY_BOOKINGS}${qs.toString() ? `?${qs.toString()}` : ''}`;
+
+    const response = await apiRequest<PaginatedBookingsResponse>(url, {
+      method: HttpMethod.GET,
+      requiresAuth: true,
+    });
+    // Normalize: ensure data and pageInfo are present
+    return {
+      success: !!response.success,
+      data: (response.data as any)?.data || (response.data as any) || [],
+      pageInfo: (response.data as any)?.pageInfo,
+      filters: (response.data as any)?.filters,
+    } as PaginatedBookingsResponse;
   }
 
   /**

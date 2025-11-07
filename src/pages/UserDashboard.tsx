@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,16 @@ import { Link } from 'react-router-dom';
 import { QuickBookingForm } from '@/components/forms/QuickBookingForm';
 import { BufferDaysRequestDialog } from '@/components/forms/BufferDaysRequestDialog';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { InstagramSkeleton, DashboardStatsSkeleton, BookingSkeleton } from '@/components/ui/InstagramSkeleton';
+import { 
+  DashboardStatsSkeleton as OptimizedStatsSkeleton, 
+  BookingListSkeleton, 
+  PageLoadingSkeleton,
+  IncrementalLoadingSkeleton,
+  LoadingSpinner
+} from '@/components/ui/OptimizedSkeletons';
+import { useDashboardRecentBookings } from '@/hooks/useDashboardRecentBookings';
 
 export default function UserDashboard() {
   const { user, refreshUser, isAuthenticated } = useUser();
@@ -47,6 +57,28 @@ export default function UserDashboard() {
     activeSubscription: false,
     upcomingBookings: 0
   });
+
+  // Recent bookings for dashboard (cursor-based minimal projection)
+  const {
+    items: recentBookings,
+    isLoading: recentBookingsLoading,
+    isFetchingNextPage: recentBookingsFetchingNext,
+    hasNextPage: recentBookingsHasNext,
+    fetchNextPage: fetchNextRecentBookings,
+  } = useDashboardRecentBookings(5);
+  const bookingsSentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = bookingsSentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && recentBookingsHasNext && !recentBookingsFetchingNext) {
+        fetchNextRecentBookings();
+      }
+    }, { root: null, rootMargin: '200px', threshold: 0 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchNextRecentBookings, recentBookingsHasNext, recentBookingsFetchingNext]);
 
   useEffect(() => {
     if (user && isAuthenticated) {
@@ -96,9 +128,59 @@ export default function UserDashboard() {
       // Handle subscription
       if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
         console.log('Subscription response data:', subscriptionResponse.value.data);
-        // Backend returns subscription in the 'subscription' property of the data
+        // Backend returns { subscription: Subscription } wrapped by api.ts in data
         const subscriptionData = subscriptionResponse.value.data?.subscription || null;
         setSubscription(subscriptionData);
+
+        // If monthly-status is missing or not active, but we have an ACTIVE subscription,
+        // derive a minimal MonthlySubscriptionStatus so the UI reflects the active state.
+        if (subscriptionData && subscriptionData.status === 'ACTIVE') {
+          setMonthlySubscriptionStatus((prev) => {
+            if (prev?.hasActiveSubscription) return prev;
+            return {
+              success: true,
+              hasActiveSubscription: true,
+              subscription: subscriptionData as any,
+              currentCycle: subscriptionData.currentCycleStart && subscriptionData.currentCycleEnd ? {
+                id: subscriptionData.id,
+                subscriptionId: subscriptionData.id,
+                cycleNumber: subscriptionData.completedCycles ? subscriptionData.completedCycles + 1 : 1,
+                startDate: subscriptionData.currentCycleStart,
+                endDate: subscriptionData.currentCycleEnd || subscriptionData.endDate,
+                status: subscriptionData.isInBufferPeriod ? 'IN_BUFFER' : 'ACTIVE',
+                totalServices: subscriptionData.plan?.sessionsPerMonth || 0,
+                completedServices: 0,
+                skippedServices: 0,
+                bufferDaysUsed: subscriptionData.bufferDaysUsed || 0,
+                isBufferActive: !!subscriptionData.isInBufferPeriod,
+                paymentStatus: 'COMPLETED',
+                amount: subscriptionData.amount,
+                createdAt: subscriptionData.startDate,
+                updatedAt: subscriptionData.updatedAt,
+              } : undefined,
+              activeBuffer: subscriptionData.isInBufferPeriod ? {
+                id: `${subscriptionData.id}-buffer` as any,
+                subscriptionId: subscriptionData.id,
+                startDate: subscriptionData.bufferStartDate || subscriptionData.currentCycleStart || subscriptionData.startDate,
+                endDate: subscriptionData.bufferEndDate || subscriptionData.currentCycleEnd || subscriptionData.endDate,
+                status: 'ACTIVE',
+                reason: 'CUSTOMER_REQUEST',
+                daysCount: (subscriptionData.bufferDaysCount || 0),
+                servicesSkipped: 0,
+                autoResumeDate: subscriptionData.bufferEndDate || subscriptionData.currentCycleEnd || subscriptionData.endDate,
+                isAutomatic: false,
+                createdAt: subscriptionData.createdAt,
+                updatedAt: subscriptionData.updatedAt,
+              } : undefined,
+              daysUntilBuffer: subscriptionData.isInBufferPeriod ? 0 : undefined,
+              summary: {
+                servicesThisMonth: subscriptionData.plan?.sessionsPerMonth || 0,
+                bufferPeriodActive: !!subscriptionData.isInBufferPeriod,
+                cycleProgress: 0,
+              },
+            } as any;
+          });
+        }
       }
 
       // Handle monthly subscription status
@@ -106,7 +188,11 @@ export default function UserDashboard() {
         console.log('Monthly subscription status response data:', monthlyStatusResponse.value.data);
         // Backend returns status in the 'data' property
         const statusData = monthlyStatusResponse.value.data || null;
-        setMonthlySubscriptionStatus(statusData);
+        // Only overwrite if API indicates an active subscription, otherwise keep any derived active state
+        setMonthlySubscriptionStatus((prev) => {
+          if (statusData?.hasActiveSubscription) return statusData;
+          return prev ?? statusData;
+        });
       } else if (monthlyStatusResponse.status === 'rejected') {
         console.error('Error fetching monthly subscription status:', monthlyStatusResponse.reason);
       }
@@ -132,16 +218,15 @@ export default function UserDashboard() {
       // Fetch buffer data if subscription exists
       let currentSubscription: Subscription | null = subscription;
       if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const subscriptionData = subscriptionResponse.value.data;
-        const finalSubscription = subscriptionData?.subscription || subscriptionData || null;
-        currentSubscription = finalSubscription as Subscription | null;
+        // Backend returns { subscription: Subscription } wrapped by api.ts
+        currentSubscription = subscriptionResponse.value.data?.subscription || null;
       }
 
       if (currentSubscription) {
         try {
           const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
             BufferService.getRemainingBufferDays(currentSubscription.id),
-            BufferService.getCustomerBufferHistory(currentSubscription.id, 1, 5)
+            BufferService.getBufferHistory(currentSubscription.id, 1, 5)
           ]);
 
           if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
@@ -177,10 +262,15 @@ export default function UserDashboard() {
     const upcomingBookings = bookings.filter(b => 
       b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
     ).length;
-    const totalSpent = payments
+    // Sum completed payments
+    let totalSpent = payments
       .filter(p => p.status === 'COMPLETED')
       .reduce((sum, p) => sum + p.amount, 0);
     const activeSubscription = subscription?.status === 'ACTIVE';
+    // Frontend dummy fallback for display only: if no payments yet but active subscription exists
+    if (totalSpent === 0 && activeSubscription && subscription?.amount) {
+      totalSpent = subscription.amount;
+    }
 
     setStats({
       totalBookings,
@@ -212,7 +302,7 @@ export default function UserDashboard() {
     try {
       const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
         BufferService.getRemainingBufferDays(subscription.id),
-        BufferService.getCustomerBufferHistory(subscription.id, 1, 5)
+        BufferService.getBufferHistory(subscription.id, 1, 5)
       ]);
 
       if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
@@ -264,9 +354,7 @@ export default function UserDashboard() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <PageLoadingSkeleton type="dashboard" />
       </DashboardLayout>
     );
   }
@@ -477,7 +565,7 @@ export default function UserDashboard() {
                                     Awaiting approval
                                   </span>
                                 )}
-                                {period.status === 'REJECTED' && period.rejectionReason && (
+                                {period.status === 'CANCELLED' && period.rejectionReason && (
                                   <span className="text-xs text-destructive block">
                                     Rejected: {period.rejectionReason}
                                   </span>
@@ -601,7 +689,7 @@ export default function UserDashboard() {
           </Card>
         </div>
 
-        {/* Recent Bookings */}
+        {/* Recent Bookings (infinite) */}
         <Card className="dashboard-card slide-up">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -620,13 +708,21 @@ export default function UserDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            {bookings.length > 0 ? (
+            {recentBookingsLoading ? (
+              <BookingListSkeleton count={5} />
+            ) : recentBookings.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h4 className="font-semibold mb-2">No Bookings Yet</h4>
+                <p className="text-muted-foreground text-sm">Your recent bookings will appear here</p>
+              </div>
+            ) : (
               <div className="space-y-4">
-                {bookings.slice(0, 5).map((booking) => (
+                {recentBookings.map((booking) => (
                   <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className={`w-3 h-3 rounded-full ${
-                        booking.status === 'COMPLETED' ? 'bg-success' : 
+                        booking.status === 'COMPLETED' ? 'bg-success' :
                         booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
                         booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
                       }`} />
@@ -656,36 +752,10 @@ export default function UserDashboard() {
                     </div>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h4 className="font-semibold mb-2">No Bookings Yet</h4>
-                <p className="text-muted-foreground text-sm mb-4">
-                  Book your first cleaning service to get started
-                </p>
-                <Button 
-                  className={`btn-hero ${shouldDisableBooking() ? 'border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100' : ''}`}
-                  onClick={handleBookNowClick}
-                  disabled={shouldDisableBooking() || bufferLoading}
-                >
-                  {bufferLoading ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      Checking...
-                    </>
-                  ) : shouldDisableBooking() ? (
-                    <>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Services Paused (Until {getFormattedEndDate()})
-                    </>
-                  ) : (
-                    <>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Book Now
-                    </>
-                  )}
-                </Button>
+                {recentBookingsFetchingNext && (
+                  <IncrementalLoadingSkeleton type="bookings" count={2} />
+                )}
+                <div ref={bookingsSentinelRef} />
               </div>
             )}
           </CardContent>

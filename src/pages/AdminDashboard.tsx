@@ -55,6 +55,19 @@ import { AdminPaymentsSection } from '../components/dashboard/AdminPaymentsSecti
 import { AdminAutomaticBookingsSection } from '../components/dashboard/AdminAutomaticBookingsSection';
 import { AdminDashboardSidebar } from './AdminDashboardSidebar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
+import { 
+  AdminInstagramSkeleton, 
+  AdminStatsGridSkeleton, 
+  AdminUserTableSkeleton,
+  AdminBookingTableSkeleton,
+  AdminPaymentTableSkeleton,
+  AdminMaidTableSkeleton,
+  AdminDashboardCardSkeleton
+} from '../components/ui/AdminInstagramSkeleton';
+import { useInfiniteAdminUsers } from '../hooks/useInfiniteAdminUsers';
+import { useInfiniteAdminBookings } from '../hooks/useInfiniteAdminBookings';
+import { useInfiniteAdminPayments } from '../hooks/useInfiniteAdminPayments';
+import { useInfiniteAdminMaids } from '../hooks/useInfiniteAdminMaids';
 
 // User interface from backend
 interface User {

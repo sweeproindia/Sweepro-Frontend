@@ -61,6 +61,7 @@ class NotificationAPIService {
     type?: string;
     startDate?: string;
     endDate?: string;
+    cursor?: string;
   }): Promise<NotificationResponse> {
     try {
       const response = await axios.get(

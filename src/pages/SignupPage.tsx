@@ -1,13 +1,15 @@
+// SignUpPage.tsx
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Lock, Mail, Phone, Sparkles, User, Crown, Shield } from 'lucide-react';
+import { AuthService, RegisterData } from '@/services/authService';
+import { Eye, EyeOff, Lock, Mail, Phone, Shield, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { AuthService, RegisterData } from '@/services/authService';
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -95,221 +97,266 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <Link to="/" className="flex items-center justify-center space-x-2 mb-8">
-          <div className="bg-white rounded-lg p-2">
-            <Sparkles className="h-6 w-6 text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-700 via-blue-400 to-white p-4">
+      <div className="w-full max-w-6xl bg-white/60 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex flex-col lg:flex-row">
+          {/* Left: Signup Form */}
+          <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-700 via-blue-400 to-white flex items-center justify-center p-8 relative">
+            {/* Simple Background Elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute top-20 left-20 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-200/20 rounded-full blur-3xl"></div>
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent"></div>
+            </div>
+
+            <div className="w-full max-w-md relative z-10">
+              {/* Logo */}
+              <Link to="/" className="flex items-center justify-center space-x-3 mb-8">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-400 rounded-lg p-2 shadow-lg">
+                  <Sparkles className="h-7 w-7 text-white" />
+                </div>
+                <span className="text-2xl font-bold text-blue-900">SweepPro</span>
+              </Link>
+
+              <Card className="shadow-2xl border-0 bg-white/30 backdrop-blur-lg">
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-xl sm:text-2xl font-bold text-blue-900 mb-2">
+                    Create Your Account
+                  </CardTitle>
+                  <CardDescription className="text-blue-700/80 text-xs sm:text-sm">
+                    Join thousands of satisfied customers and get started with{' '}
+                    <span className="font-semibold text-blue-600">{selectedPlan}</span> plan
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="name" className="text-blue-900/80 text-xs sm:text-sm">Full Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" />
+                        <Input
+                          id="name"
+                          name="name"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={formData.name}
+                          onChange={handleInputChange}
+                          className="pl-9 sm:pl-10 h-9 sm:h-10 text-xs sm:text-sm bg-white/40 border-white/40 text-blue-900 placeholder-blue-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="email" className="text-blue-900/80 text-xs sm:text-sm">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" />
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="pl-9 sm:pl-10 h-9 sm:h-10 text-xs sm:text-sm bg-white/40 border-white/40 text-blue-900 placeholder-blue-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="phone" className="text-blue-900/80 text-xs sm:text-sm">Phone Number</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" />
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className="pl-9 sm:pl-10 h-9 sm:h-10 text-xs sm:text-sm bg-white/40 border-white/40 text-blue-900 placeholder-blue-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Role Selection */}
+                    <div className="space-y-2">
+                      <Label className="text-blue-900/80 text-xs sm:text-sm">Account Type</Label>
+                      <RadioGroup value={formData.role} onValueChange={handleRoleChange}>
+                        <div className="flex items-center space-x-2 bg-white/40 rounded-lg p-2 sm:p-2.5 border border-white/40">
+                          <RadioGroupItem value="CUSTOMER" id="customer" className="border-blue-400" />
+                          <Label htmlFor="customer" className="flex items-center space-x-1.5 sm:space-x-2 cursor-pointer text-blue-900 text-xs sm:text-sm flex-1">
+                            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span>Customer - I need cleaning services</span>
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 bg-white/40 rounded-lg p-2 sm:p-2.5 border border-white/40">
+                          <RadioGroupItem value="MAID" id="maid" className="border-blue-400" />
+                          <Label htmlFor="maid" className="flex items-center space-x-1.5 sm:space-x-2 cursor-pointer text-blue-900 text-xs sm:text-sm flex-1">
+                            <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span>Maid - I provide cleaning services</span>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    {/* Address Field */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address" className="text-blue-900/80 text-xs sm:text-sm">Address</Label>
+                      <Input
+                        id="address"
+                        name="address"
+                        type="text"
+                        placeholder="Enter your full address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        className="h-9 sm:h-10 text-xs sm:text-sm bg-white/40 border-white/40 text-blue-900 placeholder-blue-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+                        required
+                        minLength={10}
+                      />
+                      <p className="text-[10px] sm:text-xs text-blue-600/70">Please provide a complete address</p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="password" className="text-blue-900/80 text-xs sm:text-sm">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" />
+                        <Input
+                          id="password"
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Create a password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          className="pl-9 sm:pl-10 pr-9 sm:pr-10 h-9 sm:h-10 text-xs sm:text-sm bg-white/40 border-white/40 text-blue-900 placeholder-blue-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-2.5 text-blue-400 hover:text-blue-700 transition-colors duration-200"
+                        >
+                          {showPassword ? <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="confirmPassword" className="text-blue-900/80 text-xs sm:text-sm">Confirm Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-2.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-400" />
+                        <Input
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          type="password"
+                          placeholder="Confirm your password"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          className="pl-9 sm:pl-10 h-9 sm:h-10 text-xs sm:text-sm bg-white/40 border-white/40 text-blue-900 placeholder-blue-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-2">
+                      <input type="checkbox" className="rounded border-blue-400 mt-0.5 sm:mt-1 h-3.5 w-3.5 sm:h-4 sm:w-4" required />
+                      <span className="text-[10px] sm:text-xs text-blue-900/70">
+                        I agree to the{' '}
+                        <a href="#" className="text-blue-500 hover:text-blue-700 transition-colors duration-200">
+                          Terms of Service
+                        </a>{' '}
+                        and{' '}
+                        <a href="#" className="text-blue-500 hover:text-blue-700 transition-colors duration-200">
+                          Privacy Policy
+                        </a>
+                      </span>
+                    </div>
+
+                    <Button 
+                      type="submit"
+                      className="w-full bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white font-semibold h-9 sm:h-10 text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-200"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                    </Button>
+                  </form>
+
+                  <div className="mt-3 sm:mt-4 text-center">
+                    <p className="text-blue-900/70 text-xs sm:text-sm">
+                      Already have an account?{' '}
+                      <a href="/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors duration-200">
+                        Sign in
+                      </a>
+                    </p>
+                  </div>
+
+                  {/* Social Signup */}
+                  <div className="mt-3 sm:mt-4">
+                    <div className="relative my-3 sm:my-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-blue-200" />
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-transparent px-2 text-blue-400">Or sign up with</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                      <Button 
+                        type="button"
+                        className="bg-white/40 hover:bg-white/60 text-blue-900 hover:text-blue-700 border border-white/40 hover:border-white/60 h-8 sm:h-9 text-xs transition-all duration-200"
+                      >
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" viewBox="0 0 24 24">
+                          <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                          <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                          <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                          <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Google
+                      </Button>
+                      <Button 
+                        type="button"
+                        className="bg-white/40 hover:bg-white/60 text-blue-900 hover:text-blue-700 border border-white/40 hover:border-white/60 h-8 sm:h-9 text-xs transition-all duration-200"
+                      >
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        Facebook
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-          <span className="text-xl font-bold text-white">SweepPro</span>
-        </Link>
 
-        <Card className="shadow-large border-0">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Create Your Account</CardTitle>
-            <CardDescription>
-              Join thousands of satisfied customers and get started with{' '}
-              <span className="font-semibold text-primary">{selectedPlan}</span> plan
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
+          {/* Right: Illustration/Info - Hidden on mobile, visible on large screens */}
+          <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-[#2d3cf6] to-blue-500">
+            {/* Background overlay */}
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80')] bg-cover bg-center opacity-30 mix-blend-overlay"></div>
+            
+            {/* Content */}
+            <div className="relative z-10 flex items-center justify-center p-12 w-full">
+              <div className="text-white max-w-md">
+                <h2 className="text-4xl font-extrabold mb-6 leading-tight drop-shadow-lg">
+                  Join SweepPro and experience hassle-free cleaning!
+                </h2>
+                <p className="mb-8 text-blue-100 text-lg font-medium drop-shadow">
+                  Sign up to book trusted professionals, manage your appointments, and enjoy a sparkling home every day.
+                </p>
+                <div className="rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 bg-white/10 p-2">
+                  <img 
+                    src="/assets/login-page.png" 
+                    alt="Dashboard Preview" 
+                    className="w-full h-auto rounded-lg"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    placeholder="Enter your phone number"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Role Selection */}
-              <div className="space-y-3">
-                <Label>Account Type</Label>
-                <RadioGroup value={formData.role} onValueChange={handleRoleChange}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="CUSTOMER" id="customer" />
-                    <Label htmlFor="customer" className="flex items-center space-x-2 cursor-pointer">
-                      <User className="h-4 w-4" />
-                      <span>Customer - I need cleaning services</span>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="MAID" id="maid" />
-                    <Label htmlFor="maid" className="flex items-center space-x-2 cursor-pointer">
-                      <Shield className="h-4 w-4" />
-                      <span>Maid - I provide cleaning services</span>
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Address Field */}
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <div className="relative">
-                  <Input
-                    id="address"
-                    name="address"
-                    type="text"
-                    placeholder="Enter your full address (minimum 10 characters)"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className=""
-                    required
-                    minLength={10}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">Please provide a complete address for service delivery</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create a password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-2">
-                <input type="checkbox" className="rounded border-border mt-1" required />
-                <span className="text-sm text-muted-foreground">
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-primary hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
-                  </Link>
-                </span>
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full btn-hero" 
-                disabled={isLoading}
-              >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-muted-foreground">
-                Already have an account?{' '}
-                <Link to="/login" className="text-primary hover:underline font-medium">
-                  Sign in
-                </Link>
-              </p>
-            </div>
-
-            {/* Social Signup */}
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-card px-2 text-muted-foreground">Or sign up with</span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <Button variant="outline" className="w-full">
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Google
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                  Facebook
-                </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,15 @@ import { useUser } from '@/contexts/UserContext';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { SubscriptionService, Subscription } from '@/services/subscriptionService';
 import { useToast } from '@/hooks/use-toast';
-
+import { Skeleton } from '@/components/ui/Skeleton';
+import { InstagramSkeleton, PaymentSkeleton, DashboardStatsSkeleton } from '@/components/ui/InstagramSkeleton';
+import { 
+  PaymentListSkeleton, 
+  DashboardStatsSkeleton as OptimizedStatsSkeleton,
+  IncrementalLoadingSkeleton,
+  LoadingSpinner
+} from '@/components/ui/OptimizedSkeletons';
+import { useInfinitePayments } from '@/hooks/useInfinitePayments';
 
 const getStatusColor = (status: string) => {
   switch (status.toUpperCase()) {
@@ -49,9 +58,11 @@ const getStatusIcon = (status: string) => {
 export default function PaymentsPage() {
   const { user, isAuthenticated } = useUser();
   const { toast } = useToast();
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const { items: payments, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, refetch } = useInfinitePayments(10);
+  const [subLoading, setSubLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const loading = isLoading || subLoading;
+
   const [stats, setStats] = useState({
     totalPaid: 0,
     thisMonthPaid: 0,
@@ -63,93 +74,118 @@ export default function PaymentsPage() {
   });
 
   useEffect(() => {
-    if (user && isAuthenticated) {
-      fetchPaymentData();
-    }
-  }, [user, isAuthenticated]);
-
-  const fetchPaymentData = async () => {
-    setLoading(true);
-    try {
-      // Fetch payments and subscription data in parallel
-      const [paymentsResponse, subscriptionResponse] = await Promise.allSettled([
-        PaymentService.getUserPayments(),
-        SubscriptionService.getUserSubscription()
-      ]);
-
-      // Handle payments
-      if (paymentsResponse.status === 'fulfilled' && paymentsResponse.value.success) {
-        const paymentsData = Array.isArray(paymentsResponse.value.data) ? 
-          paymentsResponse.value.data : 
-          paymentsResponse.value.data?.payments || 
-          paymentsResponse.value.payments || [];
-        setPayments(paymentsData);
-      }
-
-      // Handle subscription
-      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const subscriptionData = subscriptionResponse.value.data || subscriptionResponse.value.subscription || null;
-        setSubscription(subscriptionData);
-      } else if (subscriptionResponse.status === 'rejected') {
-        console.log('No active subscription found');
+    let active = true;
+    const loadSubscription = async () => {
+      setSubLoading(true);
+      try {
+        const subscriptionResponse = await SubscriptionService.getUserSubscription();
+        if (!active) return;
+        if (subscriptionResponse.success) {
+          const subscriptionData = (subscriptionResponse.data as any)?.subscription ?? subscriptionResponse.data ?? null;
+          setSubscription(subscriptionData);
+        } else {
+          setSubscription(null);
+        }
+      } catch (e) {
         setSubscription(null);
+      } finally {
+        if (active) setSubLoading(false);
       }
-
-      // Calculate stats after data is loaded
-      calculateStats();
-
-    } catch (error) {
-      console.error('Error fetching payment data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load payment data. Please try refreshing.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    if (user && isAuthenticated) loadSubscription();
+    return () => { active = false; };
+  }, [user, isAuthenticated]);
 
   const calculateStats = () => {
     const completedPayments = payments.filter(p => p.status === 'COMPLETED');
     const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
-    
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    const thisMonthPayments = completedPayments.filter(p => {
-      const paymentDate = new Date(p.createdAt);
-      return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
-    });
-    const thisMonthPaid = thisMonthPayments.reduce((sum, p) => sum + p.amount, 0);
-    
+    const now = new Date();
+    const thisMonthPaid = completedPayments
+      .filter(p => {
+        const d = new Date(p.createdAt);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, p) => sum + p.amount, 0);
     const pendingPayments = payments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING').length;
     const failedPayments = payments.filter(p => p.status === 'FAILED' || p.status === 'CANCELLED').length;
-    
     const nextPaymentAmount = subscription?.amount || 0;
     const nextPaymentDate = subscription?.nextBillDate || null;
-    
-    setStats({
-      totalPaid,
-      thisMonthPaid,
-      nextPaymentAmount,
-      nextPaymentDate,
-      pendingPayments,
-      completedPayments: completedPayments.length,
-      failedPayments
-    });
+    setStats({ totalPaid, thisMonthPaid, nextPaymentAmount, nextPaymentDate, pendingPayments, completedPayments: completedPayments.length, failedPayments });
   };
 
   useEffect(() => {
-    if (payments.length > 0 || subscription) {
-      calculateStats();
-    }
+    calculateStats();
   }, [payments, subscription]);
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }, { root: null, rootMargin: '200px', threshold: 0 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="space-y-6 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={`hsk-${i}`} className="dashboard-card">
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-4 w-28" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-7 w-32" />
+                  <Skeleton className="h-3 w-24 mt-2" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Card className="dashboard-card">
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-3 w-64 mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isLoading ? (
+                <PaymentListSkeleton count={8} />
+              ) : payments.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No payments found.</p>
+                </div>
+              ) : (
+                payments.map((payment, index) => (
+                  <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-muted/20 rounded-full flex items-center justify-center">
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">{payment.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Created on {new Date(payment.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right space-y-2">
+                      <p className="font-semibold text-foreground">₹{payment.amount.toLocaleString()}</p>
+                      <Badge className={getStatusColor(payment.status)}>
+                        {getStatusIcon(payment.status)}
+                        <span className="ml-1 capitalize">{payment.status.toLowerCase()}</span>
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
       </DashboardLayout>
     );
@@ -186,41 +222,64 @@ export default function PaymentsPage() {
           </p>
         </div>
 
-        {/* Payment Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 slide-up">
-          <Card className="dashboard-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Paid</CardTitle>
+        {/* Instagram-style Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <Card className="dashboard-card hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+              <CheckCircle className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">₹{stats.totalPaid.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">{stats.completedPayments} completed payments</p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">₹{stats.thisMonthPaid.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Next Payment</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {stats.nextPaymentAmount > 0 ? `₹${stats.nextPaymentAmount.toLocaleString()}` : 'N/A'}
+              <div className="text-2xl font-bold text-success">
+                ₹{stats.totalPaid.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.nextPaymentDate ? 
-                  `Due ${new Date(stats.nextPaymentDate).toLocaleDateString()}` : 
-                  'No upcoming payments'
-                }
+              <p className="text-xs text-muted-foreground">
+                From {stats.completedPayments} transactions
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              <Clock className="h-4 w-4 text-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning">
+                ₹{stats.pendingPayments.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stats.pendingPayments} pending payments
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Failed</CardTitle>
+              <X className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                ₹{stats.failedPayments.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stats.failedPayments} failed payments
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">This Month</CardTitle>
+              <Calendar className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                ₹{stats.thisMonthPaid.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stats.completedPayments} transactions
               </p>
             </CardContent>
           </Card>
@@ -371,7 +430,7 @@ export default function PaymentsPage() {
                             +₹{payment.tax.toLocaleString()} tax
                           </p>
                         )}
-                        <Badge className={getStatusColor(payment.status)} size="sm">
+                        <Badge className={getStatusColor(payment.status)}>
                           {getStatusIcon(payment.status)}
                           <span className="ml-1 capitalize">{payment.status.toLowerCase()}</span>
                         </Badge>
@@ -390,6 +449,10 @@ export default function PaymentsPage() {
                     </div>
                   </div>
                 ))}
+                {isFetchingNextPage && (
+                  <IncrementalLoadingSkeleton type="payments" count={3} />
+                )}
+                <div ref={sentinelRef} />
               </div>
             ) : (
               <div className="text-center py-12">

@@ -10,6 +10,16 @@ export interface PaymentData {
   description?: string;
 }
 
+export interface PaginatedPaymentsResponse {
+  success: boolean;
+  data: Payment[];
+  pageInfo?: {
+    nextCursor: string | null;
+    hasNextPage: boolean;
+    pageSize: number;
+  };
+}
+
 export interface Payment {
   id: string;
   customerId: string;
@@ -116,6 +126,27 @@ export class PaymentService {
       console.error('Create payment error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get a page of user's payments using cursor pagination
+   */
+  static async getUserPaymentsPage(params: { cursor?: string | null; limit?: number }): Promise<PaginatedPaymentsResponse> {
+    const { cursor, limit = 10 } = params || {};
+    const qs = new URLSearchParams();
+    if (cursor) qs.set('cursor', cursor);
+    if (limit) qs.set('limit', String(limit));
+    const url = `${API_ENDPOINTS.PAYMENTS.MY_PAYMENTS}${qs.toString() ? `?${qs.toString()}` : ''}`;
+
+    const response = await apiRequest<PaginatedPaymentsResponse>(url, {
+      method: HttpMethod.GET,
+      requiresAuth: true,
+    });
+    return {
+      success: !!response.success,
+      data: (response.data as any)?.data || (response.data as any) || [],
+      pageInfo: (response.data as any)?.pageInfo,
+    } as PaginatedPaymentsResponse;
   }
 
   /**

@@ -3,7 +3,7 @@
  * Full page view of all notifications with filters and actions
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,13 +20,19 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { NotificationSkeleton } from '@/components/ui/InstagramSkeleton';
+import { 
+  NotificationListSkeleton, 
+  IncrementalLoadingSkeleton,
+  LoadingSpinner
+} from '@/components/ui/OptimizedSkeletons';
+import { useInfiniteNotifications } from '@/hooks/useInfiniteNotifications';
 
 export const NotificationsPage: React.FC = () => {
   const {
-    notifications,
     unreadCount,
     isConnected,
-    loading,
     markAsRead,
     markAllAsRead,
     deleteNotification,
@@ -35,12 +41,26 @@ export const NotificationsPage: React.FC = () => {
   } = useNotifications();
 
   const [activeTab, setActiveTab] = useState<string>('all');
-
-  const filteredNotifications = notifications.filter(notif => {
-    if (activeTab === 'unread') return !notif.read;
-    if (activeTab === 'read') return notif.read;
-    return true;
+  const { items, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch } = useInfiniteNotifications({
+    limit: 10,
+    read: activeTab === 'read' ? true : activeTab === 'unread' ? false : undefined,
   });
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }, { root: null, rootMargin: '200px', threshold: 0 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const filteredNotifications = items;
 
   const getNotificationIcon = (type: string) => {
     const iconClass = "h-5 w-5";
@@ -83,10 +103,10 @@ export const NotificationsPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchNotifications}
-            disabled={loading}
+            onClick={() => { refetch(); fetchNotifications(); }}
+            disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -109,7 +129,7 @@ export const NotificationsPage: React.FC = () => {
             Mark all as read
           </Button>
         )}
-        {notifications.some(n => n.read) && (
+        {filteredNotifications.some(n => n.read) && (
           <Button
             variant="outline"
             size="sm"
@@ -125,24 +145,19 @@ export const NotificationsPage: React.FC = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="all">
-            All ({notifications.length})
+            All ({filteredNotifications.length})
           </TabsTrigger>
           <TabsTrigger value="unread">
             Unread ({unreadCount})
           </TabsTrigger>
           <TabsTrigger value="read">
-            Read ({notifications.length - unreadCount})
+            Read (—)
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-3">
-          {loading ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground">Loading notifications...</p>
-              </CardContent>
-            </Card>
+          {isLoading ? (
+            <NotificationListSkeleton count={8} />
           ) : filteredNotifications.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
@@ -158,7 +173,8 @@ export const NotificationsPage: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            filteredNotifications.map((notification) => (
+            <>
+            {filteredNotifications.map((notification) => (
               <Card
                 key={notification.id}
                 className={`cursor-pointer transition-all hover:shadow-md ${
@@ -235,7 +251,12 @@ export const NotificationsPage: React.FC = () => {
                   )}
                 </CardContent>
               </Card>
-            ))
+            ))}
+            {isFetchingNextPage && (
+              <IncrementalLoadingSkeleton type="notifications" count={3} />
+            )}
+            <div ref={sentinelRef} />
+            </>
           )}
         </TabsContent>
       </Tabs>

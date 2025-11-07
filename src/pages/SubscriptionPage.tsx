@@ -20,6 +20,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { useBookingForm, withBookingForm } from '@/contexts/BookingFormContext';
+import { InstagramSkeleton, SubscriptionCardSkeleton } from '@/components/ui/InstagramSkeleton';
 
 // Enhanced Plan Interface
 interface EnhancedSubscriptionPlan {
@@ -142,10 +143,8 @@ function SubscriptionPage() {
       ]);
 
       if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const subscriptionData =
-          subscriptionResponse.value.data ||
-          subscriptionResponse.value.subscription ||
-          null;
+        // Backend returns { subscription: Subscription } wrapped by api.ts
+        const subscriptionData = subscriptionResponse.value.data?.subscription || null;
         setSubscription(subscriptionData);
       } else {
         setSubscription(null);
@@ -284,7 +283,7 @@ function SubscriptionPage() {
                 <div className="flex items-center space-x-2">
                   <Crown className="h-6 w-6 text-primary" />
                   <CardTitle className="text-xl uppercase font-semibold">
-                    Current Plan: {subscription.plan?.id || 'Subscription Plan'}
+                    Current Plan: {subscription.plan?.name || subscription.plan?.id || 'Subscription Plan'}
                   </CardTitle>
                 </div>
                 <Badge
@@ -293,6 +292,26 @@ function SubscriptionPage() {
                   {subscription.status}
                 </Badge>
               </div>
+              {/* Property Details */}
+              {(subscription as any)?.customer?.propertyType && (
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="text-sm font-semibold mb-2">Property Details</h4>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Type:</span>
+                      <p className="font-medium">{(subscription as any).customer.propertyType}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Configuration:</span>
+                      <p className="font-medium">{(subscription as any).customer.bhkType?.replace('_', ' ')}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Size:</span>
+                      <p className="font-medium">{(subscription as any).customer.squareFeet} sqft</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="text-center mt-4">

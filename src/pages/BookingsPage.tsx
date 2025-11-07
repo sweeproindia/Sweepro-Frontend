@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
-import { useBookings } from '@/hooks/useBookings';
+import { useInfiniteBookings } from '@/hooks/useInfiniteBookings';
+
 import { useBookingForm } from '@/contexts/BookingFormContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { BookingService, type BookingStats } from '@/services/bookingService';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -76,24 +80,50 @@ export default function BookingsPage() {
     isLoading: checkingBuffer
   } = useBufferPeriod();
   
-  // Use the custom hook for managing bookings state
-  const {
-    bookings,
-    stats,
-    loading,
-    error,
-    filter,
-    setFilter,
-    refreshBookings,
-    cancelBooking: handleCancelBooking,
-  } = useBookings('CUSTOMER');
+  const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed' | 'cancelled'>('all');
+  const [stats, setStats] = useState<BookingStats | null>(null);
 
+  const {
+    items: bookings,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch,
+  } = useInfiniteBookings({ userRole: 'CUSTOMER', filter, limit: 10 });
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }, { root: null, rootMargin: '200px', threshold: 0 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await BookingService.getBookingStats();
+      if (res?.success && res.data) setStats(res.data);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+  
   // User's preferred time slot from user profile
   const preferredTimeSlot = user?.timeSlot || 'Not set';
   const preferredDuration = '3 hours'; // Standard duration for cleaning slots
   const hasPreferredSlot = user?.timeSlot && user.timeSlot !== 'Not set';
-
-
+  
   // Handle booking cancellation with confirmation
   const onCancelBooking = async (bookingId: string) => {
     if (!confirm('Are you sure you want to cancel this booking?')) {
@@ -101,13 +131,19 @@ export default function BookingsPage() {
     }
 
     try {
-      await handleCancelBooking(bookingId, 'Cancelled by customer');
+      const response = await BookingService.cancelBooking(bookingId, 'Cancelled by customer');
+      if (response.success) {
+        toast({ title: 'Success', description: 'Booking cancelled successfully' });
+        await refetch();
+        await loadStats();
+      } else {
+        throw new Error(response.message || 'Failed to cancel booking');
+      }
     } catch (err) {
       // Error handling is done in the hook
     }
   };
-
-
+  
   // Handle quick booking for tomorrow
   const handleQuickBooking = () => {
     if (shouldDisableBooking()) {
@@ -126,18 +162,34 @@ export default function BookingsPage() {
   };
   
   const handleBookingSuccess = async () => {
-    // Refresh bookings after successful booking
-    await refreshBookings();
+    await refetch();
+    await loadStats();
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading bookings...</span>
-          </div>
+        <div className="space-y-4 p-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card className="dashboard-card" key={i}>
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-4 w-full">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-64" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-6 w-24" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </DashboardLayout>
     );
@@ -173,10 +225,10 @@ export default function BookingsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={refreshBookings}
-              disabled={loading}
+              onClick={() => { refetch(); loadStats(); }}
+              disabled={isLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             {/* Custom Book Tomorrow Button with Smart Buffer Period Logic */}
@@ -295,16 +347,16 @@ export default function BookingsPage() {
         </Card>
 
         {/* Error State */}
-        {error && (
+        {isError && (
           <Card className="dashboard-card border-red-200 bg-red-50">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2 text-red-600">
                 <span className="font-medium">Error:</span>
-                <span>{error}</span>
+                <span>Failed to load bookings</span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => refreshBookings()}
+                  onClick={() => refetch()}
                   className="ml-auto"
                 >
                   Retry
@@ -465,10 +517,33 @@ export default function BookingsPage() {
               </CardContent>
             </Card>
           ))}
+          {isFetchingNextPage && (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card className="dashboard-card" key={`sk-${i}`}>
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4 w-full">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-64" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+              </Card>
+            ))
+          )}
+          <div ref={sentinelRef} />
         </div>
 
         {/* Empty State */}
-        {!loading && bookings.length === 0 && (
+        {!isLoading && bookings.length === 0 && (
           <Card className="dashboard-card text-center py-12">
             <CardContent>
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

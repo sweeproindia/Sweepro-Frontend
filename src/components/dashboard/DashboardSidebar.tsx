@@ -5,16 +5,25 @@ import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
 import { motion } from 'motion/react';
+import { useEffect, useState } from 'react';
+import { SubscriptionService } from '@/services/subscriptionService';
 
-const customerNavigationItems = [
+// Base navigation items (without Monthly Buffer)
+const baseCustomerNavigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'My Bookings', href: '/bookings', icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Auto Service', href: '/auto-service', icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Subscription', href: '/subscription', icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
-  { name: 'Monthly Buffer', href: '/monthly-subscription', icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Payment History', href: '/payments', icon: <Receipt className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Support', href: '/support', icon: <MessageCircle className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
 ];
+
+// Monthly Buffer item (only for Lux plan subscribers)
+const monthlyBufferItem = {
+  name: 'Monthly Buffer',
+  href: '/monthly-subscription',
+  icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5" />
+};
 
 const adminNavigationItems = [
   { name: 'Dashboard', href: '/admin', icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
@@ -37,8 +46,47 @@ export const DashboardSidebar = ({ open, setOpen, forceOpen }: DashboardSidebarP
   const navigate = useNavigate();
   const { user, logout } = useUser();
   const { toast } = useToast();
+  const [hasBufferAccess, setHasBufferAccess] = useState(false);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
 
   const isAdmin = location.pathname.startsWith('/admin');
+
+  // Check if user has Lux plan with buffer access
+  useEffect(() => {
+    const checkBufferAccess = async () => {
+      if (!user || isAdmin) {
+        setIsLoadingSubscription(false);
+        return;
+      }
+
+      try {
+        const response = await SubscriptionService.getUserSubscription();
+        // Check if plan has buffer system enabled (Lux plans only)
+        const subscription = response?.data?.subscription;
+        const hasBuffer = (subscription as any)?.plan?.hasBufferSystem === true;
+        setHasBufferAccess(hasBuffer);
+      } catch (error) {
+        console.error('Error checking buffer access:', error);
+        setHasBufferAccess(false);
+      } finally {
+        setIsLoadingSubscription(false);
+      }
+    };
+
+    checkBufferAccess();
+  }, [user, isAdmin]);
+
+  // Build navigation items dynamically
+  const customerNavigationItems = [...baseCustomerNavigationItems];
+  
+  // Insert Monthly Buffer after Subscription if user has buffer access
+  if (hasBufferAccess && !isLoadingSubscription) {
+    const subscriptionIndex = customerNavigationItems.findIndex(item => item.name === 'Subscription');
+    if (subscriptionIndex !== -1) {
+      customerNavigationItems.splice(subscriptionIndex + 1, 0, monthlyBufferItem);
+    }
+  }
+
   const navigationItems = isAdmin ? adminNavigationItems : customerNavigationItems;
 
   const handleLogout = () => {
