@@ -109,13 +109,98 @@ const ProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Skeleton className="h-64 w-full mb-8" />
+        {/* Header Skeleton */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-4 w-32 skeleton-shimmer" />
+              <Skeleton className="h-8 w-48 skeleton-shimmer" />
+            </div>
+            <div className="flex items-center space-x-2">
+              {[1, 2, 3].map((item) => (
+                <Skeleton key={item} className="h-10 w-28 skeleton-shimmer" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          {/* Cover + Profile */}
+          <div className="relative">
+            <Skeleton className="h-64 w-full rounded-2xl skeleton-shimmer" />
+            <Skeleton className="absolute -bottom-12 left-6 h-28 w-28 rounded-full border-4 border-white skeleton-shimmer" />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <Skeleton className="h-96" />
+            {/* Left column cards */}
+            <div className="space-y-6">
+              <div className="space-y-4 bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-fadeIn">
+                <div className="flex flex-col items-center gap-3">
+                  <Skeleton className="h-5 w-32 skeleton-shimmer" />
+                  <Skeleton className="h-4 w-24 skeleton-shimmer" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-16 rounded-full skeleton-shimmer" />
+                    <Skeleton className="h-6 w-16 rounded-full skeleton-shimmer" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((item) => (
+                    <div key={item} className="flex items-center space-x-3">
+                      <Skeleton className="h-4 w-4 rounded-full skeleton-shimmer" />
+                      <Skeleton className="h-4 flex-1 skeleton-shimmer" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-slideUp">
+                <Skeleton className="h-5 w-32 mb-4 skeleton-shimmer" />
+                <div className="space-y-4">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-4 w-4 rounded-full skeleton-shimmer" />
+                        <Skeleton className="h-4 w-24 skeleton-shimmer" />
+                      </div>
+                      <Skeleton className="h-5 w-12 skeleton-shimmer" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right column cards */}
             <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-48" />
-              <Skeleton className="h-48" />
+              {[1, 2, 3, 4].map((card) => (
+                <div
+                  key={card}
+                  className="bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-fadeIn"
+                  style={{ animationDelay: `${card * 120}ms` }}
+                >
+                  <Skeleton className="h-5 w-40 mb-4 skeleton-shimmer" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((item) => (
+                      <Skeleton key={item} className="h-4 skeleton-shimmer" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Activity timeline */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-slideUp">
+            <Skeleton className="h-5 w-44 mb-4 skeleton-shimmer" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="flex items-start space-x-3">
+                  <Skeleton className="h-8 w-8 rounded-full skeleton-shimmer" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4 skeleton-shimmer" />
+                    <Skeleton className="h-3 w-1/2 skeleton-shimmer" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

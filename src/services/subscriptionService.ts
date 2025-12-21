@@ -383,11 +383,11 @@ export class SubscriptionService {
       const params = new URLSearchParams();
       if (year) params.append('year', year.toString());
       if (month) params.append('month', month.toString());
-      
-      const endpoint = params.toString() ? 
-        `${API_ENDPOINTS.DASHBOARD.CALENDAR}?${params.toString()}` : 
+
+      const endpoint = params.toString() ?
+        `${API_ENDPOINTS.DASHBOARD.CALENDAR}?${params.toString()}` :
         API_ENDPOINTS.DASHBOARD.CALENDAR;
-      
+
       return await apiRequest<MonthlyCalendarData>(endpoint, {
         method: HttpMethod.GET,
         requiresAuth: true

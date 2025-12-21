@@ -255,6 +255,8 @@ export const apiRequest = async <T = any>(
   // Only log in development mode
   if (process.env.NODE_ENV === 'development') {
     console.log(`🚀 API Request: ${method} ${url}`);
+    console.log('Request URL:', url);
+    console.log('Request Headers:', requestHeaders);
   }
 
   try {

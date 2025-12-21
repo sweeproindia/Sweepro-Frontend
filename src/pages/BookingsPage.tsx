@@ -10,6 +10,7 @@ import { useBookingForm } from '@/contexts/BookingFormContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
+import BookingsSkeleton from '@/components/bookings/BookingsSkeleton';
 import { useToast } from '@/hooks/use-toast';
 
 const getStatusColor = (status: string) => {
@@ -133,12 +134,7 @@ export default function BookingsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading bookings...</span>
-          </div>
-        </div>
+        <BookingsSkeleton />
       </DashboardLayout>
     );
   }
@@ -476,8 +472,7 @@ export default function BookingsPage() {
               <p className="text-muted-foreground mb-4">
                 {filter === 'all' 
                   ? "You don't have any bookings yet. Schedule your first cleaning service!"
-                  : `No ${filter} bookings found. Try adjusting your filter.`
-                }
+                  : `No ${filter} bookings found. Try adjusting your filter.`}
               </p>
               {filter === 'all' && (
                 <Button className="btn-hero" onClick={handleQuickBooking}>
@@ -488,69 +483,6 @@ export default function BookingsPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Enhanced Quick Booking Card */}
-        <Card className="dashboard-card slide-up bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Quick Booking</span>
-              {hasPreferredSlot && (
-                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                  ✓ Time Slot Set
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              {hasPreferredSlot ? (
-                <>Your next service will be scheduled at <span className="font-medium text-primary">{preferredTimeSlot}</span> for {preferredDuration}</>
-              ) : (
-                <>Set up your preferred time slot to enable one-click booking for faster service scheduling</>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              {hasPreferredSlot ? (
-                <>
-                  <Button className="btn-hero" onClick={handleQuickBooking}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Book for Tomorrow ({new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()})
-                  </Button>
-                  <Button variant="outline" onClick={() => openBookingForm()}>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Choose Different Time
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="outline" onClick={() => openBookingForm()}>
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Select Time & Book Now
-                  </Button>
-                  <Button variant="ghost" className="text-amber-600">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Set Preferred Time
-                  </Button>
-                </>
-              )}
-            </div>
-            <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Clock className="h-4 w-4 text-blue-600 mt-0.5" />
-                <div className="text-sm text-blue-700 dark:text-blue-300">
-                  <p className="font-medium">Available Time Slots</p>
-                  <p className="text-xs mt-1">
-                    We offer flexible 3-hour cleaning slots from 8:00 AM to 8:00 PM. 
-                    {hasPreferredSlot 
-                      ? 'Your preferred slot will be automatically selected for quick bookings.' 
-                      : 'Set a preferred slot to enable instant booking.'
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

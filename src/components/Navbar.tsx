@@ -1,20 +1,45 @@
 import { Button } from '@/components/ui/button';
-import { Bell, Menu, MessageCircle, Shield, User, X } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Menu, MessageCircle, Shield, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthService } from '@/services/authService';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
+  user?: any;
 }
 
-export const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
+export const Navbar = ({ 
+  isAuthenticated = false, 
+  user
+}: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
+  const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
+
+  const handleLogout = () => {
+    AuthService.logout();
+    setIsUserMenuOpen(false);
+    window.location.href = '/';
+  };
+
+  const handleDashboardClick = () => {
+    if (user?.role === 'CUSTOMER') {
+      navigate('/dashboard');
+    } else if (user?.role === 'MAID') {
+      navigate('/maid-dashboard');
+    } else if (user?.role === 'ADMIN') {
+      navigate('/admin-dashboard');
+    }
+  };
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -22,16 +47,19 @@ export const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setIsNotificationOpen(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
     };
 
-    if (isNotificationOpen) {
+    if (isNotificationOpen || isUserMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isNotificationOpen]);
+  }, [isNotificationOpen, isUserMenuOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -127,23 +155,16 @@ export const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
       >
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
+          <Link to="/" className="flex items-center group flex-shrink-0">
             <img
-              src="/assets/logo.png"
+              src={scrolled ? "/assets/logo.png" : "/assets/logo-black.png"}
               alt="SweepPro Logo"
-              className="h-8 w-8 object-contain"
+              className="h-16 w-auto md:h-60 md:w-60 object-contain transition-all duration-300 group-hover:scale-110"
             />
-            <span
-              className={`text-xl font-bold transition-colors duration-300 ${
-                scrolled ? 'text-black' : 'text-white'
-              }`}
-            >
-              Sweepro
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex flex-1 justify-center items-center">
+          <div className="hidden md:flex flex-1 justify-center items-center ml-8">
             <div
               className={`flex gap-8 rounded-full px-8 py-2 transition-all duration-300 ${
                 scrolled ? 'bg-gray-100' : ''
@@ -195,23 +216,74 @@ export const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
 
           {/* Login/Signup Buttons - right side */}
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/login">
-              <Button
-                variant="outline"
-                className={`rounded-full font-semibold px-6 py-2 transition-all duration-300 ${
-                  scrolled
-                    ? 'border-2 border-gray-300 bg-white text-black hover:bg-gray-50'
-                    : 'border-2 border-white/80 backdrop-blur-md bg-white/10 text-white hover:bg-white/20'
-                }`}
-              >
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button className="rounded-full bg-gradient-to-r from-blue-600 via-blue-500 to-blue-700 text-white font-bold px-6 py-2 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300">
-                Signup
-              </Button>
-            </Link>
+            {isAuthenticated && user ? (
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleDashboardClick}
+                  className={`rounded-full font-semibold px-6 py-2 transition-all duration-300 ${
+                    scrolled
+                      ? 'border-2 border-blue-900 bg-blue-900 text-white hover:bg-red-600'
+                      : 'border-2 border-blue-900 bg-blue-900 text-white hover:bg-red-600'
+                  }`}
+                >
+                  Dashboard
+                </Button>
+                
+                <div className="relative" ref={userMenuRef}>
+                  <Button
+                    variant="outline"
+                    onClick={toggleUserMenu}
+                    className={`rounded-full font-semibold px-4 py-2 transition-all duration-300 flex items-center gap-2 ${
+                      scrolled
+                        ? 'border-2 border-blue-900 bg-white text-blue-900 hover:bg-blue-50'
+                        : 'border-2 border-blue-900 bg-blue-50 text-blue-900 hover:bg-blue-50'
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    {user.name}
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                  
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                        <p className="text-xs text-gray-500">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button
+                    variant="outline"
+                    className={`rounded-full font-semibold px-6 py-2 transition-all duration-300 ${
+                      scrolled
+                        ? 'border-2 border-blue-900 bg-white text-blue-900 hover:bg-blue-50'
+                        : 'border-2 border-white/80 backdrop-blur-md bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button 
+                    className="rounded-full bg-gradient-to-r from-blue-900 via-blue-900 to-red-600 text-white font-bold px-6 py-2 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                  >
+                    Signup
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -261,12 +333,30 @@ export const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
               FAQ
             </a>
 
-            {isAuthenticated ? (
-              <Link to="/dashboard" onClick={toggleMenu}>
-                <Button variant="default" className="w-full">
-                  Dashboard
-                </Button>
-              </Link>
+            {isAuthenticated && user ? (
+              <>
+                <div className="px-4 py-2 border-t border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
+                </div>
+                <Link to="/dashboard" onClick={toggleMenu}>
+                  <Button variant="default" className="w-full">
+                    Dashboard
+                  </Button>
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    toggleMenu();
+                  }}
+                  className="w-full text-left"
+                >
+                  <Button variant="outline" className="w-full text-red-600 border-red-600 hover:bg-red-50">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </button>
+              </>
             ) : (
               <div className="space-y-2 pt-2">
                 <Link to="/login" onClick={toggleMenu}>
@@ -275,7 +365,9 @@ export const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
                   </Button>
                 </Link>
                 <Link to="/signup" onClick={toggleMenu}>
-                  <Button className="btn-hero w-full">Get Started</Button>
+                  <Button className="btn-hero w-full">
+                    Get Started
+                  </Button>
                 </Link>
               </div>
             )}

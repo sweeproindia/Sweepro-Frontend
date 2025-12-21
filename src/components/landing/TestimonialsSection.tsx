@@ -2,6 +2,7 @@
 
 //TestimonalsSection
 
+import { motion } from 'framer-motion';
 import React from 'react';
 
 interface Testimonial {
@@ -95,7 +96,13 @@ export default function TestimonialsSection() {
   const doubledTestimonials = [...testimonials, ...testimonials];
 
   return (
-    <div id="testimonials" className="py-12 sm:py-16 px-4 sm:px-6 md:px-8 bg-white overflow-hidden">
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+      className="py-12 sm:py-16 px-4 sm:px-6 md:px-8 bg-white overflow-hidden"
+    >
       <style>{`
         @keyframes scrollUp {
           0% {
@@ -179,6 +186,6 @@ export default function TestimonialsSection() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.section>
   );
 }
