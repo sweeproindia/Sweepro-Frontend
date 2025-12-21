@@ -1,28 +1,31 @@
+// FeatureSection.tsx
+
+import { motion } from "framer-motion";
 import { Clock, CreditCard, Shield, Users } from "lucide-react";
 
 const features = [
   {
     icon: Shield,
     title: "Trusted Professionals",
-    description: "All our maids are background-verified, insured, and trained to deliver exceptional service.",
+    description: "All our care partners are background-verified, insured, and trained to deliver exceptional service.",
     color: "emerald",
   },
   {
     icon: Clock,
-    title: "Flexible Scheduling",
-    description: "Book daily, weekly, or monthly visits. Reschedule anytime through our easy-to-use platform.",
+    title: "Consistent & Reliable",
+    description: "Enjoy uninterrupted service with well-structured schedules, backup support, and transparent communication.",
     color: "blue",
   },
   {
     icon: Users,
-    title: "Background Verified",
-    description: "Every cleaner undergoes thorough background checks and identity verification for your peace of mind.",
+    title: "Designed for Modern Homes",
+    description: "From compact apartments to spacious villas, our plans adapt to your home's needs and lifestyle.",
     color: "amber",
   },
   {
     icon: CreditCard,
-    title: "Pricing & Toolkit",
-    description: "No hidden fees or surprise charges—just everything you need in one powerful toolkit to manage, automate, and grow with confidence.",
+    title: "Sweepro Kit",
+    description: "We equip our team with a curated cleaning kit to ensure effective, hygienic, and consistent results – every single time",
     color: "indigo",
   },
 ];
@@ -52,17 +55,14 @@ const colorClasses = {
 
 export default function FeaturesSection() {
   return (
-    <section
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
       id="services"
-      className="relative min-h-[600px] sm:min-h-screen py-10 sm:py-24 bg-gradient-to-b from-slate-50 to-white overflow-hidden flex items-center"
+      className="relative min-h-[600px] sm:min-h-screen py-10 sm:py-24 overflow-hidden flex items-center"
     >
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 opacity-40 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.1),transparent_50%)]"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,206,84,0.1),transparent_50%)]"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_40%,rgba(34,197,94,0.05),transparent_70%)]"></div>
-      </div>
-
       <div className="relative max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 w-full">
         {/* Header */}
         <div className="text-center mb-10 sm:mb-20">
@@ -149,6 +149,6 @@ export default function FeaturesSection() {
           animation: floating-feature-icon 2.5s ease-in-out infinite;
         }
       `}</style>
-    </section>
+    </motion.section>
   );
 }

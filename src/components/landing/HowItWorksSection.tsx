@@ -1,6 +1,8 @@
+//HowItWorksSection.tsx
+
 "use client";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Calendar, CheckCircle, CreditCard, Smile, UserPlus } from "lucide-react";
+import { CheckCircle, CreditCard, Smile, UserPlus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const steps = [
@@ -8,11 +10,6 @@ const steps = [
     icon: UserPlus,
     title: "Select Subscription",
     description: "Choose the perfect plan for your needs - Basic, Standard, or Premium.",
-  },
-  {
-    icon: Calendar,
-    title: "Schedule Visits",
-    description: "Pick your preferred days and times. We handle the rest automatically.",
   },
   {
     icon: CreditCard,
@@ -69,7 +66,14 @@ export const HowItWorksSection = () => {
   }, [activeStep, allVisible, cycle]);
 
   return (
-    <div id="how-it-works" className="py-20 relative overflow-hidden">
+    <motion.div
+      id="how-it-works"
+      className="py-20 relative overflow-hidden"
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -88,26 +92,26 @@ export const HowItWorksSection = () => {
         </motion.div>
 
         {/* Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-16 xl:gap-20 px-2 lg:px-0 justify-items-center items-stretch w-full max-w-6xl mx-auto">
           {steps.map((step, index) => (
             <motion.div
               key={step.title}
-              className="relative text-center group"
+              className="relative text-center group flex flex-col items-center h-full"
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
-              animate={allVisible || activeStep >= index ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 50, scale: 0.9 }}
+              animate={allVisible || activeStep >= index ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 50, scale: 1 }}
               transition={{ duration: 0.6 }}
             >
               {/* Icon Circle with Sequential Fill and floating effect on the full circle */}
               <div className="relative mb-6">
                 <motion.div
-                  className="inline-flex items-center justify-center w-24 h-24 rounded-full border-2 border-primary/30 mb-4 relative overflow-hidden floating-icon"
-                  style={{ background: `conic-gradient(from 0deg, var(--gradient-hero) ${activeStep === index ? 360 : 0}deg, white ${activeStep === index ? 360 : 0}deg, white 360deg)` }}
+                  className="inline-flex items-center justify-center w-24 h-24 rounded-full border-2 mb-4 relative overflow-hidden floating-icon"
+                  style={{ borderColor: activeStep === index ? '#2563eb' : '#2563eb', background: 'white' }}
                 >
                   <motion.div 
-                    className="w-20 h-20 rounded-full bg-white flex items-center justify-center relative z-10"
-                    style={{ backgroundColor: activeStep === index ? 'transparent' : 'white' }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center relative z-10"
+                    style={{ backgroundColor: 'white' }}
                   >
-                    <step.icon className="h-8 w-8 text-primary transition-colors duration-300" />
+                    <step.icon className={`h-8 w-8 ${activeStep === index || allVisible ? 'text-blue-600' : 'text-blue-600'} transition-colors duration-300`} />
                   </motion.div>
                 </motion.div>
               </div>
@@ -131,6 +135,6 @@ export const HowItWorksSection = () => {
           animation: floating 2.5s ease-in-out infinite;
         }
       `}</style>
-    </div>
+    </motion.div>
   );
 };

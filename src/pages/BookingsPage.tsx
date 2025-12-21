@@ -10,6 +10,7 @@ import { useBookingForm } from '@/contexts/BookingFormContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
+import BookingsSkeleton from '@/components/bookings/BookingsSkeleton';
 import { useToast } from '@/hooks/use-toast';
 import QrScannerDialog from '@/components/qr/QrScannerDialog';
 import { completeBookingWithQRForCustomer } from '@/services/qrService';
@@ -176,12 +177,7 @@ export default function BookingsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading bookings...</span>
-          </div>
-        </div>
+        <BookingsSkeleton />
       </DashboardLayout>
     );
   }
@@ -530,8 +526,7 @@ export default function BookingsPage() {
               <p className="text-muted-foreground mb-4">
                 {filter === 'all' 
                   ? "You don't have any bookings yet. Schedule your first cleaning service!"
-                  : `No ${filter} bookings found. Try adjusting your filter.`
-                }
+                  : `No ${filter} bookings found. Try adjusting your filter.`}
               </p>
               {filter === 'all' && (
                 <Button className="btn-hero" onClick={handleQuickBooking}>

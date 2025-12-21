@@ -29,130 +29,102 @@ export const useBufferPeriod = () => {
       return;
     }
 
+    // Temporarily suppress console errors for this specific call
+    const originalConsoleError = console.error;
+    let subscriptionResponse;
+    
     try {
       setBufferStatus(prev => ({ ...prev, isLoading: true, error: null }));
       
-      // Get user's subscription
-      console.log('🔍 Fetching user subscription...');
-      const subscriptionResponse = await SubscriptionService.getUserSubscription();
+      // Suppress console.error only for subscription API calls
+      console.error = (...args: any[]) => {
+        const message = args[0]?.toString() || '';
+        // Only suppress subscription-related 404 errors
+        if (!message.includes('No subscription found') && 
+            !message.includes('Get user subscription error') &&
+            !message.includes('API Request Failed')) {
+          originalConsoleError(...args);
+        }
+      };
       
-      console.log('🔍 Subscription response:', {
-        success: subscriptionResponse.success,
-        hasSubscription: !!subscriptionResponse.data?.subscription,
-        subscriptionId: subscriptionResponse.data?.subscription?.id
-      });
+      // Get user's subscription which includes buffer period info
+      subscriptionResponse = await SubscriptionService.getUserSubscription();
+      
+      // Restore console.error
+      console.error = originalConsoleError;
       
       if (subscriptionResponse.success && subscriptionResponse.data?.subscription) {
         const subscription = subscriptionResponse.data.subscription;
         
-        // Check current buffer status
-        console.log('🔍 Checking buffer status for subscription:', subscription.id);
-        const bufferStatusResponse = await BufferService.checkCurrentBufferStatus(subscription.id);
+        // Check if subscription has buffer period flag
+        const isInBuffer = subscription.isInBufferPeriod || false;
         
-        if (bufferStatusResponse.success) {
-          const { isInBufferPeriod: inBuffer, activeBufferPeriod } = bufferStatusResponse.data;
-          
-          console.log('🔍 Buffer period status updated:', {
-            isInBufferPeriod: inBuffer,
-            activeBufferPeriod: activeBufferPeriod,
-            endDate: activeBufferPeriod?.endDate,
-            startDate: activeBufferPeriod?.startDate,
-            fullResponse: bufferStatusResponse.data
-          });
-          
-          setBufferStatus({
-            isInBufferPeriod: inBuffer,
-            bufferEndDate: activeBufferPeriod?.endDate || null,
-            bufferStartDate: activeBufferPeriod?.startDate || null,
-            activeBufferPeriod: activeBufferPeriod || null,
-            isLoading: false,
-            error: null
-          });
-        } else {
-          console.log('🚫 Buffer status check failed:', bufferStatusResponse);
-          setBufferStatus(prev => ({
-            ...prev,
-            isLoading: false,
-            error: 'Failed to check buffer status'
-          }));
-        }
-      } else {
-        setBufferStatus(prev => ({
-          ...prev,
+        setBufferStatus({
+          isInBufferPeriod: isInBuffer,
+          bufferEndDate: subscription.bufferEndDate || null,
+          bufferStartDate: subscription.bufferStartDate || null,
+          activeBufferPeriod: isInBuffer ? { 
+            startDate: subscription.bufferStartDate,
+            endDate: subscription.bufferEndDate 
+          } : null,
           isLoading: false,
-          error: 'No subscription found'
-        }));
-      }
-    } catch (error) {
-      console.error('🚫 Error checking buffer period status:', error);
-      setBufferStatus(prev => ({
-        ...prev,
-        isInBufferPeriod: false,
-        bufferEndDate: null,
-        bufferStartDate: null,
-        activeBufferPeriod: null,
-        isLoading: false,
-        error: 'Failed to load buffer status'
-      }));
-    }
-  };
-
-  // Alternative method to check buffer period using the same API call as the working fallback
-  const checkBufferPeriodWithFallback = async () => {
-    if (!user) return;
-
-    try {
-      console.log('🔍 Fallback buffer check...');
-      const subscriptionResponse = await SubscriptionService.getUserSubscription();
-      
-      if (subscriptionResponse.success && subscriptionResponse.data?.subscription) {
-        const subscription = subscriptionResponse.data.subscription;
-        const bufferStatusResponse = await BufferService.checkCurrentBufferStatus(subscription.id);
-        
-        console.log('🔍 Fallback buffer check result:', {
-          success: bufferStatusResponse.success,
-          data: bufferStatusResponse.data
+          error: null
         });
-        
-        if (bufferStatusResponse.success && bufferStatusResponse.data.isInBufferPeriod) {
-          console.log('🔍 Fallback detected active buffer period, updating state...');
-          const { activeBufferPeriod } = bufferStatusResponse.data;
-          
-          setBufferStatus({
-            isInBufferPeriod: true,
-            bufferEndDate: activeBufferPeriod?.endDate || null,
-            bufferStartDate: activeBufferPeriod?.startDate || null,
-            activeBufferPeriod: activeBufferPeriod || null,
-            isLoading: false,
-            error: null
-          });
-        }
+      } else {
+        // No subscription found - this is normal for users without subscriptions
+        setBufferStatus({
+          isInBufferPeriod: false,
+          bufferEndDate: null,
+          bufferStartDate: null,
+          activeBufferPeriod: null,
+          isLoading: false,
+          error: null
+        });
       }
-    } catch (error) {
-      console.error('🚫 Fallback buffer check failed:', error);
+    } catch (error: any) {
+      // Restore console.error in case of exception
+      console.error = originalConsoleError;
+      
+      // Silently handle 404 errors (no subscription is normal)
+      if (error?.statusCode === 404) {
+        setBufferStatus({
+          isInBufferPeriod: false,
+          bufferEndDate: null,
+          bufferStartDate: null,
+          activeBufferPeriod: null,
+          isLoading: false,
+          error: null
+        });
+      } else {
+        // Log other errors
+        console.error('Error checking buffer period status:', error);
+        setBufferStatus({
+          isInBufferPeriod: false,
+          bufferEndDate: null,
+          bufferStartDate: null,
+          activeBufferPeriod: null,
+          isLoading: false,
+          error: null
+        });
+      }
     }
   };
+
 
   // Check buffer status on mount and when user changes
   useEffect(() => {
-    checkBufferPeriodStatus();
-    
-    // Also run fallback check after a short delay
-    const fallbackTimer = setTimeout(() => {
-      checkBufferPeriodWithFallback();
-    }, 2000);
-    
-    return () => clearTimeout(fallbackTimer);
+    if (user) {
+      checkBufferPeriodStatus();
+    }
   }, [user]);
 
-  // Periodic check every 30 seconds to ensure buffer status is up to date
+  // Periodic check every 5 minutes to ensure buffer status is up to date
   useEffect(() => {
     if (!user) return;
     
     const interval = setInterval(() => {
-      console.log('🔍 Periodic buffer status check...');
       checkBufferPeriodStatus();
-    }, 30000);
+    }, 300000); // Check every 5 minutes instead of 30 seconds
     
     return () => clearInterval(interval);
   }, [user]);
@@ -169,13 +141,7 @@ export const useBufferPeriod = () => {
 
   // Helper function to check if booking should be disabled
   const shouldDisableBooking = (): boolean => {
-    const result = bufferStatus.isInBufferPeriod;
-    console.log('🔍 shouldDisableBooking called:', {
-      isInBufferPeriod: bufferStatus.isInBufferPeriod,
-      bufferEndDate: bufferStatus.bufferEndDate,
-      result
-    });
-    return result;
+    return bufferStatus.isInBufferPeriod;
   };
 
   // Helper function to get buffer period end date formatted
@@ -193,7 +159,6 @@ export const useBufferPeriod = () => {
   return {
     ...bufferStatus,
     checkBufferPeriodStatus,
-    checkBufferPeriodWithFallback,
     getBufferPeriodMessage,
     shouldDisableBooking,
     getFormattedEndDate,

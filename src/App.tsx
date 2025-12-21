@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import { BookingFormProvider } from "@/contexts/BookingFormContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import ScrollToTop from '@/components/ScrollToTop';
 
 import AdminDashboard from "./pages/AdminDashboard";
@@ -19,6 +20,7 @@ import MaidSupportPage from "./pages/MaidSupportPage";
 import NotFound from "./pages/NotFound";
 import PaymentsPage from "./pages/PaymentsPage";
 import ProfilePage from "./pages/ProfilePage";
+import EnhancedProfilePage from "./pages/EnhancedProfilePage";
 import SignupPage from "./pages/SignupPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import MonthlySubscriptionDashboard from "./pages/MonthlySubscriptionDashboard";
@@ -29,17 +31,20 @@ import PaymentOptionsPage from "./pages/PaymentOptionsPage";
 import ReviewPaymentPage from "./pages/ReviewPaymentPage";
 import MaidVerification from "./pages/MaidVerification";
 import UserMaidDashboard from "./pages/MaidDashboard";
+import NotificationsPage from "./pages/NotificationsPage";
+import BufferManagementPage from "./pages/BufferManagementPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <UserProvider>
-      <BookingFormProvider>
-        <TooltipProvider>
-          {/* Global toast components */}
-          <Sonner />
-          <BrowserRouter>
+      <NotificationProvider>
+        <BookingFormProvider>
+          <TooltipProvider>
+            {/* Global toast components */}
+            <Sonner />
+            <BrowserRouter>
             <ScrollToTop>
               <Routes>
                   <Route path="/" element={<LandingPage />} />
@@ -53,17 +58,20 @@ const App = () => (
                   <Route path="/maid-support" element={<MaidSupportPage />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/profile/enhanced" element={<EnhancedProfilePage />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/admin-dashboard" element={<AdminDashboard />} />
                   <Route path="/bookings" element={<BookingsPage />} />
                   <Route path="/subscription" element={<SubscriptionPage />} />
                   <Route path="/monthly-subscription" element={<MonthlySubscriptionDashboard />} />
                   <Route path="/calendar" element={<MonthlyServiceCalendar />} />
+                  <Route path="/buffer" element={<BufferManagementPage />} />
                   <Route path="/subscription/:planId" element={<SubscriptionDetailsPage />}  />
                   <Route path="/payment-options" element={<PaymentOptionsPage />} />
                   <Route path="/review-payment" element={<ReviewPaymentPage />} />
                   <Route path="/payments" element={<PaymentsPage />} />
                   <Route path="/support" element={<SupportPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
                   {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
@@ -71,6 +79,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </BookingFormProvider>
+      </NotificationProvider>
     </UserProvider>
   </QueryClientProvider>
 );

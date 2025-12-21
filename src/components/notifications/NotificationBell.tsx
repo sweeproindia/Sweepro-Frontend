@@ -1,57 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, Check, Clock, User, Calendar, X } from 'lucide-react';
+import { Bell, Check, Trash2, Wifi, WifiOff } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { useNavigate } from 'react-router-dom';
 
-interface Notification {
-  id: string;
-  type: 'assignment' | 'booking' | 'payment' | 'system';
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  data?: any;
-}
-
-interface NotificationBellProps {
-  notifications?: Notification[];
-  onMarkAsRead?: (notificationId: string) => void;
-  onMarkAllAsRead?: () => void;
-  onNotificationClick?: (notification: Notification) => void;
-}
-
-export const NotificationBell: React.FC<NotificationBellProps> = ({
-  notifications = [],
-  onMarkAsRead,
-  onMarkAllAsRead,
-  onNotificationClick
-}) => {
+export const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const navigate = useNavigate();
+  const {
+    notifications,
+    unreadCount,
+    isConnected,
+    loading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications();
 
   const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'assignment':
-        return <User className="h-4 w-4 text-blue-500" />;
-      case 'booking':
-        return <Calendar className="h-4 w-4 text-green-500" />;
-      case 'payment':
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <Bell className="h-4 w-4 text-gray-500" />;
+    const iconClass = "h-4 w-4";
+    
+    if (type.includes('BOOKING')) return <Bell className={`${iconClass} text-blue-500`} />;
+    if (type.includes('PAYMENT')) return <Bell className={`${iconClass} text-green-500`} />;
+    if (type.includes('MAID') || type.includes('SERVICE')) return <Bell className={`${iconClass} text-purple-500`} />;
+    if (type.includes('SUBSCRIPTION')) return <Bell className={`${iconClass} text-orange-500`} />;
+    if (type.includes('BUFFER')) return <Bell className={`${iconClass} text-yellow-500`} />;
+    
+    return <Bell className={`${iconClass} text-gray-500`} />;
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+    // Navigate based on notification type
+    if (notification.data?.bookingId) {
+      navigate(`/bookings/${notification.data.bookingId}`);
+      setIsOpen(false);
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.isRead && onMarkAsRead) {
-      onMarkAsRead(notification.id);
-    }
-    if (onNotificationClick) {
-      onNotificationClick(notification);
-    }
+  const handleDelete = async (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation();
+    await deleteNotification(notificationId);
   };
 
   const formatTime = (dateString: string) => {
@@ -88,12 +83,21 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Notifications</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">Notifications</CardTitle>
+                <div title={isConnected ? "Connected" : "Disconnected"}>
+                  {isConnected ? (
+                    <Wifi className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <WifiOff className="h-4 w-4 text-red-500" />
+                  )}
+                </div>
+              </div>
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onMarkAllAsRead}
+                  onClick={markAllAsRead}
                   className="text-xs"
                 >
                   <Check className="h-3 w-3 mr-1" />
@@ -108,18 +112,22 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
             )}
           </CardHeader>
           <CardContent className="p-0">
-            {notifications.length === 0 ? (
+            {loading ? (
+              <div className="p-6 text-center text-muted-foreground">
+                <p>Loading notifications...</p>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
                 <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>No notifications yet</p>
               </div>
             ) : (
               <div className="max-h-96 overflow-y-auto">
-                {notifications.map((notification) => (
+                {notifications.slice(0, 10).map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors ${
-                      !notification.isRead ? 'bg-blue-50/50' : ''
+                    className={`p-4 border-b border-border cursor-pointer hover:bg-muted/50 transition-colors group ${
+                      !notification.read ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -129,14 +137,22 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm font-medium ${!notification.isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          <p className={`text-sm font-medium ${!notification.read ? 'text-foreground' : 'text-muted-foreground'}`}>
                             {notification.title}
                           </p>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2">
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {formatTime(notification.createdAt)}
                             </span>
-                            {!notification.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => handleDelete(e, notification.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            {!notification.read && (
                               <div className="w-2 h-2 bg-blue-500 rounded-full" />
                             )}
                           </div>
@@ -152,7 +168,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
             )}
             {notifications.length > 0 && (
               <div className="p-3 border-t border-border">
-                <Button variant="ghost" size="sm" className="w-full text-xs">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full text-xs"
+                  onClick={() => {
+                    navigate('/notifications');
+                    setIsOpen(false);
+                  }}
+                >
                   View all notifications
                 </Button>
               </div>

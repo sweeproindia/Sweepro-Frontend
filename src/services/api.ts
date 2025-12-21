@@ -14,6 +14,19 @@ export const API_ENDPOINTS = {
     PROFILE: '/users/profile',
     UPDATE: '/users/update',
   },
+  // Profile
+  PROFILE: {
+    ME: '/profile/me',
+    PUBLIC: '/profile/public/:userId',
+    UPDATE_USER: '/profile/user',
+    UPDATE_CUSTOMER: '/profile/customer',
+    UPDATE_MAID: '/profile/maid',
+    UPLOAD_IMAGE: '/profile/image',
+    DELETE_IMAGE: '/profile/image/:imageType',
+    STATS: '/profile/stats',
+    STATS_BY_ID: '/profile/stats/:userId',
+    ACTIVITY: '/profile/activity',
+  },
   // Services
   SERVICES: {
     ALL: '/services',
@@ -249,14 +262,15 @@ export const apiRequest = async <T = any>(
     requestConfig.body = JSON.stringify(body);
   }
 
-  console.log(`🚀 API Request: ${method} ${url}`);
-  console.log('Request config:', requestConfig);
+  // Only log in development mode
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🚀 API Request: ${method} ${url}`);
+    console.log('Request URL:', url);
+    console.log('Request Headers:', requestHeaders);
+  }
 
   try {
     const response = await fetch(url, requestConfig);
-    
-    console.log(`📡 Response status: ${response.status} ${response.statusText}`);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
     
     // Handle different content types
     let data;
@@ -266,7 +280,6 @@ export const apiRequest = async <T = any>(
       data = await response.json();
     } else {
       const text = await response.text();
-      console.log('Non-JSON response:', text);
       
       // Try to parse as JSON anyway
       try {
@@ -275,12 +288,13 @@ export const apiRequest = async <T = any>(
         data = { message: text || 'Empty response' };
       }
     }
-    
-    console.log('Response data:', data);
 
     if (!response.ok) {
       const errorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
-      console.error(`❌ API Error:`, errorMessage);
+      // Only log non-404 errors to reduce console spam
+      if (response.status !== 404) {
+        console.error(`❌ API Error:`, errorMessage);
+      }
       throw new ApiError(
         errorMessage,
         response.status,
@@ -291,11 +305,9 @@ export const apiRequest = async <T = any>(
     // Check if response has success field (auth endpoints), otherwise wrap raw data
     if (data && typeof data === 'object' && 'success' in data) {
       // Already wrapped response (from auth endpoints)
-      console.log('✅ API Success:', data.message);
       return data;
     } else {
       // Raw response data - wrap it
-      console.log('✅ API Success: Request completed');
       return {
         success: true,
         message: 'Request successful',

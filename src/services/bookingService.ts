@@ -136,34 +136,28 @@ export class BookingService {
   static async getUserBookings(status?: string): Promise<ApiResponse<Booking[]>> {
     try {
       const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_BOOKINGS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_BOOKINGS;
-      
       const response = await apiRequest<BookingsResponse>(url, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-
-      // Handle both old and new response formats
       if (response.success && response.data) {
-        // New format with wrapped response
         if ('bookings' in response.data) {
             return {
               ...response,
               data: response.data.bookings
             };
         }
-        // Old format - direct array or object with data property
-          if (Array.isArray(response.data)) {
+        if (Array.isArray(response.data)) {
             return {
               ...response,
               data: response.data as Booking[]
             };
-          }
+        }
       }
-        // If response format is unexpected, return empty array but preserve success and error info
-        return {
-          ...response,
-          data: []
-        };
+      return {
+        ...response,
+        data: []
+      };
     } catch (error) {
       console.error('Get user bookings error:', error);
       throw error;

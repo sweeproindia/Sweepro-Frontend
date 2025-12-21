@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
 import { Crown, Shield, Star, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -26,7 +27,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     tagline: 'Sweepro Touch',
     description: 'A premium silver plan for medium-sized homes. Enjoy enhanced cleaning and priority service.',
     icon: Zap,
-    gradient: 'from-[#C0C0C0] to-[#E0E0E0]'
+    gradient: 'from-blue-100 to-blue-200'
   },
   {
     id: 'premium',
@@ -34,7 +35,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     tagline: 'Sweepro Lux',
     description: 'Ultimate cleaning experience for large homes and villas with luxury service.',
     icon: Crown,
-    gradient: 'from-yellow-400 to-yellow-700'
+    gradient: 'from-blue-900 to-red-600'
   }
 ];
 
@@ -96,15 +97,20 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
   };
 
   return (
-    <section 
+    <motion.section
       id="subscription-plans"
-      className="relative min-h-screen py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 overflow-hidden">
+      className="relative min-h-screen py-24 bg-gradient-to-br from-blue-50 via-blue-100 to-white overflow-hidden"
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Floating Orbs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-400/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-pink-400/30 to-yellow-500/30 rounded-full blur-3xl animate-bounce"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-gradient-to-r from-cyan-400/10 to-blue-600/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-900/20 to-blue-50/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-red-600/20 to-blue-50/20 rounded-full blur-3xl animate-bounce"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-gradient-to-r from-blue-900/10 to-blue-50/10 rounded-full blur-3xl animate-pulse"></div>
         
         {/* Grid Pattern */}
         <div 
@@ -118,12 +124,11 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         {/* Enhanced Header */}
         <div className={`text-center mb-20 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <h2 className="text-6xl font-black bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-6 tracking-tight">
-            Choose Your Cleaning Plan
+          <h2 className="text-6xl font-black bg-gradient-to-r from-blue-900 via-blue-700 to-red-600 bg-clip-text text-transparent mb-6 tracking-tight">
+            Home Care , Your Way
           </h2>
-          <p className="text-xl text-blue-100/80 max-w-3xl mx-auto leading-relaxed">
-            Experience the future of home cleaning with our AI-powered service plans. 
-            From cozy spaces to luxury estates — we've got you covered.
+          <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+            Experience the future of home cleaning with our AI-powered service plans. From cozy spaces to luxury, we've got you covered.
           </p>
         </div>
 
@@ -239,6 +244,6 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
           animation: shine-effect 1.2s linear;
         }
       `}</style>
-    </section>
+    </motion.section>
   );
 };

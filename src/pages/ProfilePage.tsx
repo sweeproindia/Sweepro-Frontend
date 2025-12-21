@@ -19,138 +19,57 @@ import {
     Star,
     User
 } from 'lucide-react';
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { useBookingForm } from '@/contexts/BookingFormContext';
-
-interface ProfileData {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: 'user' | 'admin' | 'maid';
-  avatar: string;
-  coverImage: string;
-  location: string;
-  joinDate: string;
-  status: 'active' | 'inactive' | 'pending';
-  rating?: number;
-  totalBookings?: number;
-  totalEarnings?: number;
-  completedJobs?: number;
-  specializations?: string[];
-  bio?: string;
-  address?: string;
-  emergencyContact?: string;
-  documents?: string[];
-  achievements?: string[];
-  recentActivity?: Array<{
-    id: string;
-    action: string;
-    time: string;
-    type: 'success' | 'info' | 'warning';
-  }>;
-}
-
-// Sample profile data based on role
-const getProfileData = (role: 'user' | 'admin' | 'maid'): ProfileData => {
-  const baseData = {
-    id: '1',
-    name: '',
-    email: '',
-    phone: '',
-    role,
-    avatar: '',
-    coverImage: '',
-    location: '',
-    joinDate: '',
-    status: 'active' as const,
-  };
-
-  switch (role) {
-    case 'user':
-      return {
-        ...baseData,
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@email.com',
-        phone: '+91 98765 43210',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-        coverImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=300&fit=crop',
-        location: 'Mumbai, Maharashtra',
-        joinDate: 'March 2024',
-        totalBookings: 24,
-        bio: 'Homeowner looking for reliable cleaning services. Prefer eco-friendly products and thorough cleaning.',
-        address: '123 Sunshine Apartments, Andheri West, Mumbai - 400058',
-        emergencyContact: '+91 98765 43211 (Spouse)',
-        recentActivity: [
-          { id: '1', action: 'Booked weekly cleaning service', time: '2 hours ago', type: 'success' },
-          { id: '2', action: 'Left 5-star review for last cleaning', time: '1 day ago', type: 'success' },
-          { id: '3', action: 'Updated payment method', time: '3 days ago', type: 'info' },
-        ]
-      };
-
-    case 'admin':
-      return {
-        ...baseData,
-        name: 'Admin Manager',
-        email: 'admin@sweeppro.com',
-        phone: '+91 98765 43212',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        coverImage: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=300&fit=crop',
-        location: 'Bangalore, Karnataka',
-        joinDate: 'January 2024',
-        achievements: [
-          'Successfully onboarded 50+ cleaning professionals',
-          'Improved customer satisfaction by 25%',
-          'Reduced service complaints by 40%',
-          'Launched new mobile app features'
-        ],
-        recentActivity: [
-          { id: '1', action: 'Approved 5 new maid applications', time: '1 hour ago', type: 'success' },
-          { id: '2', action: 'Resolved customer complaint #1234', time: '3 hours ago', type: 'success' },
-          { id: '3', action: 'Updated system maintenance schedule', time: '1 day ago', type: 'info' },
-        ]
-      };
-
-    case 'maid':
-      return {
-        ...baseData,
-        name: 'Priya Sharma',
-        email: 'priya.sharma@email.com',
-        phone: '+91 98765 43213',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
-        coverImage: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=300&fit=crop',
-        location: 'Delhi, NCR',
-        joinDate: 'February 2024',
-        rating: 4.8,
-        totalBookings: 156,
-        totalEarnings: 45000,
-        completedJobs: 142,
-        specializations: ['Deep Cleaning', 'Kitchen Cleaning', 'Bathroom Sanitization', 'Window Cleaning'],
-        bio: 'Professional cleaner with 5+ years of experience. Specialized in deep cleaning and eco-friendly products. Committed to providing excellent service.',
-        address: '456 Green Park, New Delhi - 110016',
-        emergencyContact: '+91 98765 43214 (Family)',
-        documents: ['Aadhar Card', 'Background Verification', 'Training Certificate', 'Insurance'],
-        achievements: [
-          'Top performer for 3 consecutive months',
-          '100% customer satisfaction rating',
-          'Completed advanced cleaning certification',
-          'Received 50+ 5-star reviews'
-        ],
-        recentActivity: [
-          { id: '1', action: 'Completed apartment cleaning at Sunshine Towers', time: '2 hours ago', type: 'success' },
-          { id: '2', action: 'Received 5-star rating from client', time: '3 hours ago', type: 'success' },
-          { id: '3', action: 'Updated availability for next week', time: '1 day ago', type: 'info' },
-        ]
-      };
-  }
-};
+import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
+import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
+import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ProfilePage: React.FC = () => {
-  const [userRole, setUserRole] = useState<'user' | 'admin' | 'maid'>('user'); // Default to user for demo
-  const profileData = getProfileData(userRole);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageType, setImageType] = useState<'profile' | 'cover'>('profile');
   const { openBookingForm } = useBookingForm();
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    setLoading(true);
+    try {
+      const response = await apiRequest(API_ENDPOINTS.PROFILE.ME, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+
+      if (response.success) {
+        setProfileData(response.data);
+        setStats(response.data.stats);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load profile');
+      // If auth fails, redirect to login
+      if (error.statusCode === 401) {
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageUpload = (type: 'profile' | 'cover') => {
+    setImageType(type);
+    setImageDialogOpen(true);
+  };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -187,6 +106,123 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header Skeleton */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-4 w-32 skeleton-shimmer" />
+              <Skeleton className="h-8 w-48 skeleton-shimmer" />
+            </div>
+            <div className="flex items-center space-x-2">
+              {[1, 2, 3].map((item) => (
+                <Skeleton key={item} className="h-10 w-28 skeleton-shimmer" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+          {/* Cover + Profile */}
+          <div className="relative">
+            <Skeleton className="h-64 w-full rounded-2xl skeleton-shimmer" />
+            <Skeleton className="absolute -bottom-12 left-6 h-28 w-28 rounded-full border-4 border-white skeleton-shimmer" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left column cards */}
+            <div className="space-y-6">
+              <div className="space-y-4 bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-fadeIn">
+                <div className="flex flex-col items-center gap-3">
+                  <Skeleton className="h-5 w-32 skeleton-shimmer" />
+                  <Skeleton className="h-4 w-24 skeleton-shimmer" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-16 rounded-full skeleton-shimmer" />
+                    <Skeleton className="h-6 w-16 rounded-full skeleton-shimmer" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((item) => (
+                    <div key={item} className="flex items-center space-x-3">
+                      <Skeleton className="h-4 w-4 rounded-full skeleton-shimmer" />
+                      <Skeleton className="h-4 flex-1 skeleton-shimmer" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-slideUp">
+                <Skeleton className="h-5 w-32 mb-4 skeleton-shimmer" />
+                <div className="space-y-4">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Skeleton className="h-4 w-4 rounded-full skeleton-shimmer" />
+                        <Skeleton className="h-4 w-24 skeleton-shimmer" />
+                      </div>
+                      <Skeleton className="h-5 w-12 skeleton-shimmer" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right column cards */}
+            <div className="lg:col-span-2 space-y-6">
+              {[1, 2, 3, 4].map((card) => (
+                <div
+                  key={card}
+                  className="bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-fadeIn"
+                  style={{ animationDelay: `${card * 120}ms` }}
+                >
+                  <Skeleton className="h-5 w-40 mb-4 skeleton-shimmer" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((item) => (
+                      <Skeleton key={item} className="h-4 skeleton-shimmer" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Activity timeline */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-xl border border-border/60 p-6 animate-slideUp">
+            <Skeleton className="h-5 w-44 mb-4 skeleton-shimmer" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="flex items-start space-x-3">
+                  <Skeleton className="h-8 w-8 rounded-full skeleton-shimmer" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4 skeleton-shimmer" />
+                    <Skeleton className="h-3 w-1/2 skeleton-shimmer" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6">
+            <p className="text-center text-gray-600">Failed to load profile data</p>
+            <Button onClick={fetchProfileData} className="w-full mt-4">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -210,7 +246,7 @@ const ProfilePage: React.FC = () => {
                   className="btn-hero"
                 />
               )}
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Profile
               </Button>
@@ -230,19 +266,38 @@ const ProfilePage: React.FC = () => {
             {/* Profile Card */}
             <Card className="mb-6">
               <div className="relative">
-                <img 
-                  src={profileData.coverImage} 
-                  alt="Cover" 
-                  className="w-full h-32 object-cover rounded-t-lg"
-                />
+                {profileData.coverImage ? (
+                  <img
+                    src={profileData.coverImage}
+                    alt="Cover"
+                    className="w-full h-32 object-cover rounded-t-lg"
+                  />
+                ) : (
+                  <div className="w-full h-32 bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-lg" />
+                )}
+                <button
+                  onClick={() => handleImageUpload('cover')}
+                  className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-white transition-colors"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
                 <div className="absolute -bottom-12 left-6">
                   <div className="relative">
-                    <img 
-                      src={profileData.avatar} 
-                      alt={profileData.name} 
-                      className="w-24 h-24 rounded-full border-4 border-white object-cover"
-                    />
-                    <button className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full hover:bg-primary/90">
+                    {profileData.profileImage ? (
+                      <img
+                        src={profileData.profileImage}
+                        alt={profileData.name}
+                        className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center">
+                        <User className="h-12 w-12 text-gray-400" />
+                      </div>
+                    )}
+                    <button
+                      onClick={() => handleImageUpload('profile')}
+                      className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full hover:bg-primary/90"
+                    >
                       <Camera className="h-4 w-4" />
                     </button>
                   </div>
@@ -252,17 +307,17 @@ const ProfilePage: React.FC = () => {
                 <div className="text-center mb-4">
                   <h2 className="text-xl font-bold text-gray-900">{profileData.name}</h2>
                   <div className="flex items-center justify-center space-x-2 mt-2">
-                    {getRoleIcon(profileData.role)}
-                    <span className="text-sm text-gray-600 capitalize">{profileData.role}</span>
-                    <Badge className={getStatusColor(profileData.status)}>
+                    {getRoleIcon(profileData.role?.toLowerCase())}
+                    <span className="text-sm text-gray-600 capitalize">{profileData.role?.toLowerCase()}</span>
+                    <Badge className={getStatusColor(profileData.status?.toLowerCase())}>
                       {profileData.status}
                     </Badge>
                   </div>
-                  {profileData.rating && (
+                  {profileData.maidProfile?.rating && (
                     <div className="flex items-center justify-center space-x-1 mt-2">
                       <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="text-sm font-medium">{profileData.rating}</span>
-                      <span className="text-sm text-gray-500">({profileData.totalBookings} reviews)</span>
+                      <span className="text-sm font-medium">{profileData.maidProfile.rating.toFixed(1)}</span>
+                      <span className="text-sm text-gray-500">({profileData.maidProfile.totalRatings} reviews)</span>
                     </div>
                   )}
                 </div>
@@ -280,54 +335,56 @@ const ProfilePage: React.FC = () => {
                     <Phone className="h-4 w-4 text-gray-400" />
                     <span className="text-sm text-gray-600">{profileData.phone}</span>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{profileData.location}</span>
-                  </div>
+                  {(profileData.city || profileData.address) && (
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">{profileData.city || profileData.address}</span>
+                    </div>
+                  )}
                   <div className="flex items-center space-x-3">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Joined {profileData.joinDate}</span>
+                    <span className="text-sm text-gray-600">Joined {new Date(profileData.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Quick Stats */}
-            {(profileData.totalBookings || profileData.totalEarnings || profileData.completedJobs) && (
+            {(stats?.totalBookings || stats?.totalEarnings || stats?.completedBookings) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Quick Stats</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {profileData.totalBookings && (
+                  {stats?.totalBookings > 0 && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <Clock className="h-4 w-4 text-blue-500" />
                         <span className="text-sm text-gray-600">Total Bookings</span>
                       </div>
-                      <span className="font-semibold">{profileData.totalBookings}</span>
+                      <span className="font-semibold">{stats.totalBookings}</span>
                     </div>
                   )}
-                  {profileData.completedJobs && (
+                  {stats?.completedBookings > 0 && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <CheckCircle className="h-4 w-4 text-green-500" />
                         <span className="text-sm text-gray-600">Completed Jobs</span>
                       </div>
-                      <span className="font-semibold">{profileData.completedJobs}</span>
+                      <span className="font-semibold">{stats.completedBookings}</span>
                     </div>
                   )}
-                  {profileData.totalEarnings && (
+                  {stats?.totalEarnings > 0 && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <DollarSign className="h-4 w-4 text-green-500" />
                         <span className="text-sm text-gray-600">Total Earnings</span>
                       </div>
-                      <span className="font-semibold">₹{profileData.totalEarnings.toLocaleString()}</span>
+                      <span className="font-semibold">₹{stats.totalEarnings.toLocaleString()}</span>
                     </div>
                   )}
                   {/* Quick Booking Section for Users */}
-                  {profileData.role === 'user' && (
+                  {profileData.role === 'CUSTOMER' && (
                     <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border border-blue-200">
                       <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
@@ -366,14 +423,14 @@ const ProfilePage: React.FC = () => {
           {/* Right Column - Details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Specializations */}
-            {profileData.specializations && (
+            {profileData.maidProfile?.specializations && profileData.maidProfile.specializations.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Specializations</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {profileData.specializations.map((spec, index) => (
+                    {profileData.maidProfile.specializations.map((spec: string, index: number) => (
                       <Badge key={index} variant="secondary">
                         {spec}
                       </Badge>
@@ -384,7 +441,7 @@ const ProfilePage: React.FC = () => {
             )}
 
             {/* Achievements */}
-            {profileData.achievements && (
+            {profileData.maidProfile?.achievements && profileData.maidProfile.achievements.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center">
@@ -394,7 +451,7 @@ const ProfilePage: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    {profileData.achievements.map((achievement, index) => (
+                    {profileData.maidProfile.achievements.map((achievement: string, index: number) => (
                       <li key={index} className="flex items-start space-x-3">
                         <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
                         <span className="text-sm text-gray-600">{achievement}</span>
@@ -406,17 +463,17 @@ const ProfilePage: React.FC = () => {
             )}
 
             {/* Documents */}
-            {profileData.documents && (
+            {profileData.maidProfile?.certifications && profileData.maidProfile.certifications.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Documents</CardTitle>
+                  <CardTitle className="text-lg">Certifications</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {profileData.documents.map((doc, index) => (
+                    {profileData.maidProfile.certifications.map((cert: string, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium">{doc}</span>
-                        <Badge variant="outline">Verified</Badge>
+                        <span className="text-sm font-medium">{cert}</span>
+                        <Badge variant="outline">Certified</Badge>
                       </div>
                     ))}
                   </div>
@@ -424,8 +481,26 @@ const ProfilePage: React.FC = () => {
               </Card>
             )}
 
+            {/* Interests for Customer */}
+            {profileData.customerProfile?.interests && profileData.customerProfile.interests.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Interests</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.customerProfile.interests.map((interest: string, index: number) => (
+                      <Badge key={index} variant="secondary">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Recent Activity */}
-            {profileData.recentActivity && (
+            {false && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Recent Activity</CardTitle>
@@ -456,12 +531,15 @@ const ProfilePage: React.FC = () => {
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-1">Address</h4>
                     <p className="text-sm text-gray-600">{profileData.address}</p>
+                    {profileData.city && profileData.state && (
+                      <p className="text-sm text-gray-600">{profileData.city}, {profileData.state} - {profileData.pincode}</p>
+                    )}
                   </div>
                 )}
-                {profileData.emergencyContact && (
+                {profileData.customerProfile?.emergencyContact && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-1">Emergency Contact</h4>
-                    <p className="text-sm text-gray-600">{profileData.emergencyContact}</p>
+                    <p className="text-sm text-gray-600">{profileData.customerProfile.emergencyContact}</p>
                   </div>
                 )}
               </CardContent>
@@ -469,8 +547,24 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <ProfileEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        userData={profileData}
+        onProfileUpdated={fetchProfileData}
+      />
+
+      <ImageUploadDialog
+        open={imageDialogOpen}
+        onOpenChange={setImageDialogOpen}
+        imageType={imageType}
+        currentImage={imageType === 'profile' ? profileData.profileImage : profileData.coverImage}
+        onImageUpdated={fetchProfileData}
+      />
     </div>
   );
 };
 
-export default ProfilePage; 
+export default ProfilePage;

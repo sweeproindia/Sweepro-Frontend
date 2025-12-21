@@ -11,6 +11,7 @@ import {
   Zap,
   Shield,
   Star,
+  CheckCircle,
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
@@ -20,6 +21,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { useBookingForm, withBookingForm } from '@/contexts/BookingFormContext';
+import SubscriptionSkeleton from '@/components/subscription/SubscriptionSkeleton';
 
 // Enhanced Plan Interface
 interface EnhancedSubscriptionPlan {
@@ -247,9 +249,7 @@ function SubscriptionPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <SubscriptionSkeleton />
       </DashboardLayout>
     );
   }
@@ -276,35 +276,146 @@ function SubscriptionPage() {
           </p>
         </div>
 
-        {/* Current Plan */}
+        {/* Current Subscription Details - Full Width */}
         {subscription ? (
-          <Card className="dashboard-card slide-up bg-gradient-feature">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Crown className="h-6 w-6 text-primary" />
-                  <CardTitle className="text-xl uppercase font-semibold">
-                    Current Plan: {subscription.plan?.id || 'Subscription Plan'}
-                  </CardTitle>
+          <>
+            <Card className="dashboard-card slide-up">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Subscription Plan
+                </CardTitle>
+                <CardDescription>Your current subscription details</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 bg-gradient-feature rounded-lg">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-lg">{subscription.plan?.name || 'Current Plan'}</h4>
+                      <Badge variant={subscription.status === 'ACTIVE' ? 'default' : 'destructive'}>
+                        {subscription.status}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground text-sm mb-3">
+                      {subscription.plan?.description || 'Premium cleaning services'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium">Amount:</span>
+                        <p className="text-lg font-bold text-primary">₹{subscription.amount.toLocaleString()}</p>
+                        {subscription.discount > 0 && (
+                          <p className="text-xs text-success">-₹{subscription.discount.toLocaleString()} discount</p>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium">Duration:</span>
+                        <p>{subscription.plan?.duration || 1} month{(subscription.plan?.duration || 1) > 1 ? 's' : ''}</p>
+                        <p className="text-xs text-muted-foreground">{subscription.billingCycle.toLowerCase()} billing</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Sessions:</span>
+                        <p>{subscription.plan?.sessionsPerWeek || 0}/week</p>
+                        <p className="text-xs text-muted-foreground">{subscription.plan?.sessionsPerMonth || 0}/month</p>
+                      </div>
+                      <div>
+                        <span className="font-medium">Started:</span>
+                        <p>{new Date(subscription.startDate).toLocaleDateString()}</p>
+                        <p className="text-xs text-muted-foreground">Expires: {new Date(subscription.endDate).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    {subscription.nextBillDate && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">Next Billing:</span>
+                          <span className="text-sm font-bold">
+                            {new Date(subscription.nextBillDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-sm font-medium">Auto Renewal:</span>
+                          <Badge variant={subscription.autoRenew ? 'default' : 'outline'}>
+                            {subscription.autoRenew ? 'Enabled' : 'Disabled'}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button className="w-full" variant="outline">
+                      Manage Plan
+                    </Button>
+                    <Button className="w-full" variant="outline">
+                      View History
+                    </Button>
+                  </div>
                 </div>
-                <Badge
-                  variant={subscription.status === 'ACTIVE' ? 'default' : 'destructive'}
-                >
-                  {subscription.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center mt-4">
-                <div className="text-3xl font-bold text-primary">
-                  ₹{subscription.amount.toLocaleString()}
-                </div>
-                <div className="text-muted-foreground">
-                  / {subscription.plan?.duration || 1} month
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Plan Features Card */}
+            <Card className="dashboard-card slide-up">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Plan Features
+                </CardTitle>
+                <CardDescription>What's included in your subscription</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {subscription && subscription.plan ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Sessions Per Week</p>
+                        <p className="text-2xl font-bold text-primary">{subscription.plan.sessionsPerWeek || 0}</p>
+                      </div>
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-1">Sessions Per Month</p>
+                        <p className="text-2xl font-bold text-primary">{subscription.plan.sessionsPerMonth || 0}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm">Included Features:</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-foreground">Professional cleaning services</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-foreground">{subscription.plan.sessionsPerMonth || 0} sessions per month</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-foreground">Dedicated maid assignment</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-foreground">Priority customer support</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-foreground">Flexible scheduling</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Plan Duration:</span>
+                        <Badge variant="outline">{subscription.plan.duration || 1} month{(subscription.plan.duration || 1) > 1 ? 's' : ''}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Billing Cycle:</span>
+                        <Badge variant="secondary">{subscription.billingCycle}</Badge>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </>
         ) : (
           <Card className="dashboard-card slide-up">
             <CardHeader>
