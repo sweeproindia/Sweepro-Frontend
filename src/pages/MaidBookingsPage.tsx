@@ -16,9 +16,11 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useBookings, BookingFilter } from '@/hooks/useBookings';
+import MaidQrDialog from '@/components/qr/MaidQrDialog';
 
 export default function MaidBookingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [qrOpen, setQrOpen] = useState(false);
   const {
     bookings,
     stats,
@@ -100,9 +102,14 @@ export default function MaidBookingsPage() {
             <h1 className="text-3xl font-bold text-foreground">My Assignments</h1>
             <p className="text-muted-foreground mt-2">Manage and track all your cleaning appointments</p>
           </div>
-          <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
+              <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            </Button>
+            <Button size="sm" onClick={() => setQrOpen(true)}>
+              Show My QR
+            </Button>
+          </div>
         </div>
 
         {/* Stats Overview */}
@@ -322,6 +329,7 @@ export default function MaidBookingsPage() {
           </CardContent>
         </Card>
       </div>
+      <MaidQrDialog open={qrOpen} onOpenChange={setQrOpen} />
     </MaidDashboardLayout>
   );
 }

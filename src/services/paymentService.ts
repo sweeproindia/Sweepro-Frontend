@@ -102,6 +102,22 @@ export interface RefundData {
 }
 
 export class PaymentService {
+  private static razorpayScriptPromise: Promise<void> | null = null;
+
+  static async loadRazorpaySdk(): Promise<void> {
+    if ((window as any).Razorpay) return;
+    if (!this.razorpayScriptPromise) {
+      this.razorpayScriptPromise = new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+        document.body.appendChild(script);
+      });
+    }
+    await this.razorpayScriptPromise;
+  }
   /**
    * Create a payment
    */
@@ -152,13 +168,26 @@ export class PaymentService {
   /**
    * Create Razorpay order for booking
    */
-  static async createRazorpayBookingOrder(bookingId: string): Promise<ApiResponse<RazorpayOrderData>> {
+  static async createRazorpayBookingOrder(bookingId: string, amount: number, currency: string = 'INR'): Promise<ApiResponse<RazorpayOrderData>> {
     try {
-      return await apiRequest<RazorpayOrderData>(API_ENDPOINTS.PAYMENTS.RAZORPAY.BOOKING_ORDER, {
+      const res = await apiRequest<any>(API_ENDPOINTS.PAYMENTS.RAZORPAY.BOOKING_ORDER, {
         method: HttpMethod.POST,
-        body: { bookingId },
+        body: { bookingId, amount, currency },
         requiresAuth: true
       });
+      const response: any = res;
+      const order = response.order || response.data?.order;
+      const key = response.key || response.data?.key;
+      return {
+        success: true,
+        message: 'Order created',
+        data: {
+          orderId: order?.id,
+          amount: order?.amount,
+          currency: order?.currency,
+          key
+        }
+      };
     } catch (error) {
       console.error('Create Razorpay booking order error:', error);
       throw error;
@@ -168,13 +197,26 @@ export class PaymentService {
   /**
    * Create Razorpay order for subscription
    */
-  static async createRazorpaySubscriptionOrder(subscriptionId: string): Promise<ApiResponse<RazorpayOrderData>> {
+  static async createRazorpaySubscriptionOrder(subscriptionId: string, amount: number, currency: string = 'INR'): Promise<ApiResponse<RazorpayOrderData>> {
     try {
-      return await apiRequest<RazorpayOrderData>(API_ENDPOINTS.PAYMENTS.RAZORPAY.SUBSCRIPTION_ORDER, {
+      const res = await apiRequest<any>(API_ENDPOINTS.PAYMENTS.RAZORPAY.SUBSCRIPTION_ORDER, {
         method: HttpMethod.POST,
-        body: { subscriptionId },
+        body: { subscriptionId, amount, currency },
         requiresAuth: true
       });
+      const response: any = res;
+      const order = response.order || response.data?.order;
+      const key = response.key || response.data?.key;
+      return {
+        success: true,
+        message: 'Order created',
+        data: {
+          orderId: order?.id,
+          amount: order?.amount,
+          currency: order?.currency,
+          key
+        }
+      };
     } catch (error) {
       console.error('Create Razorpay subscription order error:', error);
       throw error;
@@ -340,20 +382,28 @@ export class PaymentService {
    * Initiate Razorpay payment
    */
   static initializeRazorpayPayment(options: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!window.Razorpay) {
-        reject(new Error('Razorpay SDK not loaded'));
+    return new Promise(async (resolve, reject) => {
+      try {
+        await this.loadRazorpaySdk();
+      } catch (e) {
+        reject(e);
         return;
       }
 
+      const userModal = options?.modal || {};
       const rzp = new window.Razorpay({
         ...options,
         handler: (response: any) => {
           resolve(response);
         },
         modal: {
+          ...userModal,
           ondismiss: () => {
-            reject(new Error('Payment cancelled by user'));
+            try {
+              if (typeof userModal.ondismiss === 'function') userModal.ondismiss();
+            } finally {
+              reject(new Error('Payment cancelled by user'));
+            }
           }
         }
       });

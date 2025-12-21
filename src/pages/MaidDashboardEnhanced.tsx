@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidBookingRequestsSection } from '@/components/dashboard/MaidBookingRequestsSection';
 import { MaidAssignmentRequestsSection } from '@/components/dashboard/MaidAssignmentRequestsSection';
+import { MaidAvailabilityToggle } from '@/components/dashboard/MaidAvailabilityToggle';
 
 // Service interface to match backend
 interface Service {
@@ -238,6 +239,7 @@ export default function MaidDashboardEnhanced() {
             Here's your comprehensive cleaning schedule, earnings overview, and performance metrics.
           </p>
         </div>
+        <div className="slide-up"><MaidAvailabilityToggle /></div>
      
         {/* Verification Status Banners */}
         {verificationStatus === 'NOT_SUBMITTED' && (
