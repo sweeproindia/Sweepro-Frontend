@@ -53,6 +53,7 @@ import { EnhancedAdminBookingsSection } from '../components/dashboard/AdminBooki
 import { AdminSubscriptionsSection } from '../components/dashboard/AdminSubscriptionsSection';
 import { AdminPaymentsSection } from '../components/dashboard/AdminPaymentsSection';
 import { AdminAutomaticBookingsSection } from '../components/dashboard/AdminAutomaticBookingsSection';
+import { AdminDashboardLayout } from '../components/dashboard/AdminDashboardLayout';
 import { AdminDashboardSidebar } from './AdminDashboardSidebar';
 import { NotificationBell } from '../components/notifications/NotificationBell';
 
@@ -606,131 +607,94 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-background items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="text-muted-foreground">Loading admin dashboard...</span>
+      <AdminDashboardLayout>
+        {/* Page Header Skeleton */}
+        <div className="mb-6">
+          <div className="skeleton-glass h-10 w-64 rounded-lg"></div>
+          <div className="skeleton-glass h-6 w-96 rounded-lg mt-2"></div>
         </div>
-      </div>
+
+        {/* Analytics Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-6 space-y-3">
+              <div className="skeleton-glass h-4 w-24 rounded-lg"></div>
+              <div className="skeleton-glass h-8 w-16 rounded-lg"></div>
+              <div className="skeleton-glass h-3 w-32 rounded-lg"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="skeleton-glass h-6 w-48 rounded-lg mb-4"></div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="grid grid-cols-5 gap-4">
+                <div className="skeleton-glass h-4 w-full rounded-lg"></div>
+                <div className="skeleton-glass h-4 w-full rounded-lg"></div>
+                <div className="skeleton-glass h-4 w-full rounded-lg"></div>
+                <div className="skeleton-glass h-4 w-full rounded-lg"></div>
+                <div className="skeleton-glass h-4 w-full rounded-lg"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Additional Content Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-6 space-y-4">
+              <div className="skeleton-glass h-6 w-32 rounded-lg"></div>
+              <div className="space-y-3">
+                {[...Array(3)].map((_, j) => (
+                  <div key={j} className="flex items-center justify-between">
+                    <div className="skeleton-glass h-4 w-24 rounded-lg"></div>
+                    <div className="skeleton-glass h-4 w-16 rounded-lg"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </AdminDashboardLayout>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background">
-  {/* Top Navigation - Inspired by customer dashboard */}
-  <div className="relative z-10 flex-shrink-0 flex h-16 bg-card border-b border-border shadow-sm">
-    <div className="flex-1 px-4 flex justify-between items-center">
-      {/* Left side: Logo */}
-      <div className="flex items-center space-x-4">
-        {/* Logo in Navbar */}
-        <Link to="/admin" className="flex items-center space-x-2">
-          <div className="bg-gradient-to-r from-red-500 to-orange-600 rounded-lg p-2">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
-          <span className="font-bold text-xl">SweepPro Admin</span>
-        </Link>
+    <AdminDashboardLayout>
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">
+          {activeSection === 'overview' && 'Dashboard Overview'}
+          {activeSection === 'bookings' && 'All Bookings'}
+          {activeSection === 'pending-bookings' && 'Pending Bookings'}
+          {activeSection === 'users' && 'User Management'}
+          {activeSection === 'maids' && 'Maid Management'}
+          {activeSection === 'maid-verification' && 'Maid Verification'}
+          {activeSection === 'subscriptions' && 'Subscriptions'}
+          {activeSection === 'buffer-management' && 'Buffer Period Management'}
+          {activeSection === 'automatic-assignments' && 'Automatic Assignment System'}
+          {activeSection === 'payments' && 'Payment Management'}
+          {activeSection === 'plans' && 'Subscription Plans'}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
+          {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
+          {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
+          {activeSection === 'users' && 'Manage customer accounts and profiles'}
+          {activeSection === 'maids' && 'Manage service providers and performance'}
+          {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
+          {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
+          {activeSection === 'buffer-management' && 'Review buffer requests and manage service interruptions'}
+          {activeSection === 'automatic-assignments' && 'Monitor and manage automatic assignment requests based on customer time slots'}
+          {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
+          {activeSection === 'plans' && 'Manage available service plans and pricing'}
+        </p>
       </div>
 
-      {/* Right side: Notifications, Refresh, Profile and Mobile Menu */}
-      <div className="flex items-center space-x-4">
-        {/* Notifications - Using NotificationBell Component */}
-        <NotificationBell />
-
-        {/* Refresh Button - Hidden on Mobile */}
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={fetchAdminData}
-          className="hidden md:flex"
-        >
-          Refresh
-        </Button>
-
-        {/* Profile - Desktop Only */}
-        <div className="hidden md:flex items-center space-x-2">
-          <Link to="/profile">
-            <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-              <User className="h-5 w-5" />
-              <span className="text-sm font-medium">
-                {user?.name || 'Admin'}
-              </span>
-            </Button>
-          </Link>
-         
-        </div>
-
-        {/* Hamburger Menu - Mobile Only (Now on right side) */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="md:hidden"
-          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-      </div>
-    </div>
-  </div>
-
-      {/* Main content area with sidebar and page content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Desktop (always visible) */}
-        <div className="hidden md:block">
-          <AdminDashboardSidebar pendingBookingsCount={analyticsData.pendingBookings} />
-        </div>
-        
-        {/* Mobile Sidebar (controlled by navbar hamburger) */}
-        {isMobileSidebarOpen && (
-          <>
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-              onClick={() => setIsMobileSidebarOpen(false)}
-            />
-            
-            {/* Sidebar */}
-            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
-              <AdminDashboardSidebar open={true} setOpen={setIsMobileSidebarOpen} forceOpen={true} pendingBookingsCount={analyticsData.pendingBookings} />
-            </div>
-          </>
-        )}
-
-        {/* Page content */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              {/* Page Header */}
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-foreground">
-                  {activeSection === 'overview' && 'Dashboard Overview'}
-                  {activeSection === 'bookings' && 'All Bookings'}
-                  {activeSection === 'pending-bookings' && 'Pending Bookings'}
-                  {activeSection === 'users' && 'User Management'}
-                  {activeSection === 'maids' && 'Maid Management'}
-                  {activeSection === 'maid-verification' && 'Maid Verification'}
-                  {activeSection === 'subscriptions' && 'Subscriptions'}
-                  {activeSection === 'buffer-management' && 'Buffer Period Management'}
-                  {activeSection === 'automatic-assignments' && 'Automatic Assignment System'}
-                  {activeSection === 'payments' && 'Payment Management'}
-                  {activeSection === 'plans' && 'Subscription Plans'}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
-                  {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
-                  {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
-                  {activeSection === 'users' && 'Manage customer accounts and profiles'}
-                  {activeSection === 'maids' && 'Manage service providers and performance'}
-                  {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
-                  {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
-                  {activeSection === 'buffer-management' && 'Review buffer requests and manage service interruptions'}
-                  {activeSection === 'automatic-assignments' && 'Monitor and manage automatic assignment requests based on customer time slots'}
-                  {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
-                  {activeSection === 'plans' && 'Manage available service plans and pricing'}
-                </p>
-              </div>
-
-              {/* Main Content */}
-              <div className="space-y-6">
+      {/* Main Content */}
+      <div className="space-y-6">
                 {/* Overview Section */}
                 {activeSection === 'overview' && (
                   <>
@@ -1072,10 +1036,6 @@ export default function AdminDashboard() {
                   </Card>
                 )}
               </div>
-            </div>
-          </div>
-        </main>
-      </div>
 
       {/* All Notifications Modal */}
       {showAllNotifications && (
@@ -1152,6 +1112,6 @@ export default function AdminDashboard() {
         }}
         onSuccess={handleEditUserSuccess}
       />
-    </div>
+    </AdminDashboardLayout>
   );
 }

@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils";
 import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { IconUpload, IconX, IconFile, IconCheck } from "@tabler/icons-react";
+import { IconUpload, IconX, IconFile, IconCheck, IconAlertTriangle } from "@tabler/icons-react";
 import { useDropzone } from "react-dropzone";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DocumentUploadProps {
   title: string;
@@ -26,11 +27,30 @@ export const DocumentUpload = ({
 }: DocumentUploadProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [sizeError, setSizeError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const validateFileSize = (file: File): boolean => {
+    const sizeMB = file.size / (1024 * 1024);
+    if (sizeMB > maxSize) {
+      setSizeError(`File "${file.name}" is too large (${sizeMB.toFixed(2)}MB). Maximum size is ${maxSize}MB.`);
+      return false;
+    }
+    setSizeError("");
+    return true;
+  };
+
   const handleFileChange = (newFiles: File[]) => {
-    setFiles(newFiles);
-    onChange && onChange(newFiles);
+    if (newFiles.length > 0) {
+      const validFiles = newFiles.filter(file => validateFileSize(file));
+      if (validFiles.length === newFiles.length) {
+        setFiles(validFiles);
+        onChange && onChange(validFiles);
+      }
+    } else {
+      setFiles(newFiles);
+      onChange && onChange(newFiles);
+    }
   };
 
   const handleClick = (e?: React.MouseEvent) => {
@@ -88,9 +108,9 @@ export const DocumentUpload = ({
           type="file"
           accept={acceptedTypes.join(',')}
           onChange={(e) => {
-            const files = Array.from(e.target.files || []);
-            if (files.length > 0) {
-              handleFileChange(files);
+            const selectedFiles = Array.from(e.target.files || []);
+            if (selectedFiles.length > 0) {
+              handleFileChange(selectedFiles);
             }
           }}
           style={{ display: 'none' }}
@@ -205,6 +225,16 @@ export const DocumentUpload = ({
             </motion.div>
           )}
         </div>
+
+        {/* File Size Error Alert */}
+        {sizeError && (
+          <Alert className="mt-4 border-destructive/50 bg-destructive/10">
+            <IconAlertTriangle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              {sizeError}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {fileRejections.length > 0 && (
           <div className="mt-4 space-y-2">

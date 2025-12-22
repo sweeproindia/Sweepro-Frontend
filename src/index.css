@@ -273,3 +273,30 @@ html {
 section[id], div[id] {
   scroll-margin-top: 5rem;
 }
+
+@layer utilities {
+  .skeleton-glass {
+    background: linear-gradient(to right, rgba(243, 244, 246, 0.5), rgba(229, 231, 235, 0.5), rgba(243, 244, 246, 0.5));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .skeleton-dark {
+    background: linear-gradient(to right, rgba(31, 41, 55, 0.3), rgba(55, 65, 81, 0.3), rgba(31, 41, 55, 0.3));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+}

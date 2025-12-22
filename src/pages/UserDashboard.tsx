@@ -16,6 +16,8 @@ import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, Do
 import { Link } from 'react-router-dom';
 import { QuickBookingForm } from '@/components/forms/QuickBookingForm';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
+import { FeedbackCard } from '@/components/feedback/FeedbackCard';
+import FeedbackService from '@/services/feedbackService';
 
 export default function UserDashboard() {
   const { user, refreshUser, isAuthenticated } = useUser();
@@ -131,6 +133,33 @@ export default function UserDashboard() {
       } else if (maidAssignmentResponse.status === 'rejected') {
         console.warn('⚠️ Maid assignment fetch failed:', maidAssignmentResponse.reason);
         setMaidAssignment(null);
+      }
+
+
+      // Fetch buffer data if subscription exists
+      let currentSubscription: Subscription | null = subscription;
+      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
+        const finalSubscription = (subscriptionResponse.value as any).subscription || subscriptionResponse.value.data?.subscription || null;
+        currentSubscription = finalSubscription as Subscription | null;
+      }
+
+      if (currentSubscription) {
+        try {
+          const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
+            BufferService.getRemainingBufferDays(currentSubscription.id),
+            BufferService.getBufferHistory(currentSubscription.id, 1, 5)
+          ]);
+
+          if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
+            setBufferInfo(bufferInfoResponse.value.data);
+          }
+
+          if (bufferHistoryResponse.status === 'fulfilled' && bufferHistoryResponse.value.success) {
+            setBufferHistory(bufferHistoryResponse.value.data.history || []);
+          }
+        } catch (bufferError) {
+          console.error('Error fetching buffer data:', bufferError);
+        }
       }
 
       // Calculate stats after data is loaded
@@ -576,7 +605,57 @@ export default function UserDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Feedback Section - Show single feedback card for most recent completed service */}
+        {user && isAuthenticated && (
+          <div className="slide-up">
+            <FeedbackCard onFeedbackSubmitted={fetchUserDashboardData} />
+          </div>
+        )}
+        
+        {/* Debug: Check if there are completed bookings */}
+        {user && isAuthenticated && bookings.length > 0 && (
+          <div className="mt-4 p-4 bg-gray-100 rounded text-sm">
+            <p>Debug: Total bookings: {bookings.length}</p>
+            <p>Completed bookings: {bookings.filter(b => b.status === 'COMPLETED').length}</p>
+            <p>Check browser console (F12) for FeedbackCard logs</p>
+          </div>
+        )}
       </div>
+
+      {/* Floating Buffer Button for SweePro Lux Users */}
+      {hasBufferAccess && !bufferAccessLoading && (
+        <Link to="/buffer">
+          <Button
+            className={`
+              fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg 
+              flex items-center justify-center z-50 transition-all duration-200
+              hover:shadow-xl hover:scale-105
+              ${isInBufferPeriod 
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white' 
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
+              }
+            `}
+            size="lg"
+            title={isInBufferPeriod ? "Resume Services - Click to manage" : "Pause Services - Click to manage"}
+          >
+            {isInBufferPeriod ? (
+              <Play className="h-6 w-6" />
+            ) : (
+              <Pause className="h-6 w-6" />
+            )}
+            
+            {/* Status indicator */}
+            <span className={`
+              absolute -top-1 -right-1 h-3 w-3 rounded-full
+              ${isInBufferPeriod 
+                ? 'bg-orange-300 animate-pulse' 
+                : 'bg-green-400 animate-pulse'
+              }
+            `}></span>
+          </Button>
+        </Link>
+      )}
     </DashboardLayout>
   );
 }
