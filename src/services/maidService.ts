@@ -132,5 +132,25 @@ export const MaidService = {
       console.error('Error fetching maid schedule:', error);
       return { success: false };
     }
+  },
+
+  setAvailability: async (availability: { isAvailable: boolean; note?: string }): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await apiRequest<any>(
+        '/api/maids/availability',
+        {
+          method: HttpMethod.PUT,
+          requiresAuth: true,
+          body: availability
+        }
+      );
+      return response as { success: boolean; message?: string };
+    } catch (error) {
+      console.error('Error setting maid availability:', error);
+      return {
+        success: false,
+        message: 'Failed to update availability'
+      };
+    }
   }
 };

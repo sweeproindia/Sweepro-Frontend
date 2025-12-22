@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause, ScanLine } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useBookings } from '@/hooks/useBookings';
 import { useBookingForm } from '@/contexts/BookingFormContext';
@@ -14,6 +14,8 @@ import BookingsSkeleton from '@/components/bookings/BookingsSkeleton';
 import { useToast } from '@/hooks/use-toast';
 import { FeedbackCard } from '@/components/feedback/FeedbackCard';
 import FeedbackService from '@/services/feedbackService';
+import QrScannerDialog from '@/components/qr/QrScannerDialog';
+import { completeBookingWithQRForCustomer } from '@/services/qrService';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -35,9 +37,11 @@ const getStatusColor = (status: string) => {
 const getStatusLabel = (status: string) => {
   switch (status.toLowerCase()) {
     case 'confirmed':
+      return 'Confirmed';
     case 'assigned':
+      return 'Assigned';
     case 'in_progress':
-      return 'Scheduled';
+      return 'In Progress';
     case 'completed':
       return 'Completed';
     case 'cancelled':
@@ -68,7 +72,10 @@ export default function BookingsPage() {
   const { toast } = useToast();
   const { openBookingForm } = useBookingForm();
   const { user } = useUser();
-  
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanBookingId, setScanBookingId] = useState<string | null>(null);
+  const [completingWithQr, setCompletingWithQr] = useState(false);
+
   // Use the buffer period hook
   const {
     isInBufferPeriod,
@@ -96,7 +103,6 @@ export default function BookingsPage() {
   const preferredDuration = '3 hours'; // Standard duration for cleaning slots
   const hasPreferredSlot = user?.timeSlot && user.timeSlot !== 'Not set';
 
-
   // Handle booking cancellation with confirmation
   const onCancelBooking = async (bookingId: string) => {
     if (!confirm('Are you sure you want to cancel this booking?')) {
@@ -109,7 +115,6 @@ export default function BookingsPage() {
       // Error handling is done in the hook
     }
   };
-
 
   // Handle quick booking for tomorrow
   const handleQuickBooking = () => {
@@ -133,6 +138,43 @@ export default function BookingsPage() {
     await refreshBookings();
   };
 
+  const openQrScannerForBooking = (bookingId: string) => {
+    setScanBookingId(bookingId);
+    setScanOpen(true);
+  };
+
+  const handleQrScan = async (text: string) => {
+    const bookingId = scanBookingId;
+    if (!bookingId) return;
+
+    try {
+      setCompletingWithQr(true);
+      const res = await completeBookingWithQRForCustomer(bookingId, text);
+
+      if (res.success) {
+        toast({
+          title: 'Success',
+          description: 'Booking completed successfully',
+        });
+        await refreshBookings();
+      } else {
+        toast({
+          title: 'Error',
+          description: res.message || 'Failed to complete booking',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to complete booking',
+        variant: 'destructive',
+      });
+    } finally {
+      setCompletingWithQr(false);
+      setScanBookingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -451,6 +493,17 @@ export default function BookingsPage() {
                       </Button>
                     </>
                   )}
+                  {['CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => openQrScannerForBooking(booking.id)}
+                      disabled={completingWithQr}
+                    >
+                      <ScanLine className={`h-4 w-4 mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
+                      Scan Maid QR
+                    </Button>
+                  )}
                   {booking.status === 'COMPLETED' && (
                     <Button variant="outline" size="sm">
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -495,6 +548,77 @@ export default function BookingsPage() {
             }}
           />
         </div>
+
+        {/* Enhanced Quick Booking Card */}
+        <Card className="dashboard-card slide-up bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Quick Booking</span>
+              {hasPreferredSlot && (
+                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                  ✓ Time Slot Set
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {hasPreferredSlot ? (
+                <>Your next service will be scheduled at <span className="font-medium text-primary">{preferredTimeSlot}</span> for {preferredDuration}</>
+              ) : (
+                <>Set up your preferred time slot to enable one-click booking for faster service scheduling</>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4">
+              {hasPreferredSlot ? (
+                <>
+                  <Button className="btn-hero" onClick={handleQuickBooking}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Book for Tomorrow ({new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()})
+                  </Button>
+                  <Button variant="outline" onClick={() => openBookingForm()}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Choose Different Time
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => openBookingForm()}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Select Time & Book Now
+                  </Button>
+                  <Button variant="ghost" className="text-amber-600">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Set Preferred Time
+                  </Button>
+                </>
+              )}
+            </div>
+            <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  <p className="font-medium">Available Time Slots</p>
+                  <p className="text-xs mt-1">
+                    We offer flexible 3-hour cleaning slots from 8:00 AM to 8:00 PM. 
+                    {hasPreferredSlot 
+                      ? 'Your preferred slot will be automatically selected for quick bookings.' 
+                      : 'Set a preferred slot to enable instant booking.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <QrScannerDialog
+          open={scanOpen}
+          onOpenChange={(open) => {
+            setScanOpen(open);
+            if (!open) setScanBookingId(null);
+          }}
+          onScan={handleQrScan}
+        />
       </div>
     </DashboardLayout>
   );
