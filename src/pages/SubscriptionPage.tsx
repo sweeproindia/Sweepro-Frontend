@@ -18,7 +18,7 @@ import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/
 import { BookingService } from '@/services/bookingService';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { useBookingForm, withBookingForm } from '@/contexts/BookingFormContext';
 import SubscriptionSkeleton from '@/components/subscription/SubscriptionSkeleton';
@@ -98,6 +98,7 @@ const enhancedPlans: EnhancedSubscriptionPlan[] = [
 
 function SubscriptionPage() {
   const { user, isAuthenticated } = useUser();
+  const location = useLocation() as { state?: any };
   const { toast } = useToast();
   const { openBookingForm } = useBookingForm();
   const navigate = useNavigate();
@@ -110,6 +111,9 @@ function SubscriptionPage() {
     averageRating: 0,
     costPerVisit: 0,
   });
+
+  const lastPaymentFromNav = (location.state?.payment as any) || null;
+  const propertyConfigFromNav = (location.state?.propertyConfig as any) || null;
 
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -269,6 +273,25 @@ function SubscriptionPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {location.state?.fromPayment && (
+          <Card className="border border-green-200 bg-green-50/80">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-800">
+                <CheckCircle className="h-5 w-5" />
+                Subscription Payment Successful
+              </CardTitle>
+              <CardDescription className="text-green-700">
+                Your subscription has been updated. Amount paid: ₹
+                {Number(location.state.amount || 0).toFixed(0)}
+                {location.state.razorpayOrderId && (
+                  <span className="block text-xs text-green-700 mt-1">
+                    Razorpay Order ID: {location.state.razorpayOrderId}
+                  </span>
+                )}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
         <div className="fade-in">
           <h1 className="text-3xl font-bold text-foreground">Subscription Details</h1>
           <p className="text-muted-foreground mt-2">
@@ -352,6 +375,74 @@ function SubscriptionPage() {
               </CardContent>
             </Card>
 
+            {/* Recent Payment card when redirected from payment */}
+            {location.state?.fromPayment && lastPaymentFromNav && (
+              <Card className="dashboard-card slide-up">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    Recent Subscription Payment
+                  </CardTitle>
+                  <CardDescription>
+                    Details of your latest subscription payment via Razorpay
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Amount Paid</p>
+                      <p className="text-xl font-bold text-primary">
+                        ₹
+                        {(
+                          lastPaymentFromNav.finalAmount ??
+                          lastPaymentFromNav.amount ??
+                          location.state.amount ?? 0
+                        )
+                          .toFixed?.(0) ??
+                          Number(
+                            lastPaymentFromNav.finalAmount ||
+                              lastPaymentFromNav.amount ||
+                              location.state.amount ||
+                              0
+                          ).toFixed(0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Status</p>
+                      <Badge
+                        variant={
+                          lastPaymentFromNav.status === 'COMPLETED'
+                            ? 'default'
+                            : 'outline'
+                        }
+                        className={
+                          lastPaymentFromNav.status === 'COMPLETED'
+                            ? 'bg-green-600 text-white'
+                            : ''
+                        }
+                      >
+                        {lastPaymentFromNav.status}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Razorpay Payment ID</p>
+                      <p className="font-mono text-xs break-all">
+                        {lastPaymentFromNav.gatewayResponse?.id || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Razorpay Order ID</p>
+                      <p className="font-mono text-xs break-all">
+                        {location.state.razorpayOrderId ||
+                          lastPaymentFromNav.transactionId ||
+                          'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Plan Features Card */}
             <Card className="dashboard-card slide-up">
               <CardHeader>
@@ -415,6 +506,97 @@ function SubscriptionPage() {
                 ) : null}
               </CardContent>
             </Card>
+
+            {/* Property configuration used for pricing (from Review Payment) */}
+            {location.state?.fromPayment && propertyConfigFromNav && (
+              <Card className="dashboard-card slide-up">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Property Configuration Used for Pricing
+                  </CardTitle>
+                  <CardDescription>
+                    These details were used to calculate your subscription amount.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Property Type</p>
+                      <p className="font-medium capitalize">
+                        {propertyConfigFromNav.propertyType || '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Configuration</p>
+                      <p className="font-medium">
+                        {propertyConfigFromNav.bhkType?.toUpperCase() || '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Approx. Size</p>
+                      <p className="font-medium">
+                        {propertyConfigFromNav.squareFeet || 0} sq ft
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Service Start Date</p>
+                      <p className="font-medium">
+                        {propertyConfigFromNav.startDate
+                          ? new Date(
+                              propertyConfigFromNav.startDate
+                            ).toLocaleDateString()
+                          : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Preferred Time Slot</p>
+                      <p className="font-medium">
+                        {propertyConfigFromNav.timeSlot || '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-sm mb-4">
+                    <p className="text-xs text-muted-foreground mb-1">Service Address</p>
+                    <p className="font-medium break-words">
+                      {[
+                        propertyConfigFromNav.addressLine,
+                        propertyConfigFromNav.locality,
+                        propertyConfigFromNav.city,
+                        propertyConfigFromNav.state,
+                        propertyConfigFromNav.pincode,
+                      ]
+                        .filter(Boolean)
+                        .join(', ') ||
+                        propertyConfigFromNav.address ||
+                        '—'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Base Plan Amount (before GST)</p>
+                      <p className="font-semibold">
+                        ₹
+                        {Number(
+                          propertyConfigFromNav.finalTotalPrice || 0
+                        ).toFixed(0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Paid Amount (with GST)</p>
+                      <p className="font-semibold text-primary">
+                        ₹{Number(location.state.amount || 0).toFixed(0)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         ) : (
           <Card className="dashboard-card slide-up">
