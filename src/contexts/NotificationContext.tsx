@@ -36,7 +36,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   /**
    * Fetch notifications from API
    */
+  const hasAuthToken = useCallback(() => {
+    const token = localStorage.getItem('authToken');
+    return typeof token === 'string' && token.length > 0;
+  }, []);
+
   const fetchNotifications = useCallback(async () => {
+    if (!hasAuthToken()) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await notificationAPI.getNotifications({ limit: 50 });
@@ -51,19 +62,24 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hasAuthToken]);
 
   /**
    * Refresh unread count
    */
   const refreshUnreadCount = useCallback(async () => {
+    if (!hasAuthToken()) {
+      setUnreadCount(0);
+      return;
+    }
+
     try {
       const count = await notificationAPI.getUnreadCount();
       setUnreadCount(count);
     } catch (error) {
       console.error('Failed to refresh unread count:', error);
     }
-  }, []);
+  }, [hasAuthToken]);
 
   /**
    * Mark notification as read
@@ -186,15 +202,16 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
    * Initialize WebSocket connection
    */
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    
-    if (!token) {
+    if (!hasAuthToken()) {
       console.log('No token found, skipping WebSocket connection');
       return;
     }
 
     // Connect to WebSocket
-    websocketService.connect(token);
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      websocketService.connect(token);
+    }
 
     // Subscribe to connection events
     const unsubscribeConnect = websocketService.onConnect(() => {
@@ -219,7 +236,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       unsubscribeMessage();
       websocketService.disconnect();
     };
-  }, [fetchNotifications, refreshUnreadCount, handleNewNotification]);
+  }, [fetchNotifications, refreshUnreadCount, handleNewNotification, hasAuthToken]);
 
   /**
    * Fetch notifications on mount

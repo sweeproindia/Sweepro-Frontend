@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, CreditCard, MessageCircle, LogOut, User, Settings, Clock, Star, Shield, Zap } from 'lucide-react';
+import { Home, Calendar, MessageCircle, LogOut, User, Clock, Shield } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 
 interface MaidDashboardSidebarProps {
@@ -27,24 +28,9 @@ const maidNavigationItems = [
     showBadge: true
   },
   { 
-    name: 'Auto Requests', 
-    href: '/maid-auto-requests', 
-    icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
-  },
-  { 
     name: 'Availability', 
     href: '/maid-availability', 
     icon: <Clock className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
-  },
-  { 
-    name: 'Earnings', 
-    href: '/maid-earnings', 
-    icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
-  },
-  { 
-    name: 'Ratings', 
-    href: '/maid-ratings', 
-    icon: <Star className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
     name: 'Support', 
@@ -54,7 +40,8 @@ const maidNavigationItems = [
   { 
     name: 'Verification', 
     href: '/maid-verification', 
-    icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+    icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+    conditionalShow: true // Will be shown based on verification status
   },
   { 
     name: 'Profile', 
@@ -68,7 +55,37 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
   const navigate = useNavigate();
   const { user, logout } = useUser();
   const { toast } = useToast();
-  
+  const [verificationStatus, setVerificationStatus] = useState<string>('NOT_SUBMITTED');
+
+  // Fetch verification status on mount
+  useEffect(() => {
+    const fetchVerificationStatus = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        const response = await fetch('/api/documents/maid-verification-status', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setVerificationStatus(result.data.overallStatus || 'NOT_SUBMITTED');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching verification status:', error);
+      }
+    };
+
+    fetchVerificationStatus();
+  }, []);
+
   const handleLogout = () => {
     logout();
     toast({
@@ -78,12 +95,21 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
     navigate('/');
   };
 
-  const links = maidNavigationItems.map(item => ({
-    label: item.name,
-    href: item.href,
-    icon: item.icon,
-    badge: item.showBadge && upcomingBookingsCount > 0 ? upcomingBookingsCount : undefined,
-  }));
+  // Filter navigation items based on verification status
+  const shouldShowVerification = () => {
+    // Show verification link only if:
+    // 1. Not verified yet (NOT_SUBMITTED or REJECTED)
+    return verificationStatus === 'NOT_SUBMITTED' || verificationStatus === 'REJECTED';
+  };
+
+  const links = maidNavigationItems
+    .filter(item => !item.conditionalShow || shouldShowVerification())
+    .map(item => ({
+      label: item.name,
+      href: item.href,
+      icon: item.icon,
+      badge: item.showBadge && upcomingBookingsCount > 0 ? upcomingBookingsCount : undefined,
+    }));
 
   // If forceOpen is true, always pass true to the Sidebar component
   const sidebarOpen = forceOpen ? true : open;

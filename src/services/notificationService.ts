@@ -43,12 +43,15 @@ export interface UnreadCountResponse {
 class NotificationAPIService {
   private getAuthHeader() {
     const token = localStorage.getItem('authToken');
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
     };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return { headers };
   }
 
   /**
