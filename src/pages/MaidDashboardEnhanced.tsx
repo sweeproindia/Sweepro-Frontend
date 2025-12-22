@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidBookingRequestsSection } from '@/components/dashboard/MaidBookingRequestsSection';
 import { MaidAssignmentRequestsSection } from '@/components/dashboard/MaidAssignmentRequestsSection';
+import { MaidAvailabilityToggle } from '@/components/dashboard/MaidAvailabilityToggle';
 
 // Service interface to match backend
 interface Service {
@@ -238,6 +239,7 @@ export default function MaidDashboardEnhanced() {
             Here's your comprehensive cleaning schedule, earnings overview, and performance metrics.
           </p>
         </div>
+        <div className="slide-up"><MaidAvailabilityToggle /></div>
      
         {/* Verification Status Banners */}
         {verificationStatus === 'NOT_SUBMITTED' && (
@@ -459,6 +461,31 @@ export default function MaidDashboardEnhanced() {
             </CardHeader>
             <CardContent>
               <MaidAssignmentRequestsSection onRefresh={fetchMaidDashboardData} />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Add automatic booking assignment requests for maids */}
+        <div className="mb-8">
+          <Card className="dashboard-card slide-up">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Bell className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Automatic Booking Assignment Requests</CardTitle>
+                    <CardDescription>Accept or reject automatic bookings assigned to you</CardDescription>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="bg-green-100 text-green-600">
+                  Auto
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <MaidBookingRequestsSection onRefresh={fetchMaidDashboardData} />
             </CardContent>
           </Card>
         </div>

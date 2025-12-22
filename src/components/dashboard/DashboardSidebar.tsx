@@ -1,17 +1,17 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, CreditCard, Receipt, MessageCircle, LogOut, Users, Shield, BarChart3, Package, Zap } from 'lucide-react';
+import { Home, Calendar, CreditCard, Receipt, MessageCircle, LogOut, Users, Shield, BarChart3, Package, Zap, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { useBufferAccess } from '@/hooks/useBufferAccess';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 const customerNavigationItems = [
   { name: 'Dashboard', href: '/dashboard', icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'My Bookings', href: '/bookings', icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
-  { name: 'Auto Service', href: '/auto-service', icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Subscription', href: '/subscription', icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
-  { name: 'Monthly Buffer', href: '/monthly-subscription', icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Payment History', href: '/payments', icon: <Receipt className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
   { name: 'Support', href: '/support', icon: <MessageCircle className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> },
 ];
@@ -37,6 +37,7 @@ export const DashboardSidebar = ({ open, setOpen, forceOpen }: DashboardSidebarP
   const navigate = useNavigate();
   const { user, logout } = useUser();
   const { toast } = useToast();
+  const { hasBufferAccess, isLoading: isLoadingBuffer } = useBufferAccess();
 
   const isAdmin = location.pathname.startsWith('/admin');
   const navigationItems = isAdmin ? adminNavigationItems : customerNavigationItems;
@@ -50,7 +51,22 @@ export const DashboardSidebar = ({ open, setOpen, forceOpen }: DashboardSidebarP
     navigate('/');
   };
 
-  const links = navigationItems.map(item => ({
+  // Build navigation items with conditional buffer item
+  let finalNavigationItems = navigationItems;
+  if (!isAdmin && hasBufferAccess && !isLoadingBuffer) {
+    // Insert buffer item after subscription
+    const bufferItem = { name: 'Buffer Management', href: '/buffer', icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5" /> };
+    const subscriptionIndex = finalNavigationItems.findIndex(item => item.name === 'Subscription');
+    if (subscriptionIndex !== -1) {
+      finalNavigationItems = [
+        ...finalNavigationItems.slice(0, subscriptionIndex + 1),
+        bufferItem,
+        ...finalNavigationItems.slice(subscriptionIndex + 1)
+      ];
+    }
+  }
+
+  const links = finalNavigationItems.map(item => ({
     label: item.name,
     href: item.href,
     icon: item.icon,
@@ -97,7 +113,7 @@ export const DashboardSidebar = ({ open, setOpen, forceOpen }: DashboardSidebarP
                   </div>
                   <div className="mb-3">
                     <Badge
-                      variant={user.status === 'active' ? 'default' : user.status === 'pending' ? 'secondary' : 'outline'}
+                      variant={user.status === 'ACTIVE' ? 'default' : user.status === 'PENDING' ? 'secondary' : 'outline'}
                       className="text-xs"
                     >
                       {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
@@ -110,20 +126,23 @@ export const DashboardSidebar = ({ open, setOpen, forceOpen }: DashboardSidebarP
                   </div>
                 </motion.div>
               )}
-              <SidebarLink
-                link={{
-                  label: "Logout",
-                  href: "#",
-                  icon: (
-                    <LogOut className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-                  ),
-                }}
-                className="cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleLogout();
-                }}
-              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 w-full justify-start"
+              >
+                <LogOut className="h-5 w-5 flex-shrink-0" />
+                {(sidebarOpen || forceOpen) && (
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-sm"
+                  >
+                    Logout
+                  </motion.span>
+                )}
+              </Button>
             </div>
           )}
         </div>

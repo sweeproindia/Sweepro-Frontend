@@ -1,18 +1,27 @@
+//footer.tsx
+
+
 //Footer.tsx
 
+import { motion } from 'framer-motion';
 import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Twitter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Footer = () => {
   return (
-    <footer className="bg-gradient-to-tr from-[#031024] via-[#0C0950] to-[#031024] border-t border-blue-900 text-white">
+    <motion.footer
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+      className="bg-gradient-to-tr from-[#031024] via-[#0C0950] to-[#031024] border-t border-blue-900 text-white"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand Section */}
           <div className="space-y-5">
-            <Link to="/" className="flex items-center space-x-2 group">
-              <img src="/assets/logo.png" alt="SweepPro Logo" className="h-8 w-8 object-contain" />
-              <span className="text-2xl font-extrabold tracking-tight" style={{ color: '#fff' }}>sweepro</span>
+            <Link to="/" className="flex items-center group">
+              <img src="/assets/logo.png" alt="SweepPro Logo" className="h-20 w-20 object-contain transition-all duration-300 group-hover:scale-110" />
             </Link>
             <p className="text-blue-100 leading-relaxed text-base font-medium">
               Enjoy a sparkling home, every day. Our trusted, background-verified professionals bring peace of mind and a fresh start to your space.
@@ -113,6 +122,6 @@ export const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   );
 };

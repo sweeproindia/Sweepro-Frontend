@@ -8,7 +8,7 @@ import { useUser } from '@/contexts/UserContext';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { SubscriptionService, Subscription } from '@/services/subscriptionService';
 import { useToast } from '@/hooks/use-toast';
-
+import PaymentsPageSkeleton from '@/components/payments/PaymentsPageSkeleton';
 
 const getStatusColor = (status: string) => {
   switch (status.toUpperCase()) {
@@ -148,9 +148,7 @@ export default function PaymentsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <PaymentsPageSkeleton />
       </DashboardLayout>
     );
   }

@@ -1,3 +1,6 @@
+//FAQ section
+
+import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -78,7 +81,13 @@ export const FAQSection: React.FC = () => {
   };
 
   return (
-    <section id="faq" className="py-20 bg-white">
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+      className="py-20 bg-white"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Side - FAQ Content */}
@@ -119,6 +128,6 @@ export const FAQSection: React.FC = () => {
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
-}; 
+};

@@ -136,53 +136,10 @@ export class BookingService {
   static async getUserBookings(status?: string): Promise<ApiResponse<Booking[]>> {
     try {
       const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_BOOKINGS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_BOOKINGS;
-      
       const response = await apiRequest<BookingsResponse>(url, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-
-      // Handle both old and new response formats
-      if (response.success && response.data) {
-        // New format with wrapped response
-        if ('bookings' in response.data) {
-            return {
-              ...response,
-              data: response.data.bookings
-            };
-        }
-        // Old format - direct array or object with data property
-          if (Array.isArray(response.data)) {
-            return {
-              ...response,
-              data: response.data as Booking[]
-            };
-          }
-      }
-        // If response format is unexpected, return empty array but preserve success and error info
-        return {
-          ...response,
-          data: []
-        };
-    } catch (error) {
-      console.error('Get user bookings error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get maid assignments (for service providers)
-   */
-  static async getMaidBookings(status?: string): Promise<ApiResponse<Booking[]>> {
-    try {
-      const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS;
-      
-      const response = await apiRequest<BookingsResponse>(url, {
-        method: HttpMethod.GET,
-        requiresAuth: true
-      });
-
-      // Handle both old and new response formats
       if (response.success && response.data) {
         if ('bookings' in response.data) {
             return {
@@ -197,11 +154,47 @@ export class BookingService {
             };
         }
       }
-        // If response format is unexpected, return empty array but preserve success and error info
-        return {
-          ...response,
-          data: []
-        };
+      return {
+        ...response,
+        data: []
+      };
+    } catch (error) {
+      console.error('Get user bookings error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get maid assignments (for service providers)
+   * WARNING: This only returns bookings the maid has already accepted/been assigned.
+   * For pending assignment requests (need maid to accept/reject), use assignmentService.getPendingAssignments()
+   */
+  static async getMaidBookings(status?: string): Promise<ApiResponse<Booking[]>> {
+    try {
+      const url = status ? `${API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS}?status=${status}` : API_ENDPOINTS.BOOKINGS.MY_ASSIGNMENTS;
+      const response = await apiRequest<BookingsResponse>(url, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+      // Only use for already assigned bookings
+      if (response.success && response.data) {
+        if ('bookings' in response.data) {
+          return {
+            ...response,
+            data: response.data.bookings
+          };
+        }
+        if (Array.isArray(response.data)) {
+          return {
+            ...response,
+            data: response.data as Booking[]
+          };
+        }
+      }
+      return {
+        ...response,
+        data: []
+      };
     } catch (error) {
       console.error('Get maid bookings error:', error);
       throw error;

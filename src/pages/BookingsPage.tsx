@@ -3,14 +3,17 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause, ScanLine } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useBookings } from '@/hooks/useBookings';
 import { useBookingForm } from '@/contexts/BookingFormContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
+import BookingsSkeleton from '@/components/bookings/BookingsSkeleton';
 import { useToast } from '@/hooks/use-toast';
+import QrScannerDialog from '@/components/qr/QrScannerDialog';
+import { completeBookingWithQRForCustomer } from '@/services/qrService';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -32,9 +35,11 @@ const getStatusColor = (status: string) => {
 const getStatusLabel = (status: string) => {
   switch (status.toLowerCase()) {
     case 'confirmed':
+      return 'Confirmed';
     case 'assigned':
+      return 'Assigned';
     case 'in_progress':
-      return 'Scheduled';
+      return 'In Progress';
     case 'completed':
       return 'Completed';
     case 'cancelled':
@@ -65,7 +70,10 @@ export default function BookingsPage() {
   const { toast } = useToast();
   const { openBookingForm } = useBookingForm();
   const { user } = useUser();
-  
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanBookingId, setScanBookingId] = useState<string | null>(null);
+  const [completingWithQr, setCompletingWithQr] = useState(false);
+
   // Use the buffer period hook
   const {
     isInBufferPeriod,
@@ -93,7 +101,6 @@ export default function BookingsPage() {
   const preferredDuration = '3 hours'; // Standard duration for cleaning slots
   const hasPreferredSlot = user?.timeSlot && user.timeSlot !== 'Not set';
 
-
   // Handle booking cancellation with confirmation
   const onCancelBooking = async (bookingId: string) => {
     if (!confirm('Are you sure you want to cancel this booking?')) {
@@ -106,7 +113,6 @@ export default function BookingsPage() {
       // Error handling is done in the hook
     }
   };
-
 
   // Handle quick booking for tomorrow
   const handleQuickBooking = () => {
@@ -130,15 +136,48 @@ export default function BookingsPage() {
     await refreshBookings();
   };
 
+  const openQrScannerForBooking = (bookingId: string) => {
+    setScanBookingId(bookingId);
+    setScanOpen(true);
+  };
+
+  const handleQrScan = async (text: string) => {
+    const bookingId = scanBookingId;
+    if (!bookingId) return;
+
+    try {
+      setCompletingWithQr(true);
+      const res = await completeBookingWithQRForCustomer(bookingId, text);
+
+      if (res.success) {
+        toast({
+          title: 'Success',
+          description: 'Booking completed successfully',
+        });
+        await refreshBookings();
+      } else {
+        toast({
+          title: 'Error',
+          description: res.message || 'Failed to complete booking',
+          variant: 'destructive',
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err?.message || 'Failed to complete booking',
+        variant: 'destructive',
+      });
+    } finally {
+      setCompletingWithQr(false);
+      setScanBookingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading bookings...</span>
-          </div>
-        </div>
+        <BookingsSkeleton />
       </DashboardLayout>
     );
   }
@@ -452,6 +491,17 @@ export default function BookingsPage() {
                       </Button>
                     </>
                   )}
+                  {['CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => openQrScannerForBooking(booking.id)}
+                      disabled={completingWithQr}
+                    >
+                      <ScanLine className={`h-4 w-4 mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
+                      Scan Maid QR
+                    </Button>
+                  )}
                   {booking.status === 'COMPLETED' && (
                     <Button variant="outline" size="sm">
                       <CheckCircle className="h-4 w-4 mr-2" />
@@ -476,8 +526,7 @@ export default function BookingsPage() {
               <p className="text-muted-foreground mb-4">
                 {filter === 'all' 
                   ? "You don't have any bookings yet. Schedule your first cleaning service!"
-                  : `No ${filter} bookings found. Try adjusting your filter.`
-                }
+                  : `No ${filter} bookings found. Try adjusting your filter.`}
               </p>
               {filter === 'all' && (
                 <Button className="btn-hero" onClick={handleQuickBooking}>
@@ -551,6 +600,14 @@ export default function BookingsPage() {
             </div>
           </CardContent>
         </Card>
+        <QrScannerDialog
+          open={scanOpen}
+          onOpenChange={(open) => {
+            setScanOpen(open);
+            if (!open) setScanBookingId(null);
+          }}
+          onScan={handleQrScan}
+        />
       </div>
     </DashboardLayout>
   );

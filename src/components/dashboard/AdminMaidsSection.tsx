@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import QrCodeRenderer from '@/components/qr/QrCodeRenderer';
 
 interface Maid {
   id: string;
@@ -36,6 +37,8 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
   onVerifyMaid,
 }) => {
   const [showAddMaidDialog, setShowAddMaidDialog] = useState(false);
+  const [showQrDialog, setShowQrDialog] = useState(false);
+  const [qrMaid, setQrMaid] = useState<Maid | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [newMaid, setNewMaid] = useState({
@@ -45,6 +48,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
     address: '',
     experience: '',
     specializations: [] as string[],
+    status: 'pending' as const,
   });
 
   const getPaginatedData = (data: Maid[], page: number) => {
@@ -70,8 +74,27 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
       address: '',
       experience: '',
       specializations: [],
+      status: 'pending',
     });
     setShowAddMaidDialog(false);
+  };
+
+  const qrPayload = qrMaid
+    ? JSON.stringify({
+        maidId: qrMaid.id,
+        userId: qrMaid.id,
+        name: qrMaid.name,
+        email: qrMaid.email,
+        type: 'maid_verification',
+        timestamp: new Date().toISOString(),
+      })
+    : '';
+
+  const copyQrPayload = async () => {
+    if (!qrPayload) return;
+    try {
+      await navigator.clipboard.writeText(qrPayload);
+    } catch {}
   };
 
   const getStatusColor = (status: string) => {
@@ -304,6 +327,16 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                     <Button size="sm" variant="outline">
                       View Details
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setQrMaid(maid);
+                        setShowQrDialog(true);
+                      }}
+                    >
+                      View QR
+                    </Button>
                     {maid.status === 'pending' && (
                       <Button
                         size="sm"
@@ -332,6 +365,30 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
           />
         )}
       </CardContent>
+      <Dialog
+        open={showQrDialog}
+        onOpenChange={(open) => {
+          setShowQrDialog(open);
+          if (!open) setQrMaid(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Maid QR Code</DialogTitle>
+            <DialogDescription>Customer can scan this QR to verify and complete the booking.</DialogDescription>
+          </DialogHeader>
+          <div className="grid place-items-center gap-3">
+            {qrPayload && <QrCodeRenderer data={qrPayload} size={220} />}
+            {qrMaid?.name && <div className="text-sm text-muted-foreground">{qrMaid.name}</div>}
+            {qrPayload && (
+              <Button variant="outline" size="sm" onClick={copyQrPayload}>
+                Copy QR Data
+              </Button>
+            )}
+          </div>
+          <DialogFooter />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
-}; 
+};

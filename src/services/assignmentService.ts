@@ -65,6 +65,14 @@ export interface BookingForAssignment {
   maidResponseAt?: string;
   rejectionReason?: string;
   reassignmentCount: number;
+  lastAttempt?: {
+    maidProfileId?: string;
+    maidUserId?: string;
+    maidName?: string;
+    status?: string;
+    reason?: string;
+    respondedAt?: string;
+  };
   service: {
     id: string;
     name: string;

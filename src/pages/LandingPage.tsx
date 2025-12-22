@@ -7,56 +7,74 @@ import { PricingSection } from '@/components/landing/PricingSection';
 import SweepProAboutUs from '@/components/landing/SweepProAboutUs';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import LoginForm from '@/components/ui/LoginForm';
-import SignupForm from '@/components/ui/SignupForm';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthService } from '@/services/authService';
 
 export default function LandingPage() {
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [signupOpen, setSignupOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // This would come from your auth context
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
 
-  // Pass these to Navbar so it can trigger the modals
-  const handleOpenLogin = () => setLoginOpen(true);
-  const handleOpenSignup = () => setSignupOpen(true);
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      if (AuthService.isAuthenticated()) {
+        try {
+          // Validate token with server
+          const isValid = await AuthService.refreshAuth();
+          if (isValid) {
+            const userData = AuthService.getStoredUser();
+            setIsAuthenticated(true);
+            setUser(userData);
+          } else {
+            setIsAuthenticated(false);
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Auth validation failed:', error);
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  // Navigate to dashboard
+  const handleDashboardClick = () => {
+    const userData = AuthService.getStoredUser();
+    if (userData?.role === 'CUSTOMER') {
+      navigate('/dashboard');
+    } else if (userData?.role === 'MAID') {
+      navigate('/maid-dashboard');
+    } else if (userData?.role === 'ADMIN') {
+      navigate('/admin-dashboard');
+    }
+  };
 
   const handlePlanSelect = (planId: string) => {
     if (isAuthenticated) {
       // User is logged in, navigate directly to subscription details
       navigate(`/subscription-details/${planId}`);
     } else {
-      // User is not logged in, show signup modal with plan context
-      setSelectedPlanId(planId);
-      setSignupOpen(true);
+      // User is not logged in, redirect to signup page
+      navigate('/signup');
     }
-  };
-
-  const handleAuthSuccess = () => {
-    setIsAuthenticated(true);
-    setLoginOpen(false);
-    setSignupOpen(false);
-    
-    // If user was selecting a plan, navigate to it now
-    if (selectedPlanId) {
-      navigate(`/subscription-details/${selectedPlanId}`);
-      setSelectedPlanId(null);
-    }
-  };
-
-  const handleCloseModals = () => {
-    setLoginOpen(false);
-    setSignupOpen(false);
-    setSelectedPlanId(null);
   };
 
   return (
     <div className="min-h-screen">
-      <Navbar onLoginClick={handleOpenLogin} onSignupClick={handleOpenSignup} />
-      <HeroSection />
+      <Navbar 
+        isAuthenticated={isAuthenticated}
+        user={user}
+      />
+      <HeroSection 
+        isAuthenticated={isAuthenticated}
+        user={user}
+        onDashboardClick={handleDashboardClick}
+      />
       <SweepProAboutUs/>
       <FeaturesSection />
       <HowItWorksSection />
@@ -70,25 +88,6 @@ export default function LandingPage() {
       <FAQSection />
       <Footer />
 
-      {/* Login Modal */}
-      <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
-        <DialogContent>
-          <LoginForm onClose={() => {
-            setLoginOpen(false);
-            setSignupOpen(true);
-          }} onSuccess={handleAuthSuccess} />
-        </DialogContent>
-      </Dialog>
-      
-      {/* Signup Modal */}
-      <Dialog open={signupOpen} onOpenChange={setSignupOpen}>
-        <DialogContent>
-          <SignupForm onClose={() => {
-            setSignupOpen(false);
-            setLoginOpen(true);
-          }} onSuccess={handleAuthSuccess} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

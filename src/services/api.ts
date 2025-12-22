@@ -41,7 +41,13 @@ export const API_ENDPOINTS = {
     COMPLETE_PAYMENT: '/bookings/complete-payment',
     AVAILABLE_SLOTS: '/bookings/available-slots',
     ESTIMATE_COST: '/bookings/estimate-cost',
+    COMPLETE_WITH_QR: '/bookings/:bookingId/complete-with-qr',
 
+  },
+  BOOKING_COMPLETION: {
+    MAID_QR_CODE: '/booking-completion/maid/qr-code',
+    START: '/booking-completion/:bookingId/start',
+    COMPLETE_WITH_QR: '/booking-completion/:bookingId/complete'
   },
   // Subscriptions
   SUBSCRIPTIONS: {
@@ -163,6 +169,10 @@ export const API_ENDPOINTS = {
     STATISTICS: '/automatic-assignments/statistics',
     CUSTOMER_TIMESLOTS: '/automatic-assignments/customer-timeslots',
     TEST_TIMESLOT: '/automatic-assignments/test-timeslot',
+  },
+  // Maids
+  MAIDS: {
+    AVAILABILITY: '/maids/availability'
   }
 };
 
@@ -255,6 +265,8 @@ export const apiRequest = async <T = any>(
   // Only log in development mode
   if (process.env.NODE_ENV === 'development') {
     console.log(`🚀 API Request: ${method} ${url}`);
+    console.log('Request URL:', url);
+    console.log('Request Headers:', requestHeaders);
   }
 
   try {
