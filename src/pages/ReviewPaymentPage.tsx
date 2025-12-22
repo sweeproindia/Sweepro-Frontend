@@ -232,9 +232,55 @@ export default function ReviewPaymentPage() {
     setIsProcessing(true);
 
     try {
-      // Step 1: Create subscription first (before payment)
+      // Step 1: Resolve the actual backend plan and create a subscription
+      // Map the selected UI plan (Sweepro Touch / Sweepro Lux) to the real
+      // ServicePlan in the backend so we pass a valid planId.
+      const plansResponse = await SubscriptionService.getSubscriptionPlans();
+      const rawPlans: any = plansResponse.data;
+      const backendPlans: any[] = Array.isArray(rawPlans)
+        ? rawPlans
+        : rawPlans?.plans || (plansResponse as any).plans || [];
+
+      if (!backendPlans || backendPlans.length === 0) {
+        throw new Error('No subscription plans are configured on the server.');
+      }
+
+      const normalizeName = (value: string | undefined | null) =>
+        (value || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '');
+
+      const selectedNameNorm = normalizeName(selectedPlan.name);
+
+      // 1) Try exact normalized name match
+      let backendPlan = backendPlans.find(
+        (p: any) => normalizeName(p.name) === selectedNameNorm
+      );
+
+      // 2) Fallback by known plan ids / keywords if exact match fails
+      if (!backendPlan) {
+        backendPlan = backendPlans.find((p: any) => {
+          const n = normalizeName(p.name);
+          if (selectedPlan.id === 'standard') {
+            // Map UI "Sweepro Touch" to backend "SweepPro Touch" (name contains "touch")
+            return n.includes('touch');
+          }
+          if (selectedPlan.id === 'premium') {
+            // Map UI "Sweepro Lux" to backend Lux plan (name contains "lux")
+            return n.includes('lux');
+          }
+          return false;
+        });
+      }
+
+      if (!backendPlan) {
+        throw new Error(
+          'Matching subscription plan not found on server. Please contact support or try another plan.'
+        );
+      }
+
       const subscriptionData = {
-        planId: selectedPlan.id,
+        planId: backendPlan.id,
         paymentMethod: 'RAZORPAY',
         autoRenewal: true,
         startDate: selectedOptions.startDate,
@@ -264,20 +310,31 @@ export default function ReviewPaymentPage() {
       };
 
       const subscriptionResponse = await SubscriptionService.subscribeToPlan(subscriptionData);
-      const createdSubscriptionId = subscriptionResponse.data?.subscription?.id;
+      const subscriptionPayload: any =
+        (subscriptionResponse.data as any)?.subscription ||
+        (subscriptionResponse.data as any) ||
+        (subscriptionResponse as any).subscription;
+
+      const createdSubscriptionId = subscriptionPayload?.id;
       if (!createdSubscriptionId) {
         throw new Error('Failed to create subscription');
       }
 
       // Step 2: Create Razorpay order for this subscription
-      const orderResponse = await PaymentService.createRazorpaySubscriptionOrder(createdSubscriptionId);
+      // Step 2: Create Razorpay order for this subscription using the exact
+      // final amount shown in the payment summary (including GST). This keeps
+      // the backend/Razorpay amount in sync with the UI.
+      const orderResponse = await PaymentService.createRazorpaySubscriptionOrder(
+        createdSubscriptionId,
+        totalWithGst
+      );
       if (!orderResponse.success || !orderResponse.data) {
         throw new Error('Failed to create payment order');
       }
 
       // Align response to Razorpay expected fields
       const orderId = (orderResponse.data as any).orderId;
-      const amount = (orderResponse.data as any).amount;
+      const amount = (orderResponse.data as any).amount; // amount is in paise as required by Razorpay
       const currency = (orderResponse.data as any).currency;
       const key = (orderResponse.data as any).key;
 
@@ -338,20 +395,42 @@ export default function ReviewPaymentPage() {
         subscriptionId: subscriptionId,
       };
       const verificationResponse = await PaymentService.verifyRazorpayPayment(verificationData);
-      if (verificationResponse.success) {
+      const verifiedPayment: any =
+        (verificationResponse as any).payment ||
+        (verificationResponse.data as any)?.payment;
+
+      if (verificationResponse.success && verifiedPayment) {
         // Clear localStorage after successful payment
         clearBookingData();
-        
-        toast({ title: 'Payment Successful!', description: `Your ${selectedPlan.name} subscription has been activated.` });
-        navigate('/payment-success', {
+
+        // Optionally refresh subscription data from server
+        let subscriptionData: any = null;
+        try {
+          const subRes = await SubscriptionService.getUserSubscription();
+          subscriptionData =
+            (subRes.data as any)?.subscription ||
+            (subRes as any).subscription ||
+            subRes.data ||
+            null;
+        } catch (e) {
+          console.warn('Failed to refresh subscription after payment:', e);
+        }
+
+        toast({
+          title: 'Payment Successful!',
+          description: `Your ${selectedPlan.name} subscription has been activated.`,
+        });
+
+        // Redirect user to their subscription page with relevant data
+        navigate('/subscription', {
           state: {
-            paymentId: verificationResponse.data?.payment?.id,
-            orderId: razorpayResponse.razorpay_order_id,
+            fromPayment: true,
+            payment: verifiedPayment,
+            subscription: subscriptionData,
+            razorpayOrderId: razorpayResponse.razorpay_order_id,
             amount: totalWithGst,
-            subscriptionId: subscriptionId,
-            selectedPlan,
-            selectedOptions
-          }
+            propertyConfig: selectedOptions,
+          },
         });
       } else {
         throw new Error('Payment verification failed');
