@@ -58,6 +58,14 @@ interface Booking {
     phone: string;
     rating?: number;
   };
+  lastAttempt?: {
+    maidProfileId?: string;
+    maidUserId?: string;
+    maidName?: string;
+    status?: string;
+    reason?: string;
+    respondedAt?: string;
+  };
 }
 
 interface Maid {
@@ -174,7 +182,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
     }
   };
 
-  const handleReassignClick = (booking: Booking) => {
+  const handleReassignClick = (booking: BookingForAssignment) => {
     setSelectedBooking(booking);
     setSelectedMaidId('');
     setReassignDialogOpen(true);
@@ -232,7 +240,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
     }
   };
 
-  const getPaginatedData = (data: Booking[]) => {
+  const getPaginatedData = (data: BookingForAssignment[]) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return data.slice(startIndex, endIndex);
@@ -360,17 +368,19 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                           )}
 
                           {/* Previous Maid Info */}
-                          {booking.maid && (
+                          {(booking.lastAttempt?.maidName || booking.maid) && (
                             <div className="bg-gray-50 dark:bg-gray-950/20 p-3 rounded border border-gray-200 dark:border-gray-800">
                               <div className="flex items-center gap-2">
                                 <XCircle className="h-4 w-4 text-gray-600" />
                                 <span className="font-medium text-gray-700 dark:text-gray-300">Previously assigned to:</span>
-                                <span className="font-semibold text-gray-800 dark:text-gray-200">{booking.maid.name}</span>
+                                <span className="font-semibold text-gray-800 dark:text-gray-200">{booking.lastAttempt?.maidName || booking.maid?.name}</span>
                               </div>
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{booking.maid.phone}</p>
-                              {booking.maidResponseAt && (
+                              {booking.maid?.phone && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{booking.maid.phone}</p>
+                              )}
+                              {(booking.lastAttempt?.respondedAt || booking.maidResponseAt) && (
                                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                  Rejected: {new Date(booking.maidResponseAt).toLocaleString()}
+                                  {booking.lastAttempt?.status === 'expired' ? 'Expired' : 'Rejected'}: {new Date(booking.lastAttempt?.respondedAt || booking.maidResponseAt!).toLocaleString()}
                                 </p>
                               )}
                             </div>
@@ -382,7 +392,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                               <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                               <div>
                                 <p className="text-sm text-red-700 dark:text-red-300">
-                                  <strong>Rejection Reason:</strong> {booking.rejectionReason || 'Maid declined the assignment'}
+                                  <strong>Rejection Reason:</strong> {booking.lastAttempt?.reason || booking.rejectionReason || 'Maid declined the assignment'}
                                 </p>
                                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                                   Reassignment attempt #{(booking.reassignmentCount || 0) + 1}
@@ -480,7 +490,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                   </SelectTrigger>
                   <SelectContent>
                     {availableMaids
-                      .filter(maid => maid.id !== selectedBooking.maidId) // Exclude the maid who rejected
+                      .filter(maid => maid.id !== (selectedBooking.lastAttempt?.maidUserId || selectedBooking.maidId))
                       .map((maid) => (
                         <SelectItem key={maid.id} value={maid.id}>
                           <div className="flex items-center justify-between w-full">

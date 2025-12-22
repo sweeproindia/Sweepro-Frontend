@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { maidService } from '@/services/maidService';
+import { MaidService } from '@/services/maidService';
 import { useUser } from '@/contexts/UserContext';
 
 export const MaidAvailabilityToggle: React.FC = () => {
@@ -29,7 +29,7 @@ export const MaidAvailabilityToggle: React.FC = () => {
     setIsAvailable(checked);
     setSaving(true);
     try {
-      const res = await maidService.setAvailability({ isAvailable: checked, note: note?.trim() ? note.trim() : undefined });
+      const res = await MaidService.setAvailability({ isAvailable: checked, note: note?.trim() ? note.trim() : undefined });
       if (res.success) {
         toast({
           title: 'Availability updated',
@@ -50,7 +50,7 @@ export const MaidAvailabilityToggle: React.FC = () => {
   const handleSaveNote = async () => {
     setSaving(true);
     try {
-      const res = await maidService.setAvailability({ isAvailable, note: note?.trim() ? note.trim() : undefined });
+      const res = await MaidService.setAvailability({ isAvailable, note: note?.trim() ? note.trim() : undefined });
       if (res.success) {
         toast({ title: 'Note saved', description: 'Your availability note has been updated.' });
         await refreshUser();
