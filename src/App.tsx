@@ -33,6 +33,7 @@ import MaidVerification from "./pages/MaidVerification";
 import UserMaidDashboard from "./pages/MaidDashboard";
 import NotificationsPage from "./pages/NotificationsPage";
 import BufferManagementPage from "./pages/BufferManagementPage";
+import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
                   <Route path="/monthly-subscription" element={<MonthlySubscriptionDashboard />} />
                   <Route path="/calendar" element={<MonthlyServiceCalendar />} />
                   <Route path="/buffer" element={<BufferManagementPage />} />
+                  <Route path="/admin/feedback" element={<AdminFeedbackPage />} />
                   <Route path="/subscription/:planId" element={<SubscriptionDetailsPage />}  />
                   <Route path="/payment-options" element={<PaymentOptionsPage />} />
                   <Route path="/review-payment" element={<ReviewPaymentPage />} />

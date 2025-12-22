@@ -1,6 +1,8 @@
 import { DashboardNavbar } from './DashboardNavbar';
 import { AdminDashboardSidebar } from './AdminDashboardSidebar';
 import { useState } from 'react';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AdminDashboardLayoutProps {
   children: React.ReactNode;
@@ -10,7 +12,7 @@ export const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) =>
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background">
+    <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
       {/* Top Navigation */}
       <DashboardNavbar 
         userType="admin"
@@ -20,7 +22,7 @@ export const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) =>
       {/* Main content area with sidebar and page content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Desktop (always visible) */}
-        <div className="hidden md:block">
+        <div className="hidden md:flex md:flex-shrink-0">
           <AdminDashboardSidebar />
         </div>
         
@@ -41,7 +43,7 @@ export const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) =>
         )}
 
         {/* Page content */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
+        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-slate-50">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               {children}

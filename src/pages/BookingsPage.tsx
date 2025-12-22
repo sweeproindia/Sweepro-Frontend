@@ -12,6 +12,8 @@ import { BookingButton } from '@/components/buttons/BookingButton';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
 import BookingsSkeleton from '@/components/bookings/BookingsSkeleton';
 import { useToast } from '@/hooks/use-toast';
+import { FeedbackCard } from '@/components/feedback/FeedbackCard';
+import FeedbackService from '@/services/feedbackService';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -130,6 +132,7 @@ export default function BookingsPage() {
     // Refresh bookings after successful booking
     await refreshBookings();
   };
+
 
   if (loading) {
     return (
@@ -483,6 +486,15 @@ export default function BookingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Feedback Section - Single card for most recent completed service */}
+        <div className="slide-up mt-6">
+          <FeedbackCard
+            onFeedbackSubmitted={async () => {
+              await refreshBookings();
+            }}
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

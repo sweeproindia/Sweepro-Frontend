@@ -18,6 +18,8 @@ import { Calendar, CreditCard, Clock, CheckCircle, AlertTriangle, TrendingUp, Do
 import { Link } from 'react-router-dom';
 import { QuickBookingForm } from '@/components/forms/QuickBookingForm';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
+import { FeedbackCard } from '@/components/feedback/FeedbackCard';
+import FeedbackService from '@/services/feedbackService';
 
 export default function UserDashboard() {
   const { user, refreshUser, isAuthenticated } = useUser();
@@ -154,6 +156,7 @@ export default function UserDashboard() {
         console.warn('⚠️ Maid assignment fetch failed:', maidAssignmentResponse.reason);
         setMaidAssignment(null);
       }
+
 
       // Fetch buffer data if subscription exists
       let currentSubscription: Subscription | null = subscription;
@@ -654,6 +657,22 @@ export default function UserDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Feedback Section - Show single feedback card for most recent completed service */}
+        {user && isAuthenticated && (
+          <div className="slide-up">
+            <FeedbackCard onFeedbackSubmitted={fetchUserDashboardData} />
+          </div>
+        )}
+        
+        {/* Debug: Check if there are completed bookings */}
+        {user && isAuthenticated && bookings.length > 0 && (
+          <div className="mt-4 p-4 bg-gray-100 rounded text-sm">
+            <p>Debug: Total bookings: {bookings.length}</p>
+            <p>Completed bookings: {bookings.filter(b => b.status === 'COMPLETED').length}</p>
+            <p>Check browser console (F12) for FeedbackCard logs</p>
+          </div>
+        )}
       </div>
 
       {/* Floating Buffer Button for SweePro Lux Users */}
