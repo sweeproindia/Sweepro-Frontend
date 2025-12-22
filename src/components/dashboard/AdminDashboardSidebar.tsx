@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, CreditCard, Receipt, Users, Shield, BarChart3, Package, LogOut, Sparkles, Clock, Settings, Pause, Zap } from 'lucide-react';
+import { Home, Calendar, CreditCard, Receipt, Users, Shield, BarChart3, Package, LogOut, Sparkles, Clock, Settings, Pause, Zap, MessageSquare, TrendingUp, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
@@ -57,9 +57,9 @@ const adminNavigationItems = [
     icon: <Pause className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
-    name: 'Auto Assignments', 
-    href: '/admin#automatic-assignments', 
-    icon: <Zap className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+    name: 'Feedback Management', 
+    href: '/admin/feedback', 
+    icon: <MessageSquare className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
     name: 'Payments', 
@@ -102,8 +102,24 @@ export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBooking
     <Sidebar open={sidebarOpen} setOpen={setOpen}>
       <SidebarBody className="justify-between gap-10">
         <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-          {/* Removed Logo from sidebar since it's now in navbar */}
-          <div className="mt-8 flex flex-col gap-2">
+          {/* Admin Panel Header */}
+          {(sidebarOpen || forceOpen) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="px-4 py-3 mb-2 bg-gradient-to-r from-blue-900 to-blue-800 rounded-lg border-l-4 border-yellow-400"
+            >
+              <div className="flex items-center space-x-2 mb-2">
+                <Lock className="h-4 w-4 text-yellow-300" />
+                <span className="text-xs font-bold text-yellow-300">ADMIN PANEL</span>
+              </div>
+              <h3 className="text-sm font-bold text-white">Management Area</h3>
+              <p className="text-xs text-blue-100 mt-1">Control & Monitor</p>
+            </motion.div>
+          )}
+
+          {/* Navigation Items */}
+          <div className="mt-4 flex flex-col gap-2">
             {links.map((link, idx) => (
               <div key={idx} className="relative">
                 <SidebarLink link={link} />

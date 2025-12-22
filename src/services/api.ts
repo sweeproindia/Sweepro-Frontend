@@ -170,6 +170,16 @@ export const API_ENDPOINTS = {
     CUSTOMER_TIMESLOTS: '/automatic-assignments/customer-timeslots',
     TEST_TIMESLOT: '/automatic-assignments/test-timeslot',
   },
+  // Feedback
+  FEEDBACK: {
+    SUBMIT: '/feedback',
+    MY_FEEDBACK: '/feedback/my-feedback',
+    ELIGIBLE_BOOKINGS: '/feedback/eligible-bookings',
+    BY_BOOKING: '/feedback/booking/:bookingId',
+    ALL: '/feedback/all',
+    STATS: '/feedback/stats',
+    ADMIN_RESPONSE: '/feedback/:feedbackId/admin-response',
+  },
   // Maids
   MAIDS: {
     AVAILABILITY: '/maids/availability'
