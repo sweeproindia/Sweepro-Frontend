@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
   // Subscriptions
   SUBSCRIPTIONS: {
     PLANS: '/subscriptions/plans',
+    VALIDATE_PRICING: '/subscriptions/validate-pricing',
     SUBSCRIBE: '/subscriptions/subscribe',
     MY_SUBSCRIPTION: '/subscriptions/my-subscription',
     STATUS: '/subscriptions/status',

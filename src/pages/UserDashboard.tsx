@@ -5,11 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
-import { useBufferAccess } from '@/hooks/useBufferAccess';
 import { BookingService, Booking } from '@/services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan, MonthlySubscriptionStatus } from '@/services/subscriptionService';
 import { PaymentService, Payment } from '@/services/paymentService';
-import { BufferService, BufferPeriod } from '@/services/bufferService';
 import { MaidService, MaidAssignment } from '@/services/maidService';
 import { MaidAssignmentCard } from '@/components/dashboard/MaidAssignmentCard';
 import UserDashboardSkeleton from '@/components/dashboard/UserDashboardSkeleton';
@@ -34,8 +32,6 @@ export default function UserDashboard() {
     isLoading: bufferLoading
   } = useBufferPeriod();
 
-  // Check if user has buffer access (SweePro Lux plan)
-  const { hasBufferAccess, isLoading: bufferAccessLoading } = useBufferAccess();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [monthlySubscriptionStatus, setMonthlySubscriptionStatus] = useState<MonthlySubscriptionStatus | null>(null);
@@ -43,10 +39,7 @@ export default function UserDashboard() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bufferInfo, setBufferInfo] = useState<any | null>(null);
-  const [bufferHistory, setBufferHistory] = useState<BufferPeriod[]>([]);
   const [maidAssignment, setMaidAssignment] = useState<MaidAssignment | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
   const [stats, setStats] = useState({
     totalBookings: 0,
     completedBookings: 0,
@@ -59,21 +52,6 @@ export default function UserDashboard() {
     if (user && isAuthenticated) {
       console.log('UserDashboard - Current User Data:', user);
       fetchUserDashboardData();
-      
-      // Set up periodic refresh for buffer data (every 30 seconds)
-      const interval = setInterval(() => {
-        if (subscription) {
-          refreshBufferData();
-        }
-      }, 30000);
-      
-      setRefreshInterval(interval);
-      
-      return () => {
-        if (interval) {
-          clearInterval(interval);
-        }
-      };
     }
   }, [user, isAuthenticated, subscription?.id]);
 
@@ -224,36 +202,6 @@ export default function UserDashboard() {
       calculateStats();
     }
   }, [bookings, payments, subscription]);
-
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
-  }, [refreshInterval]);
-
-  const refreshBufferData = async () => {
-    if (!subscription) return;
-    
-    try {
-      const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
-        BufferService.getRemainingBufferDays(subscription.id),
-        BufferService.getBufferHistory(subscription.id, 1, 5)
-      ]);
-
-      if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
-        setBufferInfo(bufferInfoResponse.value.data || null);
-      }
-
-      if (bufferHistoryResponse.status === 'fulfilled' && bufferHistoryResponse.value.success) {
-        setBufferHistory(bufferHistoryResponse.value.data?.history || []);
-      }
-    } catch (error) {
-      console.error('Error refreshing buffer data:', error);
-    }
-  };
 
   const handleBookNowClick = () => {
     console.log('🔍 HandleBookNowClick - Buffer Status:', {

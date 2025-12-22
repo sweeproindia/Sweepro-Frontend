@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { BufferService, BufferStatistics, BufferPeriod, AffectedService } from '@/services/bufferService';
 import { toast } from 'sonner';
-import { format, isAfter } from 'date-fns';
+import { format, isAfter, isValid, parseISO } from 'date-fns';
 
 interface AdminBufferManagementSectionProps {}
 
@@ -51,6 +51,29 @@ interface PendingBufferRequest {
   servicePlan: any;
 }
 
+const safeFormatDate = (
+  value: unknown,
+  dateFormat: string,
+  fallback = 'N/A'
+) => {
+  if (!value) return fallback;
+
+  let date: Date;
+
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === 'string') {
+    date = parseISO(value);
+  } else if (typeof value === 'number') {
+    date = new Date(value);
+  } else {
+    return fallback;
+  }
+
+  if (!isValid(date)) return fallback;
+  return format(date, dateFormat);
+};
+
 export const AdminBufferManagementSection: React.FC<AdminBufferManagementSectionProps> = () => {
   // State management
   const [loading, setLoading] = useState(true);
@@ -60,6 +83,8 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
   const [allBufferPeriods, setAllBufferPeriods] = useState<any[]>([]);
   const [affectedServices, setAffectedServices] = useState<AffectedService[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [processingAction, setProcessingAction] = useState<'approve' | 'reject' | null>(null);
   
   // Pagination states
   const [pendingPage, setPendingPage] = useState(1);
@@ -183,6 +208,8 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
 
   const handleApprove = async (request: PendingBufferRequest) => {
     try {
+      setProcessingRequestId(request.id);
+      setProcessingAction('approve');
       const response = await BufferService.approveBufferRequest(request.id, adminNotes);
       if (response.success) {
         toast.success('Buffer request approved successfully');
@@ -196,6 +223,9 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
     } catch (error) {
       toast.error('Failed to approve buffer request');
       console.error('Approve error:', error);
+    } finally {
+      setProcessingRequestId(null);
+      setProcessingAction(null);
     }
   };
 
@@ -206,6 +236,8 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
     }
 
     try {
+      setProcessingRequestId(request.id);
+      setProcessingAction('reject');
       const response = await BufferService.rejectBufferRequest(request.id, rejectionReason);
       if (response.success) {
         toast.success('Buffer request rejected');
@@ -219,6 +251,9 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
     } catch (error) {
       toast.error('Failed to reject buffer request');
       console.error('Reject error:', error);
+    } finally {
+      setProcessingRequestId(null);
+      setProcessingAction(null);
     }
   };
 
@@ -308,12 +343,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Buffer Period Management</h2>
-          <p className="text-muted-foreground">
-            Manage customer buffer periods and service interruptions
-          </p>
-        </div>
+        
         <Button onClick={refreshData} disabled={refreshing} variant="outline">
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
@@ -486,9 +516,9 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <p>{format(new Date(request.startDate), 'MMM dd')}</p>
+                          <p>{safeFormatDate(request.startDate, 'MMM dd')}</p>
                           <p className="text-muted-foreground">
-                            to {format(new Date(request.endDate), 'MMM dd, yyyy')}
+                            to {safeFormatDate(request.endDate, 'MMM dd, yyyy')}
                           </p>
                         </div>
                       </TableCell>
@@ -502,7 +532,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                       </TableCell>
                       <TableCell>
                         <p className="text-sm">
-                          {format(new Date(request.requestedAt), 'MMM dd, yyyy')}
+                          {safeFormatDate((request as any).requestedAt || (request as any).createdAt, 'MMM dd, yyyy')}
                         </p>
                       </TableCell>
                       <TableCell>
@@ -604,9 +634,9 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <p>{format(new Date(period.startDate), 'MMM dd')}</p>
+                          <p>{safeFormatDate(period.startDate, 'MMM dd')}</p>
                           <p className="text-muted-foreground">
-                            to {format(new Date(period.endDate), 'MMM dd, yyyy')}
+                            to {safeFormatDate(period.endDate, 'MMM dd, yyyy')}
                           </p>
                         </div>
                       </TableCell>
@@ -692,53 +722,38 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                     <TableHead>Scheduled Time</TableHead>
                     <TableHead>Maid</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Buffer Impact</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {affectedServices.map((service) => (
-                    <TableRow key={service.id}>
+                  {affectedServices.map((service: any) => (
+                    <TableRow key={service.id || service.bookingId}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{service.customer?.name}</p>
-                          <p className="text-sm text-muted-foreground">{service.customer?.email}</p>
+                          <p className="font-medium">{service.customer?.name || 'N/A'}</p>
+                          <p className="text-sm text-muted-foreground">{service.customer?.email || ''}</p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <p className="font-medium">{service.service?.name}</p>
-                          <p className="text-sm text-muted-foreground">{service.service?.category}</p>
-                        </div>
+                        <p className="text-sm">{service.service?.name || 'N/A'}</p>
                       </TableCell>
                       <TableCell>
-                        <p className="text-sm">
-                          {format(new Date(service.scheduledAt), 'MMM dd, yyyy')}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(service.scheduledAt), 'h:mm a')}
-                        </p>
+                        <p className="text-sm">{safeFormatDate(service.scheduledAt, 'MMM dd, yyyy')}</p>
+                        <p className="text-sm text-muted-foreground">{safeFormatDate(service.scheduledAt, 'h:mm a')}</p>
                       </TableCell>
                       <TableCell>
                         {service.maid ? (
                           <div>
-                            <p className="font-medium">{service.maid.name}</p>
-                            <p className="text-sm text-muted-foreground">{service.maid.phone}</p>
+                            <p className="text-sm">{service.maid?.name || service.maid?.user?.name || 'Assigned'}</p>
+                            <p className="text-xs text-muted-foreground">{service.maid?.phone || service.maid?.user?.phone || ''}</p>
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">Not assigned</p>
+                          <span className="text-sm text-muted-foreground">Unassigned</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(service.status)}>
-                          {service.status}
+                        <Badge variant={service.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
+                          {service.isBufferSkipped ? 'BUFFER' : service.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {service.isBufferSkipped ? (
-                          <Badge variant="destructive">Skipped by Buffer</Badge>
-                        ) : (
-                          <Badge variant="secondary">Not Affected</Badge>
-                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -747,7 +762,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
 
               {affectedServices.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
                   <p>No services affected by buffer periods on this date</p>
                 </div>
               )}
@@ -757,8 +772,8 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
       </Tabs>
 
       {/* Review Dialog */}
-      <Dialog 
-        open={reviewDialog.open} 
+      <Dialog
+        open={reviewDialog.open}
         onOpenChange={(open) => setReviewDialog({ open, request: reviewDialog.request })}
       >
         <DialogContent className="max-w-2xl">
@@ -771,7 +786,6 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
 
           {reviewDialog.request && (
             <div className="space-y-6">
-              {/* Request Details */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
                 <div>
                   <Label className="text-sm font-medium">Customer</Label>
@@ -785,13 +799,15 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                 <div>
                   <Label className="text-sm font-medium">Buffer Period</Label>
                   <p className="text-sm">
-                    {format(new Date(reviewDialog.request.startDate), 'MMM dd')} - {format(new Date(reviewDialog.request.endDate), 'MMM dd, yyyy')}
+                    {safeFormatDate(reviewDialog.request.startDate, 'MMM dd')} - {safeFormatDate(reviewDialog.request.endDate, 'MMM dd, yyyy')}
                   </p>
                   <p className="text-xs text-muted-foreground">{reviewDialog.request.daysCount} days</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Requested</Label>
-                  <p className="text-sm">{format(new Date(reviewDialog.request.requestedAt), 'MMM dd, yyyy')}</p>
+                  <p className="text-sm">
+                    {safeFormatDate((reviewDialog.request as any).requestedAt || (reviewDialog.request as any).createdAt, 'MMM dd, yyyy')}
+                  </p>
                 </div>
               </div>
 
@@ -807,7 +823,6 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                 </div>
               )}
 
-              {/* Admin Response */}
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="admin-notes">Admin Notes (Optional)</Label>
@@ -835,22 +850,30 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
           )}
 
           <DialogFooter>
-            <Button
-              variant="outline"
+            <Button 
+              variant="outline" 
               onClick={() => setReviewDialog({ open: false, request: null })}
+              disabled={processingRequestId === reviewDialog.request?.id}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={() => reviewDialog.request && handleReject(reviewDialog.request)}
-              disabled={!rejectionReason.trim()}
+              disabled={
+                processingRequestId === reviewDialog.request?.id ||
+                processingAction === 'approve'
+              }
             >
               <XCircle className="h-4 w-4 mr-2" />
               Reject
             </Button>
             <Button
               onClick={() => reviewDialog.request && handleApprove(reviewDialog.request)}
+              disabled={
+                processingRequestId === reviewDialog.request?.id ||
+                processingAction === 'reject'
+              }
             >
               <CheckCircle className="h-4 w-4 mr-2" />
               Approve
@@ -860,8 +883,8 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
       </Dialog>
 
       {/* Detail Dialog */}
-      <Dialog 
-        open={detailDialog.open} 
+      <Dialog
+        open={detailDialog.open}
         onOpenChange={(open) => setDetailDialog({ open, period: detailDialog.period })}
       >
         <DialogContent className="max-w-2xl">
@@ -891,7 +914,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                 <div>
                   <Label className="text-sm font-medium">Period</Label>
                   <p className="text-sm">
-                    {format(new Date(detailDialog.period.startDate), 'MMM dd')} - {format(new Date(detailDialog.period.endDate), 'MMM dd, yyyy')}
+                    {safeFormatDate(detailDialog.period.startDate, 'MMM dd')} - {safeFormatDate(detailDialog.period.endDate, 'MMM dd, yyyy')}
                   </p>
                 </div>
                 <div>
@@ -901,7 +924,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                 {detailDialog.period.resumedAt && (
                   <div>
                     <Label className="text-sm font-medium">Resumed At</Label>
-                    <p className="text-sm">{format(new Date(detailDialog.period.resumedAt), 'MMM dd, yyyy')}</p>
+                    <p className="text-sm">{safeFormatDate(detailDialog.period.resumedAt, 'MMM dd, yyyy')}</p>
                   </div>
                 )}
                 <div>
@@ -925,11 +948,11 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
               <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
                 <div>
                   <Label className="text-sm font-medium">Created</Label>
-                  <p>{format(new Date(detailDialog.period.createdAt), 'MMM dd, yyyy h:mm a')}</p>
+                  <p>{safeFormatDate(detailDialog.period.createdAt, 'MMM dd, yyyy h:mm a')}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Last Updated</Label>
-                  <p>{format(new Date(detailDialog.period.updatedAt), 'MMM dd, yyyy h:mm a')}</p>
+                  <p>{safeFormatDate(detailDialog.period.updatedAt, 'MMM dd, yyyy h:mm a')}</p>
                 </div>
               </div>
             </div>

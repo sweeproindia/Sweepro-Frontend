@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { BufferService, BufferRequest } from '@/services/bufferService';
+import { BufferService, BufferRequestData } from '@/services/bufferService';
 import { Calendar, Clock, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -27,7 +27,7 @@ export function BufferDaysRequestDialog({
 }: BufferDaysRequestDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<BufferRequest>({
+  const [formData, setFormData] = useState<BufferRequestData>({
     daysCount: 1,
     startDate: '',
     reason: '',
