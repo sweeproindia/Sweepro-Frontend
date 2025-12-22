@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import  {DocumentUpload } from '@/components/ui/document-upload';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ interface VerificationStatus {
 }
 
 export default function MaidVerification() {
+  const navigate = useNavigate();
   const { user } = useUser();
   const { toast } = useToast();
   const [documents, setDocuments] = useState<VerificationDocuments>({
@@ -88,6 +90,12 @@ export default function MaidVerification() {
           const result = await response.json();
           if (result.success && result.data) {
             const data = result.data;
+            
+            // If already approved, redirect to dashboard
+            if (data.overallStatus === 'APPROVED') {
+              navigate('/maid-dashboard');
+              return;
+            }
             
             // Transform backend data to frontend format
             const transformedDocuments: any = {};

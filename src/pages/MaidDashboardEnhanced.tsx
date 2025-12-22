@@ -13,7 +13,6 @@ import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidBookingRequestsSection } from '@/components/dashboard/MaidBookingRequestsSection';
 import { MaidAssignmentRequestsSection } from '@/components/dashboard/MaidAssignmentRequestsSection';
-import { MaidAvailabilityToggle } from '@/components/dashboard/MaidAvailabilityToggle';
 
 // Service interface to match backend
 interface Service {
@@ -63,6 +62,8 @@ export default function MaidDashboardEnhanced() {
   const [isVerified, setIsVerified] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED'>('NOT_SUBMITTED');
   const [verificationData, setVerificationData] = useState<any>(null);
+  const [showVerificationAlert, setShowVerificationAlert] = useState(true);
+  const [verificationApprovedTime, setVerificationApprovedTime] = useState<number | null>(null);
 
   useEffect(() => {
     if (user && isAuthenticated && user.role === 'MAID') {
@@ -117,6 +118,36 @@ export default function MaidDashboardEnhanced() {
           
           setVerificationStatus(data.overallStatus || 'NOT_SUBMITTED');
           setIsVerified(data.overallStatus === 'APPROVED');
+          
+          // Handle 24-hour alert logic for APPROVED status
+          if (data.overallStatus === 'APPROVED') {
+            // Check if verification was approved and store the time
+            const storedApprovedTime = localStorage.getItem(`maid_verification_approved_${user?.id}`);
+            if (!storedApprovedTime) {
+              // First time approval - store the time
+              const currentTime = Date.now();
+              localStorage.setItem(`maid_verification_approved_${user?.id}`, currentTime.toString());
+              setVerificationApprovedTime(currentTime);
+              setShowVerificationAlert(true);
+            } else {
+              // Check if 24 hours have passed
+              const approvedTime = parseInt(storedApprovedTime);
+              const currentTime = Date.now();
+              const hoursPassed = (currentTime - approvedTime) / (1000 * 60 * 60);
+              
+              if (hoursPassed < 24) {
+                setShowVerificationAlert(true);
+              } else {
+                // Hide alert if 24 hours have passed
+                setShowVerificationAlert(false);
+              }
+              setVerificationApprovedTime(approvedTime);
+            }
+          } else {
+            // For other statuses, always show the alert
+            setShowVerificationAlert(true);
+          }
+          
           setVerificationData({
             ...data,
             documents: transformedDocuments
@@ -239,7 +270,6 @@ export default function MaidDashboardEnhanced() {
             Here's your comprehensive cleaning schedule, earnings overview, and performance metrics.
           </p>
         </div>
-        <div className="slide-up"><MaidAvailabilityToggle /></div>
      
         {/* Verification Status Banners */}
         {verificationStatus === 'NOT_SUBMITTED' && (
@@ -276,7 +306,7 @@ export default function MaidDashboardEnhanced() {
           </Alert>
         )}
 
-        {verificationStatus === 'APPROVED' && (
+        {verificationStatus === 'APPROVED' && showVerificationAlert && (
           <Alert className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div className="flex items-center justify-between w-full">
@@ -351,7 +381,7 @@ export default function MaidDashboardEnhanced() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 slide-up">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 slide-up">
           <Card className="dashboard-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -378,21 +408,6 @@ export default function MaidDashboardEnhanced() {
               <div className="text-2xl font-bold text-foreground">{stats.completedBookings}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {stats.completionRate}% completion rate
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Monthly Earnings
-              </CardTitle>
-              <DollarSign className="h-5 w-5 text-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">₹{stats.monthlyEarnings.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                This month
               </p>
             </CardContent>
           </Card>
@@ -491,7 +506,7 @@ export default function MaidDashboardEnhanced() {
         </div>
 
         {/* Recent Bookings and Quick Actions Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Recent Bookings */}
           <Card className="dashboard-card slide-up">
             <CardHeader>
@@ -604,50 +619,6 @@ export default function MaidDashboardEnhanced() {
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Quick Actions</CardTitle>
-                  <CardDescription>Common tasks and shortcuts</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Link to="/maid-bookings">
-                  <Button className="w-full justify-start" variant="outline">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    My Assignments
-                  </Button>
-                </Link>
-                {!isVerified && (
-                  <Link to="/maid-verification">
-                    <Button className="w-full justify-start border-warning text-warning hover:bg-warning/10" variant="outline">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Complete Verification
-                    </Button>
-                  </Link>
-                )}
-                {isVerified && (
-                  <Button className="w-full justify-start" variant="outline">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Set Availability
-                  </Button>
-                )}
-                <Button className="w-full justify-start" variant="outline">
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  View Earnings
-                </Button>
-                <Button className="w-full justify-start" variant="outline">
-                  <User className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </div>
