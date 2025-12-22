@@ -18,11 +18,10 @@ export interface Maid {
 export interface MaidAssignment {
   id: string;
   maid: Maid;
-  subscriptionId: string;
-  startDate: string;
-  endDate: string;
+  assignedAt?: string;
+  notes?: string;
   status: 'ACTIVE' | 'COMPLETED' | 'PENDING';
-  monthlySchedule: Array<{
+  monthlySchedule?: Array<{
     date: string;
     status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'BUFFER';
   }>;

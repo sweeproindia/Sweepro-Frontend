@@ -5,11 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
-import { useBufferAccess } from '@/hooks/useBufferAccess';
 import { BookingService, Booking } from '@/services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan, MonthlySubscriptionStatus } from '@/services/subscriptionService';
 import { PaymentService, Payment } from '@/services/paymentService';
-import { BufferService, BufferPeriod } from '@/services/bufferService';
 import { MaidService, MaidAssignment } from '@/services/maidService';
 import { MaidAssignmentCard } from '@/components/dashboard/MaidAssignmentCard';
 import UserDashboardSkeleton from '@/components/dashboard/UserDashboardSkeleton';
@@ -32,8 +30,6 @@ export default function UserDashboard() {
     isLoading: bufferLoading
   } = useBufferPeriod();
 
-  // Check if user has buffer access (SweePro Lux plan)
-  const { hasBufferAccess, isLoading: bufferAccessLoading } = useBufferAccess();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [monthlySubscriptionStatus, setMonthlySubscriptionStatus] = useState<MonthlySubscriptionStatus | null>(null);
@@ -41,10 +37,7 @@ export default function UserDashboard() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bufferInfo, setBufferInfo] = useState<any | null>(null);
-  const [bufferHistory, setBufferHistory] = useState<BufferPeriod[]>([]);
   const [maidAssignment, setMaidAssignment] = useState<MaidAssignment | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
   const [stats, setStats] = useState({
     totalBookings: 0,
     completedBookings: 0,
@@ -57,21 +50,6 @@ export default function UserDashboard() {
     if (user && isAuthenticated) {
       console.log('UserDashboard - Current User Data:', user);
       fetchUserDashboardData();
-      
-      // Set up periodic refresh for buffer data (every 30 seconds)
-      const interval = setInterval(() => {
-        if (subscription) {
-          refreshBufferData();
-        }
-      }, 30000);
-      
-      setRefreshInterval(interval);
-      
-      return () => {
-        if (interval) {
-          clearInterval(interval);
-        }
-      };
     }
   }, [user, isAuthenticated, subscription?.id]);
 
@@ -155,32 +133,6 @@ export default function UserDashboard() {
         setMaidAssignment(null);
       }
 
-      // Fetch buffer data if subscription exists
-      let currentSubscription: Subscription | null = subscription;
-      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const finalSubscription = (subscriptionResponse.value as any).subscription || subscriptionResponse.value.data?.subscription || null;
-        currentSubscription = finalSubscription as Subscription | null;
-      }
-
-      if (currentSubscription) {
-        try {
-          const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
-            BufferService.getRemainingBufferDays(currentSubscription.id),
-            BufferService.getBufferHistory(currentSubscription.id, 1, 5)
-          ]);
-
-          if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
-            setBufferInfo(bufferInfoResponse.value.data);
-          }
-
-          if (bufferHistoryResponse.status === 'fulfilled' && bufferHistoryResponse.value.success) {
-            setBufferHistory(bufferHistoryResponse.value.data.history || []);
-          }
-        } catch (bufferError) {
-          console.error('Error fetching buffer data:', bufferError);
-        }
-      }
-
       // Calculate stats after data is loaded
       calculateStats();
 
@@ -221,36 +173,6 @@ export default function UserDashboard() {
       calculateStats();
     }
   }, [bookings, payments, subscription]);
-
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
-    };
-  }, [refreshInterval]);
-
-  const refreshBufferData = async () => {
-    if (!subscription) return;
-    
-    try {
-      const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
-        BufferService.getRemainingBufferDays(subscription.id),
-        BufferService.getBufferHistory(subscription.id, 1, 5)
-      ]);
-
-      if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
-        setBufferInfo(bufferInfoResponse.value.data || null);
-      }
-
-      if (bufferHistoryResponse.status === 'fulfilled' && bufferHistoryResponse.value.success) {
-        setBufferHistory(bufferHistoryResponse.value.data?.history || []);
-      }
-    } catch (error) {
-      console.error('Error refreshing buffer data:', error);
-    }
-  };
 
   const handleBookNowClick = () => {
     console.log('🔍 HandleBookNowClick - Buffer Status:', {
@@ -655,40 +577,6 @@ export default function UserDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Floating Buffer Button for SweePro Lux Users */}
-      {hasBufferAccess && !bufferAccessLoading && (
-        <Link to="/buffer">
-          <Button
-            className={`
-              fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg 
-              flex items-center justify-center z-50 transition-all duration-200
-              hover:shadow-xl hover:scale-105
-              ${isInBufferPeriod 
-                ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white' 
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
-              }
-            `}
-            size="lg"
-            title={isInBufferPeriod ? "Resume Services - Click to manage" : "Pause Services - Click to manage"}
-          >
-            {isInBufferPeriod ? (
-              <Play className="h-6 w-6" />
-            ) : (
-              <Pause className="h-6 w-6" />
-            )}
-            
-            {/* Status indicator */}
-            <span className={`
-              absolute -top-1 -right-1 h-3 w-3 rounded-full
-              ${isInBufferPeriod 
-                ? 'bg-orange-300 animate-pulse' 
-                : 'bg-green-400 animate-pulse'
-              }
-            `}></span>
-          </Button>
-        </Link>
-      )}
     </DashboardLayout>
   );
 }

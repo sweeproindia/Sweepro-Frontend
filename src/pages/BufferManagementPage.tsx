@@ -15,10 +15,12 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { SubscriptionService, Subscription, BufferPeriod } from '@/services/subscriptionService';
+import { BufferService, BufferDayInfo } from '@/services/bufferService';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BufferManagementSkeleton from '@/components/buffer/BufferManagementSkeleton';
+import { BufferDaysRequestDialog } from '@/components/forms/BufferDaysRequestDialog';
 
 function BufferManagementPage() {
   const { user, isAuthenticated } = useUser();
@@ -26,6 +28,8 @@ function BufferManagementPage() {
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [bufferPeriods, setBufferPeriods] = useState<BufferPeriod[]>([]);
+  const [bufferInfo, setBufferInfo] = useState<BufferDayInfo | null>(null);
+  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [accessDeniedReason, setAccessDeniedReason] = useState('');
@@ -76,6 +80,16 @@ function BufferManagementPage() {
           }
         } catch (error) {
           console.error('Error fetching buffer history:', error);
+        }
+
+        // Fetch remaining buffer days for this subscription
+        try {
+          const remainingResponse = await BufferService.getRemainingBufferDays(subscriptionData.id);
+          if (remainingResponse.success) {
+            setBufferInfo(remainingResponse.data || null);
+          }
+        } catch (error) {
+          console.error('Error fetching remaining buffer days:', error);
         }
       } else {
         setHasAccess(false);
@@ -227,12 +241,79 @@ function BufferManagementPage() {
                 <div className="p-4 bg-white/50 dark:bg-black/20 rounded-lg">
                   <p className="text-xs text-muted-foreground mb-1">Buffer Days Available</p>
                   <p className="text-lg font-bold text-primary">
-                    {(subscription.bufferDaysCount || 3) - (subscription.bufferDaysUsed || 0)}
+                    {bufferInfo ? bufferInfo.remaining : (subscription.bufferDaysCount || 3) - (subscription.bufferDaysUsed || 0)}
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Request Buffer Days */}
+        {subscription && (
+          <Card className="dashboard-card slide-up">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Request Buffer Days
+                  </CardTitle>
+                  <CardDescription>
+                    Request a temporary pause. Your request will be reviewed by an administrator.
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => setIsRequestDialogOpen(true)}
+                  disabled={!bufferInfo || bufferInfo.remaining === 0}
+                >
+                  Request
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {bufferInfo ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Total</p>
+                    <p className="text-2xl font-bold text-foreground">{bufferInfo.total}</p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Used</p>
+                    <p className="text-2xl font-bold text-foreground">{bufferInfo.used}</p>
+                  </div>
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Remaining</p>
+                    <p className="text-2xl font-bold text-primary">{bufferInfo.remaining}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Loading your buffer days…</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => checkAccessAndFetchData()}
+                  >
+                    Refresh
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {subscription && bufferInfo && (
+          <BufferDaysRequestDialog
+            isOpen={isRequestDialogOpen}
+            onClose={() => setIsRequestDialogOpen(false)}
+            onSuccess={() => {
+              setIsRequestDialogOpen(false);
+              checkAccessAndFetchData();
+            }}
+            subscriptionId={subscription.id}
+            remainingBufferDays={bufferInfo.remaining}
+          />
         )}
 
         {/* Buffer Status Card */}

@@ -60,6 +60,11 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
 
   const { maid } = assignment;
 
+  const assignedDate = assignment.assignedAt ? new Date(assignment.assignedAt) : null;
+  const assignedMonthLabel = assignedDate
+    ? assignedDate.toLocaleDateString('en-US', { month: 'long' })
+    : 'this month';
+
   const handleContactMaid = () => {
     if (maid.phone) {
       window.open(`tel:${maid.phone}`, '_blank');
@@ -98,7 +103,7 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
               Your Dedicated Maid
             </CardTitle>
             <CardDescription>
-              Assigned for {new Date(assignment.startDate).toLocaleDateString('en-US', { month: 'long' })}
+              Assigned for {assignedMonthLabel}
             </CardDescription>
           </div>
           <Badge variant={assignment.status === 'ACTIVE' ? 'default' : 'secondary'}>
@@ -186,20 +191,20 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
             <h4 className="font-medium mb-3">Assignment Details</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Assignment Period:</span>
-                  <span className="font-medium">
-                    {new Date(assignment.startDate).toLocaleDateString()} - {new Date(assignment.endDate).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Monthly Schedule:</span>
-                  <span className="font-medium">
-                    {assignment.monthlySchedule.filter(s => s.status === 'SCHEDULED').length} sessions scheduled
-                  </span>
-                </div>
+                {assignedDate && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>Assigned On:</span>
+                    <span className="font-medium">{assignedDate.toLocaleDateString()}</span>
+                  </div>
+                )}
+                {assignment.notes && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <span>Notes:</span>
+                    <span className="font-medium">{assignment.notes}</span>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">

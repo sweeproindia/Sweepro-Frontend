@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import { saveServiceAddress, getServiceAddress, ServiceAddress } from '@/services/addressService';
 import { AuthService } from '@/services/authService';
+import { SubscriptionService } from '@/services/subscriptionService';
 
 interface SubscriptionPlan {
   id: string;
@@ -46,6 +47,15 @@ interface ServiceOptions {
   squareFeet: number;
   selectedPlanDuration: '1month' | '3month' | '6month' | null;
   finalTotalPrice: number;
+  pricing?: {
+    subtotal: number;
+    gstAmount: number;
+    totalWithGst: number;
+    discountPercent: number;
+    discountAmount: number;
+    totalBeforeDiscount: number;
+    basePricePerPeriod: number;
+  };
 }
 
 // Fixed frequency configuration
@@ -225,7 +235,7 @@ export default function PaymentOptionsPage() {
   const mapContainerIdRef = useRef<string>('map-container-' + Math.random().toString(36).slice(2));
   const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
   const prefersGoogle = !!googleMapsKey;
-  const [savedAddress, setSavedAddress] = useState<Pick<ServiceOptions, 'pincode' | 'locality' | 'addressLine' | 'city' | 'state' | 'landmark' | 'address' | 'latitude' | 'longitude'>>();
+  const [savedAddress, setSavedAddress] = useState<Partial<Pick<ServiceOptions, 'pincode' | 'locality' | 'addressLine' | 'city' | 'state' | 'landmark' | 'address' | 'latitude' | 'longitude'>>>();
   const [isSavingAddress, setIsSavingAddress] = useState(false);
 
   useEffect(() => {
@@ -262,19 +272,6 @@ export default function PaymentOptionsPage() {
     }
   }, []);
 
-  if (!selectedPlan) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
-        <div className="text-center text-gray-900">
-          <h1 className="text-2xl font-bold mb-4">No plan selected</h1>
-          <Button onClick={() => navigate('/subscription')}>
-            Back to Plans
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const handleOptionChange = (key: keyof ServiceOptions, value: string | number) => {
     setOptions(prev => ({ ...prev, [key]: value as any }));
   };
@@ -297,12 +294,69 @@ export default function PaymentOptionsPage() {
   const handlePlanDurationSelect = (durationId: string) => {
     const duration = PLAN_DURATIONS.find(d => d.id === durationId);
     if (duration) {
-      const pricing = calculatePlanPrice(duration);
-      setOptions(prev => ({ 
-        ...prev, 
-        selectedPlanDuration: durationId as ServiceOptions['selectedPlanDuration'],
-        finalTotalPrice: pricing.finalTotal
-      }));
+      (async () => {
+        try {
+          const backendPlanId = await resolveBackendPlanId(selectedPlan);
+          if (!backendPlanId) {
+            throw new Error('Unable to load plan pricing.');
+          }
+          const pricingRes = await SubscriptionService.validatePricing(
+            backendPlanId,
+            durationId as ServiceOptions['selectedPlanDuration']
+          );
+          const pricingData: any = pricingRes.data;
+          if (!pricingRes.success || !pricingData) {
+            throw new Error('Failed to calculate pricing.');
+          }
+          setOptions(prev => ({
+            ...prev,
+            selectedPlanDuration: durationId as ServiceOptions['selectedPlanDuration'],
+            finalTotalPrice: Number(pricingData.subtotal || 0),
+            pricing: {
+              subtotal: Number(pricingData.subtotal || 0),
+              gstAmount: Number(pricingData.gstAmount || 0),
+              totalWithGst: Number(pricingData.totalWithGst || 0),
+              discountPercent: Number(pricingData.discountPercent || 0),
+              discountAmount: Number(pricingData.discountAmount || 0),
+              totalBeforeDiscount: Number(pricingData.totalBeforeDiscount || 0),
+              basePricePerPeriod: Number(pricingData.basePricePerPeriod || 0),
+            }
+          }));
+        } catch (e: any) {
+          const fallback = calculatePlanPrice(duration);
+          setOptions(prev => ({
+            ...prev,
+            selectedPlanDuration: durationId as ServiceOptions['selectedPlanDuration'],
+            finalTotalPrice: fallback.finalTotal,
+            pricing: undefined
+          }));
+        }
+      })();
+    }
+  };
+
+  const resolveBackendPlanId = async (uiPlan: SubscriptionPlan) => {
+    if (!uiPlan) return null;
+
+    if (typeof uiPlan.id === 'string' && uiPlan.id.length > 12 && uiPlan.id.includes('-')) {
+      return uiPlan.id;
+    }
+
+    const keyword = (uiPlan.name || '').toLowerCase().includes('lux') ? 'lux' : 'touch';
+
+    try {
+      const plansRes = await SubscriptionService.getSubscriptionPlans();
+      const plans = Array.isArray(plansRes.data)
+        ? (plansRes.data as any[])
+        : (plansRes.data as any)?.plans || (plansRes as any)?.plans || [];
+
+      const match = (plans || []).find((p: any) =>
+        String(p?.name || '').toLowerCase().includes(keyword)
+      );
+
+      return match?.id || null;
+    } catch (e) {
+      return null;
     }
   };
 
@@ -867,6 +921,22 @@ export default function PaymentOptionsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {PLAN_DURATIONS.map((duration) => {
                     const pricing = calculatePlanPrice(duration);
+                    const isSelected = options.selectedPlanDuration === duration.id;
+                    const resolvedTotal = isSelected && options.pricing
+                      ? Number(options.pricing.subtotal || 0)
+                      : pricing.finalTotal;
+                    const resolvedTotalBeforeDiscount = isSelected && options.pricing
+                      ? Number(options.pricing.totalBeforeDiscount || 0)
+                      : pricing.totalBeforeDiscount;
+                    const resolvedDiscountPercent = isSelected && options.pricing
+                      ? Number(options.pricing.discountPercent || 0)
+                      : (duration.discount || 0);
+                    const resolvedDiscountAmount = isSelected && options.pricing
+                      ? Number(options.pricing.discountAmount || 0)
+                      : pricing.discountAmount;
+                    const resolvedMonthly = duration.multiplier > 0
+                      ? Math.round(resolvedTotal / duration.multiplier)
+                      : pricing.monthlyAfterDiscount;
                     return (
                       <div
                         key={duration.id}
@@ -889,25 +959,25 @@ export default function PaymentOptionsPage() {
                           
                           <div className="space-y-2">
                             <div className="text-2xl font-bold text-purple-600">
-                              ₹{pricing.finalTotal.toLocaleString()}
+                              ₹{resolvedTotal.toLocaleString()}
                             </div>
                             <div className="text-sm text-gray-600">
                               Total for {duration.label.toLowerCase()}
                             </div>
                             
-                            {duration.discount > 0 && (
+                            {resolvedDiscountPercent > 0 && (
                               <>
                                 <div className="text-sm text-gray-500 line-through">
-                                  ₹{pricing.totalBeforeDiscount.toLocaleString()}
+                                  ₹{resolvedTotalBeforeDiscount.toLocaleString()}
                                 </div>
                                 <div className="text-sm text-green-600 font-semibold">
-                                  Save ₹{pricing.discountAmount.toFixed(0)} ({duration.discount}%)
+                                  Save ₹{resolvedDiscountAmount.toFixed(0)} ({resolvedDiscountPercent}%)
                                 </div>
                               </>
                             )}
                             
                             <div className="text-sm text-gray-600 pt-2 border-t border-gray-200">
-                              ₹{pricing.monthlyAfterDiscount.toFixed(0)}/month
+                              ₹{resolvedMonthly.toFixed(0)}/month
                             </div>
                           </div>
                         </div>
@@ -926,21 +996,40 @@ export default function PaymentOptionsPage() {
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
                         <span>Base {selectedPlan.name} service:</span>
-                        <span>₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).monthlyBaseCost}/month</span>
+                        <span>
+                          {options.pricing
+                            ? `₹${Number(options.pricing.basePricePerPeriod || 0).toLocaleString()}/month`
+                            : `₹${calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).monthlyBaseCost}/month`
+                          }
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Property cost ({options.squareFeet} sq ft):</span>
-                        <span>₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).propertyBaseCost}/month</span>
-                      </div>
-                      {PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount! > 0 && (
+                      {!options.pricing && (
+                        <div className="flex justify-between">
+                          <span>Property cost ({options.squareFeet} sq ft):</span>
+                          <span>₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).propertyBaseCost}/month</span>
+                        </div>
+                      )}
+                      {(options.pricing ? options.pricing.discountPercent > 0 : (PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount! > 0)) && (
                         <div className="flex justify-between text-green-600">
-                          <span>Discount ({PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount}%):</span>
-                          <span>-₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).discountAmount.toFixed(0)}</span>
+                          <span>
+                            Discount ({options.pricing ? options.pricing.discountPercent : PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount}%):
+                          </span>
+                          <span>
+                            -₹{options.pricing
+                              ? Number(options.pricing.discountAmount || 0).toFixed(0)
+                              : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).discountAmount.toFixed(0)
+                            }
+                          </span>
                         </div>
                       )}
                       <div className="flex justify-between font-semibold text-purple-700 border-t pt-1">
                         <span>Final total ({PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.label}):</span>
-                        <span>₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).finalTotal.toLocaleString()}</span>
+                        <span>
+                          ₹{(options.pricing
+                            ? Number(options.pricing.subtotal || 0)
+                            : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).finalTotal
+                          ).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
