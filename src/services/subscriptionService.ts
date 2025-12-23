@@ -16,6 +16,7 @@ export interface SubscriptionPlan {
   isActive: boolean;
   isPopular: boolean;
   bufferDaysAllowed?: number;
+  hasBufferSystem?: boolean;
   createdAt?: string;
   updatedAt?: string;
   service?: {
@@ -61,11 +62,6 @@ export interface Subscription {
   lastRenewalDate?: string;
   createdAt: string;
   updatedAt: string;
-  // Buffer period properties
-  isInBufferPeriod?: boolean;
-  bufferStartDate?: string;
-  bufferEndDate?: string;
-  bufferDaysUsed?: number;
   plan?: {
     id: string;
     name: string;
@@ -79,6 +75,8 @@ export interface Subscription {
     finalPrice: number;
     isActive: boolean;
     isPopular: boolean;
+    bufferDaysAllowed?: number;
+    hasBufferSystem?: boolean;
     service?: {
       id: string;
       name: string;

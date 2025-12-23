@@ -20,7 +20,8 @@ export const debugApiCall = async (url: string, options?: RequestInit) => {
 };
 
 export const debugLogin = async (email: string, password: string) => {
-  const API_BASE_URL = 'http://localhost:3000/api';
+  const backendOrigin = (import.meta as any).env?.VITE_BACKEND_ORIGIN || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://sweep-pro-backend-testing.onrender.com');
+  const API_BASE_URL = `${backendOrigin}/api`;
   const url = `${API_BASE_URL}/auth/login`;
   
   const options: RequestInit = {
@@ -37,9 +38,10 @@ export const debugLogin = async (email: string, password: string) => {
 export const debugBackendConnection = async () => {
   console.group('🔍 Backend Connection Test');
   
+  const backendOrigin = (import.meta as any).env?.VITE_BACKEND_ORIGIN || (import.meta.env.DEV ? 'http://localhost:3000' : 'https://sweep-pro-backend-testing.onrender.com');
   const baseUrls = [
-    'http://localhost:3000',
-    'http://localhost:3000/api',
+    backendOrigin,
+    `${backendOrigin}/api`,
   ];
   
   for (const baseUrl of baseUrls) {

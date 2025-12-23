@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { BACKEND_ORIGIN } from '@/services/api';
 import { 
   Shield, 
   FileText, 
@@ -196,7 +197,7 @@ export default function MaidVerification() {
       
       // Check if backend is accessible
       try {
-        const healthCheck = await fetch('http://localhost:3000/health');
+        const healthCheck = await fetch(`${BACKEND_ORIGIN}/health`);
         console.log('Health check response:', healthCheck.status);
         if (!healthCheck.ok) {
           throw new Error('Backend server is not responding');
@@ -234,7 +235,7 @@ export default function MaidVerification() {
       // Try multiple URL approaches in case of proxy issues
       let response;
       const urls = [
-        'http://localhost:3000/api/documents/upload-verification', // Direct backend
+        `${BACKEND_ORIGIN}/api/documents/upload-verification`, // Direct backend
         '/api/documents/upload-verification' // Via proxy
       ];
       

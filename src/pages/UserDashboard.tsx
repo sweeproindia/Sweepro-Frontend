@@ -97,9 +97,16 @@ export default function UserDashboard() {
         PaymentService.getUserPayments(),
         SubscriptionService.getSubscriptionPlans(),
         MaidService.getCurrentMaidAssignment() // CUSTOMER-ONLY endpoint
-      ];
-      
-      const [bookingsResponse, subscriptionResponse, monthlyStatusResponse, paymentsResponse, plansResponse, maidAssignmentResponse] = await Promise.allSettled(promises);
+      ] as const;
+
+      const [
+        bookingsResponse,
+        subscriptionResponse,
+        monthlyStatusResponse,
+        paymentsResponse,
+        plansResponse,
+        maidAssignmentResponse
+      ] = await Promise.allSettled(promises);
 
       // Handle bookings
       console.log('📚 Bookings Response:', bookingsResponse);
@@ -122,7 +129,7 @@ export default function UserDashboard() {
         console.log('Subscription response:', subscriptionResponse.value);
         console.log('Subscription response success:', subscriptionResponse.value.success);
         // Backend returns subscription directly in the response (not wrapped in data)
-        const subscriptionData = (subscriptionResponse.value as any).subscription || subscriptionResponse.value.data?.subscription || null;
+        const subscriptionData = (subscriptionResponse.value as any).subscription || (subscriptionResponse.value as any).data?.subscription || null;
         setSubscription(subscriptionData);
         console.log('✅ Subscription loaded:', subscriptionData);
       } else if (subscriptionResponse.status === 'rejected') {
@@ -132,9 +139,12 @@ export default function UserDashboard() {
       // Handle monthly subscription status
       if (monthlyStatusResponse.status === 'fulfilled' && monthlyStatusResponse.value.success) {
         console.log('Monthly subscription status response data:', monthlyStatusResponse.value.data);
-        // Backend returns status in the 'data' property
-        const statusData = monthlyStatusResponse.value.data || null;
-        setMonthlySubscriptionStatus(statusData);
+        // Backend may return status either in data (wrapped) or at top-level (already has success)
+        const statusData =
+          (monthlyStatusResponse.value as any).data ||
+          (monthlyStatusResponse.value as any) ||
+          null;
+        setMonthlySubscriptionStatus(statusData as MonthlySubscriptionStatus | null);
       } else if (monthlyStatusResponse.status === 'rejected') {
         console.error('Error fetching monthly subscription status:', monthlyStatusResponse.reason);
       }
@@ -142,19 +152,17 @@ export default function UserDashboard() {
       // Handle payments
       if (paymentsResponse.status === 'fulfilled' && paymentsResponse.value.success) {
         // Backend returns payments directly in data field (wrapped by api.ts)
-        const paymentsData = Array.isArray(paymentsResponse.value.data) ? 
-          paymentsResponse.value.data : 
-          paymentsResponse.value.data?.payments || [];
+        const paymentsDataRaw = (paymentsResponse.value as any).data;
+        const paymentsData = Array.isArray(paymentsDataRaw) ? paymentsDataRaw : paymentsDataRaw?.payments || [];
         setPayments(paymentsData);
       }
 
       // Handle subscription plans
       if (plansResponse.status === 'fulfilled' && plansResponse.value.success) {
         // Backend returns plans directly in data field (wrapped by api.ts)
-        const plansData = Array.isArray(plansResponse.value.data) ? 
-          plansResponse.value.data : 
-          plansResponse.value.data?.plans || [];
-        setSubscriptionPlans(plansData);
+        const plansDataRaw = (plansResponse.value as any).data;
+        const plansData = Array.isArray(plansDataRaw) ? plansDataRaw : plansDataRaw?.plans || [];
+        setSubscriptionPlans(plansData as SubscriptionPlan[]);
       }
 
       // Handle maid assignment
@@ -401,9 +409,13 @@ export default function UserDashboard() {
             </CardHeader>
             <CardContent>
               {subscription ? (
-                <div className="text-2xl font-bold text-foreground">
-                  {new Date(subscription.nextBillDate).toLocaleDateString()}
-                </div>
+                subscription.nextBillDate ? (
+                  <div className="text-2xl font-bold text-foreground">
+                    {new Date(subscription.nextBillDate).toLocaleDateString()}
+                  </div>
+                ) : (
+                  <div className="text-2xl font-bold text-foreground">Not available</div>
+                )
               ) : (
                 <div className="text-center">
                   <p className="text-muted-foreground text-sm mb-4">

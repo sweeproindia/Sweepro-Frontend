@@ -20,8 +20,22 @@ class WebSocketService {
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private reconnectTimeout: NodeJS.Timeout | null = null;
 
-  constructor(url: string = (import.meta.env.DEV ? 'ws://localhost:3000' : 'wss://sweep-pro-backend-testing.onrender.com')) {
-    this.url = url;
+  constructor(url?: string) {
+    this.url = url || '';
+  }
+
+  private getWebSocketBaseUrl(): string {
+    if (this.url && this.url.trim().length > 0) return this.url;
+
+    const backendOrigin =
+      (import.meta as any).env?.VITE_BACKEND_ORIGIN ||
+      (import.meta.env.DEV ? 'http://localhost:3000' : 'https://sweep-pro-backend-testing.onrender.com');
+
+    const wsFromBackend = backendOrigin.startsWith('https://')
+      ? backendOrigin.replace('https://', 'wss://')
+      : backendOrigin.replace('http://', 'ws://');
+
+    return ((import.meta as any).env?.VITE_WS_URL || wsFromBackend) as string;
   }
 
   /**
@@ -38,7 +52,8 @@ class WebSocketService {
 
     try {
       // Create WebSocket connection with token as query parameter
-      const wsUrl = `${this.url}?token=${encodeURIComponent(token)}`;
+      const wsBaseUrl = this.getWebSocketBaseUrl();
+      const wsUrl = `${wsBaseUrl}?token=${encodeURIComponent(token)}`;
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = this.handleOpen.bind(this);

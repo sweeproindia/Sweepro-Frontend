@@ -1,5 +1,11 @@
 // API Configuration - Use local backend in development, deployed URL in production
-export const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://sweep-pro-backend-testing.onrender.com/api';
+export const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api' : 'https://sweep-pro-backend-testing.onrender.com/api');
+
+export const BACKEND_ORIGIN =
+  (import.meta as any).env?.VITE_BACKEND_ORIGIN ||
+  (API_BASE_URL.startsWith('http') ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:3000');
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -339,11 +345,12 @@ export const apiRequest = async <T = any>(
       console.error('Frontend running on:', window.location.origin);
       
       throw new ApiError(
-        `Unable to connect to server. Please check:\n1. Backend is running on http://localhost:3000\n2. Frontend is running on http://localhost:8080\n3. CORS is properly configured\n\nCurrent API URL: ${API_BASE_URL}`,
+        `Unable to connect to server. Please check:\n1. Backend is reachable at ${BACKEND_ORIGIN}\n2. Frontend is running on ${window.location.origin}\n3. CORS is properly configured\n\nCurrent API URL: ${API_BASE_URL}`,
         0,
-        { 
+        {
           originalError: error.message,
           apiBaseUrl: API_BASE_URL,
+          backendOrigin: BACKEND_ORIGIN,
           frontendOrigin: window.location.origin
         }
       );
