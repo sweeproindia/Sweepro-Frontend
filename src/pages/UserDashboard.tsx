@@ -7,6 +7,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingService, Booking } from '@/services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan, MonthlySubscriptionStatus } from '@/services/subscriptionService';
+import { BufferService } from '@/services/bufferService';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { MaidService, MaidAssignment } from '@/services/maidService';
 import { MaidAssignmentCard } from '@/components/dashboard/MaidAssignmentCard';
@@ -47,28 +48,58 @@ export default function UserDashboard() {
     activeSubscription: false,
     upcomingBookings: 0
   });
+  const [bufferInfo, setBufferInfo] = useState<any>(null);
+  const [bufferHistory, setBufferHistory] = useState<any[]>([]);
+  const [hasBufferAccess, setHasBufferAccess] = useState(false);
+  const [bufferAccessLoading, setBufferAccessLoading] = useState(true);
 
   useEffect(() => {
     if (user && isAuthenticated) {
       console.log('UserDashboard - Current User Data:', user);
+      console.log('UserDashboard - User Role:', user.role);
+      
+      // Only customers should access this dashboard
+      if (user.role !== 'CUSTOMER') {
+        console.warn('⚠️ Non-customer user attempted to access UserDashboard:', user.role);
+        setLoading(false);
+        return;
+      }
+      
       fetchUserDashboardData();
     }
   }, [user, isAuthenticated, subscription?.id]);
 
   const fetchUserDashboardData = async () => {
+    // Double-check user role to prevent data leaks
+    if (user?.role !== 'CUSTOMER') {
+      console.warn('⚠️ Unauthorized access attempt to fetchUserDashboardData - User role:', user?.role);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      console.log('🔍 Starting dashboard data fetch...');
+      console.log('🔍 Starting dashboard data fetch for CUSTOMER user...');
       
-      // Fetch all data in parallel
-      const [bookingsResponse, subscriptionResponse, monthlyStatusResponse, paymentsResponse, plansResponse, maidAssignmentResponse] = await Promise.allSettled([
+      // For CUSTOMER users, fetch all relevant data
+      // Verify user is CUSTOMER before fetching role-specific endpoints
+      if (user?.role !== 'CUSTOMER') {
+        console.error('🚨 CRITICAL: Non-customer user attempting to fetch customer data. Role:', user?.role);
+        setLoading(false);
+        return;
+      }
+
+      // Only fetch maidAssignment for CUSTOMER users - other endpoints may return 403 for non-customers
+      const promises = [
         BookingService.getUserBookings(),
         SubscriptionService.getUserSubscription(),
         SubscriptionService.getMonthlySubscriptionStatus(),
         PaymentService.getUserPayments(),
         SubscriptionService.getSubscriptionPlans(),
-        MaidService.getCurrentMaidAssignment()
-      ]);
+        MaidService.getCurrentMaidAssignment() // CUSTOMER-ONLY endpoint
+      ];
+      
+      const [bookingsResponse, subscriptionResponse, monthlyStatusResponse, paymentsResponse, plansResponse, maidAssignmentResponse] = await Promise.allSettled(promises);
 
       // Handle bookings
       console.log('📚 Bookings Response:', bookingsResponse);
@@ -136,14 +167,29 @@ export default function UserDashboard() {
       }
 
 
-      // Fetch buffer data if subscription exists
+      // Check buffer access after subscription is loaded
+      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
+        const finalSubscription = (subscriptionResponse.value as any).subscription || subscriptionResponse.value.data?.subscription || null;
+        if (finalSubscription && finalSubscription.plan) {
+          setHasBufferAccess(finalSubscription.plan.hasBufferSystem || false);
+          setBufferAccessLoading(false);
+        } else {
+          setHasBufferAccess(false);
+          setBufferAccessLoading(false);
+        }
+      } else {
+        setHasBufferAccess(false);
+        setBufferAccessLoading(false);
+      }
+
+      // Fetch buffer data if subscription exists and has buffer access
       let currentSubscription: Subscription | null = subscription;
       if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
         const finalSubscription = (subscriptionResponse.value as any).subscription || subscriptionResponse.value.data?.subscription || null;
         currentSubscription = finalSubscription as Subscription | null;
       }
 
-      if (currentSubscription) {
+      if (currentSubscription && currentSubscription.plan?.hasBufferSystem) {
         try {
           const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
             BufferService.getRemainingBufferDays(currentSubscription.id),
@@ -250,6 +296,36 @@ export default function UserDashboard() {
       <DashboardLayout>
         <div className="text-center p-8">
           <p className="text-muted-foreground">Please log in to view your dashboard.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Restrict access to CUSTOMER users only
+  if (user.role !== 'CUSTOMER') {
+    return (
+      <DashboardLayout>
+        <div className="text-center p-8">
+          <AlertTriangle className="mx-auto mb-4 text-yellow-500" size={48} />
+          <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground mb-4">
+            This dashboard is only available for customers. Please navigate to your appropriate dashboard.
+          </p>
+          <div className="space-x-4">
+            {user.role === 'MAID' && (
+              <Link to="/maid-dashboard">
+                <Button>Go to Maid Dashboard</Button>
+              </Link>
+            )}
+            {user.role === 'ADMIN' && (
+              <Link to="/admin-dashboard">
+                <Button>Go to Admin Dashboard</Button>
+              </Link>
+            )}
+            <Link to="/">
+              <Button variant="outline">Back to Home</Button>
+            </Link>
+          </div>
         </div>
       </DashboardLayout>
     );

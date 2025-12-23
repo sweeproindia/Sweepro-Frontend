@@ -20,7 +20,7 @@ class WebSocketService {
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private reconnectTimeout: NodeJS.Timeout | null = null;
 
-  constructor(url: string = 'wss://sweep-pro-backend-testing.onrender.com') {
+  constructor(url: string = (import.meta.env.DEV ? 'ws://localhost:3000' : 'wss://sweep-pro-backend-testing.onrender.com')) {
     this.url = url;
   }
 

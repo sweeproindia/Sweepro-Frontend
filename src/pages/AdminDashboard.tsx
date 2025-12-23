@@ -334,12 +334,24 @@ export default function AdminDashboard() {
   }, [location.hash]);
 
   useEffect(() => {
-    fetchAdminData();
-  }, []);
+    // Only fetch admin data if user is loaded and is an ADMIN
+    if (user && user.role === 'ADMIN') {
+      console.log('✅ Admin user verified, fetching admin data...');
+      fetchAdminData();
+    }
+  }, [user]);
 
   const fetchAdminData = async () => {
+    // Additional safety check
+    if (!user || user.role !== 'ADMIN') {
+      console.error('🚨 CRITICAL: Non-admin user attempting to fetch admin data. Role:', user?.role);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
+      console.log('📊 Fetching admin dashboard data for:', user.email);
       // Fetch all admin data in parallel
       const [usersResponse, bookingsResponse, pendingBookingsResponse, subscriptionsResponse, paymentsResponse, plansResponse, statsResponse, availableMaidsResponse] = await Promise.allSettled([
         apiRequest('/users', { method: HttpMethod.GET, requiresAuth: true }),
@@ -656,6 +668,47 @@ export default function AdminDashboard() {
               </div>
             </div>
           ))}
+        </div>
+      </AdminDashboardLayout>
+    );
+  }
+
+  // Restrict access to ADMIN users only
+  if (!user) {
+    // Show loading while user context initializes
+    return (
+      <AdminDashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </AdminDashboardLayout>
+    );
+  }
+
+  if (user.role !== 'ADMIN') {
+    return (
+      <AdminDashboardLayout>
+        <div className="text-center p-8">
+          <AlertCircle className="mx-auto mb-4 text-yellow-500" size={48} />
+          <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground mb-4">
+            This dashboard is only available for administrators. Please navigate to your appropriate dashboard.
+          </p>
+          <div className="space-x-4">
+            {user.role === 'CUSTOMER' && (
+              <Link to="/dashboard">
+                <Button>Go to Customer Dashboard</Button>
+              </Link>
+            )}
+            {user.role === 'MAID' && (
+              <Link to="/maid-dashboard">
+                <Button>Go to Maid Dashboard</Button>
+              </Link>
+            )}
+            <Link to="/">
+              <Button variant="outline">Back to Home</Button>
+            </Link>
+          </div>
         </div>
       </AdminDashboardLayout>
     );

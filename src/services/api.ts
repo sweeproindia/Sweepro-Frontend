@@ -1,5 +1,5 @@
-// API Configuration - Use proxy in development, direct URL in production
-export const API_BASE_URL = 'https://sweep-pro-backend-testing.onrender.com/api';
+// API Configuration - Use local backend in development, deployed URL in production
+export const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://sweep-pro-backend-testing.onrender.com/api';
 
 // API endpoints
 export const API_ENDPOINTS = {
