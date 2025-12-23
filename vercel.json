@@ -1,17 +1,32 @@
 {
-  "version": 2,
-  "installCommand": "npm --prefix sweep-pro-frontend install",
-  "buildCommand": "npm --prefix sweep-pro-frontend run build",
-  "devCommand": "npm --prefix sweep-pro-frontend run dev",
-  "outputDirectory": "sweep-pro-frontend/dist",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "outputDirectory": "dist",
   "trailingSlash": false,
-  "routes": [
+  "rewrites": [
     {
-      "handle": "filesystem"
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ]
 }
