@@ -912,8 +912,8 @@ export default function AdminDashboard() {
                 {/* Automatic Bookings Section */}
                 {activeSection === 'pending-bookings' && (
                   <AdminAutomaticBookingsSection
-                    availableMaids={maids.map(m => ({
-                      id: m.id,
+                    availableMaids={availableMaids.map(m => ({
+                      id: m.userId,
                       name: m.user.name,
                       email: m.user.email,
                       phone: m.user.phone,
@@ -928,8 +928,34 @@ export default function AdminDashboard() {
                 {/* Bookings Section */}
                 {activeSection === 'bookings' && (
                   <EnhancedAdminBookingsSection
-                    bookings={bookings}
-                    availableMaids={availableMaids}
+                    bookings={bookings.map((b: any) => ({
+                      ...b,
+                      serviceAddress: b.serviceAddress || b.customer?.address || '',
+                      totalAmount: b.totalAmount ?? 0,
+                      finalAmount: b.finalAmount ?? b.totalAmount ?? 0,
+                      service: b.service || {
+                        id: b.serviceId,
+                        name: b.service?.name || 'Service',
+                        description: b.service?.description || '',
+                        basePrice: b.service?.basePrice || 0,
+                      },
+                      customer: b.customer || {
+                        id: b.customerId,
+                        name: b.customer?.name || 'Customer',
+                        email: b.customer?.email || '',
+                        phone: b.customer?.phone || '',
+                      },
+                    })) as any}
+                    availableMaids={availableMaids.map((m: any) => ({
+                      id: m.userId || m.id,
+                      name: m.user?.name || m.name,
+                      email: m.user?.email || m.email,
+                      phone: m.user?.phone || m.phone,
+                      rating: m.rating,
+                      status: m.status,
+                      completedBookings: m.completedBookings,
+                      skills: m.skills,
+                    })) as any}
                     onAssignMaid={assignMaidToBooking}
                     onRefreshBookings={fetchAdminData}
                   />
@@ -949,8 +975,8 @@ export default function AdminDashboard() {
                       totalSpent: 0, // This would need to be calculated from payments
                       lastActive: u.createdAt
                     }))}
-                    availableMaids={maids.map(m => ({
-                      id: m.id,
+                    availableMaids={availableMaids.map(m => ({
+                      id: m.userId,
                       name: m.user.name,
                       email: m.user.email,
                       phone: m.user.phone,
@@ -1001,21 +1027,7 @@ export default function AdminDashboard() {
 
                 {/* Maid Verification Section */}
                 {activeSection === 'maid-verification' && (
-                  <AdminMaidVerificationSection
-                    verifications={maidVerifications}
-                    onApproveVerification={(verificationId, notes, services) => {
-                      toast({
-                        title: 'Success',
-                        description: 'Maid verification approved successfully'
-                      });
-                    }}
-                    onRejectVerification={(verificationId, reason, notes) => {
-                      toast({
-                        title: 'Verification Rejected',
-                        description: 'Maid verification has been rejected'
-                      });
-                    }}
-                  />
+                  <AdminMaidVerificationSection />
                 )}
 
                 {/* Buffer Management Section */}

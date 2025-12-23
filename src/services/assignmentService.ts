@@ -171,7 +171,7 @@ class AssignmentService {
   // Admin: Get all assignments
   async getAllAssignments(): Promise<ApiResponse<AssignmentRequest[]>> {
     try {
-      return await apiRequest<AssignmentRequest[]>('/admin/assignments', {
+      return await apiRequest<AssignmentRequest[]>('/assignments/admin/assignments', {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -184,7 +184,7 @@ class AssignmentService {
   // Admin: Create assignment for a booking
   async createAssignment(data: CreateAssignmentData): Promise<ApiResponse<AssignmentRequest>> {
     try {
-      return await apiRequest<AssignmentRequest>('/admin/assignments/create', {
+      return await apiRequest<AssignmentRequest>('/assignments/admin/assignments/create', {
         method: HttpMethod.POST,
         body: data,
         requiresAuth: true
@@ -198,7 +198,7 @@ class AssignmentService {
   // Admin: Get assignment statistics
   async getAssignmentStats(): Promise<ApiResponse<AssignmentStats>> {
     try {
-      return await apiRequest<AssignmentStats>('/admin/assignments/stats', {
+      return await apiRequest<AssignmentStats>('/assignments/admin/assignments/stats', {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -224,8 +224,8 @@ class AssignmentService {
   // Admin: Cancel assignment
   async cancelAssignment(assignmentId: string): Promise<ApiResponse<AssignmentRequest>> {
     try {
-      return await apiRequest<AssignmentRequest>(`/admin/assignments/${assignmentId}/cancel`, {
-        method: HttpMethod.POST,
+      return await apiRequest<AssignmentRequest>(`/assignments/admin/assignments/${assignmentId}`, {
+        method: HttpMethod.DELETE,
         requiresAuth: true
       });
     } catch (error) {

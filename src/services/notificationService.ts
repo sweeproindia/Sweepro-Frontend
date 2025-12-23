@@ -4,8 +4,7 @@
  */
 
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://sweep-pro-backend-testing.onrender.com/api';
+import { API_BASE_URL } from './api';
 
 export interface Notification {
   id: string;

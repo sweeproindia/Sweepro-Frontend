@@ -1,5 +1,8 @@
-// API Configuration - Use local backend in development, deployed URL in production
-export const API_BASE_URL = import.meta.env.DEV ? '/api' : 'https://sweep-pro-backend-testing.onrender.com/api';
+// API Configuration - Use local backend in development, deployed URL in production.
+// You can override production via Vite env: VITE_API_BASE_URL (e.g. https://your-backend.onrender.com/api)
+export const API_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_BASE_URL || 'https://sweep-pro-backend-testing.onrender.com/api');
 
 // API endpoints
 export const API_ENDPOINTS = {
@@ -86,14 +89,14 @@ export const API_ENDPOINTS = {
   // Verification
   VERIFICATION: {
     // Admin endpoints
-    ALL: '/admin/verifications',
-    BY_ID: '/admin/verifications/:id',
-    APPROVE: '/admin/verifications/:id/approve',
-    REJECT: '/admin/verifications/:id/reject',
-    STATS: '/admin/verifications/stats',
+    ALL: '/documents/admin-verification-data',
+    BY_ID: '/documents/review/:id',
+    APPROVE: '/documents/verification/:id/approve',
+    REJECT: '/documents/verification/:id/reject',
+    STATS: '/documents/verification-stats',
     // Maid endpoints
-    SUBMIT: '/maids/verification/submit',
-    MY_STATUS: '/maids/verification/status',
+    SUBMIT: '/documents/upload-verification',
+    MY_STATUS: '/documents/maid-verification-status',
   },
   // Assignments
   ASSIGNMENTS: {
@@ -107,7 +110,7 @@ export const API_ENDPOINTS = {
     ALL: '/assignments/admin/assignments',
     CREATE: '/assignments/admin/assignments/create',
     STATS: '/assignments/admin/assignments/stats',
-    CANCEL: '/assignments/admin/assignments/:id/cancel',
+    CANCEL: '/assignments/admin/assignments/:id',
     // New admin booking management endpoints
     PENDING_ASSIGNMENTS: '/assignments/admin/pending-assignments',
     ASSIGNED_BOOKINGS: '/assignments/admin/assigned-bookings',
@@ -145,15 +148,10 @@ export const API_ENDPOINTS = {
   // Automatic Bookings
   AUTOMATIC_BOOKINGS: {
     // Admin endpoints
-    GET_ALL: '/admin/automatic-bookings',
-    PENDING_ASSIGNMENT: '/admin/automatic-bookings/pending-assignment',
-    REASSIGNMENT: '/admin/automatic-bookings/reassignment',
-    SEND_TO_MAID: '/admin/automatic-bookings/:bookingId/send-to-maid',
-    REASSIGN: '/admin/automatic-bookings/:bookingId/reassign',
-    SCHEDULE_OVERVIEW: '/admin/automatic-bookings/schedule-overview',
-    PAUSE: '/admin/automatic-bookings/:customerId/pause',
-    RESUME: '/admin/automatic-bookings/:customerId/resume',
-    SETTINGS: '/admin/automatic-bookings/settings/:customerId',
+    GET_ALL: '/automatic-bookings',
+    CREATE: '/automatic-bookings/create',
+    CREATE_DAILY: '/automatic-bookings/create-daily',
+    ELIGIBLE_CUSTOMERS: '/automatic-bookings/eligible-customers',
     // Customer endpoints
     MY_UPCOMING: '/automatic-bookings/my-upcoming',
     MY_ASSIGNMENTS: '/automatic-bookings/my-assignments',
@@ -274,7 +272,7 @@ export const apiRequest = async <T = any>(
   }
 
   // Only log in development mode
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.log(`🚀 API Request: ${method} ${url}`);
     console.log('Request URL:', url);
     console.log('Request Headers:', requestHeaders);

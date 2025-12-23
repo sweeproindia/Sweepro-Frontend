@@ -20,8 +20,29 @@ class WebSocketService {
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private reconnectTimeout: NodeJS.Timeout | null = null;
 
-  constructor(url: string = (import.meta.env.DEV ? 'ws://localhost:3000' : 'wss://sweep-pro-backend-testing.onrender.com')) {
-    this.url = url;
+  constructor(url?: string) {
+    // Allow explicit override (tests / special cases)
+    if (url) {
+      this.url = url;
+      return;
+    }
+
+    // Optional override via Vite env
+    const envUrl = (import.meta as any)?.env?.VITE_WS_BASE_URL as string | undefined;
+    if (envUrl) {
+      this.url = envUrl;
+      return;
+    }
+
+    // Default:
+    // - Dev: backend ws on localhost:3000
+    // - Prod: same host as frontend, using ws/wss based on page protocol
+    if (import.meta.env.DEV) {
+      this.url = 'ws://localhost:3000';
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      this.url = `${protocol}//${window.location.host}`;
+    }
   }
 
   /**

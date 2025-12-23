@@ -43,7 +43,7 @@ class VerificationService {
   // Get all verification requests
   async getAllVerifications(): Promise<ApiResponse<MaidVerification[]>> {
     try {
-      return await apiRequest<MaidVerification[]>('/admin/verifications', {
+      return await apiRequest<MaidVerification[]>('/documents/admin-verification-data', {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -56,7 +56,7 @@ class VerificationService {
   // Get verification by ID
   async getVerificationById(id: string): Promise<ApiResponse<MaidVerification>> {
     try {
-      return await apiRequest<MaidVerification>(`/admin/verifications/${id}`, {
+      return await apiRequest<MaidVerification>(`/documents/review/${id}`, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -72,7 +72,7 @@ class VerificationService {
     data: VerificationApprovalData
   ): Promise<ApiResponse<MaidVerification>> {
     try {
-      return await apiRequest<MaidVerification>(`/admin/verifications/${id}/approve`, {
+      return await apiRequest<MaidVerification>(`/documents/verification/${id}/approve`, {
         method: HttpMethod.POST,
         body: data,
         requiresAuth: true
@@ -89,7 +89,7 @@ class VerificationService {
     data: VerificationRejectionData
   ): Promise<ApiResponse<MaidVerification>> {
     try {
-      return await apiRequest<MaidVerification>(`/admin/verifications/${id}/reject`, {
+      return await apiRequest<MaidVerification>(`/documents/verification/${id}/reject`, {
         method: HttpMethod.POST,
         body: data,
         requiresAuth: true
@@ -108,7 +108,7 @@ class VerificationService {
     rejected: number;
   }>> {
     try {
-      return await apiRequest('/admin/verifications/stats', {
+      return await apiRequest('/documents/verification-stats', {
         method: HttpMethod.GET,
         requiresAuth: true
       });
@@ -125,7 +125,7 @@ class VerificationService {
   }): Promise<ApiResponse<MaidVerification>> {
     try {
       // For file uploads, we need to handle FormData differently
-      return await apiRequest<MaidVerification>('/maids/verification/submit', {
+      return await apiRequest<MaidVerification>('/documents/upload-verification', {
         method: HttpMethod.POST,
         body: data,
         requiresAuth: true,
@@ -151,7 +151,7 @@ class VerificationService {
     message?: string;
   }>> {
     try {
-      return await apiRequest('/documents/verification-status', {
+      return await apiRequest('/documents/maid-verification-status', {
         method: HttpMethod.GET,
         requiresAuth: true
       });

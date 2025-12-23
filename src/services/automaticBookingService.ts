@@ -95,7 +95,7 @@ export class AutomaticBookingService {
     }
   ): Promise<ApiResponse<{ bookings: AutomaticBooking[], pagination: any }>> {
     try {
-      let url = `/admin/automatic-bookings?page=${page}&limit=${limit}`;
+      let url = `/automatic-bookings?page=${page}&limit=${limit}`;
       
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
@@ -109,6 +109,61 @@ export class AutomaticBookingService {
       });
     } catch (error) {
       console.error('Get automatic bookings error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create automatic booking for a specific customer (admin)
+   */
+  static async createAutomaticBooking(data: {
+    customerId: string;
+    serviceId: string;
+    scheduledDate: string;
+    notes?: string;
+  }): Promise<ApiResponse<any>> {
+    try {
+      return await apiRequest<any>(API_ENDPOINTS.AUTOMATIC_BOOKINGS.CREATE, {
+        method: HttpMethod.POST,
+        body: data,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Create automatic booking error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create daily automatic bookings (admin)
+   */
+  static async createDailyAutomaticBookings(data: {
+    date?: string;
+    serviceId?: string;
+  }): Promise<ApiResponse<any>> {
+    try {
+      return await apiRequest<any>(API_ENDPOINTS.AUTOMATIC_BOOKINGS.CREATE_DAILY, {
+        method: HttpMethod.POST,
+        body: data,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Create daily automatic bookings error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get eligible customers for automatic bookings (admin)
+   */
+  static async getEligibleCustomers(): Promise<ApiResponse<any>> {
+    try {
+      return await apiRequest<any>(API_ENDPOINTS.AUTOMATIC_BOOKINGS.ELIGIBLE_CUSTOMERS, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get eligible customers error:', error);
       throw error;
     }
   }
@@ -143,133 +198,8 @@ export class AutomaticBookingService {
     }
   }
 
-  /**
-   * Send booking assignment to maid (admin)
-   */
-  static async sendBookingToMaid(
-    bookingId: string,
-    maidId?: string
-  ): Promise<ApiResponse<AutomaticBooking>> {
-    try {
-      return await apiRequest<AutomaticBooking>(`/admin/automatic-bookings/${bookingId}/send-to-maid`, {
-        method: HttpMethod.POST,
-        body: maidId ? { maidId } : {},
-        requiresAuth: true
-      });
-    } catch (error) {
-      console.error('Send booking to maid error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Reassign booking to different maid (admin)
-   */
-  static async reassignBooking(
-    bookingId: string,
-    newMaidId: string,
-    reason?: string
-  ): Promise<ApiResponse<AutomaticBooking>> {
-    try {
-      return await apiRequest<AutomaticBooking>(`/admin/automatic-bookings/${bookingId}/reassign`, {
-        method: HttpMethod.POST,
-        body: { maidId: newMaidId, reason },
-        requiresAuth: true
-      });
-    } catch (error) {
-      console.error('Reassign booking error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get customer's automatic booking settings
-   */
-  static async getCustomerBookingSettings(customerId: string): Promise<ApiResponse<AutomaticBookingSettings>> {
-    try {
-      return await apiRequest<AutomaticBookingSettings>(`/automatic-bookings/settings/${customerId}`, {
-        method: HttpMethod.GET,
-        requiresAuth: true
-      });
-    } catch (error) {
-      console.error('Get customer booking settings error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update customer's automatic booking settings (admin)
-   */
-  static async updateCustomerBookingSettings(
-    customerId: string,
-    settings: Partial<AutomaticBookingSettings>
-  ): Promise<ApiResponse<AutomaticBookingSettings>> {
-    try {
-      return await apiRequest<AutomaticBookingSettings>(`/admin/automatic-bookings/settings/${customerId}`, {
-        method: HttpMethod.PATCH,
-        body: settings,
-        requiresAuth: true
-      });
-    } catch (error) {
-      console.error('Update customer booking settings error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get upcoming booking schedule overview (admin)
-   */
-  static async getBookingScheduleOverview(
-    days = 7
-  ): Promise<ApiResponse<{ schedules: BookingScheduleInfo[], summary: any }>> {
-    try {
-      return await apiRequest<{ schedules: BookingScheduleInfo[], summary: any }>(
-        `/admin/automatic-bookings/schedule-overview?days=${days}`,
-        {
-          method: HttpMethod.GET,
-          requiresAuth: true
-        }
-      );
-    } catch (error) {
-      console.error('Get booking schedule overview error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Pause automatic bookings for customer (buffer period)
-   */
-  static async pauseAutomaticBookings(
-    customerId: string,
-    pauseUntil: string,
-    reason: string
-  ): Promise<ApiResponse<{ success: boolean }>> {
-    try {
-      return await apiRequest<{ success: boolean }>(`/admin/automatic-bookings/${customerId}/pause`, {
-        method: HttpMethod.POST,
-        body: { pauseUntil, reason },
-        requiresAuth: true
-      });
-    } catch (error) {
-      console.error('Pause automatic bookings error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Resume automatic bookings for customer
-   */
-  static async resumeAutomaticBookings(customerId: string): Promise<ApiResponse<{ success: boolean }>> {
-    try {
-      return await apiRequest<{ success: boolean }>(`/admin/automatic-bookings/${customerId}/resume`, {
-        method: HttpMethod.POST,
-        requiresAuth: true
-      });
-    } catch (error) {
-      console.error('Resume automatic bookings error:', error);
-      throw error;
-    }
-  }
+  // NOTE: Admin send-to-maid / reassign / settings / pause / resume endpoints are not implemented in the backend.
+  // Admin assignment/reassignment is handled via /assignments/admin/* endpoints.
 
   /**
    * Get maid's automatic booking assignments
