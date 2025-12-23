@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { apiRequest, HttpMethod } from '@/services/api';
 
 interface MaidDashboardSidebarProps {
   open?: boolean;
@@ -62,13 +61,22 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
   useEffect(() => {
     const fetchVerificationStatus = async () => {
       try {
-        const result = await apiRequest('/documents/maid-verification-status', {
-          method: HttpMethod.GET,
-          requiresAuth: true
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        const response = await fetch('/api/documents/maid-verification-status', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
 
-        if ((result as any).success && (result as any).data) {
-          setVerificationStatus((result as any).data.overallStatus || 'NOT_SUBMITTED');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setVerificationStatus(result.data.overallStatus || 'NOT_SUBMITTED');
+          }
         }
       } catch (error) {
         console.error('Error fetching verification status:', error);
@@ -154,7 +162,7 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
                   </div>
                   <div className="mb-3">
                     <Badge
-                      variant={user.status === 'ACTIVE' ? 'default' : user.status === 'PENDING' ? 'secondary' : 'outline'}
+                      variant={user.status === 'active' ? 'default' : user.status === 'pending' ? 'secondary' : 'outline'}
                       className="text-xs"
                     >
                       {user.status?.charAt(0).toUpperCase() + user.status?.slice(1)}

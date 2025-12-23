@@ -1,7 +1,7 @@
 // API Configuration - Use local backend in development, deployed URL in production
 export const API_BASE_URL =
   (import.meta as any).env?.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? 'http://localhost:3000/api' : 'https://sweep-pro-backend-testing.onrender.com/api');
+  (import.meta.env.DEV ? '/api' : 'https://sweep-pro-backend-testing.onrender.com/api');
 
 export const BACKEND_ORIGIN =
   (import.meta as any).env?.VITE_BACKEND_ORIGIN ||

@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
-import { BACKEND_ORIGIN, apiRequest, HttpMethod } from '@/services/api';
+import { BACKEND_ORIGIN } from '@/services/api';
 import { 
   Shield, 
   FileText, 
@@ -72,51 +72,65 @@ export default function MaidVerification() {
   useEffect(() => {
     const loadVerificationStatus = async () => {
       try {
-        const result = await apiRequest('/documents/maid-verification-status', {
-          method: HttpMethod.GET,
-          requiresAuth: true
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Use the new API endpoint for maid verification status
+        const response = await fetch('/api/documents/maid-verification-status', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
 
-        if (result.success && result.data) {
-          const data: any = result.data;
-
-          // If already approved, redirect to dashboard
-          if (data.overallStatus === 'APPROVED') {
-            navigate('/maid-dashboard');
-            return;
-          }
-
-          // Transform backend data to frontend format
-          const transformedDocuments: any = {};
-
-          if (data.documents) {
-            // Map backend document types to frontend
-            const docMapping = {
-              'AADHAR_CARD': 'aadharCard',
-              'PAN_CARD': 'panCard',
-              'ADDRESS_PROOF': 'electricityBill'
-            };
-
-            data.documents.forEach((doc: any) => {
-              const frontendKey = docMapping[doc.type as keyof typeof docMapping];
-              if (frontendKey) {
-                transformedDocuments[frontendKey] = {
-                  id: doc.id,
-                  status: doc.verificationStatus,
-                  rejectionReason: doc.rejectionReason,
-                  filename: doc.fileName,
-                  uploadedAt: doc.createdAt,
-                  canReupload: doc.verificationStatus === 'REJECTED'
-                };
-              }
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const data = result.data;
+            
+            // If already approved, redirect to dashboard
+            if (data.overallStatus === 'APPROVED') {
+              navigate('/maid-dashboard');
+              return;
+            }
+            
+            // Transform backend data to frontend format
+            const transformedDocuments: any = {};
+            
+            if (data.documents) {
+              // Map backend document types to frontend
+              const docMapping = {
+                'AADHAR_CARD': 'aadharCard',
+                'PAN_CARD': 'panCard', 
+                'ADDRESS_PROOF': 'electricityBill'
+              };
+              
+              data.documents.forEach((doc: any) => {
+                const frontendKey = docMapping[doc.type as keyof typeof docMapping];
+                if (frontendKey) {
+                  transformedDocuments[frontendKey] = {
+                    id: doc.id,
+                    status: doc.verificationStatus,
+                    rejectionReason: doc.rejectionReason,
+                    filename: doc.fileName,
+                    uploadedAt: doc.createdAt,
+                    canReupload: doc.verificationStatus === 'REJECTED'
+                  };
+                }
+              });
+            }
+            
+            setVerificationStatus({
+              isSubmitted: data.hasDocuments,
+              status: data.overallStatus,
+              submittedAt: data.submittedAt,
+              documents: transformedDocuments
             });
           }
-
-          setVerificationStatus({
-            isSubmitted: data.hasDocuments,
-            status: data.overallStatus,
-            documents: transformedDocuments
-          });
         }
       } catch (error) {
         console.error('Error loading verification status:', error);
@@ -525,7 +539,7 @@ export default function MaidVerification() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      <strong>🎉 Welcome to Sweepro!</strong><br/>
+                      <strong>🎉 Welcome to Sweep Pro!</strong><br/>
                       Your profile is now verified! You can start receiving service assignments and earning money. Your account is fully active and ready to go!
                     </AlertDescription>
                   </Alert>
