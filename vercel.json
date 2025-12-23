@@ -5,12 +5,8 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "https://sweep-pro-backend-testing.onrender.com/api/$1"
     }
   ],
   "headers": [
