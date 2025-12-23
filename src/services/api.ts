@@ -1,5 +1,5 @@
 // API Configuration - Use proxy in development, direct URL in production
-export const API_BASE_URL = import.meta.env.DEV ? '/api' : 'http://localhost:3000/api';
+export const API_BASE_URL = 'https://sweep-pro-backend-testing.onrender.com/api';
 
 // API endpoints
 export const API_ENDPOINTS = {
