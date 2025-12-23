@@ -37,6 +37,15 @@ export const useBufferAccess = () => {
         return;
       }
 
+      // Subscription plans/buffer access are CUSTOMER-only concerns
+      if (user.role !== 'CUSTOMER') {
+        const state = { hasBufferAccess: false, isLoading: false, error: null };
+        setBufferAccess(state);
+        cachedBufferAccess = state;
+        lastUserId = user.id;
+        return;
+      }
+
       setBufferAccess(prev => ({ ...prev, isLoading: true, error: null }));
 
       try {

@@ -70,10 +70,14 @@ export const Sidebar = ({
 };
 
 export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
+  const { className, children } = props as unknown as {
+    className?: string;
+    children?: React.ReactNode;
+  };
   return (
     <>
       <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as React.ComponentProps<"div">)} />
+      <MobileSidebar className={className}>{children}</MobileSidebar>
     </>
   );
 };
@@ -161,7 +165,7 @@ export const SidebarLink = ({
 }: {
   link: Links;
   className?: string;
-}) => {
+} & React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
   const { open, animate } = useSidebar();
   return (
     <a

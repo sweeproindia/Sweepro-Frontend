@@ -7,6 +7,7 @@ import { useUser } from '@/contexts/UserContext';
 import { BookingService, Booking } from '@/services/bookingService';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { verificationService } from '@/services/verificationService';
+import { apiRequest, HttpMethod } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle, MapPin, Shield, Upload, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -74,85 +75,65 @@ export default function MaidDashboardEnhanced() {
 
   const fetchVerificationStatus = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) return;
-
-      const response = await fetch('/api/documents/maid-verification-status', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const result = await apiRequest('/documents/maid-verification-status', {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          const data = result.data;
-          
-          // Transform backend data to frontend format
-          const transformedDocuments: any = {};
-          
-          if (data.documents) {
-            // Map backend document types to frontend
-            const docMapping = {
-              'AADHAR_CARD': 'aadharCard',
-              'PAN_CARD': 'panCard', 
-              'ADDRESS_PROOF': 'electricityBill'
-            };
-            
-            data.documents.forEach((doc: any) => {
-              const frontendKey = docMapping[doc.type as keyof typeof docMapping];
-              if (frontendKey) {
-                transformedDocuments[frontendKey] = {
-                  id: doc.id,
-                  status: doc.verificationStatus,
-                  rejectionReason: doc.rejectionReason,
-                  filename: doc.fileName,
-                  uploadedAt: doc.createdAt,
-                  canReupload: doc.verificationStatus === 'REJECTED'
-                };
-              }
-            });
-          }
-          
-          setVerificationStatus(data.overallStatus || 'NOT_SUBMITTED');
-          setIsVerified(data.overallStatus === 'APPROVED');
-          
-          // Handle 24-hour alert logic for APPROVED status
-          if (data.overallStatus === 'APPROVED') {
-            // Check if verification was approved and store the time
-            const storedApprovedTime = localStorage.getItem(`maid_verification_approved_${user?.id}`);
-            if (!storedApprovedTime) {
-              // First time approval - store the time
-              const currentTime = Date.now();
-              localStorage.setItem(`maid_verification_approved_${user?.id}`, currentTime.toString());
-              setVerificationApprovedTime(currentTime);
-              setShowVerificationAlert(true);
-            } else {
-              // Check if 24 hours have passed
-              const approvedTime = parseInt(storedApprovedTime);
-              const currentTime = Date.now();
-              const hoursPassed = (currentTime - approvedTime) / (1000 * 60 * 60);
-              
-              if (hoursPassed < 24) {
-                setShowVerificationAlert(true);
-              } else {
-                // Hide alert if 24 hours have passed
-                setShowVerificationAlert(false);
-              }
-              setVerificationApprovedTime(approvedTime);
+      if (result.success && result.data) {
+        const data: any = result.data;
+
+        // Transform backend data to frontend format
+        const transformedDocuments: any = {};
+
+        if (data.documents) {
+          // Map backend document types to frontend
+          const docMapping = {
+            'AADHAR_CARD': 'aadharCard',
+            'PAN_CARD': 'panCard',
+            'ADDRESS_PROOF': 'electricityBill'
+          };
+
+          data.documents.forEach((doc: any) => {
+            const frontendKey = docMapping[doc.type as keyof typeof docMapping];
+            if (frontendKey) {
+              transformedDocuments[frontendKey] = {
+                id: doc.id,
+                status: doc.verificationStatus,
+                rejectionReason: doc.rejectionReason,
+                filename: doc.fileName,
+                uploadedAt: doc.createdAt,
+                canReupload: doc.verificationStatus === 'REJECTED'
+              };
             }
-          } else {
-            // For other statuses, always show the alert
-            setShowVerificationAlert(true);
-          }
-          
-          setVerificationData({
-            ...data,
-            documents: transformedDocuments
           });
         }
+
+        setVerificationStatus(data.overallStatus || 'NOT_SUBMITTED');
+        setIsVerified(data.overallStatus === 'APPROVED');
+
+        // Show APPROVED banner only for 24 hours after the actual approval time
+        if (data.overallStatus === 'APPROVED') {
+          const approvedAt = data.verificationDate || data.reviewedAt || null;
+          if (approvedAt) {
+            const approvedTime = new Date(approvedAt).getTime();
+            const currentTime = Date.now();
+            const hoursPassed = (currentTime - approvedTime) / (1000 * 60 * 60);
+            setVerificationApprovedTime(approvedTime);
+            setShowVerificationAlert(hoursPassed < 24);
+          } else {
+            setVerificationApprovedTime(null);
+            setShowVerificationAlert(false);
+          }
+        } else {
+          setShowVerificationAlert(true);
+          setVerificationApprovedTime(null);
+        }
+
+        setVerificationData({
+          ...data,
+          documents: transformedDocuments
+        });
       }
     } catch (error) {
       console.error('Error fetching verification status:', error);
@@ -311,7 +292,7 @@ export default function MaidDashboardEnhanced() {
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div className="flex items-center justify-between w-full">
               <div>
-                <h4 className="font-semibold text-lg mb-2 text-green-800">🎉 Welcome to Sweep Pro!</h4>
+                <h4 className="font-semibold text-lg mb-2 text-green-800">🎉 Welcome to Sweepro!</h4>
                 <AlertDescription className="text-green-700">
                   Congratulations! Your profile has been verified and approved. You can now receive cleaning assignments and start earning money. Your account is fully active!
                 </AlertDescription>

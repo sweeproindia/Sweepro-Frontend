@@ -49,6 +49,7 @@ export const MaidProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<MaidProfileData | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [verificationStatus, setVerificationStatus] = useState<'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED'>('NOT_SUBMITTED');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageType, setImageType] = useState<'profile' | 'cover'>('profile');
@@ -56,7 +57,24 @@ export const MaidProfilePage: React.FC = () => {
   useEffect(() => {
     fetchProfileData();
     fetchMaidReviews();
+    fetchVerificationStatus();
   }, []);
+
+  const fetchVerificationStatus = async () => {
+    try {
+      const response = await apiRequest('/documents/maid-verification-status', {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+
+      const overall = (response as any)?.data?.overallStatus;
+      if (overall === 'NOT_SUBMITTED' || overall === 'PENDING' || overall === 'APPROVED' || overall === 'REJECTED') {
+        setVerificationStatus(overall);
+      }
+    } catch (error) {
+      console.error('Error fetching verification status:', error);
+    }
+  };
 
   const fetchProfileData = async () => {
     try {
@@ -211,11 +229,35 @@ export const MaidProfilePage: React.FC = () => {
                   <Badge variant="outline" className="bg-blue-50">
                     Maid
                   </Badge>
-                  {profileData.isVerified && (
-                    <Badge className="bg-green-500 hover:bg-green-600">
-                      ✓ Verified
-                    </Badge>
-                  )}
+                  {(() => {
+                    const effectiveStatus = profileData.isVerified ? 'APPROVED' : verificationStatus;
+                    if (effectiveStatus === 'APPROVED') {
+                      return (
+                        <Badge className="bg-green-500 hover:bg-green-600">
+                          ✓ Verified
+                        </Badge>
+                      );
+                    }
+                    if (effectiveStatus === 'PENDING') {
+                      return (
+                        <Badge className="bg-yellow-500 hover:bg-yellow-600">
+                          Pending Verification
+                        </Badge>
+                      );
+                    }
+                    if (effectiveStatus === 'REJECTED') {
+                      return (
+                        <Badge className="bg-red-500 hover:bg-red-600">
+                          Verification Rejected
+                        </Badge>
+                      );
+                    }
+                    return (
+                      <Badge variant="secondary">
+                        Not Verified
+                      </Badge>
+                    );
+                  })()}
                 </div>
 
                 {/* Bio */}
@@ -309,21 +351,31 @@ export const MaidProfilePage: React.FC = () => {
                 )}
 
                 {/* Verification Status */}
-                <div className={`flex items-center gap-3 p-3 rounded-lg border ${profileData.isVerified 
-                  ? 'bg-green-50 border-green-200' 
-                  : 'bg-red-50 border-red-200'}`}>
-                  <div className={`h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 ${profileData.isVerified 
-                    ? 'bg-green-500' 
-                    : 'bg-red-500'}`}>
-                    <span className="text-white text-xs">{profileData.isVerified ? '✓' : '✕'}</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-semibold">VERIFICATION STATUS</p>
-                    <p className={`text-sm font-medium ${profileData.isVerified ? 'text-green-700' : 'text-red-700'}`}>
-                      {profileData.isVerified ? 'Verified' : 'Not Verified'}
-                    </p>
-                  </div>
-                </div>
+                {(() => {
+                  const effectiveStatus = profileData.isVerified ? 'APPROVED' : verificationStatus;
+                  const styles =
+                    effectiveStatus === 'APPROVED'
+                      ? { container: 'bg-green-50 border-green-200', dot: 'bg-green-500', text: 'text-green-700', label: 'Verified', symbol: '✓' }
+                      : effectiveStatus === 'PENDING'
+                        ? { container: 'bg-yellow-50 border-yellow-200', dot: 'bg-yellow-500', text: 'text-yellow-700', label: 'Verification Pending', symbol: '…' }
+                        : effectiveStatus === 'REJECTED'
+                          ? { container: 'bg-red-50 border-red-200', dot: 'bg-red-500', text: 'text-red-700', label: 'Verification Rejected', symbol: '✕' }
+                          : { container: 'bg-muted/20 border-muted', dot: 'bg-muted-foreground', text: 'text-muted-foreground', label: 'Not Verified', symbol: '✕' };
+
+                  return (
+                    <div className={`flex items-center gap-3 p-3 rounded-lg border ${styles.container}`}>
+                      <div className={`h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 ${styles.dot}`}>
+                        <span className="text-white text-xs">{styles.symbol}</span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground font-semibold">VERIFICATION STATUS</p>
+                        <p className={`text-sm font-medium ${styles.text}`}>
+                          {styles.label}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>

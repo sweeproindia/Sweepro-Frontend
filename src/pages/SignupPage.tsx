@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
-import logo from '../../public/assets/logo.png';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { useToast } from '@/hooks/use-toast';
 import { AuthService, RegisterData } from '@/services/authService';
 import { Eye, EyeOff, Home, Lock, Mail, Phone, Shield, Sparkles, User } from 'lucide-react';
@@ -224,7 +224,7 @@ export default function SignupPage() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <img
-              src={logo}
+              src="/assets/logo.png"
               alt="Sweepro Logo"
               className="w-40 h-40 object-contain mb-2"
               style={{ maxWidth: '180px', maxHeight: '180px' }}

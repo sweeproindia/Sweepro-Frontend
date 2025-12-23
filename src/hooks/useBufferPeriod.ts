@@ -29,6 +29,19 @@ export const useBufferPeriod = () => {
       return;
     }
 
+    // Buffer period & subscription are CUSTOMER-only concerns
+    if (user.role !== 'CUSTOMER') {
+      setBufferStatus({
+        isInBufferPeriod: false,
+        bufferEndDate: null,
+        bufferStartDate: null,
+        activeBufferPeriod: null,
+        isLoading: false,
+        error: null
+      });
+      return;
+    }
+
     // Temporarily suppress console errors for this specific call
     const originalConsoleError = console.error;
     let subscriptionResponse;
@@ -113,14 +126,14 @@ export const useBufferPeriod = () => {
 
   // Check buffer status on mount and when user changes
   useEffect(() => {
-    if (user) {
+    if (user && user.role === 'CUSTOMER') {
       checkBufferPeriodStatus();
     }
   }, [user]);
 
   // Periodic check every 5 minutes to ensure buffer status is up to date
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.role !== 'CUSTOMER') return;
     
     const interval = setInterval(() => {
       checkBufferPeriodStatus();
