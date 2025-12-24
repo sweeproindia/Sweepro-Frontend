@@ -10,6 +10,7 @@ import { AuthService, RegisterData } from '@/services/authService';
 import { Eye, EyeOff, Home, Lock, Mail, Phone, Shield, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ApiError } from '@/services/api';
 
 // Predefined addresses from your client (Only for Customers)
 const SERVICE_ADDRESSES = [
@@ -67,6 +68,8 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -85,45 +88,54 @@ export default function SignupPage() {
   const { toast } = useToast();
   const selectedPlan = location.state?.selectedPlan || 'Standard';
 
+  const validatePassword = (value: string): string | null => {
+    if (!value) return 'Password is required.';
+    if (value.length < 8) return 'Password must be at least 8 characters.';
+    if (!/[a-z]/.test(value)) return 'Password must include a lowercase letter.';
+    if (!/[A-Z]/.test(value)) return 'Password must include an uppercase letter.';
+    if (!/\d/.test(value)) return 'Password must include a number.';
+    if (!/[@$!%*?&]/.test(value)) return 'Password must include a special character (@$!%*?&).';
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validation
+
+    setFormError(null);
+
+    const nextErrors: Record<string, string> = {};
+    const name = formData.name.trim();
+    const email = formData.email.trim();
+    const phone = formData.phone.trim();
+    const maidAddress = formData.maidAddress.trim();
+
+    if (!name) nextErrors.name = 'Full name is required.';
+    else if (name.length < 2) nextErrors.name = 'Name must be at least 2 characters.';
+    else if (!/^[a-zA-Z\s]+$/.test(name)) nextErrors.name = 'Name can only contain letters and spaces.';
+
+    if (!email) nextErrors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Enter a valid email address.';
+
+    if (!phone) nextErrors.phone = 'Phone number is required.';
+    else if (!/^[6-9]\d{9}$/.test(phone)) nextErrors.phone = 'Enter a valid 10-digit Indian phone number starting with 6-9.';
+
     if (formData.role === 'CUSTOMER' && !formData.address) {
-      toast({
-        title: 'Address required',
-        description: 'Please select your apartment complex from the list',
-        variant: 'destructive'
-      });
-      return;
+      nextErrors.address = 'Please select your apartment complex.';
     }
 
-    if (formData.role === 'MAID' && !formData.maidAddress.trim()) {
-      toast({
-        title: 'Address required',
-        description: 'Please enter your residential address',
-        variant: 'destructive'
-      });
-      return;
+    if (formData.role === 'MAID' && !maidAddress) {
+      nextErrors.maidAddress = 'Residential address is required.';
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: 'Password mismatch',
-        description: 'Passwords do not match. Please check and try again.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) nextErrors.password = passwordError;
 
-    // Validate phone number
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      toast({
-        title: 'Invalid phone number',
-        description: 'Please enter a valid 10-digit phone number',
-        variant: 'destructive'
-      });
+    if (!formData.confirmPassword) nextErrors.confirmPassword = 'Please confirm your password.';
+    else if (formData.password !== formData.confirmPassword) nextErrors.confirmPassword = 'Passwords do not match.';
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setFormError('Please fix the highlighted fields.');
       return;
     }
 
@@ -135,10 +147,10 @@ export default function SignupPage() {
 
       if (formData.role === 'CUSTOMER') {
         // Find selected address details for customers
-        const selectedAddressObj = SERVICE_ADDRESSES.find(addr => 
+        const selectedAddressObj = SERVICE_ADDRESSES.find(addr =>
           `${addr.name} - ${addr.area} - ${addr.pincode}` === formData.address
         );
-        
+
         finalAddress = `${formData.address}${formData.apartmentNumber ? `, Apt: ${formData.apartmentNumber}` : ''}${formData.floorNumber ? `, Floor: ${formData.floorNumber}` : ''}`;
         serviceArea = selectedAddressObj?.area || '';
         pincode = selectedAddressObj?.pincode || '';
@@ -148,9 +160,9 @@ export default function SignupPage() {
       }
 
       const registerData: RegisterData = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
+        name,
+        email,
+        phone,
         role: formData.role,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
@@ -161,15 +173,15 @@ export default function SignupPage() {
 
       const response = await AuthService.register(registerData);
       if (response.success) {
-        const roleSpecificMessage = formData.role === 'MAID' 
-          ? 'Welcome aboard! You can now start accepting cleaning jobs.' 
+        const roleSpecificMessage = formData.role === 'MAID'
+          ? 'Welcome aboard! You can now start accepting cleaning jobs.'
           : 'Services available in your area.';
 
         toast({
           title: 'Account created successfully!',
           description: `Welcome to Sweepro, ${response.data?.user.name}! ${roleSpecificMessage}`,
         });
-        
+
         // Navigate based on role
         switch (response.data?.user.role) {
           case 'ADMIN':
@@ -183,21 +195,51 @@ export default function SignupPage() {
         }
       }
     } catch (error: any) {
-      toast({
-        title: 'Registration failed',
-        description: error.res || error.msg || 'Could not create account',
-        variant: 'destructive'
-      });
+      if (error instanceof ApiError) {
+        // Backend might return { field: 'email'|'phone', message: '...' }
+        const fieldFromBackend = (error.response as any)?.field;
+        const messageFromBackend = (error.response as any)?.message || error.message;
+
+        if (fieldFromBackend) {
+          setFieldErrors((prev) => ({ ...prev, [fieldFromBackend]: messageFromBackend }));
+          setFormError(messageFromBackend);
+          return;
+        }
+
+        // express-validator: { errors: [{ msg, path }] }
+        if (error.statusCode === 400 && (error.response as any)?.errors?.length) {
+          const next: Record<string, string> = {};
+          for (const err of (error.response as any).errors as any[]) {
+            const param = err?.path || err?.param;
+            if (!param) continue;
+            next[param] = err.msg || 'Invalid value.';
+          }
+          if (Object.keys(next).length > 0) {
+            setFieldErrors(next);
+            setFormError('Please fix the highlighted fields.');
+            return;
+          }
+        }
+
+        setFormError(messageFromBackend || 'Registration failed. Please try again.');
+        return;
+      }
+
+      setFormError(error?.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
+
+    setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    setFormError(null);
   };
 
   const handleRoleChange = (value: string) => {
@@ -237,13 +279,18 @@ export default function SignupPage() {
                 {isMaid ? 'Join as Cleaning Professional' : 'Create Your Account'}
               </CardTitle>
               <CardDescription className="text-gray-600">
-                {isMaid 
-                  ? 'Register to start accepting cleaning jobs' 
+                {isMaid
+                  ? 'Register to start accepting cleaning jobs'
                   : 'Services currently available in select Hyderabad apartments'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {formError && (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {formError}
+                  </div>
+                )}
                 {/* Personal Information Section */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -261,10 +308,13 @@ export default function SignupPage() {
                           required
                           value={formData.name}
                           onChange={handleInputChange}
-                          className="pl-10 py-6"
+                          className={`pl-10 py-6 ${fieldErrors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                           placeholder={isMaid ? "Your full name" : "John Doe"}
                         />
                       </div>
+                      {fieldErrors.name && (
+                        <p className="text-sm text-red-600">{fieldErrors.name}</p>
+                      )}
                     </div>
 
                     {/* Email */}
@@ -281,10 +331,13 @@ export default function SignupPage() {
                           required
                           value={formData.email}
                           onChange={handleInputChange}
-                          className="pl-10 py-6"
+                          className={`pl-10 py-6 ${fieldErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                           placeholder={isMaid ? "professional@example.com" : "john@example.com"}
                         />
                       </div>
+                      {fieldErrors.email && (
+                        <p className="text-sm text-red-600">{fieldErrors.email}</p>
+                      )}
                     </div>
                   </div>
 
@@ -302,11 +355,14 @@ export default function SignupPage() {
                         required
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="pl-10 py-6"
+                        className={`pl-10 py-6 ${fieldErrors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                         placeholder="9876543210"
                         maxLength={10}
                       />
                     </div>
+                    {fieldErrors.phone && (
+                      <p className="text-sm text-red-600">{fieldErrors.phone}</p>
+                    )}
                     <p className="text-xs text-gray-500">10-digit mobile number</p>
                   </div>
 
@@ -318,7 +374,7 @@ export default function SignupPage() {
                         {isCustomer ? 'Select Your Apartment Complex' : 'Your Residential Address'}
                       </Label>
                     </div>
-                    
+
                     {isCustomer ? (
                       // Customer Address Selection
                       <>
@@ -328,12 +384,17 @@ export default function SignupPage() {
                           </Label>
                           <Select
                             value={formData.address}
-                            onValueChange={(value) => setFormData(prev => ({ ...prev, address: value }))}
+                            onValueChange={(value) => {
+                              setFormData(prev => ({ ...prev, address: value }));
+                              setFieldErrors((prev) => ({ ...prev, address: undefined }));
+                              setFormError(null);
+                            }}
                             required={isCustomer}
                           >
-                            <SelectTrigger className="w-full py-6">
+                            <SelectTrigger className={`w-full py-6 ${fieldErrors.address ? 'border-red-500 focus:ring-red-500' : ''}`}>
                               <SelectValue placeholder="Select your apartment complex" />
                             </SelectTrigger>
+
                             <SelectContent className="max-h-60">
                               {Object.entries(AREA_GROUPS).map(([area, addresses]) => (
                                 <div key={area}>
@@ -341,8 +402,8 @@ export default function SignupPage() {
                                     {area}
                                   </div>
                                   {addresses.map((address) => (
-                                    <SelectItem 
-                                      key={address.id} 
+                                    <SelectItem
+                                      key={address.id}
                                       value={`${address.name} - ${address.area} - ${address.pincode}`}
                                       className="py-3"
                                     >
@@ -361,6 +422,9 @@ export default function SignupPage() {
                           <p className="text-xs text-gray-500">
                             Services are currently available only in these apartments
                           </p>
+                          {fieldErrors.address && (
+                            <p className="text-sm text-red-600">{fieldErrors.address}</p>
+                          )}
                         </div>
 
                         {/* Apartment Details */}
@@ -413,10 +477,13 @@ export default function SignupPage() {
                               required={isMaid}
                               value={formData.maidAddress}
                               onChange={handleInputChange}
-                              className="pl-10 py-6"
+                              className={`pl-10 py-6 ${fieldErrors.maidAddress ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                               placeholder="Full address with city and pincode"
                             />
                           </div>
+                          {fieldErrors.maidAddress && (
+                            <p className="text-sm text-red-600">{fieldErrors.maidAddress}</p>
+                          )}
                           <p className="text-xs text-gray-500">
                             This helps us match you with nearby cleaning jobs
                           </p>
@@ -492,10 +559,11 @@ export default function SignupPage() {
                           required
                           value={formData.password}
                           onChange={handleInputChange}
-                          className="pl-10 py-6 pr-10"
+                          className={`pl-10 py-6 pr-10 ${fieldErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                           placeholder="••••••••"
                           minLength={8}
                         />
+
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
@@ -508,6 +576,9 @@ export default function SignupPage() {
                           )}
                         </button>
                       </div>
+                      {fieldErrors.password && (
+                        <p className="text-sm text-red-600">{fieldErrors.password}</p>
+                      )}
                     </div>
 
                     {/* Confirm Password */}
@@ -524,10 +595,11 @@ export default function SignupPage() {
                           required
                           value={formData.confirmPassword}
                           onChange={handleInputChange}
-                          className="pl-10 py-6 pr-10"
+                          className={`pl-10 py-6 pr-10 ${fieldErrors.confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                           placeholder="••••••••"
                           minLength={8}
                         />
+
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -540,6 +612,9 @@ export default function SignupPage() {
                           )}
                         </button>
                       </div>
+                      {fieldErrors.confirmPassword && (
+                        <p className="text-sm text-red-600">{fieldErrors.confirmPassword}</p>
+                      )}
                     </div>
                   </div>
                   <p className="text-xs text-gray-500">

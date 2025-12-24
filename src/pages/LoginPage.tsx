@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthService, LoginCredentials } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
+import { ApiError } from '@/services/api';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +18,9 @@ export default function LoginPage() {
     password: ''
   });
 
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [formError, setFormError] = useState<string | null>(null);
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -24,41 +28,38 @@ export default function LoginPage() {
     if (e) {
       e.preventDefault();
     }
-    
-    // Basic validation
-    if (!formData.email || !formData.password) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please fill in all fields',
-        variant: 'destructive',
-      });
+
+    setFormError(null);
+
+    const nextErrors: { email?: string; password?: string } = {};
+    const email = formData.email.trim();
+    const password = formData.password;
+
+    if (!email) nextErrors.email = 'Email is required.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Enter a valid email address.';
+    if (!password) nextErrors.password = 'Password is required.';
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setFormError('Please fix the highlighted fields.');
       return;
     }
 
-    if (!formData.email.includes('@')) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please enter a valid email address',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
     setIsLoading(true);
-    
+
     try {
       const credentials: LoginCredentials = {
-        email: formData.email.trim(),
-        password: formData.password
+        email,
+        password
       };
 
       console.log('🚀 Attempting login...');
       const response = await AuthService.login(credentials, rememberMe);
       console.log('✅ Login response:', response);
-      
+
       if (response.success && response.data?.user) {
         const user = response.data.user;
-        
+
         toast({
           title: 'Login successful!',
           description: `Welcome back to Sweepro, ${user.name}!`,
@@ -78,25 +79,46 @@ export default function LoginPage() {
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Invalid credentials';
-      
-      toast({
-        title: 'Login failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      if (error instanceof ApiError) {
+        if (error.statusCode === 401) {
+          setFieldErrors({ password: 'Invalid email or password.' });
+          setFormError('Invalid email or password.');
+          return;
+        }
+
+        if (error.statusCode === 400 && (error.response as any)?.errors?.length) {
+          const next: { email?: string; password?: string } = {};
+          for (const err of (error.response as any).errors as any[]) {
+            const param = err?.path || err?.param;
+            if (param === 'email') next.email = err.msg || 'Enter a valid email.';
+            if (param === 'password') next.password = err.msg || 'Password is required.';
+          }
+          if (Object.keys(next).length > 0) {
+            setFieldErrors(next);
+            setFormError('Please fix the highlighted fields.');
+            return;
+          }
+        }
+
+        setFormError(error.message || 'Login failed. Please try again.');
+        return;
+      }
+
+      setFormError(error instanceof Error ? error.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
+
+    setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    setFormError(null);
   };
 
   return (
@@ -118,6 +140,11 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {formError && (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {formError}
+                  </div>
+                )}
                 {/* Email Input */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">
@@ -132,10 +159,13 @@ export default function LoginPage() {
                       placeholder="john@example.com"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="pl-10 py-6"
+                      className={`pl-10 py-6 ${fieldErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                       required
                     />
                   </div>
+                  {fieldErrors.email && (
+                    <p className="text-sm text-red-600">{fieldErrors.email}</p>
+                  )}
                 </div>
 
                 {/* Password Input */}
@@ -160,7 +190,7 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="pl-10 py-6 pr-10"
+                      className={`pl-10 py-6 pr-10 ${fieldErrors.password ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
                       required
                     />
                     <button
@@ -175,6 +205,9 @@ export default function LoginPage() {
                       )}
                     </button>
                   </div>
+                  {fieldErrors.password && (
+                    <p className="text-sm text-red-600">{fieldErrors.password}</p>
+                  )}
                 </div>
 
                 {/* Remember Me */}
