@@ -14,6 +14,8 @@ interface BufferPeriodStatus {
 
 export const useBufferPeriod = () => {
   const { user } = useUser();
+  const shouldRunForUser = Boolean(user && user.role === 'CUSTOMER');
+  const [pollingDisabled, setPollingDisabled] = useState(false);
   const [bufferStatus, setBufferStatus] = useState<BufferPeriodStatus>({
     isInBufferPeriod: false,
     bufferEndDate: null,
@@ -24,7 +26,7 @@ export const useBufferPeriod = () => {
   });
 
   const checkBufferPeriodStatus = async () => {
-    if (!user) {
+    if (!user || !shouldRunForUser || pollingDisabled) {
       setBufferStatus(prev => ({ ...prev, isLoading: false }));
       return;
     }
@@ -87,6 +89,11 @@ export const useBufferPeriod = () => {
       
       // Silently handle 404 errors (no subscription is normal)
       if (error?.statusCode === 404) {
+        // For MAID/ADMIN this can happen as "Customer profile not found". Disable polling entirely.
+        const msg = (error?.message || '').toString();
+        if (msg.toLowerCase().includes('customer profile not found')) {
+          setPollingDisabled(true);
+        }
         setBufferStatus({
           isInBufferPeriod: false,
           bufferEndDate: null,
@@ -113,21 +120,23 @@ export const useBufferPeriod = () => {
 
   // Check buffer status on mount and when user changes
   useEffect(() => {
-    if (user) {
+    if (shouldRunForUser && !pollingDisabled) {
       checkBufferPeriodStatus();
+    } else {
+      setBufferStatus(prev => ({ ...prev, isLoading: false }));
     }
-  }, [user]);
+  }, [shouldRunForUser, pollingDisabled]);
 
   // Periodic check every 5 minutes to ensure buffer status is up to date
   useEffect(() => {
-    if (!user) return;
+    if (!shouldRunForUser || pollingDisabled) return;
     
     const interval = setInterval(() => {
       checkBufferPeriodStatus();
     }, 300000); // Check every 5 minutes instead of 30 seconds
     
     return () => clearInterval(interval);
-  }, [user]);
+  }, [shouldRunForUser, pollingDisabled]);
 
   // Helper function to get buffer period message
   const getBufferPeriodMessage = (): string => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { BookingService, Booking } from '@/services/bookingService';
 import { PaymentService, Payment } from '@/services/paymentService';
 import { verificationService } from '@/services/verificationService';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest, HttpMethod } from '@/services/api';
 import { ArrowRight, Calendar, CheckCircle, Clock, CreditCard, DollarSign, MessageCircle, Star, User, Package, TrendingUp, AlertTriangle, MapPin, Shield, Upload, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -60,35 +61,32 @@ export default function MaidDashboardEnhanced() {
   
   // Real verification status - fetched from backend
   const [isVerified, setIsVerified] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED'>('NOT_SUBMITTED');
+  const [verificationStatus, setVerificationStatus] = useState<'UNKNOWN' | 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED'>('UNKNOWN');
+  const [verificationStatusLoaded, setVerificationStatusLoaded] = useState(false);
   const [verificationData, setVerificationData] = useState<any>(null);
   const [showVerificationAlert, setShowVerificationAlert] = useState(true);
   const [verificationApprovedTime, setVerificationApprovedTime] = useState<number | null>(null);
+  const hasRefreshedUserAfterApprovalRef = useRef(false);
+
+  const isMaidVerifiedFromProfile = Boolean((user as any)?.profiles?.maid?.isVerified) || ((user as any)?.profiles?.maid?.status === 'ACTIVE');
 
   useEffect(() => {
     if (user && isAuthenticated && user.role === 'MAID') {
       fetchMaidDashboardData();
       fetchVerificationStatus();
     }
-  }, [user, isAuthenticated]);
+  }, [user?.id, user?.role, isAuthenticated]);
 
   const fetchVerificationStatus = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) return;
-
-      const response = await fetch('/api/documents/maid-verification-status', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      setVerificationStatusLoaded(false);
+      const result = await apiRequest('/documents/maid-verification-status', {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          const data = result.data;
+      if (result.success && (result as any).data) {
+        const data = (result as any).data;
           
           // Transform backend data to frontend format
           const transformedDocuments: any = {};
@@ -116,11 +114,18 @@ export default function MaidDashboardEnhanced() {
             });
           }
           
-          setVerificationStatus(data.overallStatus || 'NOT_SUBMITTED');
-          setIsVerified(data.overallStatus === 'APPROVED');
+          const effectiveStatus = isMaidVerifiedFromProfile ? 'APPROVED' : (data.overallStatus || 'NOT_SUBMITTED');
+          setVerificationStatus(effectiveStatus);
+          setIsVerified(effectiveStatus === 'APPROVED');
+
+          // Avoid infinite loops: refresh user only once, and only if profile doesn't already indicate verified
+          if (!isMaidVerifiedFromProfile && effectiveStatus === 'APPROVED' && !hasRefreshedUserAfterApprovalRef.current) {
+            hasRefreshedUserAfterApprovalRef.current = true;
+            await refreshUser();
+          }
           
           // Handle 24-hour alert logic for APPROVED status
-          if (data.overallStatus === 'APPROVED') {
+          if (effectiveStatus === 'APPROVED') {
             // Check if verification was approved and store the time
             const storedApprovedTime = localStorage.getItem(`maid_verification_approved_${user?.id}`);
             if (!storedApprovedTime) {
@@ -152,10 +157,11 @@ export default function MaidDashboardEnhanced() {
             ...data,
             documents: transformedDocuments
           });
-        }
       }
     } catch (error) {
       console.error('Error fetching verification status:', error);
+    } finally {
+      setVerificationStatusLoaded(true);
     }
   };
 

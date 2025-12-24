@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { apiRequest, HttpMethod } from '@/services/api';
 
 interface MaidDashboardSidebarProps {
   open?: boolean;
@@ -55,31 +56,27 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
   const navigate = useNavigate();
   const { user, logout } = useUser();
   const { toast } = useToast();
-  const [verificationStatus, setVerificationStatus] = useState<string>('NOT_SUBMITTED');
+  const [verificationStatus, setVerificationStatus] = useState<string>('UNKNOWN');
+  const [verificationStatusLoaded, setVerificationStatusLoaded] = useState(false);
+
+  const isMaidVerifiedFromProfile = Boolean((user as any)?.profiles?.maid?.isVerified) || ((user as any)?.profiles?.maid?.status === 'ACTIVE');
 
   // Fetch verification status on mount
   useEffect(() => {
     const fetchVerificationStatus = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-        if (!token) return;
-
-        const response = await fetch('/api/documents/maid-verification-status', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+        setVerificationStatusLoaded(false);
+        const result = await apiRequest('/documents/maid-verification-status', {
+          method: HttpMethod.GET,
+          requiresAuth: true
         });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            setVerificationStatus(result.data.overallStatus || 'NOT_SUBMITTED');
-          }
+        if (result.success && (result as any).data) {
+          setVerificationStatus(((result as any).data as any).overallStatus || 'NOT_SUBMITTED');
         }
       } catch (error) {
         console.error('Error fetching verification status:', error);
+      } finally {
+        setVerificationStatusLoaded(true);
       }
     };
 
@@ -99,7 +96,9 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
   const shouldShowVerification = () => {
     // Show verification link only if:
     // 1. Not verified yet (NOT_SUBMITTED or REJECTED)
-    return verificationStatus === 'NOT_SUBMITTED' || verificationStatus === 'REJECTED';
+    if (isMaidVerifiedFromProfile) return false;
+    if (!verificationStatusLoaded) return true;
+    return verificationStatus !== 'APPROVED';
   };
 
   const links = maidNavigationItems
@@ -162,7 +161,7 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
                   </div>
                   <div className="mb-3">
                     <Badge
-                      variant={user.status === 'active' ? 'default' : user.status === 'pending' ? 'secondary' : 'outline'}
+                      variant={user.status === 'ACTIVE' ? 'default' : user.status === 'PENDING' ? 'secondary' : 'outline'}
                       className="text-xs"
                     >
                       {user.status?.charAt(0).toUpperCase() + user.status?.slice(1)}
