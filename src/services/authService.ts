@@ -1,4 +1,4 @@
-import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse, setAuthToken, removeAuthToken } from './api';
+import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse, setAuthToken, removeAuthToken, BACKEND_ORIGIN } from './api';
 
 
 export interface LoginCredentials {
@@ -106,7 +106,7 @@ export class AuthService {
       // Provide better error messages for common issues
       if (error instanceof Error) {
         if (error.message.includes('Unable to connect to server')) {
-          throw new Error('Cannot connect to server. Please ensure the backend is running on http://localhost:3000');
+          throw new Error(`Cannot connect to server. Please ensure the backend is reachable at ${BACKEND_ORIGIN}`);
         }
         if (error.message.includes('Failed to fetch')) {
           throw new Error('Network error - please check your internet connection and ensure the backend server is running');

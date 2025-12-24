@@ -37,6 +37,17 @@ export const useBufferAccess = () => {
         return;
       }
 
+      // Buffer access is a CUSTOMER-only concept. Avoid calling CUSTOMER-only endpoints
+      // (like subscription/profile) for other roles (e.g. MAID/ADMIN), which can throw
+      // "Customer profile not found".
+      if (user.role && user.role !== 'CUSTOMER') {
+        const state = { hasBufferAccess: false, isLoading: false, error: null };
+        setBufferAccess(state);
+        cachedBufferAccess = state;
+        lastUserId = user.id;
+        return;
+      }
+
       setBufferAccess(prev => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -57,8 +68,18 @@ export const useBufferAccess = () => {
           lastUserId = user.id;
         }
       } catch (error) {
-        console.error('Error checking buffer access:', error);
-        const state = { hasBufferAccess: false, isLoading: false, error: 'Error checking buffer access' };
+        // If the backend tells us the customer profile doesn't exist, treat it as
+        // "no buffer access" instead of surfacing an error (common for MAID accounts).
+        const errorMessage = String((error as any)?.message || '');
+        const isCustomerProfileMissing = errorMessage.toLowerCase().includes('customer profile not found');
+        if (!isCustomerProfileMissing) {
+          console.error('Error checking buffer access:', error);
+        }
+        const state = {
+          hasBufferAccess: false,
+          isLoading: false,
+          error: isCustomerProfileMissing ? null : 'Error checking buffer access'
+        };
         setBufferAccess(state);
         cachedBufferAccess = state;
         lastUserId = user.id;

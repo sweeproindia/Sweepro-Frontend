@@ -48,6 +48,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { apiRequest, API_BASE_URL, HttpMethod } from '@/services/api';
 
 interface MaidVerification {
   id: string;
@@ -117,26 +118,10 @@ export default function AdminMaidVerification() {
   const fetchVerifications = async () => {
     setLoading(true);
     try {
-      // Get token from localStorage using the correct key
-      const token = localStorage.getItem('authToken');
-      console.log(token);
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
-
-      // Make API call to get maid verification data
-      const response = await fetch('/documents/verification/admin', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
+      const result: any = await apiRequest('/documents/admin-verification-data', {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
-      console.log(response.headers.get('authorization'));
-
-
-      const result = await response.json();
 
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch verifications');
@@ -159,19 +144,19 @@ export default function AdminMaidVerification() {
         documents: {
           aadharCard: item.documents.aadharCard ? {
             filename: item.documents.aadharCard.filename,
-            url: `/api/documents/${item.documents.aadharCard.id}/download`,
+            url: `${API_BASE_URL}/documents/download/${item.documents.aadharCard.id}`,
             uploadedAt: item.documents.aadharCard.uploadedAt,
             fileSize: item.documents.aadharCard.fileSize
           } : null,
           panCard: item.documents.panCard ? {
             filename: item.documents.panCard.filename,
-            url: `/api/documents/${item.documents.panCard.id}/download`,
+            url: `${API_BASE_URL}/documents/download/${item.documents.panCard.id}`,
             uploadedAt: item.documents.panCard.uploadedAt,
             fileSize: item.documents.panCard.fileSize
           } : null,
           electricityBill: item.documents.electricityBill ? {
             filename: item.documents.electricityBill.filename,
-            url: `/api/documents/${item.documents.electricityBill.id}/download`,
+            url: `${API_BASE_URL}/documents/download/${item.documents.electricityBill.id}`,
             uploadedAt: item.documents.electricityBill.uploadedAt,
             fileSize: item.documents.electricityBill.fileSize
           } : null
@@ -229,16 +214,8 @@ export default function AdminMaidVerification() {
     }
 
     try {
-      // Get token from localStorage using the correct key
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
+      const endpoint = `/documents/verification/${selectedVerification.id}/${reviewAction === 'APPROVE' ? 'approve' : 'reject'}`;
 
-      // Prepare API endpoint based on action
-      const endpoint = `/api/documents/verification/${selectedVerification.id}/${reviewAction === 'APPROVE' ? 'approve' : 'reject'}`;
-      
-      // Prepare request body
       const requestBody: any = {};
       if (reviewAction === 'REJECT') {
         requestBody.rejectionReason = rejectionReason;
@@ -247,17 +224,11 @@ export default function AdminMaidVerification() {
         requestBody.adminNotes = adminNotes;
       }
 
-      // Make API call
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
+      const result: any = await apiRequest(endpoint, {
+        method: HttpMethod.POST,
+        body: requestBody,
+        requiresAuth: true
       });
-
-      const result = await response.json();
 
       if (!result.success) {
         throw new Error(result.message || 'Failed to update verification status');

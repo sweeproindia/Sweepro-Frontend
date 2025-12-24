@@ -83,6 +83,10 @@
     <div id="log" class="log">Ready to test...\n</div>
 
     <script>
+        const BACKEND_ORIGIN = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:3000'
+            : 'https://sweep-pro-backend-testing.onrender.com';
+
         function log(message, isError = false) {
             const logDiv = document.getElementById('log');
             const timestamp = new Date().toLocaleTimeString();
@@ -98,13 +102,13 @@
             log('Testing backend connection...');
             
             try {
-                const response = await fetch('http://localhost:3000/health');
+                const response = await fetch(`${BACKEND_ORIGIN}/health`);
                 log(`Health check: ${response.status} ${response.statusText}`);
                 
                 const data = await response.json();
                 log(`Health data: ${JSON.stringify(data)}`);
                 
-                const docTest = await fetch('http://localhost:3000/api/documents/test-verification');
+                const docTest = await fetch(`${BACKEND_ORIGIN}/api/documents/test-verification`);
                 log(`Document endpoint test: ${docTest.status} ${docTest.statusText}`);
                 
                 const docData = await docTest.json();
@@ -148,7 +152,7 @@
             try {
                 log('Making request to upload endpoint...');
                 
-                const response = await fetch('http://localhost:3000/api/documents/upload-verification', {
+                const response = await fetch(`${BACKEND_ORIGIN}/api/documents/upload-verification`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`

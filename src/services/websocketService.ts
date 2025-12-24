@@ -21,28 +21,21 @@ class WebSocketService {
   private reconnectTimeout: NodeJS.Timeout | null = null;
 
   constructor(url?: string) {
-    // Allow explicit override (tests / special cases)
-    if (url) {
-      this.url = url;
-      return;
-    }
+    this.url = url || '';
+  }
 
-    // Optional override via Vite env
-    const envUrl = (import.meta as any)?.env?.VITE_WS_BASE_URL as string | undefined;
-    if (envUrl) {
-      this.url = envUrl;
-      return;
-    }
+  private getWebSocketBaseUrl(): string {
+    if (this.url && this.url.trim().length > 0) return this.url;
 
-    // Default:
-    // - Dev: backend ws on localhost:3000
-    // - Prod: same host as frontend, using ws/wss based on page protocol
-    if (import.meta.env.DEV) {
-      this.url = 'ws://localhost:3000';
-    } else {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      this.url = `${protocol}//${window.location.host}`;
-    }
+    const backendOrigin =
+      (import.meta as any).env?.VITE_BACKEND_ORIGIN ||
+      (import.meta.env.DEV ? 'http://localhost:3000' : 'https://sweep-pro-backend-testing.onrender.com');
+
+    const wsFromBackend = backendOrigin.startsWith('https://')
+      ? backendOrigin.replace('https://', 'wss://')
+      : backendOrigin.replace('http://', 'ws://');
+
+    return ((import.meta as any).env?.VITE_WS_URL || wsFromBackend) as string;
   }
 
   /**
@@ -59,7 +52,8 @@ class WebSocketService {
 
     try {
       // Create WebSocket connection with token as query parameter
-      const wsUrl = `${this.url}?token=${encodeURIComponent(token)}`;
+      const wsBaseUrl = this.getWebSocketBaseUrl();
+      const wsUrl = `${wsBaseUrl}?token=${encodeURIComponent(token)}`;
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = this.handleOpen.bind(this);

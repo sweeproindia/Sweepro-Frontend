@@ -106,12 +106,27 @@ export const MaidProfilePage: React.FC = () => {
         requiresAuth: true
       });
       if (response.success) {
-        setReviews(response.data || []);
+        const list = (response as any).data || (response as any).reviews || [];
+        setReviews(Array.isArray(list) ? list : []);
       }
     } catch (error) {
       console.error('Error fetching reviews:', error);
     }
   };
+
+  // Keep displayed rating consistent with feedback if profile doesn't have it yet
+  useEffect(() => {
+    if (!profileData) return;
+    if (profileData.rating !== undefined && profileData.rating !== null && (profileData.totalReviews || 0) > 0) return;
+    if (reviews.length === 0) return;
+
+    const avg = reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length;
+    setProfileData(prev => prev ? ({
+      ...prev,
+      rating: Number.isFinite(avg) ? avg : 0,
+      totalReviews: reviews.length
+    }) : prev);
+  }, [reviews, profileData]);
 
   const handleImageUpload = (type: 'profile' | 'cover') => {
     setImageType(type);

@@ -149,29 +149,23 @@ function SubscriptionPage() {
 
       if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
         const subscriptionData =
-          subscriptionResponse.value.data ||
-          subscriptionResponse.value.subscription ||
+          (subscriptionResponse.value as any).subscription ||
+          (subscriptionResponse.value as any).data?.subscription ||
           null;
-        setSubscription(subscriptionData);
+        setSubscription(subscriptionData as Subscription | null);
       } else {
         setSubscription(null);
       }
 
       if (plansResponse.status === 'fulfilled' && plansResponse.value.success) {
-        const plans = Array.isArray(plansResponse.value.data)
-          ? plansResponse.value.data
-          : plansResponse.value.data?.plans ||
-          plansResponse.value.plans ||
-          [];
-        setAvailablePlans(plans);
+        const plansData = (plansResponse.value as any).data;
+        const plans = Array.isArray(plansData) ? plansData : plansData?.plans || [];
+        setAvailablePlans(plans as SubscriptionPlan[]);
       }
 
       if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
-        const bookings = Array.isArray(bookingsResponse.value.data)
-          ? bookingsResponse.value.data
-          : bookingsResponse.value.data?.bookings ||
-          bookingsResponse.value.bookings ||
-          [];
+        const bookingsData = (bookingsResponse.value as any).data;
+        const bookings = Array.isArray(bookingsData) ? bookingsData : bookingsData?.bookings || [];
 
         const completedBookings = bookings.filter((b) => b.status === 'COMPLETED');
         const completedVisits = completedBookings.length;
