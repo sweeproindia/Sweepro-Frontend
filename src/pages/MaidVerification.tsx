@@ -332,7 +332,10 @@ export default function MaidVerification() {
       });
 
       if (refreshResponse.ok) {
-        const refreshed = await refreshResponse.json();
+        const refreshContentType = refreshResponse.headers.get('content-type') || '';
+        const refreshed = refreshContentType.includes('application/json')
+          ? await refreshResponse.json()
+          : { success: false, message: await refreshResponse.text() };
         if (refreshed.success && refreshed.data) {
           const data = refreshed.data;
           const transformedDocuments: any = {};

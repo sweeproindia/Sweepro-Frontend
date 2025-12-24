@@ -1,5 +1,6 @@
 import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse } from './api';
 import { Payment } from './paymentService';
+import { AuthService } from './authService';
 
 // Types for subscription
 export interface SubscriptionPlan {
@@ -287,6 +288,13 @@ export class SubscriptionService {
    */
   static async getUserSubscription(): Promise<ApiResponse<{ subscription: Subscription }>> {
     try {
+      const user = AuthService.getStoredUser();
+      if (user && user.role !== 'CUSTOMER') {
+        return {
+          success: false,
+          message: 'Subscription is only available for customer accounts'
+        } as ApiResponse<{ subscription: Subscription }>;
+      }
       return await apiRequest<{ subscription: Subscription }>(API_ENDPOINTS.SUBSCRIPTIONS.MY_SUBSCRIPTION, {
         method: HttpMethod.GET,
         requiresAuth: true

@@ -151,7 +151,7 @@ class VerificationService {
     message?: string;
   }>> {
     try {
-      return await apiRequest('/documents/verification-status', {
+      return await apiRequest('/documents/maid-verification-status', {
         method: HttpMethod.GET,
         requiresAuth: true
       });
