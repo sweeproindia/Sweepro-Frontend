@@ -52,6 +52,7 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+
   const [stats, setStats] = useState({
     totalPaid: 0,
     thisMonthPaid: 0,
@@ -64,6 +65,11 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     if (user && isAuthenticated) {
+      if (user.role !== 'CUSTOMER') {
+        setLoading(false);
+        setSubscription(null);
+        return;
+      }
       fetchPaymentData();
     }
   }, [user, isAuthenticated]);
@@ -79,17 +85,23 @@ export default function PaymentsPage() {
 
       // Handle payments
       if (paymentsResponse.status === 'fulfilled' && paymentsResponse.value.success) {
-        const paymentsData = Array.isArray(paymentsResponse.value.data) ? 
-          paymentsResponse.value.data : 
-          paymentsResponse.value.data?.payments || 
-          paymentsResponse.value.payments || [];
+        const paymentsValue: any = paymentsResponse.value as any;
+        const paymentsDataRaw = paymentsValue?.data;
+        const paymentsData = Array.isArray(paymentsDataRaw)
+          ? paymentsDataRaw
+          : (paymentsDataRaw?.payments || paymentsValue?.payments || []);
         setPayments(paymentsData);
       }
 
       // Handle subscription
       if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const subscriptionData = subscriptionResponse.value.data || subscriptionResponse.value.subscription || null;
-        setSubscription(subscriptionData);
+        const subscriptionValue: any = subscriptionResponse.value as any;
+        const subscriptionData =
+          subscriptionValue?.subscription ||
+          subscriptionValue?.data?.subscription ||
+          subscriptionValue?.data ||
+          null;
+        setSubscription(subscriptionData as Subscription | null);
       } else if (subscriptionResponse.status === 'rejected') {
         console.log('No active subscription found');
         setSubscription(null);
@@ -369,7 +381,7 @@ export default function PaymentsPage() {
                             +₹{payment.tax.toLocaleString()} tax
                           </p>
                         )}
-                        <Badge className={getStatusColor(payment.status)} size="sm">
+                        <Badge className={getStatusColor(payment.status)}>
                           {getStatusIcon(payment.status)}
                           <span className="ml-1 capitalize">{payment.status.toLowerCase()}</span>
                         </Badge>

@@ -17,6 +17,7 @@ import { useUser } from '@/contexts/UserContext';
 import MaidPerformanceOverview from '@/components/feedback/MaidPerformanceOverview';
 import FeedbackActionPanel from '@/components/feedback/FeedbackActionPanel';
 import AuditTrailModal from '@/components/feedback/AuditTrailModal';
+import { apiRequest, HttpMethod } from '@/services/api';
 
 export default function AdminFeedbackPage() {
   const { user } = useUser();
@@ -60,15 +61,12 @@ export default function AdminFeedbackPage() {
 
   const fetchMaidsList = async () => {
     try {
-      const response = await fetch('/api/maids/list', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
+      const res: any = await apiRequest('/maids', {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
-      if (response.ok) {
-        const data = await response.json();
-        setMaidsList(data.data || []);
-      }
+      const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+      setMaidsList(list);
     } catch (error) {
       console.error('Error fetching maids list:', error);
     }
@@ -77,15 +75,11 @@ export default function AdminFeedbackPage() {
   const fetchDisputedFeedback = async () => {
     setLoadingDisputed(true);
     try {
-      const response = await fetch('/api/feedback/disputed?limit=10', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
+      const res: any = await apiRequest('/feedback/disputed?limit=10', {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
-      if (response.ok) {
-        const data = await response.json();
-        setDisputedFeedback(data.data || []);
-      }
+      setDisputedFeedback(res?.data || []);
     } catch (error) {
       console.error('Error fetching disputed feedback:', error);
     } finally {
@@ -95,15 +89,11 @@ export default function AdminFeedbackPage() {
 
   const fetchMaidAnalytics = async (maidId: string) => {
     try {
-      const response = await fetch(`/api/feedback/maid/${maidId}/analytics`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
+      const res: any = await apiRequest(`/feedback/maid/${maidId}/analytics`, {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
-      if (response.ok) {
-        const data = await response.json();
-        setMaidAnalytics(data.data);
-      }
+      setMaidAnalytics(res?.data || null);
     } catch (error) {
       console.error('Error fetching maid analytics:', error);
     }
@@ -112,16 +102,12 @@ export default function AdminFeedbackPage() {
   const fetchAuditTrail = async (feedbackId: string) => {
     setLoadingAudit(true);
     try {
-      const response = await fetch(`/api/feedback/${feedbackId}/audit-trail`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
+      const res: any = await apiRequest(`/feedback/${feedbackId}/audit-trail`, {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
-      if (response.ok) {
-        const data = await response.json();
-        setAuditTrail(data.data || []);
-        setShowAuditModal(true);
-      }
+      setAuditTrail(res?.data || []);
+      setShowAuditModal(true);
     } catch (error) {
       console.error('Error fetching audit trail:', error);
       toast({
@@ -188,20 +174,15 @@ export default function AdminFeedbackPage() {
   const handleRecalculateRating = async () => {
     if (!selectedMaidId) return;
     try {
-      const response = await fetch(`/api/feedback/maid/${selectedMaidId}/recalculate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
+      await apiRequest(`/feedback/maid/${selectedMaidId}/recalculate`, {
+        method: HttpMethod.POST,
+        requiresAuth: true
       });
-      if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Maid rating recalculated successfully'
-        });
-        fetchMaidAnalytics(selectedMaidId);
-      }
+      toast({
+        title: 'Success',
+        description: 'Maid rating recalculated successfully'
+      });
+      fetchMaidAnalytics(selectedMaidId);
     } catch (error) {
       toast({
         title: 'Error',

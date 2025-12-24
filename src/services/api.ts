@@ -2,11 +2,21 @@
 const DEFAULT_PROD_API_BASE_URL = 'https://sweep-pro-backend-testing.onrender.com/api';
 
 const ENV_API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
-const RAW_API_BASE_URL = ENV_API_BASE_URL || (import.meta.env.DEV ? '/api' : DEFAULT_PROD_API_BASE_URL);
 
-export const API_BASE_URL = (!import.meta.env.DEV && RAW_API_BASE_URL.startsWith('/'))
-  ? DEFAULT_PROD_API_BASE_URL
-  : RAW_API_BASE_URL;
+const normalizeApiBaseUrl = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return DEFAULT_PROD_API_BASE_URL;
+  if (!/^https?:\/\//i.test(trimmed)) return DEFAULT_PROD_API_BASE_URL;
+  return /\/api\/?$/i.test(trimmed) ? trimmed.replace(/\/api\/?$/i, '/api') : `${trimmed.replace(/\/+$/, '')}/api`;
+};
+
+const RAW_API_BASE_URL = ENV_API_BASE_URL
+  ? normalizeApiBaseUrl(ENV_API_BASE_URL)
+  : (import.meta.env.DEV ? '/api' : DEFAULT_PROD_API_BASE_URL);
+
+export const API_BASE_URL = import.meta.env.DEV
+  ? RAW_API_BASE_URL
+  : normalizeApiBaseUrl(RAW_API_BASE_URL);
 
 export const BACKEND_ORIGIN =
   (import.meta as any).env?.VITE_BACKEND_ORIGIN ||
