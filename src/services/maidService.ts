@@ -136,7 +136,7 @@ export const MaidService = {
   setAvailability: async (availability: { isAvailable: boolean; note?: string }): Promise<{ success: boolean; message?: string }> => {
     try {
       const response = await apiRequest<any>(
-        '/api/maids/availability',
+        '/maids/availability',
         {
           method: HttpMethod.PUT,
           requiresAuth: true,

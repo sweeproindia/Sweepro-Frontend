@@ -17,6 +17,7 @@ import TestLoginPage from "./pages/TestLoginPage";
 import MaidBookingsPage from "./pages/MaidBookingsPage";
 import MaidDashboard from "./pages/MaidDashboardEnhanced";
 import MaidSupportPage from "./pages/MaidSupportPage";
+import MaidAvailabilityPage from "./pages/MaidAvailabilityPage";
 import NotFound from "./pages/NotFound";
 import PaymentsPage from "./pages/PaymentsPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -57,6 +58,7 @@ const App = () => (
                   <Route path="/maid-dashboard" element={<MaidDashboard />} />
                   <Route path="/maid-bookings" element={<MaidBookingsPage />} />
                   <Route path="/maid-support" element={<MaidSupportPage />} />
+                  <Route path="/maid-availability" element={<MaidAvailabilityPage />} />
                   <Route path="/dashboard" element={<UserDashboard />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/profile/enhanced" element={<EnhancedProfilePage />} />

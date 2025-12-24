@@ -300,7 +300,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                 <RotateCcw className="h-5 w-5 text-destructive" />
                 Reassignment Required ({reassignmentBookings.length})
               </CardTitle>
-              <CardDescription>Bookings rejected by maids that need new assignments</CardDescription>
+              <CardDescription>Bookings needing reassignment due to rejection, expiry, or maid weekly leave</CardDescription>
             </div>
             <Button
               variant="outline"
@@ -386,14 +386,20 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                             </div>
                           )}
 
-                          {/* Rejection Reason */}
+                          {/* Reason */}
                           <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded border border-red-200 dark:border-red-800">
                             <div className="flex items-start gap-2">
                               <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                               <div>
+                                {((booking.lastAttempt?.reason || booking.rejectionReason) === 'MAID_ON_LEAVE') ? (
+                                  <p className="text-sm text-red-700 dark:text-red-300">
+                                    <strong>Reason:</strong> Maid on weekly leave
+                                  </p>
+                                ) : (
                                 <p className="text-sm text-red-700 dark:text-red-300">
-                                  <strong>Rejection Reason:</strong> {booking.lastAttempt?.reason || booking.rejectionReason || 'Maid declined the assignment'}
+                                  <strong>Reason:</strong> {booking.lastAttempt?.reason || booking.rejectionReason || 'Maid declined the assignment'}
                                 </p>
+                                )}
                                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                                   Reassignment attempt #{(booking.reassignmentCount || 0) + 1}
                                 </p>

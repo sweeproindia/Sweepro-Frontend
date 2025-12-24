@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import QrCodeRenderer from '@/components/qr/QrCodeRenderer';
+import { apiRequest, HttpMethod } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface Maid {
   id: string;
@@ -20,9 +22,12 @@ interface Maid {
   experience: string;
   specializations: string[];
   rating: number;
-  status: 'active' | 'pending';
+  status: 'active' | 'inactive' | 'on_leave';
+  rawStatus: 'PENDING_VERIFICATION' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLACKLISTED' | 'ON_LEAVE';
   totalBookings: number;
   joinDate: string;
+  weeklyOffDay?: string | null;
+  availability?: Record<string, any> | null;
 }
 
 interface AdminMaidsSectionProps {
@@ -36,11 +41,17 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
   onAddMaid,
   onVerifyMaid,
 }) => {
+  const { toast } = useToast();
   const [showAddMaidDialog, setShowAddMaidDialog] = useState(false);
   const [showQrDialog, setShowQrDialog] = useState(false);
   const [qrMaid, setQrMaid] = useState<Maid | null>(null);
+  const [weeklyOffDialogOpen, setWeeklyOffDialogOpen] = useState(false);
+  const [weeklyOffMaid, setWeeklyOffMaid] = useState<Maid | null>(null);
+  const [weeklyOffDay, setWeeklyOffDay] = useState<string>('NONE');
+  const [savingWeeklyOff, setSavingWeeklyOff] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
   const [newMaid, setNewMaid] = useState({
     name: '',
     email: '',
@@ -48,13 +59,56 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
     address: '',
     experience: '',
     specializations: [] as string[],
-    status: 'pending' as const,
+    status: 'inactive' as const,
+    rawStatus: 'INACTIVE' as const,
+    availability: null as Record<string, any> | null,
   });
 
   const getPaginatedData = (data: Maid[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return data.slice(startIndex, endIndex);
+  };
+
+  const openWeeklyOffDialog = (maid: Maid) => {
+    setWeeklyOffMaid(maid);
+    setWeeklyOffDay(maid.weeklyOffDay || 'NONE');
+    setWeeklyOffDialogOpen(true);
+  };
+
+  const saveWeeklyOff = async () => {
+    if (!weeklyOffMaid) return;
+    setSavingWeeklyOff(true);
+    try {
+      const payload = {
+        weeklyOffDay: weeklyOffDay === 'NONE' ? null : weeklyOffDay
+      };
+      const res: any = await apiRequest(`/maids/${weeklyOffMaid.id}/weekly-off`, {
+        method: HttpMethod.PUT,
+        requiresAuth: true,
+        body: payload
+      });
+
+      if (res?.success === false) {
+        throw new Error(res?.error || res?.message || 'Failed to update weekly off day');
+      }
+
+      toast({
+        title: 'Weekly Leave Updated',
+        description: 'Maid weekly off day updated successfully.'
+      });
+
+      setWeeklyOffDialogOpen(false);
+      setWeeklyOffMaid(null);
+    } catch (e: any) {
+      toast({
+        title: 'Update Failed',
+        description: e?.message || 'Failed to update weekly off day',
+        variant: 'destructive'
+      });
+    } finally {
+      setSavingWeeklyOff(false);
+    }
   };
 
   const getTotalPages = (data: Maid[]) => {
@@ -74,7 +128,9 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
       address: '',
       experience: '',
       specializations: [],
-      status: 'pending',
+      status: 'inactive',
+      rawStatus: 'INACTIVE',
+      availability: null,
     });
     setShowAddMaidDialog(false);
   };
@@ -97,14 +153,29 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
     } catch {}
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: Maid['status']) => {
     switch (status) {
       case 'active':
         return 'bg-success/20 text-success';
-      case 'pending':
+      case 'inactive':
+        return 'bg-muted text-muted-foreground';
+      case 'on_leave':
         return 'bg-warning/20 text-warning';
       default:
         return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const formatStatus = (status: Maid['status']) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'inactive':
+        return 'Inactive';
+      case 'on_leave':
+        return 'On Leave';
+      default:
+        return 'Inactive';
     }
   };
 
@@ -155,8 +226,11 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
             <Badge variant="secondary" className="bg-success/20 text-success">
               {allMaids.filter(m => m.status === 'active').length} active
             </Badge>
+            <Badge variant="secondary" className="bg-muted text-muted-foreground">
+              {allMaids.filter(m => m.status === 'inactive').length} inactive
+            </Badge>
             <Badge variant="secondary" className="bg-warning/20 text-warning">
-              {allMaids.filter(m => m.status === 'pending').length} pending
+              {allMaids.filter(m => m.status === 'on_leave').length} on leave
             </Badge>
             <Dialog open={showAddMaidDialog} onOpenChange={setShowAddMaidDialog}>
               <DialogTrigger asChild>
@@ -276,14 +350,12 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">S.No</TableHead>
+              <TableHead className="w-[80px]">S.No</TableHead>
               <TableHead>Maid</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Experience</TableHead>
-              <TableHead>Rating</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Total Bookings</TableHead>
-              <TableHead>Join Date</TableHead>
+              <TableHead>Weekly Leave</TableHead>
+              <TableHead>Performance</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -303,7 +375,26 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                   <p className="text-sm">{maid.phone}</p>
                   <p className="text-xs text-muted-foreground">{maid.address}</p>
                 </TableCell>
-                <TableCell>{maid.experience}</TableCell>
+                <TableCell>
+                  <Badge className={getStatusColor(maid.status)}>
+                    {formatStatus(maid.status)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {maid.weeklyOffDay ? (
+                    <Badge variant="outline">
+                      {maid.weeklyOffDay}
+                    </Badge>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openWeeklyOffDialog(maid)}
+                    >
+                      Set Weekly Leave
+                    </Button>
+                  )}
+                </TableCell>
                 <TableCell>
                   {maid.rating > 0 ? (
                     <div className="flex items-center gap-1">
@@ -313,15 +404,6 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                     <span className="text-muted-foreground">No ratings</span>
                   )}
                 </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(maid.status)}>
-                    {maid.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{maid.totalBookings}</Badge>
-                </TableCell>
-                <TableCell>{maid.joinDate}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline">
@@ -337,7 +419,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                     >
                       View QR
                     </Button>
-                    {maid.status === 'pending' && (
+                    {maid.rawStatus === 'PENDING_VERIFICATION' && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -387,6 +469,44 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
             )}
           </div>
           <DialogFooter />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={weeklyOffDialogOpen} onOpenChange={setWeeklyOffDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Set Weekly Leave</DialogTitle>
+            <DialogDescription>
+              Choose the maid's weekly leave day. On that day, auto-generated assignments will go to reassignment as MAID_ON_LEAVE.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Weekly Off Day</Label>
+              <Select value={weeklyOffDay} onValueChange={setWeeklyOffDay}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select day" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">None</SelectItem>
+                  <SelectItem value="MONDAY">MONDAY</SelectItem>
+                  <SelectItem value="TUESDAY">TUESDAY</SelectItem>
+                  <SelectItem value="WEDNESDAY">WEDNESDAY</SelectItem>
+                  <SelectItem value="THURSDAY">THURSDAY</SelectItem>
+                  <SelectItem value="FRIDAY">FRIDAY</SelectItem>
+                  <SelectItem value="SATURDAY">SATURDAY</SelectItem>
+                  <SelectItem value="SUNDAY">SUNDAY</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWeeklyOffDialogOpen(false)} disabled={savingWeeklyOff}>
+              Cancel
+            </Button>
+            <Button onClick={saveWeeklyOff} disabled={savingWeeklyOff}>
+              {savingWeeklyOff ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>

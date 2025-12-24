@@ -78,8 +78,10 @@ interface Maid {
   languages: string[];
   rating: number;
   totalRatings: number;
-  status: 'PENDING_VERIFICATION' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  status: 'PENDING_VERIFICATION' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLACKLISTED' | 'ON_LEAVE';
   completedBookings: number;
+  weeklyOffDay?: string | null;
+  availability?: Record<string, any> | null;
   user: User;
 }
 
@@ -91,6 +93,30 @@ interface Notification {
   time: string;
   unread: boolean;
 }
+
+const WEEKDAY_ENUM = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+
+const getTodayWeekday = (): string => {
+  return WEEKDAY_ENUM[new Date().getDay()];
+};
+
+const computeMaidDisplayStatus = (maid: Maid): 'active' | 'inactive' | 'on_leave' => {
+  const weeklyOffDay = maid.weeklyOffDay ? maid.weeklyOffDay.toUpperCase() : null;
+  const today = getTodayWeekday();
+  const availabilityObj = maid.availability && typeof maid.availability === 'object' ? maid.availability : {};
+  const isUnavailable = availabilityObj && availabilityObj.isAvailable === false;
+  const isWeeklyOffToday = weeklyOffDay ? weeklyOffDay === today : false;
+
+  if (isWeeklyOffToday && isUnavailable) {
+    return 'inactive';
+  }
+
+  if (isWeeklyOffToday || isUnavailable) {
+    return 'on_leave';
+  }
+
+  return 'active';
+};
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -328,7 +354,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'automatic-assignments', 'payments', 'plans'].includes(hash)) {
       setActiveSection(hash);
     }
   }, [location.hash]);
@@ -353,7 +379,7 @@ export default function AdminDashboard() {
     try {
       console.log('📊 Fetching admin dashboard data for:', user.email);
       // Fetch all admin data in parallel
-      const [usersResponse, bookingsResponse, pendingBookingsResponse, subscriptionsResponse, paymentsResponse, plansResponse, statsResponse, availableMaidsResponse] = await Promise.allSettled([
+      const [usersResponse, bookingsResponse, pendingBookingsResponse, subscriptionsResponse, paymentsResponse, plansResponse, statsResponse, availableMaidsResponse, maidsResponse] = await Promise.allSettled([
         apiRequest('/users', { method: HttpMethod.GET, requiresAuth: true }),
         apiRequest('/bookings', { method: HttpMethod.GET, requiresAuth: true }),
         apiRequest('/admin/pending-bookings', { method: HttpMethod.GET, requiresAuth: true }),
@@ -361,7 +387,8 @@ export default function AdminDashboard() {
         apiRequest('/admin/payments', { method: HttpMethod.GET, requiresAuth: true }),
         SubscriptionService.getSubscriptionPlans(),
         apiRequest('/admin/stats', { method: HttpMethod.GET, requiresAuth: true }),
-        apiRequest('/admin/available-maids', { method: HttpMethod.GET, requiresAuth: true })
+        apiRequest('/admin/available-maids', { method: HttpMethod.GET, requiresAuth: true }),
+        apiRequest('/maids', { method: HttpMethod.GET, requiresAuth: true })
       ]);
 
       // Handle users data
@@ -382,12 +409,44 @@ export default function AdminDashboard() {
             rating: 0,
             totalRatings: 0,
             status: 'ACTIVE',
-            completedBookings: 0
+            completedBookings: 0,
+            availability: null,
+            weeklyOffDay: null
           }));
         setMaids(maidsData);
       } else if (usersResponse.status === 'rejected') {
         console.error('Failed to fetch users');
         setUsers([]);
+      }
+
+      // Prefer full maid profiles from /maids
+      if (maidsResponse.status === 'fulfilled' && (maidsResponse.value as any)?.success !== false) {
+        const raw = (maidsResponse.value as any).data ?? (maidsResponse.value as any);
+        const arr = Array.isArray(raw) ? raw : (raw?.maids || raw?.data || []);
+        const mapped: Maid[] = arr.map((u: any) => ({
+          id: u.id,
+          userId: u.id,
+          user: {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            role: 'MAID',
+            status: u.status || 'ACTIVE',
+            address: u.address,
+            timeSlot: u.timeSlot,
+            createdAt: u.createdAt,
+          } as User,
+          skills: u.maidProfile?.skills || [],
+          languages: u.maidProfile?.languages || ['English'],
+          rating: u.maidProfile?.rating || 0,
+          totalRatings: u.maidProfile?.totalRatings || 0,
+          status: (u.maidProfile?.status || 'ACTIVE') as Maid['status'],
+          completedBookings: u.maidProfile?.completedBookings || 0,
+          weeklyOffDay: u.maidProfile?.weeklyOffDay ?? null,
+          availability: (u.maidProfile?.availability && typeof u.maidProfile.availability === 'object') ? u.maidProfile.availability : null
+        }));
+        setMaids(mapped);
       }
 
       // Handle bookings data
@@ -432,8 +491,10 @@ export default function AdminDashboard() {
           languages: u.maidProfile?.languages || ['English'],
           rating: u.maidProfile?.rating || 0,
           totalRatings: u.maidProfile?.totalRatings || 0,
-          status: (u.maidProfile?.status || 'ACTIVE') as any,
+          status: (u.maidProfile?.status || 'ACTIVE') as Maid['status'],
           completedBookings: u.maidProfile?.completedBookings || 0,
+          weeklyOffDay: u.maidProfile?.weeklyOffDay ?? null,
+          availability: (u.maidProfile?.availability && typeof u.maidProfile.availability === 'object') ? u.maidProfile.availability : null
         }));
         setAvailableMaids(mapped);
       }
@@ -895,9 +956,12 @@ export default function AdminDashboard() {
                       experience: `${m.completedBookings} bookings completed`,
                       specializations: m.skills,
                       rating: m.rating,
-                      status: m.status === 'ACTIVE' ? 'active' : 'pending',
+                      status: computeMaidDisplayStatus(m),
+                      rawStatus: (m.status || 'INACTIVE') as any,
+                      availability: (m.availability && typeof m.availability === 'object') ? m.availability : null,
                       totalBookings: m.completedBookings,
-                      joinDate: m.user.createdAt
+                      joinDate: m.user.createdAt,
+                      weeklyOffDay: m.weeklyOffDay || null
                     }))}
                     onAddMaid={(maidData) => {
                       toast({
