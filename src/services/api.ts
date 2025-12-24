@@ -241,16 +241,20 @@ export class ApiError extends Error {
 }
 
 // Token management
+export type AuthTokenStorage = 'local' | 'session';
+
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
 };
 
-export const setAuthToken = (token: string): void => {
-  localStorage.setItem('authToken', token);
+export const setAuthToken = (token: string, storage: AuthTokenStorage = 'local'): void => {
+  const target = storage === 'session' ? sessionStorage : localStorage;
+  target.setItem('authToken', token);
 };
 
 export const removeAuthToken = (): void => {
   localStorage.removeItem('authToken');
+  sessionStorage.removeItem('authToken');
 };
 
 // Generic API request function
@@ -267,17 +271,29 @@ export const apiRequest = async <T = any>(
 
   const url = `${API_BASE_URL}${endpoint}`;
 
+  const isFormDataBody = typeof FormData !== 'undefined' && body instanceof FormData;
+  const isBlobBody = typeof Blob !== 'undefined' && body instanceof Blob;
+  const isStringBody = typeof body === 'string';
+
+  const hasContentTypeHeader = Object.keys(headers).some((k) => k.toLowerCase() === 'content-type');
+
   const requestHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...headers
   };
+
+  if (!hasContentTypeHeader && !isFormDataBody) {
+    requestHeaders['Content-Type'] = 'application/json';
+  }
 
   // Add auth token if required
   if (requiresAuth) {
     const token = getAuthToken();
-    if (token) {
-      requestHeaders.Authorization = `Bearer ${token}`;
+    if (!token) {
+      throw new ApiError('Authentication token not found. Please log in again.', 401, {
+        missingToken: true
+      });
     }
+    requestHeaders.Authorization = `Bearer ${token}`;
   }
 
   const requestConfig: RequestInit = {
@@ -286,7 +302,11 @@ export const apiRequest = async <T = any>(
   };
 
   if (body && method !== HttpMethod.GET) {
-    requestConfig.body = JSON.stringify(body);
+    if (isFormDataBody || isBlobBody || isStringBody) {
+      requestConfig.body = body as any;
+    } else {
+      requestConfig.body = JSON.stringify(body);
+    }
   }
 
   // Only log in development mode

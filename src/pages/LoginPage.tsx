@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -52,7 +53,7 @@ export default function LoginPage() {
       };
 
       console.log('🚀 Attempting login...');
-      const response = await AuthService.login(credentials);
+      const response = await AuthService.login(credentials, rememberMe);
       console.log('✅ Login response:', response);
       
       if (response.success && response.data?.user) {
@@ -182,6 +183,8 @@ export default function LoginPage() {
                     type="checkbox"
                     id="remember"
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                   />
                   <Label htmlFor="remember" className="text-sm text-gray-600">
                     Remember me for 30 days

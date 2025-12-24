@@ -1,4 +1,4 @@
-import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse, setAuthToken, removeAuthToken, BACKEND_ORIGIN } from './api';
+import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse, setAuthToken, removeAuthToken, BACKEND_ORIGIN, getAuthToken } from './api';
 
 
 export interface LoginCredentials {
@@ -52,6 +52,10 @@ export interface AddressData {
 }
 
 export class AuthService {
+  private static getStorageForExistingUser(): Storage {
+    return localStorage.getItem('user') ? localStorage : sessionStorage;
+  }
+
   /**
    * Register a new user
    */
@@ -80,12 +84,12 @@ export class AuthService {
   /**
    * Login user
    */
-  static async login(credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> {
+  static async login(credentials: LoginCredentials, rememberMe: boolean = false): Promise<ApiResponse<AuthResponse>> {
     try {
       console.log('🔑 AuthService: Starting login process');
       const response = await apiRequest<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, {
         method: HttpMethod.POST,
-        body: credentials,
+        body: { ...credentials, rememberMe } as any,
         requiresAuth: false
       });
 
@@ -94,8 +98,14 @@ export class AuthService {
       // Store token and user data on successful login
       if (response.success && response.data?.token) {
         console.log('🔑 AuthService: Storing token and user data');
-        setAuthToken(response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Ensure we don't keep stale auth data in the other storage.
+        removeAuthToken();
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+
+        const storage = rememberMe ? localStorage : sessionStorage;
+        setAuthToken(response.data.token, rememberMe ? 'local' : 'session');
+        storage.setItem('user', JSON.stringify(response.data.user));
         console.log('🔑 AuthService: Login successful, data stored');
       }
 
@@ -129,7 +139,8 @@ export class AuthService {
 
       // Update stored user data
       if (response.success && response.data?.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        const storage = this.getStorageForExistingUser();
+        storage.setItem('user', JSON.stringify(response.data.user));
       }
 
       return response;
@@ -145,14 +156,15 @@ export class AuthService {
   static logout(): void {
     removeAuthToken();
     localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
   }
 
   /**
    * Check if user is authenticated
    */
   static isAuthenticated(): boolean {
-    const token = localStorage.getItem('authToken');
-    const user = localStorage.getItem('user');
+    const token = getAuthToken();
+    const user = localStorage.getItem('user') || sessionStorage.getItem('user');
     return !!(token && user);
   }
 
@@ -162,7 +174,7 @@ export class AuthService {
    */
   static getStoredUser(): User | null {
     try {
-      const userData = localStorage.getItem('user');
+      const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       console.error('Error parsing stored user data:', error);
@@ -177,7 +189,8 @@ export class AuthService {
     const currentUser = this.getStoredUser();
     if (currentUser) {
       const updatedUser = { ...currentUser, ...userData };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      const storage = this.getStorageForExistingUser();
+      storage.setItem('user', JSON.stringify(updatedUser));
     }
   }
 
@@ -185,7 +198,7 @@ export class AuthService {
    * Check if token is expired (basic check)
    */
   static isTokenExpired(): boolean {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     if (!token) return true;
 
     try {

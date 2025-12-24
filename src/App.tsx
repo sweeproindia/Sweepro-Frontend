@@ -2,11 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner"; // fix: correct path
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { UserProvider } from "@/contexts/UserContext";
 import { BookingFormProvider } from "@/contexts/BookingFormContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ScrollToTop from '@/components/ScrollToTop';
+import { getAuthToken } from '@/services/api';
+import { useUser } from '@/contexts/UserContext';
 
 import AdminDashboard from "./pages/AdminDashboard";
 import BookingsPage from "./pages/BookingsPage";
@@ -38,6 +40,24 @@ import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 
 const queryClient = new QueryClient();
 
+const RequireMaidAuth = ({ children }: { children: JSX.Element }) => {
+  const token = getAuthToken();
+  const { user, isLoading, authInitialized } = useUser();
+
+  // Avoid redirecting before we finish loading auth state from storage
+  if (!authInitialized) return null;
+
+  if (!token) return <Navigate to="/login" replace />;
+  if (!user && isLoading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'MAID') {
+    const redirect = user.role === 'ADMIN' ? '/admin-dashboard' : '/dashboard';
+    return <Navigate to={redirect} replace />;
+  }
+
+  return children;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <UserProvider>
@@ -53,12 +73,12 @@ const App = () => (
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/test-login" element={<TestLoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
-                  <Route path="/maid-verification" element={<MaidVerification />} />
-                  <Route path="/maid" element={<UserMaidDashboard />} />
-                  <Route path="/maid-dashboard" element={<MaidDashboard />} />
-                  <Route path="/maid-bookings" element={<MaidBookingsPage />} />
-                  <Route path="/maid-support" element={<MaidSupportPage />} />
-                  <Route path="/maid-availability" element={<MaidAvailabilityPage />} />
+                  <Route path="/maid-verification" element={<RequireMaidAuth><MaidVerification /></RequireMaidAuth>} />
+                  <Route path="/maid" element={<RequireMaidAuth><UserMaidDashboard /></RequireMaidAuth>} />
+                  <Route path="/maid-dashboard" element={<RequireMaidAuth><MaidDashboard /></RequireMaidAuth>} />
+                  <Route path="/maid-bookings" element={<RequireMaidAuth><MaidBookingsPage /></RequireMaidAuth>} />
+                  <Route path="/maid-support" element={<RequireMaidAuth><MaidSupportPage /></RequireMaidAuth>} />
+                  <Route path="/maid-availability" element={<RequireMaidAuth><MaidAvailabilityPage /></RequireMaidAuth>} />
                   <Route path="/dashboard" element={<UserDashboard />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/profile/enhanced" element={<EnhancedProfilePage />} />

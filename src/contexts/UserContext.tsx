@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { AuthService, User, LoginCredentials } from '@/services/authService';
+import { ApiError } from '@/services/api';
 
 interface UserContextType {
   user: User | null;
@@ -8,16 +9,17 @@ interface UserContextType {
   updateUser: (userData: Partial<User>) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  authInitialized: boolean;
   refreshUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   // Check for stored user and refresh auth on mount
   useEffect(() => {
@@ -53,13 +55,14 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
+        setAuthInitialized(true);
       }
     };
 
     initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<User> => {
+  const login = useCallback(async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     
     try {
@@ -80,23 +83,23 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     AuthService.logout();
     setUser(null);
     setIsAuthenticated(false);
-  };
+  }, []);
 
-  const updateUser = (userData: Partial<User>) => {
+  const updateUser = useCallback((userData: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
       AuthService.updateStoredUser(userData);
       setUser(updatedUser);
     }
-  };
+  }, [user]);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     if (!isAuthenticated) return;
     
     setIsLoading(true);
@@ -108,15 +111,22 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Failed to refresh user:', error);
-      // If refresh fails, logout the user
-      logout();
+      // Only logout on real auth failures. Transient network/server errors should not wipe the session.
+      if (error instanceof ApiError && error.statusCode === 401) {
+        logout();
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated, logout]);
+
+  const contextValue = useMemo(
+    () => ({ user, login, logout, updateUser, isLoading, isAuthenticated, authInitialized, refreshUser }),
+    [user, login, logout, updateUser, isLoading, isAuthenticated, authInitialized, refreshUser]
+  );
 
   return (
-    <UserContext.Provider value={{ user, login, logout, updateUser, isLoading, isAuthenticated, refreshUser }}>
+    <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );

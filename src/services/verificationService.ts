@@ -119,15 +119,19 @@ class VerificationService {
   }
 
   // Submit verification request (for maids)
-  async submitVerification(data: {
-    personalInfo: MaidVerification['personalInfo'];
-    documents: FormData;
-  }): Promise<ApiResponse<MaidVerification>> {
+  async submitVerification(
+    data:
+      | {
+          personalInfo: MaidVerification['personalInfo'];
+          documents: FormData;
+        }
+      | FormData
+  ): Promise<ApiResponse<MaidVerification>> {
     try {
-      // For file uploads, we need to handle FormData differently
+      const formData = data instanceof FormData ? data : data.documents;
       return await apiRequest<MaidVerification>('/documents/upload-verification', {
         method: HttpMethod.POST,
-        body: data,
+        body: formData,
         requiresAuth: true,
         headers: {
           // Don't set Content-Type for FormData, let browser set it with boundary

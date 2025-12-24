@@ -1,13 +1,13 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Home, Calendar, MessageCircle, LogOut, User, Clock, Shield } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { Sidebar, SidebarBody, SidebarLink } from '@/components/ui/aceternity-sidebar';
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { apiRequest, HttpMethod } from '@/services/api';
+import { apiRequest, ApiError, HttpMethod } from '@/services/api';
 
 interface MaidDashboardSidebarProps {
   open?: boolean;
@@ -52,10 +52,13 @@ const maidNavigationItems = [
 ];
 
 export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBookingsCount = 0 }: MaidDashboardSidebarProps) => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useUser();
+  const { user, logout, refreshUser } = useUser();
   const { toast } = useToast();
+
+  const pollIntervalRef = useRef<number | undefined>(undefined);
+  const hasRefreshedAfterApprovalRef = useRef(false);
+
   const [verificationStatus, setVerificationStatus] = useState<string>('UNKNOWN');
   const [verificationStatusLoaded, setVerificationStatusLoaded] = useState(false);
 
@@ -71,9 +74,33 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
           requiresAuth: true
         });
         if (result.success && (result as any).data) {
-          setVerificationStatus(((result as any).data as any).overallStatus || 'NOT_SUBMITTED');
+          const status = ((result as any).data as any).overallStatus || 'NOT_SUBMITTED';
+          setVerificationStatus(status);
+
+          // If approved, refresh user profile to reflect verified status without logout/login
+          if (status === 'APPROVED') {
+            if (!hasRefreshedAfterApprovalRef.current) {
+              hasRefreshedAfterApprovalRef.current = true;
+              await refreshUser();
+            }
+
+            if (pollIntervalRef.current) {
+              window.clearInterval(pollIntervalRef.current);
+              pollIntervalRef.current = undefined;
+            }
+          }
         }
       } catch (error) {
+        if (error instanceof ApiError && error.statusCode === 401) {
+          navigate('/login');
+          return;
+        }
+        if (error instanceof ApiError && error.statusCode === 403) {
+          // Token is valid but not allowed for maid endpoint (likely logged in as non-maid)
+          const redirect = user?.role === 'ADMIN' ? '/admin-dashboard' : '/dashboard';
+          navigate(redirect);
+          return;
+        }
         console.error('Error fetching verification status:', error);
       } finally {
         setVerificationStatusLoaded(true);
@@ -81,7 +108,19 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
     };
 
     fetchVerificationStatus();
-  }, []);
+
+    // Poll while not approved, so admin approval reflects without logout/login
+    pollIntervalRef.current = window.setInterval(() => {
+      fetchVerificationStatus();
+    }, 15000);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        window.clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = undefined;
+      }
+    };
+  }, [navigate, refreshUser, user?.role]);
 
   const handleLogout = () => {
     logout();

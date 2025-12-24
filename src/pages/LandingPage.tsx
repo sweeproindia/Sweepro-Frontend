@@ -79,10 +79,12 @@ export default function LandingPage() {
       <FeaturesSection />
       <HowItWorksSection />
       
-      <PricingSection 
-        isAuthenticated={isAuthenticated}
-        onPlanSelect={handlePlanSelect}
-      />
+      {!isAuthenticated && (
+        <PricingSection 
+          isAuthenticated={isAuthenticated}
+          onPlanSelect={handlePlanSelect}
+        />
+      )}
       
       <TestimonialsSection />
       <FAQSection />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import  {DocumentUpload } from '@/components/ui/document-upload';
@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
-import { API_BASE_URL, BACKEND_ORIGIN } from '@/services/api';
+import { apiRequest, ApiError, BACKEND_ORIGIN, HttpMethod } from '@/services/api';
 import { 
   Shield, 
   FileText, 
@@ -53,8 +53,13 @@ interface VerificationStatus {
 
 export default function MaidVerification() {
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, refreshUser } = useUser();
   const { toast } = useToast();
+  const toastRef = useRef(toast);
+
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
   const [documents, setDocuments] = useState<VerificationDocuments>({
     aadharCard: [],
     panCard: [],
@@ -71,10 +76,8 @@ export default function MaidVerification() {
     documents: {}
   });
 
-  const verificationStatusUrl = `${API_BASE_URL}/documents/maid-verification-status`;
-  const verificationUploadUrl = `${API_BASE_URL}/documents/upload-verification`;
-
   const isMaidVerifiedFromProfile = Boolean((user as any)?.profiles?.maid?.isVerified) || ((user as any)?.profiles?.maid?.status === 'ACTIVE');
+  const userRole = (user as any)?.role;
 
   // Load existing verification status on component mount
   useEffect(() => {
@@ -86,36 +89,23 @@ export default function MaidVerification() {
       try {
         setIsLoading(true);
         setStatusError(null);
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          setIsLoading(false);
-          return;
-        }
 
-        // Use the new API endpoint for maid verification status
-        const response = await fetch(verificationStatusUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+        const result = await apiRequest('/documents/maid-verification-status', {
+          method: HttpMethod.GET,
+          requiresAuth: true
         });
 
-        const contentType = response.headers.get('content-type') || '';
-        const result = contentType.includes('application/json')
-          ? await response.json()
-          : { success: false, message: await response.text() };
-
-        if (response.ok && result.success && result.data) {
-          const data = result.data;
+        if (result.success && (result as any).data) {
+          const data = (result as any).data;
             
             // If already approved, redirect to dashboard
             if (data.overallStatus === 'APPROVED') {
-              toast({
+              toastRef.current({
                 title: 'Already Verified',
                 description: 'Your profile is already verified.',
                 variant: 'default'
               });
+              await refreshUser();
               navigate('/maid-dashboard');
               return;
             }
@@ -166,6 +156,15 @@ export default function MaidVerification() {
             );
           }
       } catch (error) {
+        if (error instanceof ApiError && error.statusCode === 401) {
+          navigate('/login');
+          return;
+        }
+        if (error instanceof ApiError && error.statusCode === 403) {
+          const redirect = userRole === 'ADMIN' ? '/admin-dashboard' : '/dashboard';
+          navigate(redirect);
+          return;
+        }
         console.error('Error loading verification status:', error);
         setShowUploadForm(false);
         setStatusError(error instanceof Error ? error.message : 'Failed to load verification status');
@@ -175,7 +174,7 @@ export default function MaidVerification() {
     };
 
     loadVerificationStatus();
-  }, [isMaidVerifiedFromProfile, reloadKey, verificationStatusUrl, navigate]);
+  }, [isMaidVerifiedFromProfile, reloadKey, navigate, refreshUser, userRole]);
 
   const getDocumentUploadRequirements = () => {
     const existing = verificationStatus.documents || {};
@@ -264,80 +263,26 @@ export default function MaidVerification() {
         console.log('Added electricityBill:', documents.electricityBill[0].name);
       }
 
-      // Get token from localStorage
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
-
       console.log('Making API request to upload documents...');
 
-      console.log(`Attempting upload to: ${verificationUploadUrl}`);
-      const response = await fetch(verificationUploadUrl, {
-        method: 'POST',
+      const result = await apiRequest('/documents/upload-verification', {
+        method: HttpMethod.POST,
+        body: formData,
+        requiresAuth: true,
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
+          // Do not set Content-Type for FormData
+        }
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
-
-        // If already verified, redirect away from verification flow
-        if (response.status === 403) {
-          try {
-            const parsed = JSON.parse(errorText);
-            const msg = parsed?.message || errorText;
-            if (typeof msg === 'string' && msg.toLowerCase().includes('already verified')) {
-              toast({
-                title: 'Already Verified',
-                description: 'Your account is already verified. Redirecting to dashboard.',
-                variant: 'default'
-              });
-              navigate('/maid-dashboard');
-              return;
-            }
-          } catch {
-            // ignore JSON parse errors
-          }
-        }
-        throw new Error(`Server error: ${response.status} - ${errorText}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const responseText = await response.text();
-        console.error('Non-JSON response:', responseText);
-        throw new Error('Server returned non-JSON response: ' + responseText.substring(0, 200));
-      }
-
-      const result = await response.json();
       console.log('Upload result:', result);
 
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to upload documents');
-      }
-
-      const refreshResponse = await fetch(verificationStatusUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const refreshed = await apiRequest('/documents/maid-verification-status', {
+        method: HttpMethod.GET,
+        requiresAuth: true
       });
 
-      if (refreshResponse.ok) {
-        const refreshContentType = refreshResponse.headers.get('content-type') || '';
-        const refreshed = refreshContentType.includes('application/json')
-          ? await refreshResponse.json()
-          : { success: false, message: await refreshResponse.text() };
-        if (refreshed.success && refreshed.data) {
-          const data = refreshed.data;
+      if (refreshed.success && (refreshed as any).data) {
+          const data = (refreshed as any).data;
           const transformedDocuments: any = {};
           if (data.documents) {
             const docMapping = {
@@ -367,7 +312,10 @@ export default function MaidVerification() {
             rejectionReason: data.rejectionReason,
             documents: transformedDocuments
           });
-        }
+
+          if (data.overallStatus === 'APPROVED') {
+            await refreshUser();
+          }
       }
 
       setShowUploadForm(false);
@@ -390,7 +338,7 @@ export default function MaidVerification() {
       
       if (error instanceof Error) {
         if (error.message.includes('fetch')) {
-          errorMessage = 'Network error: Cannot connect to server. Please check if the backend is running on port 3000.';
+          errorMessage = `Network error: Cannot connect to server. Please check if the backend is reachable at ${BACKEND_ORIGIN}.`;
         } else if (error.message.includes('Authentication')) {
           errorMessage = 'Authentication failed. Please log in again.';
         } else {

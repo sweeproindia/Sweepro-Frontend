@@ -187,14 +187,16 @@ export const Navbar = ({
               >
                 How It Works
               </a>
-              <a
-                href="#subscription-plans"
-                className={`font-semibold hover:text-blue-600 transition-colors ${
-                  scrolled ? 'text-black' : 'text-white'
-                }`}
-              >
-                Pricing
-              </a>
+              {!isAuthenticated && (
+                <a
+                  href="#subscription-plans"
+                  className={`font-semibold hover:text-blue-600 transition-colors ${
+                    scrolled ? 'text-black' : 'text-white'
+                  }`}
+                >
+                  Pricing
+                </a>
+              )}
               <a
                 href="#testimonials"
                 className={`font-semibold hover:text-blue-600 transition-colors ${
@@ -311,13 +313,15 @@ export const Navbar = ({
             >
               How It Works
             </a>
-            <a
-              href="#subscription-plans"
-              className="block text-muted-foreground hover:text-primary transition-colors py-2"
-              onClick={toggleMenu}
-            >
-              Pricing
-            </a>
+            {!isAuthenticated && (
+              <a
+                href="#subscription-plans"
+                className="block text-muted-foreground hover:text-primary transition-colors py-2"
+                onClick={toggleMenu}
+              >
+                Pricing
+              </a>
+            )}
             <a
               href="#testimonials"
               className="block text-muted-foreground hover:text-primary transition-colors py-2"
