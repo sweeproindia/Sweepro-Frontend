@@ -99,7 +99,7 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
   return (
     <motion.section
       id="subscription-plans"
-      className="relative min-h-screen py-24 bg-gradient-to-br from-blue-50 via-blue-100 to-white overflow-hidden"
+      className="relative min-h-screen py-24 bg-gradient-to-t from-blue-200 via-blue-200 via-blue-600  to-white overflow-hidden"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -188,7 +188,7 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
                             }`}
                             onClick={() => handlePlanSelect(plan.id)}
                           >
-                            Learn More
+                            Buy Now
                           </Button>
                         </div>
                       </CardContent>

@@ -464,15 +464,15 @@ export default function MaidDashboard() {
               {bookings.length > 0 ? (
                 <div className="space-y-4">
                   {bookings.slice(0, 2).map((booking) => (
-                    <div key={booking.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4 flex-1">
+                    <div key={booking.id} className="p-4 border rounded-2xl hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
+                      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-4 flex-1">
                           <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
                             booking.status === 'COMPLETED' ? 'bg-success' : 
                             booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
                             booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
                           }`} />
-                          <div className="flex-1">
+                          <div className="flex-1 space-y-3">
                             <div className="flex items-center gap-2 mb-3">
                               <p className="font-semibold text-foreground text-lg">
                                 {booking.service?.name || 'Cleaning Service'}
@@ -487,7 +487,7 @@ export default function MaidDashboard() {
                             </div>
                             
                             {/* Enhanced Assignment Details */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-sm">
                                   <Calendar className="h-4 w-4 text-primary" />
@@ -542,11 +542,11 @@ export default function MaidDashboard() {
                             
                             {booking.specialInstructions && (
                               <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-l-4 border-yellow-400">
-                                <div className="flex items-start gap-2">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
                                   <MessageCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
                                   <div>
                                     <span className="font-medium text-yellow-700 dark:text-yellow-300 text-sm">Special Instructions:</span>
-                                    <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-1">{booking.specialInstructions}</p>
+                                    <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-1 break-words">{booking.specialInstructions}</p>
                                   </div>
                                 </div>
                               </div>
@@ -555,7 +555,7 @@ export default function MaidDashboard() {
                             {/* Assignment Status & Timeline */}
                             {booking.createdAt && (
                               <div className="mb-3 p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
+                                <div className="flex flex-wrap items-center gap-2 text-sm text-green-700 dark:text-green-300">
                                   <CheckCircle className="h-4 w-4" />
                                   <span>Assigned on {new Date(booking.createdAt).toLocaleDateString()}</span>
                                 </div>
@@ -568,7 +568,7 @@ export default function MaidDashboard() {
                       {/* Enhanced Action buttons for maid */}
                       <div className="mt-4 pt-4 border-t border-border">
                         {booking.status === 'CONFIRMED' && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                               ▶️ Start Service
                             </Button>
@@ -584,7 +584,7 @@ export default function MaidDashboard() {
                           </div>
                         )}
                         {booking.status === 'IN_PROGRESS' && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                               ✅ Complete Service
                             </Button>
@@ -600,7 +600,7 @@ export default function MaidDashboard() {
                           </div>
                         )}
                         {booking.status === 'PENDING' && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <div className="flex items-center gap-2 text-sm text-orange-600">
                               <Clock className="h-4 w-4 animate-pulse" />
                               <span>Awaiting admin assignment...</span>
@@ -608,7 +608,7 @@ export default function MaidDashboard() {
                           </div>
                         )}
                         {booking.status === 'COMPLETED' && (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <Badge variant="default" className="bg-green-100 text-green-800">
                               ✅ Service Completed
                             </Badge>

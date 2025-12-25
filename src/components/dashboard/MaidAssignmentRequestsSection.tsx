@@ -234,7 +234,7 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
     <>
       <Card className="dashboard-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-primary" />
@@ -252,7 +252,7 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
               size="sm"
               onClick={fetchAssignmentRequests}
               disabled={loading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full md:w-auto"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -271,9 +271,9 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
           ) : (
             <div className="space-y-4">
               {assignmentRequests.map((request) => (
-                <Card key={request.id} className="border border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
+                <Card key={request.id} className="border border-gray-200 rounded-2xl">
+                  <CardContent className="space-y-4 p-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="flex-1 space-y-3">
                         {/* Customer Info */}
                         <div className="flex items-center gap-3">
@@ -311,7 +311,7 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
                         </div>
 
                         {/* Request Details */}
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             <span>Requested: {new Date(request.requestedAt).toLocaleDateString()}</span>
@@ -340,12 +340,12 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex flex-col gap-2 ml-4">
+                      <div className="flex w-full flex-col gap-2 lg:ml-4 lg:w-auto">
                         <Button
                           size="sm"
                           onClick={() => handleAcceptRequest(request.id)}
                           disabled={processing === request.id || isExpired(request.expiresAt)}
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="w-full bg-green-600 text-white hover:bg-green-700"
                         >
                           {processing === request.id ? (
                             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -359,7 +359,7 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
                           variant="outline"
                           onClick={() => openRejectDialog(request)}
                           disabled={processing === request.id || isExpired(request.expiresAt)}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
                         >
                           <XCircle className="h-4 w-4" />
                           Reject

@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CreditCard, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Mail, Package, TrendingUp, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface Subscription {
   id: string;
@@ -29,6 +30,7 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getPaginatedData = (data: Subscription[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage;
@@ -93,6 +95,37 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
     </div>
   );
 
+  const filteredSubscriptions = React.useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return subscriptions;
+    return subscriptions.filter((subscription) => {
+      const name = subscription.customerName.toLowerCase();
+      const email = subscription.customerEmail.toLowerCase();
+      const plan = subscription.plan.toLowerCase();
+      const status = subscription.status.toLowerCase();
+      return (
+        name.includes(term) ||
+        email.includes(term) ||
+        plan.includes(term) ||
+        status.includes(term)
+      );
+    });
+  }, [subscriptions, searchTerm]);
+
+  const totalPages = Math.max(1, getTotalPages(filteredSubscriptions));
+  const paginatedSubscriptions = getPaginatedData(filteredSubscriptions, currentPage);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  React.useEffect(() => {
+    const updatedTotal = Math.max(1, getTotalPages(filteredSubscriptions));
+    if (currentPage > updatedTotal) {
+      setCurrentPage(updatedTotal);
+    }
+  }, [filteredSubscriptions, currentPage]);
+
   return (
     <Card className="dashboard-card">
       <CardHeader>
@@ -102,83 +135,125 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
         </CardTitle>
         <CardDescription>Manage customer subscription plans and usage</CardDescription>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">S.No</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Plan</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Usage</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Next Billing</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {getPaginatedData(subscriptions, currentPage).map((subscription, index) => (
-              <TableRow key={subscription.id}>
-                <TableCell className="font-medium">
-                  {getSerialNumber(index, currentPage)}
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{subscription.customerName}</p>
-                    <p className="text-sm text-muted-foreground">{subscription.customerEmail}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{subscription.plan}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(subscription.status)}>
-                    {subscription.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>{subscription.usage} / {subscription.limit}</span>
-                      <span>{getUsagePercentage(subscription.usage, subscription.limit)}%</span>
-                    </div>
-                    <Progress 
-                      value={getUsagePercentage(subscription.usage, subscription.limit)} 
-                      className="h-2"
-                    />
-                  </div>
-                </TableCell>
-                <TableCell>${subscription.price}/month</TableCell>
-                <TableCell>{subscription.nextBilling}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className="cursor-pointer hover:bg-muted">
-                      View Details
-                    </Badge>
-                    {subscription.status === 'active' && (
-                      <Badge variant="outline" className="cursor-pointer hover:bg-muted">
-                        Manage
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {subscriptions.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No subscriptions found
+      <CardContent className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Showing {paginatedSubscriptions.length > 0 ? `${getSerialNumber(0, currentPage)}-
+              ${getSerialNumber(paginatedSubscriptions.length - 1, currentPage)}` : 0} of {filteredSubscriptions.length} subscriptions
+            </p>
           </div>
-        )}
-        {subscriptions.length > 0 && (
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by customer, email, plan, or status"
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">S.No</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Usage</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Next Billing</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedSubscriptions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                    {filteredSubscriptions.length === 0 ? 'No subscriptions match your search.' : 'No subscriptions on this page.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedSubscriptions.map((subscription, index) => (
+                  <TableRow key={subscription.id}>
+                    <TableCell className="font-medium">
+                      {getSerialNumber(index, currentPage)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-primary" />
+                          <span className="font-medium">{subscription.customerName}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          <span>{subscription.customerEmail}</span>
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {subscription.plan}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(subscription.status)}>
+                        {subscription.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>{subscription.usage} / {subscription.limit}</span>
+                          <span>{getUsagePercentage(subscription.usage, subscription.limit)}%</span>
+                        </div>
+                        <Progress
+                          value={getUsagePercentage(subscription.usage, subscription.limit)}
+                          className="h-2"
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-sm">
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <span>₹{subscription.price.toLocaleString('en-IN')}/month</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CalendarIcon className="h-4 w-4" />
+                        <span>{subscription.nextBilling}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline">
+                          View Details
+                        </Button>
+                        {subscription.status === 'active' && (
+                          <Button size="sm" variant="outline">
+                            Manage Plan
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {filteredSubscriptions.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
-            totalPages={getTotalPages(subscriptions)}
+            totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
         )}
       </CardContent>
     </Card>
   );
-}; 
+};

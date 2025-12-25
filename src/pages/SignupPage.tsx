@@ -11,6 +11,7 @@ import { Eye, EyeOff, Home, Lock, Mail, Phone, Shield, Sparkles, User } from 'lu
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/services/api';
+import { parseApiError } from '@/utils/errorUtils';
 
 // Predefined addresses from your client (Only for Customers)
 const SERVICE_ADDRESSES = [
@@ -196,36 +197,21 @@ export default function SignupPage() {
       }
     } catch (error: any) {
       if (error instanceof ApiError) {
-        // Backend might return { field: 'email'|'phone', message: '...' }
-        const fieldFromBackend = (error.response as any)?.field;
-        const messageFromBackend = (error.response as any)?.message || error.message;
-
-        if (fieldFromBackend) {
-          setFieldErrors((prev) => ({ ...prev, [fieldFromBackend]: messageFromBackend }));
-          setFormError(messageFromBackend);
-          return;
-        }
-
-        // express-validator: { errors: [{ msg, path }] }
-        if (error.statusCode === 400 && (error.response as any)?.errors?.length) {
-          const next: Record<string, string> = {};
-          for (const err of (error.response as any).errors as any[]) {
-            const param = err?.path || err?.param;
-            if (!param) continue;
-            next[param] = err.msg || 'Invalid value.';
-          }
-          if (Object.keys(next).length > 0) {
-            setFieldErrors(next);
-            setFormError('Please fix the highlighted fields.');
-            return;
-          }
-        }
-
-        setFormError(messageFromBackend || 'Registration failed. Please try again.');
-        return;
+        console.error('Registration error response:', error.response);
       }
 
-      setFormError(error?.message || 'Registration failed. Please try again.');
+      const { formError: nextFormError, fieldErrors: parsedFieldErrors } = parseApiError(error, {
+        fieldMap: {
+          credentials: ['email', 'password'],
+          email: ['email'],
+          phone: ['phone'],
+          password: ['password', 'confirmPassword']
+        },
+        defaultMessage: 'Registration failed. Please try again.'
+      });
+
+      setFieldErrors((prev) => ({ ...prev, ...parsedFieldErrors }));
+      setFormError(nextFormError);
     } finally {
       setIsLoading(false);
     }

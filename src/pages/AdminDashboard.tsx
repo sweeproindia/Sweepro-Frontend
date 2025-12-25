@@ -783,7 +783,7 @@ export default function AdminDashboard() {
           {activeSection === 'overview' && 'Dashboard Overview'}
           {activeSection === 'bookings' && 'All Bookings'}
           {activeSection === 'pending-bookings' && 'Pending Bookings'}
-          {activeSection === 'users' && 'User Management'}
+          {activeSection === 'users' && 'Customer Management'}
           {activeSection === 'maids' && 'Maid Management'}
           {activeSection === 'maid-verification' && 'Maid Verification'}
           {activeSection === 'subscriptions' && 'Subscriptions'}

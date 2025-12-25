@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthService, LoginCredentials } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 import { ApiError } from '@/services/api';
+import { parseApiError } from '@/utils/errorUtils';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -80,31 +81,18 @@ export default function LoginPage() {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        if (error.statusCode === 401) {
-          setFieldErrors({ password: 'Invalid email or password.' });
-          setFormError('Invalid email or password.');
-          return;
-        }
-
-        if (error.statusCode === 400 && (error.response as any)?.errors?.length) {
-          const next: { email?: string; password?: string } = {};
-          for (const err of (error.response as any).errors as any[]) {
-            const param = err?.path || err?.param;
-            if (param === 'email') next.email = err.msg || 'Enter a valid email.';
-            if (param === 'password') next.password = err.msg || 'Password is required.';
-          }
-          if (Object.keys(next).length > 0) {
-            setFieldErrors(next);
-            setFormError('Please fix the highlighted fields.');
-            return;
-          }
-        }
-
-        setFormError(error.message || 'Login failed. Please try again.');
-        return;
+        console.error('Login error response:', error.response);
       }
 
-      setFormError(error instanceof Error ? error.message : 'Login failed. Please try again.');
+      const { formError: nextFormError, fieldErrors: parsedFieldErrors } = parseApiError(error, {
+        fieldMap: {
+          credentials: ['email', 'password']
+        },
+        defaultMessage: 'Login failed. Please try again.'
+      });
+
+      setFieldErrors(parsedFieldErrors as { email?: string; password?: string });
+      setFormError(nextFormError);
     } finally {
       setIsLoading(false);
     }

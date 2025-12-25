@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Users, ChevronLeft, ChevronRight, UserPlus, Pause, User, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Users, ChevronLeft, ChevronRight, UserPlus, Pause, User, AlertTriangle, RefreshCw, Calendar, Search } from 'lucide-react';
+
 import { CustomerAssignmentService, CustomerAssignmentStatus } from '@/services/customerAssignmentService';
 import { toast } from 'sonner';
 
@@ -50,7 +52,8 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   const itemsPerPage = 5;
   const [customerStatuses, setCustomerStatuses] = useState<Record<string, CustomerAssignmentStatus>>({});
   const [loading, setLoading] = useState(false);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Assignment dialog state
   const [assignDialog, setAssignDialog] = useState<{
     open: boolean;
@@ -69,7 +72,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   const loadCustomerStatuses = async () => {
     setLoading(true);
     console.log('🔄 Loading customer statuses for', users.length, 'users');
-    
+
     try {
       const statusPromises = users.map(async (user) => {
         try {
@@ -81,7 +84,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           return { userId: user.id, status: null };
         }
       });
-      
+
       const results = await Promise.all(statusPromises);
       const statusMap: Record<string, CustomerAssignmentStatus> = {};
       results.forEach(({ userId, status }) => {
@@ -89,11 +92,11 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           statusMap[userId] = status;
           console.log(`📝 Added status for user ${userId}:`, {
             hasAssignment: status.hasAssignment,
-            maidName: status.assignment?.maid?.name
+            maidName: status.assignment?.maid?.name,
           });
         }
       });
-      
+
       setCustomerStatuses(statusMap);
       console.log('🎉 Customer statuses updated:', Object.keys(statusMap).length, 'customers with status');
     } catch (error) {
@@ -107,28 +110,26 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   const checkMaidConflicts = async (maidId: string, customerId: string) => {
     try {
       // This is a preview check - we'll try to get customer status and see existing assignments
-      const customer = users.find(u => u.id === customerId);
+      const customer = users.find((u) => u.id === customerId);
       if (!customer) return;
 
       // Find if this maid is already assigned to other customers
-      const otherCustomersWithSameMaid = Object.entries(customerStatuses).filter(([userId, status]) => 
-        userId !== customerId && 
-        status.hasAssignment && 
-        status.assignment?.maid.id === maidId
+      const otherCustomersWithSameMaid = Object.entries(customerStatuses).filter(([userId, status]) =>
+        userId !== customerId && status.hasAssignment && status.assignment?.maid.id === maidId
       );
 
       if (otherCustomersWithSameMaid.length > 0) {
         const customerNames = otherCustomersWithSameMaid.map(([userId]) => {
-          const user = users.find(u => u.id === userId);
+          const user = users.find((u) => u.id === userId);
           return user?.name || 'Unknown';
         }).join(', ');
-        
-        setConflictWarnings(prev => ({
+
+        setConflictWarnings((prev) => ({
           ...prev,
-          [maidId]: `⚠️ This maid is already assigned to: ${customerNames}`
+          [maidId]: `⚠️ This maid is already assigned to: ${customerNames}`,
         }));
       } else {
-        setConflictWarnings(prev => {
+        setConflictWarnings((prev) => {
           const newWarnings = { ...prev };
           delete newWarnings[maidId];
           return newWarnings;
@@ -150,17 +151,17 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
       const response = await CustomerAssignmentService.assignMaidToCustomer({
         customerId: assignDialog.customer.id,
         maidId: selectedMaidId,
-        notes: assignmentNotes
+        notes: assignmentNotes,
       });
-      
+
       console.log('Assignment response:', response);
-      
+
       // Find the selected maid details for optimistic update
-      const selectedMaid = availableMaids.find(m => m.id === selectedMaidId);
-      
+      const selectedMaid = availableMaids.find((m) => m.id === selectedMaidId);
+
       // Optimistic update - immediately update the customer status
       if (selectedMaid) {
-        setCustomerStatuses(prev => ({
+        setCustomerStatuses((prev) => ({
           ...prev,
           [assignDialog.customer!.id]: {
             customerId: assignDialog.customer!.id,
@@ -178,7 +179,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 name: assignDialog.customer!.name,
                 email: assignDialog.customer!.email,
                 phone: assignDialog.customer!.phone,
-                address: ''
+                address: '',
               },
               maid: {
                 id: selectedMaidId,
@@ -187,50 +188,49 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 phone: selectedMaid.phone,
                 rating: selectedMaid.rating,
                 skills: selectedMaid.skills,
-                completedBookings: selectedMaid.completedBookings
-              }
+                completedBookings: selectedMaid.completedBookings,
+              },
             },
             isInBufferPeriod: prev[assignDialog.customer!.id]?.isInBufferPeriod || false,
             bufferPeriod: prev[assignDialog.customer!.id]?.bufferPeriod,
             nextBookingDate: prev[assignDialog.customer!.id]?.nextBookingDate,
-            lastBookingDate: prev[assignDialog.customer!.id]?.lastBookingDate
-          }
+            lastBookingDate: prev[assignDialog.customer!.id]?.lastBookingDate,
+          },
         }));
       }
-      
+
       toast.success('Assignment request sent to maid successfully');
       setAssignDialog({ open: false, customer: null });
       setSelectedMaidId('');
       setAssignmentNotes('');
       setConflictWarnings({});
-      
+
       // Refresh data in background
       setTimeout(async () => {
         await loadCustomerStatuses();
         onRefreshData?.();
       }, 500);
-      
     } catch (error: any) {
       console.error('Assignment error:', error);
-      
+
       // Handle specific conflict errors
       if (error.response?.status === 409) {
         const conflictType = error.response.data?.conflictType;
         const errorMessage = error.response.data?.error || 'Assignment conflict detected';
-        
+
         if (conflictType === 'TIMESLOT_CONFLICT') {
           toast.error(`Timeslot Conflict: ${errorMessage}`, {
             duration: 6000,
-            description: 'This maid is already assigned to another customer with the same timeslot.'
+            description: 'This maid is already assigned to another customer with the same timeslot.',
           });
         } else if (conflictType === 'CAPACITY_EXCEEDED') {
           toast.error(`Capacity Exceeded: ${errorMessage}`, {
             duration: 6000,
-            description: 'This maid has reached their maximum daily booking capacity.'
+            description: 'This maid has reached their maximum daily booking capacity.',
           });
         } else {
           toast.error(`Assignment Conflict: ${errorMessage}`, {
-            duration: 5000
+            duration: 5000,
           });
         }
       } else {
@@ -244,24 +244,23 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   const handleRemoveAssignment = async (customerId: string) => {
     try {
       // Optimistic update - immediately remove assignment
-      setCustomerStatuses(prev => ({
+      setCustomerStatuses((prev) => ({
         ...prev,
         [customerId]: {
           ...prev[customerId],
           hasAssignment: false,
-          assignment: undefined
-        }
+          assignment: undefined,
+        },
       }));
-      
+
       await CustomerAssignmentService.removeCustomerAssignment(customerId);
       toast.success('Maid assignment removed');
-      
+
       // Refresh data in background
       setTimeout(async () => {
         await loadCustomerStatuses();
         onRefreshData?.();
       }, 500);
-      
     } catch (error) {
       toast.error('Failed to remove assignment');
       console.error('Remove assignment error:', error);
@@ -329,6 +328,31 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
     </div>
   );
 
+  const filteredUsers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter((user) => {
+      const name = user.name.toLowerCase();
+      const email = user.email.toLowerCase();
+      const phone = user.phone?.toLowerCase?.() ?? user.phone;
+      return name.includes(term) || email.includes(term) || (typeof phone === 'string' && phone.toLowerCase().includes(term));
+    });
+  }, [users, searchTerm]);
+
+  const totalPages = Math.max(1, getTotalPages(filteredUsers));
+  const paginatedUsers = getPaginatedData(filteredUsers, currentPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const updatedTotalPages = Math.max(1, getTotalPages(filteredUsers));
+    if (currentPage > updatedTotalPages) {
+      setCurrentPage(updatedTotalPages);
+    }
+  }, [filteredUsers, currentPage]);
+
   return (
     <Card className="dashboard-card">
       <CardHeader>
@@ -352,180 +376,205 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">S.No</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Assigned Maid</TableHead>
-              <TableHead>Buffer Status</TableHead>
-              <TableHead>Next Booking</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+      <CardContent className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Showing {paginatedUsers.length > 0 ? `${getSerialNumber(0, currentPage)}-
+              ${getSerialNumber(paginatedUsers.length - 1, currentPage)}` : 0} of {filteredUsers.length} customers
+            </p>
+          </div>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by name, email, or phone"
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
-                  <div className="flex items-center justify-center gap-2">
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Loading customer assignments...
-                  </div>
-                </TableCell>
+                <TableHead className="w-12">S.No</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Assigned Maid</TableHead>
+                <TableHead>Buffer Status</TableHead>
+                <TableHead>Next Booking</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ) : (
-              getPaginatedData(users, currentPage).map((user, index) => {
-                const customerStatus = customerStatuses[user.id];
-                return (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    {getSerialNumber(index, currentPage)}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <p className="text-sm">{user.phone}</p>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(user.status)}>
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <RefreshCw className="h-3 w-3 animate-spin" />
-                        <span className="text-xs text-muted-foreground">Loading...</span>
-                      </div>
-                    ) : customerStatus?.hasAssignment ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-green-600" />
-                          <span className="font-medium text-sm">
-                            {customerStatus.assignment?.maid.name || 'Unknown Maid'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Rating: {customerStatus.assignment?.maid.rating?.toFixed(1) || 'N/A'}★
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Phone: {customerStatus.assignment?.maid.phone || 'N/A'}
-                        </p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-6 text-xs"
-                          onClick={() => handleRemoveAssignment(user.id)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <Badge variant="outline" className="text-xs">
-                          No Assignment
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-6 text-xs"
-                          onClick={() => setAssignDialog({ open: true, customer: user })}
-                        >
-                          <UserPlus className="h-3 w-3 mr-1" />
-                          Assign
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {!customerStatus?.hasSubscription ? (
-                      <Badge variant="outline" className="text-xs">
-                        No Subscription
-                      </Badge>
-                    ) : customerStatus?.isInBufferPeriod ? (
-                      <div className="space-y-1">
-                        <Badge variant="destructive" className="text-xs">
-                          <Pause className="h-3 w-3 mr-1" />
-                          In Buffer
-                        </Badge>
-                        <p className="text-xs text-muted-foreground">
-                          Until: {customerStatus.bufferPeriod?.endDate ? 
-                            new Date(customerStatus.bufferPeriod.endDate).toLocaleDateString() : 'N/A'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Reason: {customerStatus.bufferPeriod?.reason || 'N/A'}
-                        </p>
-                      </div>
-                    ) : (
-                      <Badge variant="default" className="text-xs">
-                        Active
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {customerStatus?.nextBookingDate ? (
-                      <div className="text-sm">
-                        <p className="font-medium">
-                          {new Date(customerStatus.nextBookingDate).toLocaleDateString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(customerStatus.nextBookingDate).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        {customerStatus?.isInBufferPeriod ? 'Paused' : 'Not scheduled'}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 flex-wrap">
-                      <Button size="sm" variant="outline" className="h-7 text-xs">
-                        View Details
-                      </Button>
-                      {user.status === 'pending' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs"
-                          onClick={() => onVerifyUser(user.id)}
-                        >
-                          Verify
-                        </Button>
-                      )}
-                      {customerStatus?.isInBufferPeriod && (
-                        <Badge variant="outline" className="text-xs">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Buffer Active
-                        </Badge>
-                      )}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-8 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      Loading customer assignments...
                     </div>
                   </TableCell>
                 </TableRow>
-              );
-              })
-            )}
-          </TableBody>
-        </Table>
-        {users.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No users found
-          </div>
-        )}
-        {users.length > 0 && (
+              ) : paginatedUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                    {filteredUsers.length === 0
+                      ? 'No customers match your search.'
+                      : 'No customers on this page.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedUsers.map((user, index) => {
+                  const customerStatus = customerStatuses[user.id];
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">
+                        {getSerialNumber(index, currentPage)}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">{user.phone}</p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(user.status)}>
+                          {user.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {loading ? (
+                          <div className="flex items-center gap-2">
+                            <RefreshCw className="h-3 w-3 animate-spin" />
+                            <span className="text-xs text-muted-foreground">Loading...</span>
+                          </div>
+                        ) : customerStatus?.hasAssignment ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-green-600" />
+                              <span className="font-medium text-sm">
+                                {customerStatus.assignment?.maid.name || 'Unknown Maid'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Rating: {customerStatus.assignment?.maid.rating?.toFixed(1) || 'N/A'}★
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Phone: {customerStatus.assignment?.maid.phone || 'N/A'}
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs"
+                              onClick={() => handleRemoveAssignment(user.id)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <Badge variant="outline" className="text-xs">
+                              No Assignment
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-xs"
+                              onClick={() => setAssignDialog({ open: true, customer: user })}
+                            >
+                              <UserPlus className="h-3 w-3 mr-1" />
+                              Assign
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {!customerStatus?.hasSubscription ? (
+                          <Badge variant="outline" className="text-xs">
+                            No Subscription
+                          </Badge>
+                        ) : customerStatus?.isInBufferPeriod ? (
+                          <div className="space-y-1">
+                            <Badge variant="destructive" className="text-xs">
+                              <Pause className="h-3 w-3 mr-1" />
+                              In Buffer
+                            </Badge>
+                            <p className="text-xs text-muted-foreground">
+                              Until: {customerStatus.bufferPeriod?.endDate
+                                ? new Date(customerStatus.bufferPeriod.endDate).toLocaleDateString()
+                                : 'N/A'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Reason: {customerStatus.bufferPeriod?.reason || 'N/A'}
+                            </p>
+                          </div>
+                        ) : (
+                          <Badge variant="default" className="text-xs">
+                            Active
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {customerStatus?.nextBookingDate ? (
+                          <div className="text-sm">
+                            <p className="font-medium">
+                              {new Date(customerStatus.nextBookingDate).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(customerStatus.nextBookingDate).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            {customerStatus?.isInBufferPeriod ? 'Paused' : 'Not scheduled'}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          <Button size="sm" variant="outline" className="h-7 text-xs">
+                            View Details
+                          </Button>
+                          {user.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() => onVerifyUser(user.id)}
+                            >
+                              Verify
+                            </Button>
+                          )}
+                          {customerStatus?.isInBufferPeriod && (
+                            <Badge variant="outline" className="text-xs">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Buffer Active
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {filteredUsers.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
-            totalPages={getTotalPages(users)}
+            totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
         )}

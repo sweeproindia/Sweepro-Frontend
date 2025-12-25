@@ -216,16 +216,10 @@ export default function SubscriptionDetailsPage() {
 
   const handleGoBack = () => {
     try {
-      navigate(-1);
+      navigate('/', { replace: false });
     } catch (error) {
-      console.error('Error going back:', error);
-      // Fallback navigation
-      try {
-        navigate('/subscription');
-      } catch (fallbackError) {
-        console.error('Fallback navigation failed:', fallbackError);
-        window.history.back();
-      }
+      console.error('Error navigating home:', error);
+      window.location.href = '/';
     }
   };
 
@@ -242,35 +236,34 @@ export default function SubscriptionDetailsPage() {
           disabled={isNavigating}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Plans
+          Back
+
         </Button>
 
         {/* Plan Selection Toggle */}
         <div className="mb-12">
           <div className="flex justify-center">
-            <div className="inline-flex p-1 bg-muted rounded-2xl border border-border">
-              {Object.entries(subscriptionPlans).map(([id, planData]) => {
-                const PlanIcon = planData.icon;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => handlePlanChange(id)}
-                    disabled={isNavigating}
-                    className={`relative px-8 py-4 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
-                      selectedPlan === id
-                        ? 'bg-primary text-primary-foreground shadow-lg transform scale-105'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-                    } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <PlanIcon className="h-4 w-4" />
-                    {planData.name}
-                    {planData.popular && selectedPlan !== id && (
-                      <Badge variant="secondary" className="text-xs">Popular</Badge>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {Object.entries(subscriptionPlans).map(([id, planData]) => {
+              const PlanIcon = planData.icon;
+              return (
+                <button
+                  key={id}
+                  onClick={() => handlePlanChange(id)}
+                  disabled={isNavigating}
+                  className={`relative px-8 py-4 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
+                    selectedPlan === id
+                      ? 'bg-primary text-primary-foreground shadow-lg transform scale-105'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <PlanIcon className="h-4 w-4" />
+                  {planData.name}
+                  {planData.popular && selectedPlan !== id && (
+                    <Badge variant="secondary" className="text-xs">Popular</Badge>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 

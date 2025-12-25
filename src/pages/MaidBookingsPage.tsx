@@ -97,23 +97,23 @@ export default function MaidBookingsPage() {
     <MaidDashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="fade-in flex items-center justify-between">
-          <div>
+        <div className="fade-in flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
             <h1 className="text-3xl font-bold text-foreground">My Assignments</h1>
             <p className="text-muted-foreground mt-2">Manage and track all your cleaning appointments</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading} className="w-full sm:w-auto">
               <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </Button>
-            <Button size="sm" onClick={() => setQrOpen(true)}>
+            <Button size="sm" onClick={() => setQrOpen(true)} className="w-full sm:w-auto">
               Show My QR
             </Button>
           </div>
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 slide-up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 slide-up">
           <Card className="dashboard-card">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -166,7 +166,7 @@ export default function MaidBookingsPage() {
         {/* Filters and Search */}
         <Card className="dashboard-card slide-up">
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center space-x-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Filter by:</span>
@@ -201,43 +201,55 @@ export default function MaidBookingsPage() {
         {/* Bookings List */}
         <Card className="dashboard-card slide-up">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <CardTitle>All Bookings</CardTitle>
                 <CardDescription>
                   {loading ? 'Loading...' : `${filteredBookings.length} booking${filteredBookings.length !== 1 ? 's' : ''} found`}
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading}>
+              <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading} className="w-full md:w-auto">
                 <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 p-3 rounded bg-destructive/10 text-destructive text-sm">{error}</div>
+              <div className="mb-4 p-3 rounded bg-destructive/10 text-destructive text-sm flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <span>{error}</span>
+                <Button variant="outline" size="sm" className="ml-auto" onClick={refreshBookings} disabled={loading}>
+                  Retry
+                </Button>
+              </div>
             )}
+
             <div className="space-y-4">
               {!loading && filteredBookings.map((booking) => (
-                <div key={booking.id} className="border border-border rounded-lg p-6 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className={`p-2 rounded-lg ${getStatusColor(booking.status)}`}>
-                          {getStatusIcon(booking.status)}
+                <div key={booking.id} className="border border-border rounded-2xl p-6 hover:bg-muted/30 transition-colors">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${getStatusColor(booking.status)}`}>
+                            {getStatusIcon(booking.status)}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground">{booking.customer?.name || 'Customer'}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(booking.scheduledAt).toLocaleDateString()} at {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            {booking.serviceAddress && (
+                              <p className="text-xs text-muted-foreground">{booking.serviceAddress}</p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground">{booking.customer?.name || 'Customer'}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(booking.scheduledAt).toLocaleDateString()} at {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                        <Badge className={getStatusColor(booking.status)}>
+                        <Badge className={`${getStatusColor(booking.status)} w-fit`}>
                           {booking.status.replace('_', ' ')}
                         </Badge>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div className="flex items-center space-x-2">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">{booking.serviceAddress}</span>
@@ -261,22 +273,22 @@ export default function MaidBookingsPage() {
                       {booking.specialInstructions && (
                         <div className="mb-2 p-3 bg-muted/30 rounded-lg">
                           <p className="text-sm font-medium text-foreground mb-1">Special Instructions:</p>
-                          <p className="text-sm text-muted-foreground">{booking.specialInstructions}</p>
+                          <p className="text-sm text-muted-foreground break-words">{booking.specialInstructions}</p>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex flex-col space-y-2 min-w-[160px]">
-                      <Button size="sm" variant="outline">
+                    <div className="flex w-full flex-col space-y-2 min-w-[160px] lg:w-[180px]">
+                      <Button size="sm" variant="outline" className="w-full">
                         View Details
                       </Button>
                       {(booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED') && (
-                        <Button size="sm" variant="outline" onClick={() => onStartService(booking.id)}>
+                        <Button size="sm" variant="outline" onClick={() => onStartService(booking.id)} className="w-full">
                           Start Service
                         </Button>
                       )}
                       {booking.status === 'IN_PROGRESS' && (
-                        <Button size="sm" variant="outline" onClick={() => onCompleteService(booking.id)}>
+                        <Button size="sm" variant="outline" onClick={() => onCompleteService(booking.id)} className="w-full">
                           Mark Complete
                         </Button>
                       )}

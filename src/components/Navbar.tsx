@@ -138,6 +138,30 @@ export const Navbar = ({
     }
   };
 
+  const navLinks = [
+    {
+      href: '#services',
+      label: 'Services',
+    },
+    {
+      href: '#how-it-works',
+      label: 'How It Works',
+    },
+    ...(
+      !isAuthenticated
+        ? [{ href: '#subscription-plans', label: 'Pricing' }]
+        : []
+    ),
+    {
+      href: '#testimonials',
+      label: 'Testimonials',
+    },
+    {
+      href: '#faq',
+      label: 'FAQ',
+    },
+  ];
+
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
@@ -153,13 +177,13 @@ export const Navbar = ({
         }`}
         style={!scrolled ? { background: 'none' } : {}}
       >
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-16 gap-3">
           {/* Logo */}
           <Link to="/" className="flex items-center group flex-shrink-0">
             <img
               src={scrolled ? "/assets/logo.png" : "/assets/logo-black.png"}
               alt="SweepPro Logo"
-              className="h-16 w-auto md:h-60 md:w-60 object-contain transition-all duration-300 group-hover:scale-110"
+              className="h-12 w-auto md:h-60 md:w-60 object-contain transition-all duration-300 group-hover:scale-110"
             />
           </Link>
 
@@ -171,48 +195,17 @@ export const Navbar = ({
               }`}
               style={!scrolled ? { background: 'transparent', boxShadow: 'none' } : {}}
             >
-              <a
-                href="#services"
-                className={`font-semibold hover:text-blue-600 transition-colors ${
-                  scrolled ? 'text-black' : 'text-white'
-                }`}
-              >
-                Services
-              </a>
-              <a
-                href="#how-it-works"
-                className={`font-semibold hover:text-blue-600 transition-colors ${
-                  scrolled ? 'text-black' : 'text-white'
-                }`}
-              >
-                How It Works
-              </a>
-              {!isAuthenticated && (
+              {navLinks.map((link) => (
                 <a
-                  href="#subscription-plans"
+                  key={link.href}
+                  href={link.href}
                   className={`font-semibold hover:text-blue-600 transition-colors ${
                     scrolled ? 'text-black' : 'text-white'
                   }`}
                 >
-                  Pricing
+                  {link.label}
                 </a>
-              )}
-              <a
-                href="#testimonials"
-                className={`font-semibold hover:text-blue-600 transition-colors ${
-                  scrolled ? 'text-black' : 'text-white'
-                }`}
-              >
-                Testimonials
-              </a>
-              <a
-                href="#faq"
-                className={`font-semibold hover:text-blue-600 transition-colors ${
-                  scrolled ? 'text-black' : 'text-white'
-                }`}
-              >
-                FAQ
-              </a>
+              ))}
             </div>
           </div>
 
@@ -289,8 +282,34 @@ export const Navbar = ({
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button variant="ghost" size="sm" onClick={toggleMenu}>
+          <div className="md:hidden flex items-center gap-2">
+            {isAuthenticated && user && (
+              <Button
+                size="sm"
+                variant={scrolled ? 'outline' : 'ghost'}
+                className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+                  scrolled
+                    ? 'border-blue-900 text-blue-900 hover:bg-blue-50'
+                    : 'text-white hover:bg-white/10'
+                }`}
+                onClick={() => {
+                  toggleMenu();
+                  handleDashboardClick();
+                }}
+              >
+                Dashboard
+              </Button>
+            )}
+            <Button
+              variant={scrolled ? 'outline' : 'ghost'}
+              size="sm"
+              className={`${
+                scrolled ? 'border-gray-300 text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'
+              }`}
+              onClick={toggleMenu}
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            >
               {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
@@ -298,83 +317,69 @@ export const Navbar = ({
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t border-border">
-            <a
-              href="#services"
-              className="block text-muted-foreground hover:text-primary transition-colors py-2"
-              onClick={toggleMenu}
-            >
-              Services
-            </a>
-            <a
-              href="#how-it-works"
-              className="block text-muted-foreground hover:text-primary transition-colors py-2"
-              onClick={toggleMenu}
-            >
-              How It Works
-            </a>
-            {!isAuthenticated && (
-              <a
-                href="#subscription-plans"
-                className="block text-muted-foreground hover:text-primary transition-colors py-2"
-                onClick={toggleMenu}
-              >
-                Pricing
-              </a>
-            )}
-            <a
-              href="#testimonials"
-              className="block text-muted-foreground hover:text-primary transition-colors py-2"
-              onClick={toggleMenu}
-            >
-              Testimonials
-            </a>
-            <a
-              href="#faq"
-              className="block text-muted-foreground hover:text-primary transition-colors py-2"
-              onClick={toggleMenu}
-            >
-              FAQ
-            </a>
-
-            {isAuthenticated && user ? (
-              <>
-                <div className="px-4 py-2 border-t border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
-                </div>
-                <Link to="/dashboard" onClick={toggleMenu}>
-                  <Button variant="default" className="w-full">
-                    Dashboard
-                  </Button>
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    toggleMenu();
-                  }}
-                  className="w-full text-left"
-                >
-                  <Button variant="outline" className="w-full text-red-600 border-red-600 hover:bg-red-50">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                </button>
-              </>
-            ) : (
-              <div className="space-y-2 pt-2">
-                <Link to="/login" onClick={toggleMenu}>
-                  <Button variant="outline" className="w-full">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/signup" onClick={toggleMenu}>
-                  <Button className="btn-hero w-full">
-                    Get Started
-                  </Button>
-                </Link>
+          <div className="md:hidden mt-3 rounded-3xl border border-white/20 bg-white/80 backdrop-blur-xl shadow-2xl">
+            <div className="px-5 pt-5 pb-6 space-y-4">
+              <div className="flex flex-col gap-3">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-700 hover:shadow"
+                    onClick={toggleMenu}
+                  >
+                    {link.label}
+                    <ChevronDown className="h-4 w-4 rotate-[-90deg] text-slate-400" />
+                  </a>
+                ))}
               </div>
-            )}
+
+              <div className="space-y-3 border-t border-slate-200/70 pt-4">
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-lg">
+                      <p className="text-sm font-semibold">{user.name}</p>
+                      <p className="text-xs text-slate-200">{user.email}</p>
+                    </div>
+                    <Button
+                      className="w-full rounded-2xl bg-gradient-to-r from-blue-900 via-blue-900 to-red-600 text-white shadow-lg hover:shadow-xl"
+                      onClick={() => {
+                        toggleMenu();
+                        handleDashboardClick();
+                      }}
+                    >
+                      Go to Dashboard
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-2xl border-red-500 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        handleLogout();
+                        toggleMenu();
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <Link to="/login" onClick={toggleMenu}>
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-2xl border-slate-200 text-slate-700 hover:border-blue-200 hover:bg-blue-50"
+                      >
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/signup" onClick={toggleMenu}>
+                      <Button className="w-full rounded-2xl bg-gradient-to-r from-blue-900 via-blue-900 to-red-600 text-white shadow-lg hover:shadow-xl">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

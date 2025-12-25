@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Shield, ChevronLeft, ChevronRight, User, Phone, MapPin, Star, Search } from 'lucide-react';
+
 import QrCodeRenderer from '@/components/qr/QrCodeRenderer';
 import { apiRequest, HttpMethod } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +52,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
   const [savingWeeklyOff, setSavingWeeklyOff] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [newMaid, setNewMaid] = useState({
     name: '',
@@ -178,6 +180,32 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
         return 'Inactive';
     }
   };
+
+  const filteredMaids = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return allMaids;
+    return allMaids.filter((maid) => {
+      const name = maid.name.toLowerCase();
+      const email = maid.email.toLowerCase();
+      const phone = maid.phone.toLowerCase();
+      const address = maid.address?.toLowerCase() ?? '';
+      const specs = maid.specializations.map((spec) => spec.toLowerCase()).join(' ');
+      return (
+        name.includes(term) ||
+        email.includes(term) ||
+        phone.includes(term) ||
+        address.includes(term) ||
+        specs.includes(term)
+      );
+    });
+  }, [allMaids, searchTerm]);
+
+  const totalPages = Math.max(1, getTotalPages(filteredMaids));
+  const paginatedMaids = getPaginatedData(filteredMaids, currentPage);
+
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const Pagination = ({ currentPage, totalPages, onPageChange }: {
     currentPage: number;
@@ -346,107 +374,153 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px]">S.No</TableHead>
-              <TableHead>Maid</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Weekly Leave</TableHead>
-              <TableHead>Performance</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {getPaginatedData(allMaids, currentPage).map((maid, index) => (
-              <TableRow key={maid.id}>
-                <TableCell className="font-medium">
-                  {getSerialNumber(index, currentPage)}
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{maid.name}</p>
-                    <p className="text-sm text-muted-foreground">{maid.email}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <p className="text-sm">{maid.phone}</p>
-                  <p className="text-xs text-muted-foreground">{maid.address}</p>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(maid.status)}>
-                    {formatStatus(maid.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {maid.weeklyOffDay ? (
-                    <Badge variant="outline">
-                      {maid.weeklyOffDay}
-                    </Badge>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openWeeklyOffDialog(maid)}
-                    >
-                      Set Weekly Leave
-                    </Button>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {maid.rating > 0 ? (
-                    <div className="flex items-center gap-1">
-                      <span>⭐{maid.rating}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">No ratings</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      View Details
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setQrMaid(maid);
-                        setShowQrDialog(true);
-                      }}
-                    >
-                      View QR
-                    </Button>
-                    {maid.rawStatus === 'PENDING_VERIFICATION' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onVerifyMaid(maid.id)}
-                      >
-                        Verify
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {allMaids.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No maids found
+      <CardContent className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Showing {paginatedMaids.length > 0 ? `${getSerialNumber(0, currentPage)}-
+              ${getSerialNumber(paginatedMaids.length - 1, currentPage)}` : 0} of {filteredMaids.length} maids
+            </p>
           </div>
-        )}
-        {allMaids.length > 0 && (
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search by name, email, phone, or specialization"
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">S.No</TableHead>
+                <TableHead>Maid</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Weekly Leave</TableHead>
+                <TableHead>Performance</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedMaids.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                    {filteredMaids.length === 0 ? 'No maids match your search.' : 'No maids on this page.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedMaids.map((maid, index) => (
+                  <TableRow key={maid.id}>
+                    <TableCell className="font-medium">
+                      {getSerialNumber(index, currentPage)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <p className="font-medium">{maid.name}</p>
+                        <p className="text-xs text-muted-foreground">{maid.email}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {maid.specializations.map((spec) => (
+                            <Badge key={spec} variant="outline" className="text-[11px] uppercase tracking-wide">
+                              {spec}
+                            </Badge>
+                          ))}
+                          {maid.specializations.length === 0 && (
+                            <Badge variant="outline" className="text-[11px] uppercase tracking-wide">
+                              No specializations
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{maid.phone}</span>
+                        </div>
+                        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <MapPin className="mt-0.5 h-3 w-3" />
+                          <span>{maid.address || 'Address unavailable'}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(maid.status)}>
+                        {formatStatus(maid.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {maid.weeklyOffDay ? (
+                        <Badge variant="outline">
+                          {maid.weeklyOffDay}
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openWeeklyOffDialog(maid)}
+                        >
+                          Set Weekly Leave
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {maid.rating > 0 ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Star className="h-4 w-4 text-amber-500" />
+                          <span>{maid.rating.toFixed(1)} • {maid.totalBookings} bookings</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No ratings yet</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline">
+                          View Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setQrMaid(maid);
+                            setShowQrDialog(true);
+                          }}
+                        >
+                          View QR
+                        </Button>
+                        {maid.rawStatus === 'PENDING_VERIFICATION' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onVerifyMaid(maid.id)}
+                          >
+                            Verify
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {filteredMaids.length > itemsPerPage && (
           <Pagination
             currentPage={currentPage}
-            totalPages={getTotalPages(allMaids)}
+            totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
         )}
       </CardContent>
+
       <Dialog
         open={showQrDialog}
         onOpenChange={(open) => {
