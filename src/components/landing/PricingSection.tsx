@@ -27,7 +27,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     tagline: 'Sweepro Touch',
     description: 'A premium silver plan for medium-sized homes. Enjoy enhanced cleaning and priority service.',
     icon: Zap,
-    gradient: 'from-blue-100 to-blue-200'
+    gradient: 'from-blue-200 to-blue-300'
   },
   {
     id: 'premium',
@@ -99,8 +99,9 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
   return (
     <motion.section
       id="subscription-plans"
-      className="relative min-h-screen py-24 bg-gradient-to-t from-blue-200 via-blue-200 via-blue-600  to-white overflow-hidden"
+      className="relative min-h-screen py-24 bg-gradient-to-t from-white via-blue-200 via-blue-600  to-white overflow-hidden"
       initial={{ opacity: 0, y: 40 }}
+      
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -108,7 +109,7 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
       {/* Animated Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Floating Orbs */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-900/20 to-blue-50/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-red-900/20 to-red-50/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-red-600/20 to-blue-50/20 rounded-full blur-3xl animate-bounce"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[60rem] bg-gradient-to-r from-blue-900/10 to-blue-50/10 rounded-full blur-3xl animate-pulse"></div>
         
@@ -124,7 +125,7 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         {/* Enhanced Header */}
         <div className={`text-center mb-20 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <h2 className="text-6xl font-black bg-gradient-to-r from-blue-900 via-blue-700 to-red-600 bg-clip-text text-transparent mb-6 tracking-tight">
+          <h2 className="text-6xl font-black bg-gradient-to-r from-blue-900 via-blue-900 to-red-900 bg-clip-text text-transparent mb-6 tracking-tight">
             Home Care , Your Way
           </h2>
           <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
@@ -226,7 +227,7 @@ export const PricingSection = ({ isAuthenticated = false, onPlanSelect }: Pricin
                     <div className="text-4xl font-black text-white mb-3 group-hover:scale-110 transition-transform duration-300">
                       <Counter end={stat.value} duration={2000 + index * 200} />
                     </div>
-                    <div className="text-blue-100/80 text-sm font-medium">{stat.label}</div>
+                    <div className="text-white text-sm font-medium">{stat.label}</div>
                   </div>
                 </div>
               );

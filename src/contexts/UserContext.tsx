@@ -4,9 +4,10 @@ import { ApiError } from '@/services/api';
 
 interface UserContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<User>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  setAuthenticatedUser: (userData: User) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
   authInitialized: boolean;
@@ -62,17 +63,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeAuth();
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<User> => {
+  const setAuthenticatedUser = useCallback((userData: User) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  }, []);
+
+  const login = useCallback(async (email: string, password: string, rememberMe: boolean = false): Promise<User> => {
     setIsLoading(true);
     
     try {
       const credentials: LoginCredentials = { email, password };
-      const response = await AuthService.login(credentials);
+      const response = await AuthService.login(credentials, rememberMe);
       
       if (response.success && response.data?.user) {
         const loggedInUser = response.data.user;
-        setUser(loggedInUser);
-        setIsAuthenticated(true);
+        setAuthenticatedUser(loggedInUser);
         return loggedInUser;
       } else {
         throw new Error(response.message || 'Login failed');
@@ -121,8 +126,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [isAuthenticated, logout]);
 
   const contextValue = useMemo(
-    () => ({ user, login, logout, updateUser, isLoading, isAuthenticated, authInitialized, refreshUser }),
-    [user, login, logout, updateUser, isLoading, isAuthenticated, authInitialized, refreshUser]
+    () => ({ user, login, logout, updateUser, setAuthenticatedUser, isLoading, isAuthenticated, authInitialized, refreshUser }),
+    [user, login, logout, updateUser, setAuthenticatedUser, isLoading, isAuthenticated, authInitialized, refreshUser]
   );
 
   return (

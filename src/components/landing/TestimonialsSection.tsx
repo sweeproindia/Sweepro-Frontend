@@ -71,7 +71,7 @@ const TestimonialCard: React.FC<{ testimonial: Testimonial; isEven: boolean }> =
       ? 'bg-[#1455FD] text-white' 
       : 'bg-[#F5F5F5] text-gray-800'
   }`}>
-    <div className="flex items-center mb-3 sm:mb-4">
+    <div className="flex items-center mb-3 sm:mb-4" >
       <img 
         src={testimonial.avatar} 
         alt={testimonial.name} 
@@ -97,6 +97,7 @@ export default function TestimonialsSection() {
 
   return (
     <motion.section
+       id="testimonials"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}

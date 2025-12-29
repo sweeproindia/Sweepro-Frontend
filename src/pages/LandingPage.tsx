@@ -8,13 +8,14 @@ import SweepProAboutUs from '@/components/landing/SweepProAboutUs';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from '@/services/authService';
 
 export default function LandingPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -41,6 +42,26 @@ export default function LandingPage() {
 
     checkAuthStatus();
   }, []);
+
+  // Handle smooth scroll when coming from other routes with target section
+  useEffect(() => {
+    const state = location.state as { scrollTo?: string } | null;
+    const targetSection = state?.scrollTo;
+    if (!targetSection) return;
+
+    const scrollTimeout = window.requestAnimationFrame(() => {
+      const element = document.getElementById(targetSection);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    // Clear the state so the effect doesn't run again unnecessarily
+    const { scrollTo, ...rest } = state || {};
+    navigate(location.pathname, { replace: true, state: Object.keys(rest).length ? rest : null });
+
+    return () => window.cancelAnimationFrame(scrollTimeout);
+  }, [location, navigate]);
 
   // Navigate to dashboard
   const handleDashboardClick = () => {
