@@ -220,35 +220,6 @@ export default function BookingsPage() {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            {/* Custom Book Tomorrow Button with Smart Buffer Period Logic */}
-            <Button
-              onClick={handleQuickBooking}
-              className={`btn-hero ${shouldDisableBooking() ? 'border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100' : ''}`}
-              disabled={shouldDisableBooking() || checkingBuffer}
-            >
-              {checkingBuffer ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Checking...
-                </>
-              ) : shouldDisableBooking() ? (
-                <>
-                  <Pause className="h-4 w-4 mr-2" />
-                  Services Paused (Until {getFormattedEndDate()})
-                </>
-              ) : (
-                <>
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Book for Tomorrow
-                </>
-              )}
-            </Button>
-            <BookingButton
-              onClick={() => openBookingForm()}
-              text="New Booking"
-              variant="outline"
-              size="sm"
-            />
           </div>
         </div>
 
@@ -550,7 +521,7 @@ export default function BookingsPage() {
         </div>
 
         {/* Enhanced Quick Booking Card */}
-        <Card className="dashboard-card slide-up bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+        {/* <Card className="dashboard-card slide-up bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Quick Booking</span>
@@ -610,7 +581,7 @@ export default function BookingsPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
         <QrScannerDialog
           open={scanOpen}
           onOpenChange={(open) => {
