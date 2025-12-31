@@ -130,11 +130,11 @@ const SweepProAboutUs: React.FC = () => {
           <div className="space-y-8 pt-12">
             {/* About Us Badge */}
             <div className={`transition-all duration-1000 delay-200 ${fadeInClass}`}>
-              <Link to="/about">
+              
                 <span className="inline-block bg-blue-600 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg cursor-pointer hover:bg-blue-700 transition tracking-wide">
                   About Us
                 </span>
-              </Link>
+             
             </div>
 
             {/* Main Title */}

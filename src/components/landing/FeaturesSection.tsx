@@ -1,7 +1,7 @@
 // FeatureSection.tsx
 
 import { motion } from "framer-motion";
-import { Clock, CreditCard, Shield, Users } from "lucide-react";
+import { Clock, Shield, Users,Package } from "lucide-react";
 
 const features = [
   {
@@ -23,7 +23,7 @@ const features = [
     color: "amber",
   },
   {
-    icon: CreditCard,
+    icon: Package,
     title: "Sweepro Kit",
     description: "We equip our team with a curated cleaning kit to ensure effective, hygienic, and consistent results – every single time",
     color: "indigo",
@@ -72,7 +72,7 @@ export default function FeaturesSection() {
             </span>
           </div>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
-            Professional Cleaning
+            Essential Homecare
             <span className="block text-blue-600">Made Simple</span>
           </h2>
           <p className="text-base sm:text-xl text-gray-600 max-w-xs sm:max-w-3xl mx-auto leading-relaxed">

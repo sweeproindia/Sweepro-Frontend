@@ -7,6 +7,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { AuthService, RegisterData } from '@/services/authService';
+import { useUser } from '@/contexts/UserContext';
+
 import { Eye, EyeOff, Home, Lock, Mail, Phone, Shield, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -87,6 +89,8 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { setAuthenticatedUser } = useUser();
+
   const selectedPlan = location.state?.selectedPlan || 'Standard';
 
   const validatePassword = (value: string): string | null => {
@@ -173,18 +177,21 @@ export default function SignupPage() {
       };
 
       const response = await AuthService.register(registerData);
-      if (response.success) {
+      if (response.success && response.data?.user) {
+        const loggedInUser = response.data.user;
+        setAuthenticatedUser(loggedInUser);
+
         const roleSpecificMessage = formData.role === 'MAID'
           ? 'Welcome aboard! You can now start accepting cleaning jobs.'
           : 'Services available in your area.';
 
         toast({
           title: 'Account created successfully!',
-          description: `Welcome to Sweepro, ${response.data?.user.name}! ${roleSpecificMessage}`,
+          description: `Welcome to Sweepro, ${loggedInUser.name}! ${roleSpecificMessage}`,
         });
 
         // Navigate based on role
-        switch (response.data?.user.role) {
+        switch (loggedInUser.role) {
           case 'ADMIN':
             navigate('/admin-dashboard');
             break;

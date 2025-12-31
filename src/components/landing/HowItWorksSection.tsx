@@ -87,7 +87,7 @@ export const HowItWorksSection = () => {
             How It Works
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Getting started is simple. Follow these easy steps to transform your cleaning routine.
+            Getting started is simple. Follow these easy steps to transform your daily cleaning routine.
           </p>
         </motion.div>
 

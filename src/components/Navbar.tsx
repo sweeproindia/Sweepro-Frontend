@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Bell, ChevronDown, LogOut, Menu, MessageCircle, Shield, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from '@/services/authService';
 
 interface NavbarProps {
@@ -20,6 +20,7 @@ export const Navbar = ({
   const notificationRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
@@ -140,27 +141,44 @@ export const Navbar = ({
 
   const navLinks = [
     {
-      href: '#services',
+      href: 'services',
       label: 'Services',
     },
     {
-      href: '#how-it-works',
+      href: 'how-it-works',
       label: 'How It Works',
     },
     ...(
       !isAuthenticated
-        ? [{ href: '#subscription-plans', label: 'Pricing' }]
+        ? [{ href: 'subscription-plans', label: 'Pricing' }]
         : []
     ),
     {
-      href: '#testimonials',
+      href: 'testimonials-section',
       label: 'Testimonials',
     },
     {
-      href: '#faq',
+      href: 'faq-section',
       label: 'FAQ',
     },
   ];
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleNavLinkClick = (sectionId: string) => {
+    setIsMenuOpen(false);
+    if (location.pathname !== '/') {
+      navigate('/', { state: { scrollTo: sectionId } });
+      return;
+    }
+
+    scrollToSection(sectionId);
+  };
 
   return (
     <nav
@@ -196,15 +214,15 @@ export const Navbar = ({
               style={!scrolled ? { background: 'transparent', boxShadow: 'none' } : {}}
             >
               {navLinks.map((link) => (
-                <a
+                <button
                   key={link.href}
-                  href={link.href}
+                  onClick={() => handleNavLinkClick(link.href)}
                   className={`font-semibold hover:text-blue-600 transition-colors ${
                     scrolled ? 'text-black' : 'text-white'
                   }`}
                 >
                   {link.label}
-                </a>
+                </button>
               ))}
             </div>
           </div>
@@ -321,15 +339,15 @@ export const Navbar = ({
             <div className="px-5 pt-5 pb-6 space-y-4">
               <div className="flex flex-col gap-3">
                 {navLinks.map((link) => (
-                  <a
+                  <button
                     key={link.href}
-                    href={link.href}
+                    type="button"
                     className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-700 hover:shadow"
-                    onClick={toggleMenu}
+                    onClick={() => handleNavLinkClick(link.href)}
                   >
                     {link.label}
                     <ChevronDown className="h-4 w-4 rotate-[-90deg] text-slate-400" />
-                  </a>
+                  </button>
                 ))}
               </div>
 

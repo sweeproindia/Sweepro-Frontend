@@ -74,6 +74,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const navigate = useNavigate();
   return (
     <motion.section
+    id="hero-section"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
@@ -132,14 +133,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <>
                 <button
                   className="flex items-center justify-center gap-2 sm:gap-3 bg-blue-900 text-white font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-red-600 active:scale-95 border-2 border-blue-900 ring-2 ring-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-900 min-w-[180px]"
-                  onClick={() => navigate('/consultation')}
+                  onClick={() => navigate('/login')}
                   style={{ letterSpacing: '1px' }}
                 >
                   Hire Me
                 </button>
                 <button
                   className="flex items-center justify-center gap-2 sm:gap-3 bg-blue-50 text-blue-900 font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-white active:scale-95 border-2 border-blue-900 ring-2 ring-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-900 min-w-[180px]"
-                  onClick={() => navigate('/plans')}
+                  onClick={() => navigate('/signup')}
                   style={{ letterSpacing: '1px' }}
                 >
                   Hire
@@ -169,32 +170,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             style={{ animationDelay: '0.2s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
-              <span className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
-                <Sparkles size={16} color="#fff" />
+              <span className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
+                <Sparkles size={32} color="#fff" />
               </span>
-              <span className="font-semibold text-gray-900 text-xs sm:text-base">Deep Cleaning</span>
+              <span className="font-semibold text-gray-900 text-xs sm:text-base">Professional Cleaning</span>
             </div>
           </div>
 
           <div
-            className="absolute right-0 sm:right-[-40px] md:right-[-120px] top-1/2 animate-floating-card"
+            className="absolute right-0 sm:right-[-40px] md:right-[-90px] top-1/2 animate-floating-card "
             style={{ animationDelay: '0.5s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
               <span className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7-7-7-7 7 7 7z"></path></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7-7-7-7 7 7 7z"></path></svg>
               </span>
-              <span className="font-semibold text-gray-900 text-xs sm:text-base">Eco-Friendly</span>
+              <span className="font-semibold text-gray-900 text-xs sm:text-base">Cleaning Kit</span>
             </div>
           </div>
 
           <div
-            className="absolute right-0 md:right-[-80px] top-[18%] md:top-[16%] animate-floating-card"
+            className="absolute right-0 md:right-[-50px] top-[18%] md:top-[16%] animate-floating-card"
             style={{ animationDelay: '0.8s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
-              <span className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14.2 18.5 21 12 17.8 5.5 21 7 14.2 2 9.3 9 8.5 12 2"></polygon></svg>
+              <span className="w-24 h-24 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14.2 18.5 21 12 17.8 5.5 21 7 14.2 2 9.3 9 8.5 12 2"></polygon></svg>
               </span>
               <span className="font-semibold text-gray-900 text-xs sm:text-base">Verified Cleaners</span>
             </div>

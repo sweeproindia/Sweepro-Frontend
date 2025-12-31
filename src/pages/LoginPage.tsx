@@ -5,10 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Lock, Mail, Phone, Shield, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthService, LoginCredentials } from '@/services/authService';
+import { LoginCredentials } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 import { ApiError } from '@/services/api';
 import { parseApiError } from '@/utils/errorUtils';
+import { useUser } from '@/contexts/UserContext';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,6 +25,7 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login: loginUser } = useUser();
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) {
@@ -54,30 +56,24 @@ export default function LoginPage() {
         password
       };
 
-      console.log('🚀 Attempting login...');
-      const response = await AuthService.login(credentials, rememberMe);
-      console.log('✅ Login response:', response);
+      const user = await loginUser(credentials.email, credentials.password, rememberMe);
 
-      if (response.success && response.data?.user) {
-        const user = response.data.user;
+      toast({
+        title: 'Login successful!',
+        description: `Welcome back to Sweepro, ${user.name}!`,
+      });
 
-        toast({
-          title: 'Login successful!',
-          description: `Welcome back to Sweepro, ${user.name}!`,
-        });
-
-        // Navigate based on user role from backend response
-        switch (user.role) {
-          case 'ADMIN':
-            navigate('/admin-dashboard');
-            break;
-          case 'MAID':
-            navigate('/maid-dashboard');
-            break;
-          case 'CUSTOMER':
-          default:
-            navigate('/dashboard');
-        }
+      // Navigate based on user role from backend response
+      switch (user.role) {
+        case 'ADMIN':
+          navigate('/admin-dashboard');
+          break;
+        case 'MAID':
+          navigate('/maid-dashboard');
+          break;
+        case 'CUSTOMER':
+        default:
+          navigate('/dashboard');
       }
     } catch (error) {
       if (error instanceof ApiError) {
@@ -116,7 +112,7 @@ export default function LoginPage() {
         <div className="w-full max-w-2xl">
           {/* Logo */}
           <div className="flex items-center justify-center mb-8">
-            <img src="/assets/logo.png" alt="Sweepro Logo" className="h-24 w-auto" />
+            <img src="/assets/logo.png" alt="Sweepro Logo" className="h-32 w-auto" />
           </div>
 
           <Card className="border-none shadow-lg">
@@ -296,9 +292,9 @@ export default function LoginPage() {
             <h2 className="text-4xl font-bold mb-4">
               Welcome back to Sweepro!
             </h2>
-            <p className="text-lg text-blue-100 mb-8">
+            {/* <p className="text-lg text-blue-100 mb-8">
               Continue managing your cleaning services, appointments, and connect with trusted professionals.
-            </p>
+            </p> */}
           </div>
 
           <div className="space-y-6">
