@@ -7,41 +7,15 @@ import { PricingSection } from '@/components/landing/PricingSection';
 import SweepProAboutUs from '@/components/landing/SweepProAboutUs';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AuthService } from '@/services/authService';
+import { useUser } from '@/contexts/UserContext';
+import { getAuthTokenType } from '@/services/api';
 
 export default function LandingPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Check authentication status on component mount
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      if (AuthService.isAuthenticated()) {
-        try {
-          // Validate token with server
-          const isValid = await AuthService.refreshAuth();
-          if (isValid) {
-            const userData = AuthService.getStoredUser();
-            setIsAuthenticated(true);
-            setUser(userData);
-          } else {
-            setIsAuthenticated(false);
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Auth validation failed:', error);
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      }
-    };
-
-    checkAuthStatus();
-  }, []);
+  const { user: contextUser, isAuthenticated: contextIsAuthenticated, authInitialized, isLoading } = useUser();
 
   // Handle smooth scroll when coming from other routes with target section
   useEffect(() => {
@@ -65,18 +39,30 @@ export default function LandingPage() {
 
   // Navigate to dashboard
   const handleDashboardClick = () => {
-    const userData = AuthService.getStoredUser();
-    if (userData?.role === 'CUSTOMER') {
+    if (!authInitialized || isLoading) return;
+    if (!contextIsAuthenticated || !contextUser) {
+      navigate('/login');
+      return;
+    }
+
+    const tokenType = getAuthTokenType();
+    const shouldEnforceProfileCompletion = tokenType === 'firebase' || Boolean((contextUser as any)?.firebase_uid);
+    if (shouldEnforceProfileCompletion && !(contextUser as any).profile_completed) {
+      navigate('/complete-profile');
+      return;
+    }
+
+    if (contextUser?.role === 'CUSTOMER') {
       navigate('/dashboard');
-    } else if (userData?.role === 'MAID') {
+    } else if (contextUser?.role === 'MAID') {
       navigate('/maid-dashboard');
-    } else if (userData?.role === 'ADMIN') {
+    } else if (contextUser?.role === 'ADMIN') {
       navigate('/admin-dashboard');
     }
   };
 
   const handlePlanSelect = (planId: string) => {
-    if (isAuthenticated) {
+    if (contextIsAuthenticated) {
       // User is logged in, navigate directly to subscription details
       navigate(`/subscription-details/${planId}`);
     } else {
@@ -88,21 +74,21 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen">
       <Navbar 
-        isAuthenticated={isAuthenticated}
-        user={user}
+        isAuthenticated={contextIsAuthenticated}
+        user={contextUser}
       />
       <HeroSection 
-        isAuthenticated={isAuthenticated}
-        user={user}
+        isAuthenticated={contextIsAuthenticated}
+        user={contextUser}
         onDashboardClick={handleDashboardClick}
       />
       <SweepProAboutUs/>
       <FeaturesSection />
       <HowItWorksSection />
       
-      {!isAuthenticated && (
+      {!contextIsAuthenticated && (
         <PricingSection 
-          isAuthenticated={isAuthenticated}
+          isAuthenticated={contextIsAuthenticated}
           onPlanSelect={handlePlanSelect}
         />
       )}

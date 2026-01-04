@@ -200,7 +200,7 @@ export const Navbar = ({
           <Link to="/" className="flex items-center group flex-shrink-0">
             <img
               src={scrolled ? "/assets/logo.png" : "/assets/logo-black.png"}
-              alt="SweepPro Logo"
+              alt="Sweepro Logo"
               className="h-12 w-auto md:h-60 md:w-60 object-contain transition-all duration-300 group-hover:scale-110"
             />
           </Link>

@@ -42,7 +42,7 @@ interface ServiceOptions {
   city: string;
   state: string;
   landmark: string;
-  propertyType: 'apartment' | 'bungalow';
+  propertyType: 'apartment' | 'bungalow' | null;
   bhkType: '1bhk' | '2bhk' | '3bhk' | '4bhk' | null;
   squareFeet: number;
   selectedPlanDuration: '1month' | '3month' | '6month' | null;
@@ -88,14 +88,6 @@ const PROPERTY_TYPES = [
     icon: '🏢',
     pricePerSqFt: 2.2, // ₹2.2 per sq ft for apartments
     complexityFactor: 1.0 // Base complexity
-  },
-  {
-    id: 'bungalow' as const,
-    name: 'Bungalow',
-    description: 'Independent Houses, Villas',
-    icon: '🏡',
-    pricePerSqFt: 2.8, // ₹2.8 per sq ft for independent houses
-    complexityFactor: 1.15 // 15% higher due to complexity
   }
 ];
 
@@ -209,7 +201,7 @@ export default function PaymentOptionsPage() {
     city: '',
     state: '',
     landmark: '',
-    propertyType: 'apartment',
+    propertyType: null, // Apartment not selected by default
     bhkType: null,
     squareFeet: 0,
     selectedPlanDuration: null,
@@ -272,7 +264,7 @@ export default function PaymentOptionsPage() {
     }
   }, []);
 
-  const handleOptionChange = (key: keyof ServiceOptions, value: string | number) => {
+  const handleOptionChange = (key: keyof ServiceOptions, value: string | number | null) => {
     setOptions(prev => ({ ...prev, [key]: value as any }));
   };
 
@@ -728,93 +720,89 @@ export default function PaymentOptionsPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Left Column - Time & Date */}
-          <div className="space-y-6">
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  Preferred Time
-                </CardTitle>
-                <CardDescription>Select an exact start time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Select value={options.timeSlot} onValueChange={(v) => handleOptionChange('timeSlot', v)}>
-                  <SelectTrigger className="h-12 text-base rounded-lg">
-                    <SelectValue placeholder="Select a time" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="max-h-80 overflow-y-auto">
-                    {timeSlots.map((slot) => (
-                      <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                  Service Start Date
-                </CardTitle>
-                <CardDescription>When would you like to start the service?</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <input
-                  type="date"
-                  value={options.startDate}
-                  onChange={(e) => handleOptionChange('startDate', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-colors"
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Frequency */}
-          <div className="space-y-6">
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Clock className="h-5 w-5 text-purple-600" />
-                  Service Frequency
-                </CardTitle>
-                <CardDescription>Frequency is fixed based on your selected plan</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="p-4 rounded-xl border-2 border-purple-500 bg-purple-50 text-purple-700 font-semibold flex items-center justify-between">
-                  <span>
-                    {selectedPlan.id === 'premium' ? '6 days/week (Sweepro Lux)' : '6 days/week (Sweepro Touch)'}
-                  </span>
-                  <Badge className="bg-green-500 text-white">Included</Badge>
-                </div>
-                <p className="text-sm text-gray-600 mt-2">
-                  {selectedPlan.id === 'premium' 
-                    ? 'Daily cleaning service 6 days a week with premium care'
-                    : 'Regular cleaning service 6 days a week with essential care'
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Service Frequency Card - move above the row */}
+        <div className="mb-8">
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="h-5 w-5 text-purple-600" />
+                Service Frequency
+              </CardTitle>
+              <CardDescription>Frequency is fixed based on your selected plan</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 rounded-xl border-2 border-purple-500 bg-purple-50 text-purple-700 font-semibold flex items-center justify-between">
+                <span>
+                  {selectedPlan.id === 'premium' ? '6 days/week (Sweepro Lux)' : '6 days/week (Sweepro Touch)'}
+                </span>
+                <Badge className="bg-green-500 text-white">Included</Badge>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                {selectedPlan.id === 'premium' 
+                  ? 'Daily cleaning service 6 days a week with premium care'
+                  : 'Regular cleaning service 6 days a week with essential care'
+                }
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Property Configuration Section */}
-        <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Home className="h-5 w-5 text-orange-600" />
-              Property Configuration
-            </CardTitle>
-            <CardDescription>Configure your property details for accurate pricing</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            {/* Property Type Selection */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">Property Type</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Row: Preferred Time, Service Date, Property Type */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          {/* Preferred Time */}
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="h-5 w-5 text-blue-600" />
+                Preferred Time
+              </CardTitle>
+              <CardDescription>Select an exact start time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Select value={options.timeSlot} onValueChange={(v) => handleOptionChange('timeSlot', v)}>
+                <SelectTrigger className="h-12 text-base rounded-lg">
+                  <SelectValue placeholder="Select a time" />
+                </SelectTrigger>
+                <SelectContent position="popper" className="max-h-80 overflow-y-auto">
+                  {timeSlots.map((slot) => (
+                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
+          {/* Service Start Date */}
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Calendar className="h-5 w-5 text-green-600" />
+                Service Start Date
+              </CardTitle>
+              <CardDescription>When would you like to start the service?</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <input
+                type="date"
+                value={options.startDate}
+                onChange={(e) => handleOptionChange('startDate', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-colors"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Property Type - Only Apartment */}
+          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Home className="h-5 w-5 text-orange-600" />
+                Property Type
+              </CardTitle>
+              <CardDescription>Select your property type</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4">
                 {PROPERTY_TYPES.map((type) => (
                   <div
                     key={type.id}
@@ -823,7 +811,7 @@ export default function PaymentOptionsPage() {
                         ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-gray-200 bg-white hover:border-orange-300'
                     }`}
-                    onClick={() => handleOptionChange('propertyType', type.id)}
+                    onClick={() => handleOptionChange('propertyType', options.propertyType === type.id ? null : type.id)}
                   >
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl">{type.icon}</span>
@@ -838,43 +826,59 @@ export default function PaymentOptionsPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            {/* Step 1: BHK Selection */}
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-3 block">
-                Step 1: Select BHK Configuration
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {BHK_CONFIGS.map((bhk) => (
-                  <div
-                    key={bhk.id}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-center ${
-                      options.bhkType === bhk.id
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 bg-white hover:border-blue-300'
-                    }`}
-                    onClick={() => handleBhkSelect(bhk.id)}
-                    onMouseEnter={() => setHoveredBhk(bhk.id)}
-                    onMouseLeave={() => setHoveredBhk(null)}
-                  >
-                    <div className="font-semibold text-lg">{bhk.label}</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {bhk.sqftOptions.length} size options
+        {/* BHK Selection - only visible after Apartment selected */}
+        {options.propertyType === 'apartment' && (
+          <div className="pt-8">
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  BHK Configuration
+                </CardTitle>
+                <CardDescription>Select your BHK type</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {BHK_CONFIGS.map((bhk) => (
+                    <div
+                      key={bhk.id}
+                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-center ${
+                        options.bhkType === bhk.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 bg-white hover:border-blue-300'
+                      }`}
+                      onClick={() => handleBhkSelect(bhk.id)}
+                      onMouseEnter={() => setHoveredBhk(bhk.id)}
+                      onMouseLeave={() => setHoveredBhk(null)}
+                    >
+                      <div className="font-semibold text-lg">{bhk.label}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {bhk.sqftOptions.length} size options
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-            {/* Step 2: Square Footage Selection (appears after BHK selection) */}
-            {showSqftOptions && selectedBhkConfig && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <label className="text-sm font-medium text-gray-700 mb-3 block">
-                  Step 2: Select Size for {selectedBhkConfig.label}
-                </label>
+        {/* Size Selection - only visible after BHK selected */}
+        {options.bhkType && (
+          <div className="pt-8">
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  Size Selection
+                </CardTitle>
+                <CardDescription>Select your property size</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {selectedBhkConfig.sqftOptions.map((option) => (
+                  {BHK_CONFIGS.find(bhk => bhk.id === options.bhkType)?.sqftOptions.map((option) => (
                     <div
                       key={option.value}
                       className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
@@ -890,7 +894,6 @@ export default function PaymentOptionsPage() {
                     </div>
                   ))}
                 </div>
-
                 {/* Custom Size Input */}
                 <div className="mt-4 pt-4 border-t border-gray-300">
                   <div className="flex items-center space-x-3">
@@ -909,135 +912,135 @@ export default function PaymentOptionsPage() {
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-            {/* Step 3: Plan Duration Selection (appears after sqft selection) */}
-            {showPricingPlans && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <label className="text-sm font-medium text-gray-700 mb-3 block">
-                  Step 3: Choose Plan Duration & Pricing
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {PLAN_DURATIONS.map((duration) => {
-                    const pricing = calculatePlanPrice(duration);
-                    const isSelected = options.selectedPlanDuration === duration.id;
-                    const resolvedTotal = isSelected && options.pricing
-                      ? Number(options.pricing.subtotal || 0)
-                      : pricing.finalTotal;
-                    const resolvedTotalBeforeDiscount = isSelected && options.pricing
-                      ? Number(options.pricing.totalBeforeDiscount || 0)
-                      : pricing.totalBeforeDiscount;
-                    const resolvedDiscountPercent = isSelected && options.pricing
-                      ? Number(options.pricing.discountPercent || 0)
-                      : (duration.discount || 0);
-                    const resolvedDiscountAmount = isSelected && options.pricing
-                      ? Number(options.pricing.discountAmount || 0)
-                      : pricing.discountAmount;
-                    const resolvedMonthly = duration.multiplier > 0
-                      ? Math.round(resolvedTotal / duration.multiplier)
-                      : pricing.monthlyAfterDiscount;
-                    return (
-                      <div
-                        key={duration.id}
-                        className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 relative ${
-                          options.selectedPlanDuration === duration.id
-                            ? 'border-purple-500 bg-purple-50'
-                            : 'border-gray-300 bg-white hover:border-purple-300'
-                        }`}
-                        onClick={() => handlePlanDurationSelect(duration.id)}
-                      >
-                        {duration.popular && (
-                          <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white">
-                            Most Popular
-                          </Badge>
+        {/* Step 3: Plan Duration Selection (appears after sqft selection) */}
+        {showPricingPlans && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <label className="text-sm font-medium text-gray-700 mb-3 block">
+              Step 3: Choose Plan Duration & Pricing
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {PLAN_DURATIONS.map((duration) => {
+                const pricing = calculatePlanPrice(duration);
+                const isSelected = options.selectedPlanDuration === duration.id;
+                const resolvedTotal = isSelected && options.pricing
+                  ? Number(options.pricing.subtotal || 0)
+                  : pricing.finalTotal;
+                const resolvedTotalBeforeDiscount = isSelected && options.pricing
+                  ? Number(options.pricing.totalBeforeDiscount || 0)
+                  : pricing.totalBeforeDiscount;
+                const resolvedDiscountPercent = isSelected && options.pricing
+                  ? Number(options.pricing.discountPercent || 0)
+                  : (duration.discount || 0);
+                const resolvedDiscountAmount = isSelected && options.pricing
+                  ? Number(options.pricing.discountAmount || 0)
+                  : pricing.discountAmount;
+                const resolvedMonthly = duration.multiplier > 0
+                  ? Math.round(resolvedTotal / duration.multiplier)
+                  : pricing.monthlyAfterDiscount;
+                return (
+                  <div
+                    key={duration.id}
+                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 relative ${
+                      options.selectedPlanDuration === duration.id
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-300 bg-white hover:border-purple-300'
+                    }`}
+                    onClick={() => handlePlanDurationSelect(duration.id)}
+                  >
+                    {duration.popular && (
+                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white">
+                        Most Popular
+                      </Badge>
+                    )}
+                    
+                    <div className="text-center">
+                      <h4 className="font-bold text-lg text-gray-900">{duration.label}</h4>
+                      <p className="text-xs text-gray-600 mb-3">{duration.description}</p>
+                      
+                      <div className="space-y-2">
+                        <div className="text-2xl font-bold text-purple-600">
+                          ₹{resolvedTotal.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Total for {duration.label.toLowerCase()}
+                        </div>
+                        
+                        {resolvedDiscountPercent > 0 && (
+                          <>
+                            <div className="text-sm text-gray-500 line-through">
+                              ₹{resolvedTotalBeforeDiscount.toLocaleString()}
+                            </div>
+                            <div className="text-sm text-green-600 font-semibold">
+                              Save ₹{resolvedDiscountAmount.toFixed(0)} ({resolvedDiscountPercent}%)
+                            </div>
+                          </>
                         )}
                         
-                        <div className="text-center">
-                          <h4 className="font-bold text-lg text-gray-900">{duration.label}</h4>
-                          <p className="text-xs text-gray-600 mb-3">{duration.description}</p>
-                          
-                          <div className="space-y-2">
-                            <div className="text-2xl font-bold text-purple-600">
-                              ₹{resolvedTotal.toLocaleString()}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Total for {duration.label.toLowerCase()}
-                            </div>
-                            
-                            {resolvedDiscountPercent > 0 && (
-                              <>
-                                <div className="text-sm text-gray-500 line-through">
-                                  ₹{resolvedTotalBeforeDiscount.toLocaleString()}
-                                </div>
-                                <div className="text-sm text-green-600 font-semibold">
-                                  Save ₹{resolvedDiscountAmount.toFixed(0)} ({resolvedDiscountPercent}%)
-                                </div>
-                              </>
-                            )}
-                            
-                            <div className="text-sm text-gray-600 pt-2 border-t border-gray-200">
-                              ₹{resolvedMonthly.toFixed(0)}/month
-                            </div>
-                          </div>
+                        <div className="text-sm text-gray-600 pt-2 border-t border-gray-200">
+                          ₹{resolvedMonthly.toFixed(0)}/month
                         </div>
-
-                        {options.selectedPlanDuration === duration.id && (
-                          <Check className="absolute -top-2 -right-2 h-6 w-6 text-white bg-purple-600 rounded-full p-1" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {options.selectedPlanDuration && (
-                  <div className="mt-4 p-4 bg-white rounded-lg border border-purple-200">
-                    <h5 className="font-semibold text-gray-800 mb-2">Pricing Breakdown:</h5>
-                    <div className="text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span>Base {selectedPlan.name} service:</span>
-                        <span>
-                          {options.pricing
-                            ? `₹${Number(options.pricing.basePricePerPeriod || 0).toLocaleString()}/month`
-                            : `₹${calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).monthlyBaseCost}/month`
-                          }
-                        </span>
-                      </div>
-                      {!options.pricing && (
-                        <div className="flex justify-between">
-                          <span>Property cost ({options.squareFeet} sq ft):</span>
-                          <span>₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).propertyBaseCost}/month</span>
-                        </div>
-                      )}
-                      {(options.pricing ? options.pricing.discountPercent > 0 : (PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount! > 0)) && (
-                        <div className="flex justify-between text-green-600">
-                          <span>
-                            Discount ({options.pricing ? options.pricing.discountPercent : PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount}%):
-                          </span>
-                          <span>
-                            -₹{options.pricing
-                              ? Number(options.pricing.discountAmount || 0).toFixed(0)
-                              : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).discountAmount.toFixed(0)
-                            }
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex justify-between font-semibold text-purple-700 border-t pt-1">
-                        <span>Final total ({PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.label}):</span>
-                        <span>
-                          ₹{(options.pricing
-                            ? Number(options.pricing.subtotal || 0)
-                            : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).finalTotal
-                          ).toLocaleString()}
-                        </span>
                       </div>
                     </div>
+
+                    {options.selectedPlanDuration === duration.id && (
+                      <Check className="absolute -top-2 -right-2 h-6 w-6 text-white bg-purple-600 rounded-full p-1" />
+                    )}
                   </div>
-                )}
+                );
+              })}
+            </div>
+
+            {options.selectedPlanDuration && (
+              <div className="mt-4 p-4 bg-white rounded-lg border border-purple-200">
+                <h5 className="font-semibold text-gray-800 mb-2">Pricing Breakdown:</h5>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>Base {selectedPlan.name} service:</span>
+                    <span>
+                      {options.pricing
+                        ? `₹${Number(options.pricing.basePricePerPeriod || 0).toLocaleString()}/month`
+                        : `₹${calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).monthlyBaseCost}/month`
+                      }
+                    </span>
+                  </div>
+                  {!options.pricing && (
+                    <div className="flex justify-between">
+                      <span>Property cost ({options.squareFeet} sq ft):</span>
+                      <span>₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).propertyBaseCost}/month</span>
+                    </div>
+                  )}
+                  {(options.pricing ? options.pricing.discountPercent > 0 : (PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount! > 0)) && (
+                    <div className="flex justify-between text-green-600">
+                      <span>
+                        Discount ({options.pricing ? options.pricing.discountPercent : PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount}%):
+                      </span>
+                      <span>
+                        -₹{options.pricing
+                          ? Number(options.pricing.discountAmount || 0).toFixed(0)
+                          : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).discountAmount.toFixed(0)
+                        }
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold text-purple-700 border-t pt-1">
+                    <span>Final total ({PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.label}):</span>
+                    <span>
+                      ₹{(options.pricing
+                        ? Number(options.pricing.subtotal || 0)
+                        : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).finalTotal
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        )}
 
         {/* Service Address Section */}
         <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">

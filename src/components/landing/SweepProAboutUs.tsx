@@ -154,7 +154,7 @@ const SweepProAboutUs: React.FC = () => {
                 </span>
 
                 <span className="block mb-4">
-                  We provide trained and verified care partners with structured cleaning plans and an essential cleaning kit to ensure consistent quality in every service. From kitchen to bathroom care, every SweepPro visit is efficient, safe, and professionally managed.
+                  We provide trained and verified care partners with structured cleaning plans and an essential cleaning kit to ensure consistent quality in every service. From kitchen to bathroom care, every Sweepro visit is efficient, safe, and professionally managed.
                 </span>
 
                 <span className="block mb-4">
@@ -162,7 +162,7 @@ const SweepProAboutUs: React.FC = () => {
                 </span>
 
                 <span className="block">
-                  At SweepPro, we believe every clean home tells a happy story — one that begins with SweepPro Care. We’re here to make that care simple, affordable, and reliable.
+                  At Sweepro, we believe every clean home tells a happy story — one that begins with Sweepro Care. We’re here to make that care simple, affordable, and reliable.
                 </span>
               </p>
             </div>

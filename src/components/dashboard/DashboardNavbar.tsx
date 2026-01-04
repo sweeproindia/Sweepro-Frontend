@@ -81,7 +81,7 @@ export const DashboardNavbar = ({
           <Link to="/" className="flex items-center group">
             <img
               src={userType === 'admin' ? '/assets/logo-black.png' : '/assets/logo.png'}
-              alt="SweepPro Logo"
+              alt="Sweepro Logo"
               className="h-32 w-32 object-contain transition-all duration-300 group-hover:scale-110"
             />
           </Link>

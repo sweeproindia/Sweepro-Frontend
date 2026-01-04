@@ -262,7 +262,7 @@ export default function ReviewPaymentPage() {
         backendPlan = backendPlans.find((p: any) => {
           const n = normalizeName(p.name);
           if (selectedPlan.id === 'standard') {
-            // Map UI "Sweepro Touch" to backend "SweepPro Touch" (name contains "touch")
+            // Map UI "Sweepro Touch" to backend "Sweepro Touch" (name contains "touch")
             return n.includes('touch');
           }
           if (selectedPlan.id === 'premium') {
@@ -500,10 +500,8 @@ export default function ReviewPaymentPage() {
         </Button>
 
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-3 rounded-full shadow-lg">
-              <Sparkles className="h-8 w-8 text-white" />
-            </div>
+          <div className="flex justify-center mb-2"> {/* Changed mb-4 to mb-2 to decrease gap */}
+              <img src="public\assets\logo.png" alt='logo' className="h-32 " />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Review & Payment</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">Review your selections and complete the payment to start your cleaning service</p>
@@ -530,7 +528,7 @@ export default function ReviewPaymentPage() {
                       </span>
                     )}
                     <div className="mt-2">
-                      <span className="inline-block px-3 py-1 text-sm font-semibold bg-purple-100 text-purple-800 rounded-full">
+                      <span className="inline-block px-2 py-1 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full">
                         {getPlanDurationInfo()?.label} Plan
                       </span>
                     </div>

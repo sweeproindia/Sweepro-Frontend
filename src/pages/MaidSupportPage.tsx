@@ -38,7 +38,7 @@ interface SupportTicket {
 const initialMessages: Message[] = [
   {
     id: 1,
-    text: "Hello! Welcome to SweepPro Support. How can I help you today?",
+    text: "Hello! Welcome to Sweepro Support. How can I help you today?",
     sender: 'support',
     timestamp: '10:00 AM'
   },
@@ -209,7 +209,7 @@ export default function MaidSupportPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">Email Support</h3>
-                  <p className="text-sm text-muted-foreground">support@sweeppro.com</p>
+                  <p className="text-sm text-muted-foreground">support@sweepro.com</p>
                 </div>
               </div>
             </CardContent>

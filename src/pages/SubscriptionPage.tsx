@@ -89,7 +89,7 @@ const enhancedPlans: EnhancedSubscriptionPlan[] = [
     ],
     discount: 20,
     icon: Crown,
-    gradient: 'from-yellow-400 to-yellow-700', // EXACT GOLD GRADIENT
+    gradient: 'from-[#C0C0C0] to-[#E0E0E0]', // CHANGED TO SILVER GRADIENT
     sessionsPerWeek: 4,
     sessionsPerMonth: 16,
     discountPercent: 20,

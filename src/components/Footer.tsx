@@ -21,7 +21,7 @@ export const Footer = () => {
           {/* Brand Section */}
           <div className="space-y-5">
             <Link to="/" className="flex items-center group">
-              <img src="/assets/logo-black.png" alt="SweepPro Logo" className="h-21 w-40 pr-3 mr-6  object-contain transition-all duration-300 group-hover:scale-110" />
+              <img src="/assets/logo-black.png" alt="Sweepro Logo" className="h-21 w-40 pr-3 mr-6  object-contain transition-all duration-300 group-hover:scale-110" />
             </Link>
             <p className="text-blue-100 leading-relaxed text-base font-medium">
               Enjoy a sparkling home, every day. Our trusted, background-verified professionals bring peace of mind and a fresh start to your space.
