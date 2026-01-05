@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { assignmentService } from '@/services/assignmentService';
+import { assignmentService, BookingForAssignment, AvailableMaid } from '@/services/assignmentService';
 import { apiRequest, HttpMethod } from '@/services/api';
 import { 
   Calendar, 
@@ -34,6 +34,8 @@ interface Booking {
   specialInstructions?: string;
   rejectionReason?: string;
   reassignmentCount?: number;
+  assignedAt?: string;
+  maidResponseAt?: string;
   service: {
     id: string;
     name: string;
@@ -45,6 +47,21 @@ interface Booking {
     name: string;
     email: string;
     phone: string;
+  };
+  maid?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    rating?: number;
+    totalRatings?: number;
+    status?: 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION';
+    completedBookings?: number;
+    skills?: string[];
+    isVerified?: boolean;
+    isAvailable?: boolean;
+    currentAssignments?: number;
+    maxDailyBookings?: number;
   };
 }
 
@@ -89,6 +106,66 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
     fetchAvailableMaids();
   }, []);
 
+  const normalizeBookingStatus = (status?: string): Booking['status'] => {
+    const allowed: Booking['status'][] = ['PENDING', 'CONFIRMED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+    const upper = status?.toUpperCase();
+    return allowed.includes(upper as Booking['status']) ? (upper as Booking['status']) : 'PENDING';
+  };
+
+  const normalizeAssignmentStatus = (status?: string): Booking['assignmentStatus'] => {
+    const allowed: NonNullable<Booking['assignmentStatus']>[] = [
+      'PENDING_ASSIGNMENT',
+      'ASSIGNED_PENDING_RESPONSE',
+      'ACCEPTED',
+      'REJECTED',
+      'REASSIGNED'
+    ];
+    const upper = status?.toUpperCase();
+    return allowed.includes(upper as NonNullable<Booking['assignmentStatus']>)
+      ? (upper as NonNullable<Booking['assignmentStatus']>)
+      : undefined;
+  };
+
+  const transformBookingForUi = (booking: BookingForAssignment): Booking => ({
+    id: booking.id,
+    customerId: booking.customerId,
+    serviceId: booking.serviceId,
+    scheduledAt: booking.scheduledAt,
+    timeSlot: booking.timeSlot,
+    serviceAddress: booking.serviceAddress,
+    totalAmount: booking.totalAmount,
+    finalAmount: booking.finalAmount,
+    specialInstructions: booking.specialInstructions,
+    status: normalizeBookingStatus(booking.status),
+    assignmentStatus: normalizeAssignmentStatus(booking.assignmentStatus),
+    assignedAt: booking.assignedAt,
+    maidResponseAt: booking.maidResponseAt,
+    rejectionReason: booking.rejectionReason,
+    reassignmentCount: booking.reassignmentCount,
+    service: booking.service || {
+      id: booking.service?.id || booking.serviceId,
+      name: booking.service?.name || 'Service',
+      description: booking.service?.description || '',
+      basePrice: booking.service?.basePrice || 0,
+      category: booking.service?.category || 'GENERAL',
+      baseDuration: booking.service?.baseDuration || 180
+    },
+    customer: booking.customer || {
+      id: booking.customer?.id || booking.customerId,
+      name: booking.customer?.name || 'Customer',
+      email: booking.customer?.email || '',
+      phone: booking.customer?.phone || ''
+    },
+    maid: booking.maid || (booking.lastAttempt?.maidName
+      ? {
+          id: booking.lastAttempt?.maidUserId || '',
+          name: booking.lastAttempt.maidName,
+          email: '',
+          phone: '',
+        }
+      : undefined)
+  });
+
   const fetchPendingBookings = async () => {
     setLoading(true);
     try {
@@ -97,11 +174,13 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
       if (response.success) {
         const bookingsData = Array.isArray(response.data) ? response.data : [];
         // Filter out processed bookings to prevent reappearing
-        const filteredBookings = bookingsData.filter((booking: Booking) => !processedBookingIds.has(booking.id));
+        const filteredBookings = bookingsData
+          .filter((booking: BookingForAssignment) => !processedBookingIds.has(booking.id))
+          .map(transformBookingForUi);
         setPendingBookings(filteredBookings);
       }
     } catch (error) {
-      console.error('Error fetching pending bookings:', error);
+      console.error('Error fetching pending assignment bookings:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch pending assignments',
@@ -328,15 +407,42 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
                           )}
 
                           {booking.rejectionReason && (
-                            <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-800">
+                            <div
+                              className={
+                                booking.rejectionReason === 'MAID_ON_LEAVE'
+                                  ? 'bg-green-50 dark:bg-green-950/20 p-2 rounded border border-green-200 dark:border-green-800'
+                                  : 'bg-red-50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-800'
+                              }
+                            >
                               <div className="flex items-start gap-2">
-                                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                <AlertTriangle
+                                  className={
+                                    booking.rejectionReason === 'MAID_ON_LEAVE'
+                                      ? 'h-4 w-4 text-green-600 mt-0.5 flex-shrink-0'
+                                      : 'h-4 w-4 text-red-600 mt-0.5 flex-shrink-0'
+                                  }
+                                />
                                 <div>
-                                  <p className="text-sm text-red-700 dark:text-red-300">
-                                    <strong>Previous Rejection:</strong> {booking.rejectionReason}
+                                  <p
+                                    className={
+                                      booking.rejectionReason === 'MAID_ON_LEAVE'
+                                        ? 'text-sm text-green-700 dark:text-green-300'
+                                        : 'text-sm text-red-700 dark:text-red-300'
+                                    }
+                                  >
+                                    <strong>Previous Rejection:</strong>{' '}
+                                    {booking.rejectionReason === 'MAID_ON_LEAVE'
+                                      ? 'Maid marked weekly leave'
+                                      : booking.rejectionReason}
                                   </p>
                                   {booking.reassignmentCount && booking.reassignmentCount > 0 && (
-                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                    <p
+                                      className={
+                                        booking.rejectionReason === 'MAID_ON_LEAVE'
+                                          ? 'text-xs text-green-600 dark:text-green-400 mt-1'
+                                          : 'text-xs text-red-600 dark:text-red-400 mt-1'
+                                      }
+                                    >
                                       Reassignment attempt #{booking.reassignmentCount + 1}
                                     </p>
                                   )}
@@ -346,8 +452,20 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
                           )}
 
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                              Pending Assignment
+                            <Badge
+                              variant="outline"
+                              className={
+                                booking.rejectionReason === 'MAID_ON_LEAVE'
+                                  ? 'text-green-700 border-green-300 bg-green-100'
+                                  : 'text-yellow-600 border-yellow-600'
+                              }
+                            >
+                              {booking.rejectionReason === 'MAID_ON_LEAVE'
+                                ? 'Maid On Leave'
+                                : 'Pending Assignment'}
+                            </Badge>
+                            <Badge variant="outline" className="text-orange-600 border-orange-600">
+                              High Priority
                             </Badge>
                           </div>
                         </div>

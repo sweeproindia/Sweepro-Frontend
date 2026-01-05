@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,6 +98,25 @@ export default function BookingsPage() {
     refreshBookings,
     cancelBooking: handleCancelBooking,
   } = useBookings('CUSTOMER');
+
+  const visibleBookings = useMemo(() => (
+    bookings.filter((booking) => booking.status !== 'PENDING')
+  ), [bookings]);
+
+  const filteredBookings = useMemo(() => {
+    switch (filter) {
+      case 'scheduled':
+        return visibleBookings.filter((booking) =>
+          ['ASSIGNED', 'CONFIRMED', 'IN_PROGRESS'].includes(booking.status)
+        );
+      case 'completed':
+        return visibleBookings.filter((booking) => booking.status === 'COMPLETED');
+      case 'cancelled':
+        return visibleBookings.filter((booking) => booking.status === 'CANCELLED');
+      default:
+        return visibleBookings;
+    }
+  }, [filter, visibleBookings]);
 
   // User's preferred time slot from user profile
   const preferredTimeSlot = user?.timeSlot || 'Not set';
@@ -328,7 +348,7 @@ export default function BookingsPage() {
 
         {/* Bookings List */}
         <div className="space-y-4 slide-up">
-          {bookings.map((booking, index) => (
+          {filteredBookings.map((booking, index) => (
             <Card 
               key={booking.id} 
               className="dashboard-card"
@@ -491,7 +511,7 @@ export default function BookingsPage() {
         </div>
 
         {/* Empty State */}
-        {!loading && bookings.length === 0 && (
+        {!loading && filteredBookings.length === 0 && (
           <Card className="dashboard-card text-center py-12">
             <CardContent>
               <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

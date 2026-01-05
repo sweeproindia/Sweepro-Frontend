@@ -1,5 +1,40 @@
 import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse } from './api';
 
+export interface CustomerAssignmentRequest {
+  id: string;
+  customerId: string;
+  maidId: string;
+  requestedBy: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'cancelled';
+  requestedAt: string;
+  respondedAt?: string;
+  rejectionReason?: string;
+  notes?: string;
+  expiresAt?: string;
+  customer?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address?: string;
+    timeSlot?: string;
+  };
+  maid?: {
+    id: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      phone: string;
+    };
+  };
+  admin?: {
+    id?: string;
+    name?: string;
+    email?: string;
+  };
+}
+
 export interface CustomerMaidAssignment {
   id: string;
   customerId: string;
@@ -66,13 +101,24 @@ export interface UpdateAssignmentData {
   isActive?: boolean;
 }
 
+interface AssignmentRequestResponse {
+  requests: CustomerAssignmentRequest[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
+
 export class CustomerAssignmentService {
   /**
    * Assign a maid to a customer (Admin only)
    */
-  static async assignMaidToCustomer(data: AssignMaidData): Promise<ApiResponse<CustomerMaidAssignment>> {
+  static async assignMaidToCustomer(data: AssignMaidData): Promise<ApiResponse<CustomerAssignmentRequest>> {
     try {
-      return await apiRequest<CustomerMaidAssignment>(API_ENDPOINTS.CUSTOMER_ASSIGNMENTS.ASSIGN_MAID, {
+      return await apiRequest<CustomerAssignmentRequest>(API_ENDPOINTS.CUSTOMER_ASSIGNMENTS.ASSIGN_MAID, {
         method: HttpMethod.POST,
         body: data,
         requiresAuth: true
@@ -209,6 +255,51 @@ export class CustomerAssignmentService {
       });
     } catch (error) {
       console.error('Get maid assignments error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get customer assignment requests (Admin only)
+   */
+  static async getAssignmentRequests(params?: {
+    status?: string | string[];
+    customerId?: string;
+    maidId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<AssignmentRequestResponse>> {
+    try {
+      const searchParams = new URLSearchParams();
+
+      if (params?.status) {
+        const statusValue = Array.isArray(params.status) ? params.status.join(',') : params.status;
+        searchParams.set('status', statusValue);
+      }
+      if (params?.customerId) {
+        searchParams.set('customerId', params.customerId);
+      }
+      if (params?.maidId) {
+        searchParams.set('maidId', params.maidId);
+      }
+      if (params?.page) {
+        searchParams.set('page', params.page.toString());
+      }
+      if (params?.limit) {
+        searchParams.set('limit', params.limit.toString());
+      }
+
+      const query = searchParams.toString();
+      const endpoint = query
+        ? `${API_ENDPOINTS.CUSTOMER_ASSIGNMENTS.GET_ALL_REQUESTS}?${query}`
+        : API_ENDPOINTS.CUSTOMER_ASSIGNMENTS.GET_ALL_REQUESTS;
+
+      return await apiRequest<AssignmentRequestResponse>(endpoint, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get assignment requests error:', error);
       throw error;
     }
   }

@@ -322,98 +322,115 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
               </div>
             ) : (
               <>
-                {getPaginatedData(reassignmentBookings).map((booking, index) => (
-                  <div key={booking.id} className="border rounded-lg p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-red-200 dark:border-red-800">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-sm font-medium text-red-700 dark:text-red-300">
-                          {getSerialNumber(index)}
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-4 flex-wrap">
-                            <div>
-                              <p className="font-semibold text-foreground">{booking.service.name}</p>
-                              <p className="text-sm text-muted-foreground">₹{booking.finalAmount.toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium">{booking.customer.name}</span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">{booking.customer.phone}</p>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                              </div>
-                            </div>
+                {getPaginatedData(reassignmentBookings).map((booking, index) => {
+                  const rejectionReason = booking.lastAttempt?.reason || booking.rejectionReason;
+                  const isMaidOnLeave = rejectionReason === 'MAID_ON_LEAVE';
+                  const reasonContainerClasses = isMaidOnLeave
+                    ? 'bg-green-50 dark:bg-green-950/20 p-3 rounded border border-green-200 dark:border-green-800'
+                    : 'bg-red-50 dark:bg-red-950/20 p-3 rounded border border-red-200 dark:border-red-800';
+                  const reasonIconClasses = isMaidOnLeave
+                    ? 'h-4 w-4 text-green-600 mt-0.5 flex-shrink-0'
+                    : 'h-4 w-4 text-red-600 mt-0.5 flex-shrink-0';
+                  const reasonTextClasses = isMaidOnLeave
+                    ? 'text-sm text-green-700 dark:text-green-300'
+                    : 'text-sm text-red-700 dark:text-red-300';
+                  const attemptTextClasses = isMaidOnLeave
+                    ? 'text-xs text-green-600 dark:text-green-400 mt-1'
+                    : 'text-xs text-red-600 dark:text-red-400 mt-1';
+                  const badgeClasses = isMaidOnLeave ? 'bg-green-100 text-green-700 border-green-300' : undefined;
+
+                  return (
+                    <div
+                      key={booking.id}
+                      className="border rounded-lg p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-red-200 dark:border-red-800"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-sm font-medium text-red-700 dark:text-red-300">
+                            {getSerialNumber(index)}
                           </div>
-                          
-                          <div className="flex items-start gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-muted-foreground">{booking.serviceAddress}</span>
-                          </div>
-
-                          {booking.specialInstructions && (
-                            <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                              <p className="text-sm text-blue-700 dark:text-blue-300">
-                                <strong>Instructions:</strong> {booking.specialInstructions}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Previous Maid Info */}
-                          {(booking.lastAttempt?.maidName || booking.maid) && (
-                            <div className="bg-gray-50 dark:bg-gray-950/20 p-3 rounded border border-gray-200 dark:border-gray-800">
-                              <div className="flex items-center gap-2">
-                                <XCircle className="h-4 w-4 text-gray-600" />
-                                <span className="font-medium text-gray-700 dark:text-gray-300">Previously assigned to:</span>
-                                <span className="font-semibold text-gray-800 dark:text-gray-200">{booking.lastAttempt?.maidName || booking.maid?.name}</span>
-                              </div>
-                              {booking.maid?.phone && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{booking.maid.phone}</p>
-                              )}
-                              {(booking.lastAttempt?.respondedAt || booking.maidResponseAt) && (
-                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                  {booking.lastAttempt?.status === 'expired' ? 'Expired' : 'Rejected'}: {new Date(booking.lastAttempt?.respondedAt || booking.maidResponseAt!).toLocaleString()}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Reason */}
-                          <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded border border-red-200 dark:border-red-800">
-                            <div className="flex items-start gap-2">
-                              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-center gap-4 flex-wrap">
                               <div>
-                                {((booking.lastAttempt?.reason || booking.rejectionReason) === 'MAID_ON_LEAVE') ? (
-                                  <p className="text-sm text-red-700 dark:text-red-300">
-                                    <strong>Reason:</strong> Maid on weekly leave
-                                  </p>
-                                ) : (
-                                <p className="text-sm text-red-700 dark:text-red-300">
-                                  <strong>Reason:</strong> {booking.lastAttempt?.reason || booking.rejectionReason || 'Maid declined the assignment'}
-                                </p>
-                                )}
-                                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                  Reassignment attempt #{(booking.reassignmentCount || 0) + 1}
-                                </p>
+                                <p className="font-semibold text-foreground">{booking.service.name}</p>
+                                <p className="text-sm text-muted-foreground">₹{booking.finalAmount.toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  <span className="font-medium">{booking.customer.name}</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{booking.customer.phone}</p>
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                            
+                            <div className="flex items-start gap-2">
+                              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                              <span className="text-sm text-muted-foreground">{booking.serviceAddress}</span>
+                            </div>
 
-                          <div className="flex items-center gap-2">
-                            <Badge variant="destructive">
-                              Needs Reassignment
-                            </Badge>
-                            <Badge variant="outline" className="text-orange-600 border-orange-600">
-                              High Priority
-                            </Badge>
+                            {booking.specialInstructions && (
+                              <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                  <strong>Instructions:</strong> {booking.specialInstructions}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Previous Maid Info */}
+                            {(booking.lastAttempt?.maidName || booking.maid) && (
+                              <div className="bg-gray-50 dark:bg-gray-950/20 p-3 rounded border border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center gap-2">
+                                  <XCircle className="h-4 w-4 text-gray-600" />
+                                  <span className="font-medium text-gray-700 dark:text-gray-300">Previously assigned to:</span>
+                                  <span className="font-semibold text-gray-800 dark:text-gray-200">{booking.lastAttempt?.maidName || booking.maid?.name}</span>
+                                </div>
+                                {booking.maid?.phone && (
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{booking.maid.phone}</p>
+                                )}
+                                {(booking.lastAttempt?.respondedAt || booking.maidResponseAt) && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                    {booking.lastAttempt?.status === 'expired' ? 'Expired' : 'Rejected'}: {new Date(booking.lastAttempt?.respondedAt || booking.maidResponseAt!).toLocaleString()}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            <div className={reasonContainerClasses}>
+                              <div className="flex items-start gap-2">
+                                <AlertTriangle className={reasonIconClasses} />
+                                <div>
+                                  <p className={reasonTextClasses}>
+                                    <strong>Reason:</strong> {isMaidOnLeave ? 'Maid marked weekly leave' : (rejectionReason || 'Maid declined the assignment')}
+                                  </p>
+                                  <p className={attemptTextClasses}>
+                                    Reassignment attempt #{(booking.reassignmentCount || 0) + 1}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={isMaidOnLeave ? 'outline' : 'destructive'}
+                                className={badgeClasses}
+                              >
+                                {isMaidOnLeave ? 'Maid On Leave' : 'Needs Reassignment'}
+                              </Badge>
+                              <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                High Priority
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -429,8 +446,8 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                         </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {reassignmentBookings.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
@@ -448,7 +465,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
       </Card>
 
       {/* Reassignment Dialog */}
-      <Dialog open={reassignDialogOpen} onOpenChange={setReassignDialogOpen}>
+      <Dialog open={reassignDialogOpen} onOpenChange={(open) => setReassignDialogOpen(open)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Reassign Booking to New Maid</DialogTitle>

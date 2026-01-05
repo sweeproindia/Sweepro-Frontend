@@ -53,6 +53,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
+  const [detailsDialog, setDetailsDialog] = useState<{ open: boolean; maid: Maid | null }>({ open: false, maid: null });
 
   const [newMaid, setNewMaid] = useState({
     name: '',
@@ -117,9 +118,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
     return Math.ceil(data.length / itemsPerPage);
   };
 
-  const getSerialNumber = (index: number, page: number) => {
-    return (page - 1) * itemsPerPage + index + 1;
-  };
+  const formatDate = (value?: string) => (value ? new Date(value).toLocaleDateString() : '—');
 
   const handleAddMaid = () => {
     onAddMaid(newMaid);
@@ -248,7 +247,6 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
               <Shield className="h-5 w-5 text-primary" />
               Maid Management
             </CardTitle>
-            <CardDescription>Manage maid accounts, verify new maids, and monitor performance</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="bg-success/20 text-success">
@@ -378,8 +376,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-muted-foreground">
-              Showing {paginatedMaids.length > 0 ? `${getSerialNumber(0, currentPage)}-
-              ${getSerialNumber(paginatedMaids.length - 1, currentPage)}` : 0} of {filteredMaids.length} maids
+              Showing {paginatedMaids.length > 0 ? `${paginatedMaids.length}` : 0} of {filteredMaids.length} maids
             </p>
           </div>
           <div className="relative w-full sm:w-80">
@@ -417,7 +414,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                 paginatedMaids.map((maid, index) => (
                   <TableRow key={maid.id}>
                     <TableCell className="font-medium">
-                      {getSerialNumber(index, currentPage)}
+                      {index + 1}
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -481,7 +478,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => setDetailsDialog({ open: true, maid })}>
                           View Details
                         </Button>
                         <Button
@@ -579,6 +576,113 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
             </Button>
             <Button onClick={saveWeeklyOff} disabled={savingWeeklyOff}>
               {savingWeeklyOff ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={detailsDialog.open}
+        onOpenChange={(open) => setDetailsDialog(open ? { open, maid: detailsDialog.maid } : { open, maid: null })}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Maid Details</DialogTitle>
+            <DialogDescription>Complete profile, availability, and performance insights.</DialogDescription>
+          </DialogHeader>
+
+          {detailsDialog.maid && (
+            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <section className="rounded-lg border border-border bg-muted/30 p-4 h-full">
+                  <h4 className="text-sm font-semibold mb-3">Profile Information</h4>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Name</p>
+                      <p className="font-medium text-foreground">{detailsDialog.maid.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Status</p>
+                      <Badge className={getStatusColor(detailsDialog.maid.status)}>
+                        {formatStatus(detailsDialog.maid.status)}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Email</p>
+                      <p className="text-sm text-foreground break-all">{detailsDialog.maid.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Phone</p>
+                      <p className="text-sm text-foreground">{detailsDialog.maid.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Address</p>
+                      <p className="text-sm text-foreground">{detailsDialog.maid.address || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Joined On</p>
+                      <p className="text-sm text-foreground">{formatDate(detailsDialog.maid.joinDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Experience</p>
+                      <p className="text-sm text-foreground">{detailsDialog.maid.experience || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Weekly Off</p>
+                      <p className="text-sm text-foreground">{detailsDialog.maid.weeklyOffDay || 'Not Set'}</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-lg border border-border p-4 h-full">
+                  <h4 className="text-sm font-semibold mb-3">Skills & Performance</h4>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Total Bookings</p>
+                      <p className="text-sm text-foreground">{detailsDialog.maid.totalBookings}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase text-muted-foreground">Rating</p>
+                      <p className="text-sm text-foreground">
+                        {detailsDialog.maid.rating > 0 ? `${detailsDialog.maid.rating.toFixed(1)} ★` : 'No ratings yet'}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-xs uppercase text-muted-foreground">Specializations</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {detailsDialog.maid.specializations.length > 0 ? (
+                          detailsDialog.maid.specializations.map((spec) => (
+                            <Badge key={spec} variant="outline" className="text-[11px] uppercase tracking-wide">
+                              {spec}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="outline" className="text-[11px] uppercase tracking-wide">
+                            No specializations listed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold mb-3">Availability Snapshot</h4>
+                {detailsDialog.maid.availability ? (
+                  <pre className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground whitespace-pre-wrap">
+                    {JSON.stringify(detailsDialog.maid.availability, null, 2)}
+                  </pre>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No availability data recorded.</p>
+                )}
+              </section>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsDialog({ open: false, maid: null })}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

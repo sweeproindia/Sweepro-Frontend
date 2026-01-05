@@ -178,6 +178,13 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
       return <Badge variant="default" className="bg-green-600">Accepted</Badge>;
     }
     if (booking.status === 'CANCELLED') {
+      if (booking.rejectionReason === 'MAID_ON_LEAVE') {
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+            Maid On Leave
+          </Badge>
+        );
+      }
       return <Badge variant="destructive">Cancelled</Badge>;
     }
     return <Badge variant="outline">{booking.status}</Badge>;
@@ -291,15 +298,42 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                         )}
 
                         {booking.rejectionReason && (
-                          <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-800">
+                          <div
+                            className={
+                              booking.rejectionReason === 'MAID_ON_LEAVE'
+                                ? 'bg-green-50 dark:bg-green-950/20 p-2 rounded border border-green-200 dark:border-green-800'
+                                : 'bg-red-50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-800'
+                            }
+                          >
                             <div className="flex items-start gap-2">
-                              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                              <AlertTriangle
+                                className={
+                                  booking.rejectionReason === 'MAID_ON_LEAVE'
+                                    ? 'h-4 w-4 text-green-600 mt-0.5 flex-shrink-0'
+                                    : 'h-4 w-4 text-red-600 mt-0.5 flex-shrink-0'
+                                }
+                              />
                               <div>
-                                <p className="text-sm text-red-700 dark:text-red-300">
-                                  <strong>Previous Rejection:</strong> {booking.rejectionReason}
+                                <p
+                                  className={
+                                    booking.rejectionReason === 'MAID_ON_LEAVE'
+                                      ? 'text-sm text-green-700 dark:text-green-300'
+                                      : 'text-sm text-red-700 dark:text-red-300'
+                                  }
+                                >
+                                  <strong>Previous Rejection:</strong>{' '}
+                                  {booking.rejectionReason === 'MAID_ON_LEAVE'
+                                    ? 'Maid marked weekly leave'
+                                    : booking.rejectionReason}
                                 </p>
                                 {booking.reassignmentCount && booking.reassignmentCount > 0 && (
-                                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                  <p
+                                    className={
+                                      booking.rejectionReason === 'MAID_ON_LEAVE'
+                                        ? 'text-xs text-green-600 dark:text-green-400 mt-1'
+                                        : 'text-xs text-red-600 dark:text-red-400 mt-1'
+                                    }
+                                  >
                                     Reassignment attempt #{booking.reassignmentCount + 1}
                                   </p>
                                 )}

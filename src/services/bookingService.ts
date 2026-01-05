@@ -37,6 +37,13 @@ export interface Booking {
   totalAmount: number;
   finalAmount: number;
   discount?: number;
+  assignmentStatus?: 'PENDING_ASSIGNMENT' | 'ASSIGNED_PENDING_RESPONSE' | 'ACCEPTED' | 'REJECTED' | 'REASSIGNED';
+  rejectionReason?: string;
+  reassignmentCount?: number;
+  maidResponseAt?: string;
+  assignedAt?: string;
+  notes?: string;
+  isAutomatic?: boolean;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;

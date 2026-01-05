@@ -118,6 +118,12 @@ const computeMaidDisplayStatus = (maid: Maid): 'active' | 'inactive' | 'on_leave
   return 'active';
 };
 
+const getTimestamp = (value?: string) => {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -395,10 +401,11 @@ export default function AdminDashboard() {
       if (usersResponse.status === 'fulfilled' && usersResponse.value.success) {
         const rawUsers = usersResponse.value.data as any;
         const usersData: User[] = Array.isArray(rawUsers) ? rawUsers : (rawUsers?.users || rawUsers?.data || []);
-        setUsers(usersData);
+        const sortedUsers = [...usersData].sort((a, b) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt));
+        setUsers(sortedUsers);
         
         // Separate maids from users
-        const maidsData: Maid[] = usersData
+        const maidsData: Maid[] = sortedUsers
           .filter((u: User) => u.role === 'MAID')
           .map((u: User) => ({
             id: u.id,
@@ -413,7 +420,10 @@ export default function AdminDashboard() {
             availability: null,
             weeklyOffDay: null
           }));
-        setMaids(maidsData);
+        const sortedMaidsFromUsers = [...maidsData].sort(
+          (a, b) => getTimestamp(b.user.createdAt) - getTimestamp(a.user.createdAt)
+        );
+        setMaids(sortedMaidsFromUsers);
       } else if (usersResponse.status === 'rejected') {
         console.error('Failed to fetch users');
         setUsers([]);
@@ -446,7 +456,10 @@ export default function AdminDashboard() {
           weeklyOffDay: u.maidProfile?.weeklyOffDay ?? null,
           availability: (u.maidProfile?.availability && typeof u.maidProfile.availability === 'object') ? u.maidProfile.availability : null
         }));
-        setMaids(mapped);
+        const sortedMappedMaids = [...mapped].sort(
+          (a, b) => getTimestamp(b.user.createdAt) - getTimestamp(a.user.createdAt)
+        );
+        setMaids(sortedMappedMaids);
       }
 
       // Handle bookings data
@@ -551,16 +564,16 @@ export default function AdminDashboard() {
   };
 
   const calculateAnalytics = () => {
-    const totalCustomers = users.filter(user => user.role === 'CUSTOMER').length;
-    const totalMaids = users.filter(user => user.role === 'MAID').length;
+    const totalCustomers = users.filter(({ role }) => role === 'CUSTOMER').length;
+    const totalMaids = users.filter(({ role }) => role === 'MAID').length;
     const totalBookings = bookings.length;
-    const pendingBookings = bookings.filter(b => b.status === 'PENDING').length;
-    const activeSubscriptions = subscriptions.filter(s => s.status === 'ACTIVE').length;
-    const completedPayments = payments.filter(p => p.status === 'COMPLETED').length;
-    const pendingPayments = payments.filter(p => p.status === 'PENDING').length;
+    const pendingBookings = bookings.filter(({ status }) => status === 'PENDING').length;
+    const activeSubscriptions = subscriptions.filter(({ status }) => status === 'ACTIVE').length;
+    const completedPayments = payments.filter(({ status }) => status === 'COMPLETED').length;
+    const pendingPayments = payments.filter(({ status }) => status === 'PENDING').length;
     const totalRevenue = payments
-      .filter(p => p.status === 'COMPLETED')
-      .reduce((sum, p) => sum + p.finalAmount, 0);
+      .filter(({ status }) => status === 'COMPLETED')
+      .reduce((sum, { finalAmount }) => sum + finalAmount, 0);
 
     setAnalyticsData({
       totalBookings,
@@ -570,7 +583,7 @@ export default function AdminDashboard() {
       pendingBookings,
       activeSubscriptions,
       completedPayments,
-      pendingPayments
+      pendingPayments,
     });
   };
 
@@ -584,22 +597,24 @@ export default function AdminDashboard() {
       await apiRequest(`/users/${userId}/status`, {
         method: HttpMethod.PUT,
         body: { status },
-        requiresAuth: true
+        requiresAuth: true,
       });
-      
-      setUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, status: status as any } : user
-      ));
-      
+
+      setUsers((previousUsers) =>
+        previousUsers.map((currentUser) =>
+          currentUser.id === userId ? { ...currentUser, status: status as User['status'] } : currentUser,
+        ),
+      );
+
       toast({
         title: 'Success',
-        description: 'User status updated successfully'
+        description: 'User status updated successfully',
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to update user status',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     }
   };
@@ -610,45 +625,48 @@ export default function AdminDashboard() {
       const response = await apiRequest('/admin/assign-maid', {
         method: HttpMethod.POST,
         body: { bookingId, maidId },
-        requiresAuth: true
+        requiresAuth: true,
       });
 
       if (response.success) {
-        // Remove from pending bookings
-        setPendingBookings(prev => prev.filter(b => b.id !== bookingId));
-        
-        // Refresh bookings data
-        const bookingsResponse = await apiRequest('/bookings', { 
-          method: HttpMethod.GET, 
-          requiresAuth: true 
+        setPendingBookings((previous) => previous.filter((booking) => booking.id !== bookingId));
+
+        const bookingsResponse = await apiRequest('/bookings', {
+          method: HttpMethod.GET,
+          requiresAuth: true,
         });
+
         if (bookingsResponse.success) {
-          const bookingsData = Array.isArray(bookingsResponse.data) ? 
-            bookingsResponse.data : 
-            bookingsResponse.data?.bookings || [];
+          const rawBookings = bookingsResponse.data;
+          const bookingsData = Array.isArray(rawBookings)
+            ? rawBookings
+            : rawBookings?.bookings || rawBookings?.data || [];
           setBookings(bookingsData);
         }
 
         toast({
           title: 'Success',
-          description: 'Maid assigned to booking successfully'
+          description: 'Maid assigned to booking successfully',
         });
       }
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to assign maid to booking',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setAssigningBooking(null);
     }
   };
 
-  const filteredSubscriptions = subscriptions.filter(sub => {
+  const filteredSubscriptions = subscriptions.filter((subscription) => {
     if (!subscriptionFilter) return true;
-    return sub.plan?.name.toLowerCase().includes(subscriptionFilter.toLowerCase()) ||
-           sub.customer?.user?.name.toLowerCase().includes(subscriptionFilter.toLowerCase());
+    const normalizedFilter = subscriptionFilter.toLowerCase();
+    return (
+      subscription.plan?.name.toLowerCase().includes(normalizedFilter) ||
+      subscription.customer?.user?.name.toLowerCase().includes(normalizedFilter)
+    );
   });
 
   const handleEditPlan = (plan: SubscriptionPlan) => {
