@@ -107,7 +107,26 @@ export const MaidProfilePage: React.FC = () => {
       });
       if (response.success) {
         const list = (response as any).data || (response as any).reviews || [];
-        setReviews(Array.isArray(list) ? list : []);
+        const feedbacks = Array.isArray(list) ? list : [];
+
+        const mapped: Review[] = feedbacks.map((f: any) => {
+          const serviceDate = f?.booking?.completedAt || f?.createdAt;
+          return {
+            id: f?.id,
+            rating: f?.overallRating,
+            comment: f?.comment || '',
+            serviceDate: serviceDate || new Date().toISOString(),
+            reviewer: {
+              name: f?.customer?.name || 'Customer',
+              email: f?.customer?.email,
+              phone: f?.customer?.phone,
+              profileImage: f?.customer?.profileImage
+            },
+            serviceDetails: f?.booking?.service?.name
+          };
+        }).filter((r: any) => r?.id);
+
+        setReviews(mapped);
       }
     } catch (error) {
       console.error('Error fetching reviews:', error);

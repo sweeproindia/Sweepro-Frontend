@@ -262,7 +262,7 @@ export default function ReviewPaymentPage() {
         backendPlan = backendPlans.find((p: any) => {
           const n = normalizeName(p.name);
           if (selectedPlan.id === 'standard') {
-            // Map UI "Sweepro Touch" to backend "Sweepro Touch" (name contains "touch")
+            // Map UI "Sweepro Touch" to backend "SweepPro Touch" (name contains "touch")
             return n.includes('touch');
           }
           if (selectedPlan.id === 'premium') {
@@ -558,98 +558,100 @@ export default function ReviewPaymentPage() {
                 <p className="text-gray-600 mt-1">Complete breakdown of what's included in your {selectedPlan.name} plan</p>
               </CardHeader>
               <CardContent>
+                {/* Mixed color breakdown cards, alternating blue, orange, green */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-blue-100 p-2 rounded-full">
-                        <Package className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <p className="font-bold text-blue-900">Utensil Cleaning</p>
-                    </div>
-                    <p className="text-blue-700">{selectedPlan.serviceBreakdown.utensilCleaning}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-green-100 p-2 rounded-full">
-                        <Home className="h-4 w-4 text-green-600" />
-                      </div>
-                      <p className="font-bold text-green-900">Floor Cleaning</p>
-                    </div>
-                    <p className="text-green-700">{selectedPlan.serviceBreakdown.floorCleaning}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl border border-orange-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-orange-100 p-2 rounded-full">
-                        <Shield className="h-4 w-4 text-orange-600" />
-                      </div>
-                      <p className="font-bold text-orange-900">Bathroom Cleaning</p>
-                    </div>
-                    <p className="text-orange-700">{selectedPlan.serviceBreakdown.bathroomCleaning}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-purple-100 p-2 rounded-full">
-                        <Sparkles className="h-4 w-4 text-purple-600" />
-                      </div>
-                      <p className="font-bold text-purple-900">Home Dusting</p>
-                    </div>
-                    <p className="text-purple-700">{selectedPlan.serviceBreakdown.homeDusting}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-indigo-100 p-2 rounded-full">
-                        <Package className="h-4 w-4 text-indigo-600" />
-                      </div>
-                      <p className="font-bold text-indigo-900">Cleaning Kit</p>
-                    </div>
-                    <p className="text-indigo-700">{selectedPlan.serviceBreakdown.kitProvided}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl border border-teal-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-teal-100 p-2 rounded-full">
-                        <Clock className="h-4 w-4 text-teal-600" />
-                      </div>
-                      <p className="font-bold text-teal-900">Timings</p>
-                    </div>
-                    <p className="text-teal-700">{selectedPlan.serviceBreakdown.timings}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-xl border border-red-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-red-100 p-2 rounded-full">
-                        <Shield className="h-4 w-4 text-red-600" />
-                      </div>
-                      <p className="font-bold text-red-900">Backup Guarantee</p>
-                    </div>
-                    <p className="text-red-700">{selectedPlan.serviceBreakdown.backupGuarantee}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-yellow-100 p-2 rounded-full">
-                        <Users className="h-4 w-4 text-yellow-600" />
-                      </div>
-                      <p className="font-bold text-yellow-900">Customer Care</p>
-                    </div>
-                    <p className="text-yellow-700">{selectedPlan.serviceBreakdown.customerCare}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-pink-50 to-pink-100 rounded-xl border border-pink-200 md:col-span-2">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="bg-pink-100 p-2 rounded-full">
-                        <Calendar className="h-4 w-4 text-pink-600" />
-                      </div>
-                      <p className="font-bold text-pink-900">Buffer Days</p>
-                    </div>
-                    <p className="text-pink-700">{selectedPlan.serviceBreakdown.bufferDays}</p>
-                  </div>
+                  {(() => {
+                    // List of breakdown items with label, value, and icon
+                    const breakdownItems = [
+                      {
+                        label: 'Utensil Cleaning',
+                        value: selectedPlan.serviceBreakdown.utensilCleaning,
+                        icon: <Package className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Floor Cleaning',
+                        value: selectedPlan.serviceBreakdown.floorCleaning,
+                        icon: <Home className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Bathroom Cleaning',
+                        value: selectedPlan.serviceBreakdown.bathroomCleaning,
+                        icon: <Shield className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Home Dusting',
+                        value: selectedPlan.serviceBreakdown.homeDusting,
+                        icon: <Sparkles className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Cleaning Kit',
+                        value: selectedPlan.serviceBreakdown.kitProvided,
+                        icon: <Package className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Timings',
+                        value: selectedPlan.serviceBreakdown.timings,
+                        icon: <Clock className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Backup Guarantee',
+                        value: selectedPlan.serviceBreakdown.backupGuarantee,
+                        icon: <Shield className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Customer Care',
+                        value: selectedPlan.serviceBreakdown.customerCare,
+                        icon: <Users className="h-4 w-4" />,
+                      },
+                      {
+                        label: 'Buffer Days',
+                        value: selectedPlan.serviceBreakdown.bufferDays,
+                        icon: <Calendar className="h-4 w-4" />,
+                        colSpan: true, // Make this card span 2 columns on md+
+                      },
+                    ];
+                    // Color schemes
+                    const colorSchemes = [
+                      {
+                        bg: 'bg-gradient-to-r from-blue-50 to-blue-100',
+                        border: 'border-blue-200',
+                        iconBg: 'bg-blue-100',
+                        text: 'text-blue-900',
+                        value: 'text-blue-700',
+                      },
+                      {
+                        bg: 'bg-gradient-to-r from-orange-50 to-orange-100',
+                        border: 'border-orange-200',
+                        iconBg: 'bg-orange-100',
+                        text: 'text-orange-900',
+                        value: 'text-orange-700',
+                      },
+                      {
+                        bg: 'bg-gradient-to-r from-green-50 to-green-100',
+                        border: 'border-green-200',
+                        iconBg: 'bg-green-100',
+                        text: 'text-green-900',
+                        value: 'text-green-700',
+                      },
+                    ];
+                    // Render cards with alternating colors
+                    return breakdownItems.map((item, idx) => {
+                      const color = colorSchemes[idx % colorSchemes.length];
+                      return (
+                        <div
+                          key={item.label}
+                          className={`p-4 rounded-xl ${color.bg} ${color.border} ${item.colSpan ? 'md:col-span-2' : ''}`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className={`${color.iconBg} p-2 rounded-full`}>{item.icon}</div>
+                            <p className={`font-bold ${color.text}`}>{item.label}</p>
+                          </div>
+                          <p className={color.value}>{item.value}</p>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
-
                 <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200">
                   <div className="flex items-center gap-3 mb-2">
                     <CheckCircle className="h-5 w-5 text-emerald-600" />
@@ -683,14 +685,14 @@ export default function ReviewPaymentPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <Calendar className="h-5 w-5 text-red-600" />
+                    <Calendar className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="font-semibold text-gray-900">Start Date</p>
                       <p className="text-gray-600">{formatDate(selectedOptions.startDate)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-indigo-600" />
+                    <Clock className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="font-semibold text-gray-900">Frequency</p>
                       <p className="text-gray-600">{DAILY_FREQUENCY.name}</p>
