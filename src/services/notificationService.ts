@@ -4,7 +4,7 @@
  */
 
 import axios from 'axios';
-import { API_BASE_URL } from './api';
+import { API_BASE_URL, getAuthToken } from './api';
 
 export interface Notification {
   id: string;
@@ -41,7 +41,7 @@ export interface UnreadCountResponse {
 
 class NotificationAPIService {
   private getAuthHeader() {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };

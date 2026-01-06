@@ -107,6 +107,7 @@ class FeedbackService {
     rating?: number;
     maidId?: string;
     customerId?: string;
+    status?: string;
   }) {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -114,18 +115,16 @@ class FeedbackService {
     if (params?.rating) queryParams.append('rating', params.rating.toString());
     if (params?.maidId) queryParams.append('maidId', params.maidId);
     if (params?.customerId) queryParams.append('customerId', params.customerId);
+    if (params?.status) queryParams.append('status', params.status);
 
     const queryString = queryParams.toString();
     const url = `/feedback/all${queryString ? `?${queryString}` : ''}`;
 
     return apiRequest<{
-      data: Feedback[];
-      pagination: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-      };
+      // Backend returns { data: Feedback[], pagination: {...} }
+      // Some callers may also treat this as { data: { data: Feedback[], pagination: {...} } }
+      data: any;
+      pagination?: any;
     }>(url, {
       method: HttpMethod.GET,
       requiresAuth: true

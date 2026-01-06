@@ -29,12 +29,17 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
     ME: '/auth/me',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
   },
   // User
   USER: {
     PROFILE: '/users/profile',
     UPDATE: '/users/update',
+    COMPLETE_PROFILE: '/auth/complete-profile',
   },
+  // Apartments
+  APARTMENTS: '/auth/apartments',
   // Profile
   PROFILE: {
     ME: '/profile/me',
@@ -243,18 +248,100 @@ export class ApiError extends Error {
 // Token management
 export type AuthTokenStorage = 'local' | 'session';
 
-export const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+export type AuthTokenType = 'jwt' | 'firebase';
+
+const AUTH_TOKEN_EXPIRES_AT_KEY = 'authTokenExpiresAt';
+const DEFAULT_AUTH_TTL_DAYS = 30;
+
+const isExpired = (expiresAtRaw: string | null): boolean => {
+  if (!expiresAtRaw) return false;
+  const expiresAt = Number(expiresAtRaw);
+  if (!Number.isFinite(expiresAt)) return false;
+  return Date.now() > expiresAt;
 };
 
-export const setAuthToken = (token: string, storage: AuthTokenStorage = 'local'): void => {
+const removeAuthTokenFromStorage = (storage: Storage): void => {
+  storage.removeItem('authToken');
+  storage.removeItem('authTokenType');
+  storage.removeItem(AUTH_TOKEN_EXPIRES_AT_KEY);
+};
+
+export const getAuthToken = (): string | null => {
+  const localToken = localStorage.getItem('authToken');
+  if (localToken) {
+    const expiresAt = localStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
+    if (isExpired(expiresAt)) {
+      removeAuthTokenFromStorage(localStorage);
+      return null;
+    }
+    return localToken;
+  }
+
+  const sessionToken = sessionStorage.getItem('authToken');
+  if (sessionToken) {
+    const expiresAt = sessionStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
+    if (isExpired(expiresAt)) {
+      removeAuthTokenFromStorage(sessionStorage);
+      return null;
+    }
+    return sessionToken;
+  }
+
+  return null;
+};
+
+export const getAuthTokenType = (): AuthTokenType | null => {
+  // Keep tokenType consistent with whichever storage has the valid token
+  const localToken = localStorage.getItem('authToken');
+  if (localToken) {
+    const expiresAt = localStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
+    if (isExpired(expiresAt)) {
+      removeAuthTokenFromStorage(localStorage);
+      return null;
+    }
+    const stored = localStorage.getItem('authTokenType');
+    if (stored === 'jwt' || stored === 'firebase') return stored;
+    return null;
+  }
+
+  const sessionToken = sessionStorage.getItem('authToken');
+  if (sessionToken) {
+    const expiresAt = sessionStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
+    if (isExpired(expiresAt)) {
+      removeAuthTokenFromStorage(sessionStorage);
+      return null;
+    }
+    const stored = sessionStorage.getItem('authTokenType');
+    if (stored === 'jwt' || stored === 'firebase') return stored;
+    return null;
+  }
+
+  const stored = localStorage.getItem('authTokenType') || sessionStorage.getItem('authTokenType');
+  if (stored === 'jwt' || stored === 'firebase') return stored;
+  return null;
+};
+
+export const setAuthToken = (
+  token: string,
+  storage: AuthTokenStorage = 'local',
+  tokenType?: AuthTokenType
+): void => {
   const target = storage === 'session' ? sessionStorage : localStorage;
   target.setItem('authToken', token);
+
+  // Default: keep users signed-in for 30 days.
+  // Note: Firebase ID tokens themselves expire sooner, but this TTL controls our app session storage.
+  const expiresAt = Date.now() + DEFAULT_AUTH_TTL_DAYS * 24 * 60 * 60 * 1000;
+  target.setItem(AUTH_TOKEN_EXPIRES_AT_KEY, String(expiresAt));
+
+  if (tokenType) {
+    target.setItem('authTokenType', tokenType);
+  }
 };
 
 export const removeAuthToken = (): void => {
-  localStorage.removeItem('authToken');
-  sessionStorage.removeItem('authToken');
+  removeAuthTokenFromStorage(localStorage);
+  removeAuthTokenFromStorage(sessionStorage);
 };
 
 // Generic API request function

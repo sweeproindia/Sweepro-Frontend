@@ -79,7 +79,8 @@ export default function AdminFeedbackPage() {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-      setDisputedFeedback(res?.data || []);
+      const list = Array.isArray(res?.data) ? res.data : (res?.data?.data || []);
+      setDisputedFeedback(list);
     } catch (error) {
       console.error('Error fetching disputed feedback:', error);
     } finally {
@@ -106,7 +107,7 @@ export default function AdminFeedbackPage() {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-      setAuditTrail(res?.data || []);
+      setAuditTrail(res?.data?.auditEntries || []);
       setShowAuditModal(true);
     } catch (error) {
       console.error('Error fetching audit trail:', error);
@@ -133,8 +134,16 @@ export default function AdminFeedbackPage() {
       });
 
       if (response.success && response.data) {
-        setFeedbacks(response.data.data || []);
-        setTotalPages(response.data.pagination?.totalPages || 1);
+        // Backend returns: { success, data: Feedback[], pagination }
+        // apiRequest wraps as: { success, data: { data: Feedback[], pagination } }
+        const payload: any = response as any;
+        const feedbackArray = Array.isArray(payload.data)
+          ? payload.data
+          : (payload.data?.data || []);
+        const pagination = payload.pagination || payload.data?.pagination;
+
+        setFeedbacks(Array.isArray(feedbackArray) ? feedbackArray : []);
+        setTotalPages(pagination?.totalPages || 1);
       }
     } catch (error: any) {
       console.error('Error fetching feedbacks:', error);
@@ -192,16 +201,54 @@ export default function AdminFeedbackPage() {
     }
   };
 
-  const handleActionComplete = async () => {
+  const handleActionComplete = async (showToast: boolean = false) => {
     if (selectedMaidId) {
       await fetchMaidAnalytics(selectedMaidId);
     }
     await fetchFeedbacks();
     await fetchDisputedFeedback();
-    toast({
-      title: 'Success',
-      description: 'Action completed successfully'
+    if (showToast) {
+      toast({
+        title: 'Success',
+        description: 'Action completed successfully'
+      });
+    }
+  };
+
+  const handleAdminStatusChange = async (status: string, reason: string) => {
+    if (!selectedFeedbackForAction?.id) return;
+    await apiRequest(`/feedback/${selectedFeedbackForAction.id}/status`, {
+      method: HttpMethod.PATCH,
+      requiresAuth: true,
+      body: { status, reason }
     });
+    await handleActionComplete();
+  };
+
+  const handleAdminWeightChange = async (weight: number, reason: string) => {
+    if (!selectedFeedbackForAction?.id) return;
+    await apiRequest(`/feedback/${selectedFeedbackForAction.id}/weight`, {
+      method: HttpMethod.PATCH,
+      requiresAuth: true,
+      body: { weight, reason }
+    });
+    await handleActionComplete();
+  };
+
+  const handleAdminAddNote = async (note: string, isVerified: boolean) => {
+    if (!selectedFeedbackForAction?.id) return;
+    await apiRequest(`/feedback/${selectedFeedbackForAction.id}/note`, {
+      method: HttpMethod.PATCH,
+      requiresAuth: true,
+      body: { note, isVerified }
+    });
+    await handleActionComplete();
+  };
+
+  const handleViewFeedback = (feedback: Feedback) => {
+    setSelectedFeedback(feedback);
+    setAdminResponse(feedback.adminResponse || '');
+    setIsDialogOpen(true);
   };
 
   const handleSubmitAdminResponse = async () => {
@@ -437,7 +484,7 @@ export default function AdminFeedbackPage() {
                 <div className="space-y-6">
                   <MaidPerformanceOverview
                     maidId={selectedMaidId}
-                    maidName={maidAnalytics.maidName}
+                    maidName={maidAnalytics?.maid?.name}
                     analytics={maidAnalytics}
                     onRecalculate={handleRecalculateRating}
                   />
@@ -446,7 +493,7 @@ export default function AdminFeedbackPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>Recent Feedback</CardTitle>
-                      <CardDescription>Latest 10 feedback entries for {maidAnalytics.maidName}</CardDescription>
+                      <CardDescription>Latest 10 feedback entries for {maidAnalytics?.maid?.name}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
@@ -485,10 +532,11 @@ export default function AdminFeedbackPage() {
                       feedbackId={selectedFeedbackForAction.id}
                       currentStatus={selectedFeedbackForAction.status}
                       currentWeight={selectedFeedbackForAction.weight}
-                      onStatusChange={handleActionComplete}
-                      onWeightAdjust={handleActionComplete}
-                      onNoteAdd={handleActionComplete}
-                      onRecalculate={handleActionComplete}
+                      isWeightAdjusted={selectedFeedbackForAction.isWeightAdjusted ?? false}
+                      onStatusChange={handleAdminStatusChange}
+                      onWeightChange={handleAdminWeightChange}
+                      onAddNote={handleAdminAddNote}
+                      onRecalculate={handleRecalculateRating}
                     />
                   )}
                 </div>
