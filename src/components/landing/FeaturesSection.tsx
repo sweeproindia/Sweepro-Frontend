@@ -1,36 +1,46 @@
 // FeatureSection.tsx
 
 import { motion } from "framer-motion";
-import { Clock, Shield, Users,Package } from "lucide-react";
+import { Clock, Shield, Users, Package } from "lucide-react";
 
 const features = [
   {
-    icon: Shield,
+    icon: "/assets/trust-icon.png",
     title: "Trusted Professionals",
     description: "All our care partners are background-verified, insured, and trained to deliver exceptional service.",
-    color: "emerald",
+    color: "primary",
   },
   {
-    icon: Clock,
+    icon: "/assets/consistency.png",
     title: "Consistent & Reliable",
     description: "Enjoy uninterrupted service with well-structured schedules, backup support, and transparent communication.",
-    color: "blue",
+    color: "primary",
   },
   {
-    icon: Users,
+    icon: "/assets/property.png",
     title: "Designed for Modern Homes",
     description: "From compact apartments to spacious villas, our plans adapt to your home's needs and lifestyle.",
-    color: "amber",
+    color: "primary",
   },
   {
-    icon: Package,
+    icon: "/assets/product.png",
     title: "Sweepro Kit",
     description: "We equip our team with a curated cleaning kit to ensure effective, hygienic, and consistent results – every single time",
-    color: "indigo",
+    color: "primary",
   },
 ];
 
 const colorClasses = {
+  primary: {
+    icon: "text-[#1800ad]",
+    bg: "bg-blue-50 hover:bg-blue-100",
+    ring: "ring-[#1800ad] hover:ring-[#1800ad]",
+  },
+  black: {
+    icon: "text-gray-900",
+    bg: "bg-gray-100 hover:bg-gray-200",
+    ring: "ring-gray-900 hover:ring-black",
+  },
   emerald: {
     icon: "text-emerald-600",
     bg: "bg-emerald-50 hover:bg-emerald-100",
@@ -107,7 +117,15 @@ export default function FeaturesSection() {
                     ${colors.bg} ring-2 transition-all duration-300
                     ${colors.ring} floating-feature-bg
                   `}>
-                    <Icon className={`w-5 h-5 sm:w-8 sm:h-8 ${colors.icon} transition-transform duration-300 mx-auto`} />
+                    {typeof Icon === 'string' ? (
+                      <img 
+                        src={Icon} 
+                        alt={feature.title}
+                        className={`w-5 h-5 sm:w-8 sm:h-8 transition-transform duration-300 mx-auto`}
+                      />
+                    ) : (
+                      <Icon className={`w-5 h-5 sm:w-8 sm:h-8 ${colors.icon} transition-transform duration-300 mx-auto`} />
+                    )}
                   </div>
                   {/* Content */}
                   <h3 className="text-sm sm:text-xl font-semibold text-gray-900 mb-1 sm:mb-4 leading-tight text-center">

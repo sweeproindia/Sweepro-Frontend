@@ -194,7 +194,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             style={{ animationDelay: '0.8s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
-              <span className="w-24 h-24 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
+              <span className="w-9 h-9 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14.2 18.5 21 12 17.8 5.5 21 7 14.2 2 9.3 9 8.5 12 2"></polygon></svg>
               </span>
               <span className="font-semibold text-gray-900 text-xs sm:text-base">Verified Cleaners</span>

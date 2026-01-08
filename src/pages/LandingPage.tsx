@@ -1,7 +1,7 @@
 import { Footer } from '@/components/Footer';
 import { FAQSection } from '@/components/landing/FAQSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
-import { HeroSection } from '@/components/landing/HeroSection';
+import { HeroSection} from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import SweepProAboutUs from '@/components/landing/SweepProAboutUs';

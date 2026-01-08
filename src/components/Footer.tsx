@@ -112,7 +112,7 @@ export const Footer = () => {
         <div className="border-t border-blue-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-blue-200 text-sm font-medium">
-              © 2024 CleanEase. All rights reserved. | Made with care for your peace of mind.
+              © 2026 Sweepro, All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <Link to="/privacy" className="text-blue-200 hover:text-white transition-colors font-medium">Privacy Policy</Link>
