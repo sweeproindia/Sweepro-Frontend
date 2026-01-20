@@ -6,6 +6,50 @@ import { ArrowLeft, Check, Crown, Zap, Star, Shield, Calendar, Clock, Users, Map
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+const PALETTE = {
+  primary: '#1800ad',
+  primaryBright: '#3a1dda',
+  primaryGlow: '#6150ff',
+  primaryDark: '#0f006f',
+  mist: '#f4f5ff',
+  ink: '#1f2140',
+  slate: '#5d6185'
+} as const;
+
+const INDIGO_THEME = {
+  heroGradient: `linear-gradient(135deg, ${PALETTE.primary} 0%, ${PALETTE.primaryBright} 55%, ${PALETTE.primaryGlow} 100%)`,
+  heroGlow: '0 40px 140px -60px rgba(24,0,173,0.55)',
+  heroAura: `radial-gradient(circle at 18% 8%, rgba(97,80,255,0.28) 0%, transparent 60%)`,
+  heroOverlayLight: 'rgba(97,80,255,0.32)',
+  heroOverlayDeep: 'rgba(24,0,173,0.28)',
+  heroIconBackground: 'rgba(255,255,255,0.18)',
+  heroIconRing: 'rgba(255,255,255,0.28)',
+  headingColor: '#ffffff',
+  labelBg: 'rgba(255,255,255,0.18)',
+  labelText: '#ffffff',
+  heroDescription: 'rgba(236,238,255,0.88)',
+  accentBorder: 'rgba(24,0,173,0.18)',
+  accentSurface: 'linear-gradient(135deg, rgba(24,0,173,0.08) 0%, rgba(24,0,173,0.02) 100%)',
+  accentSurfaceBold: 'linear-gradient(135deg, rgba(24,0,173,0.12) 0%, rgba(24,0,173,0.04) 100%)',
+  iconTint: '#ffffff',
+  textStrong: '#1f2140',
+  textMuted: 'rgba(31,33,64,0.68)',
+  textSoft: 'rgba(31,33,64,0.55)',
+  surface: 'rgba(255,255,255,0.94)',
+  highlight: 'rgba(24,0,173,0.12)',
+  glow: '0 25px 80px -40px rgba(24,0,173,0.55)',
+  chipBg: 'rgba(24,0,173,0.12)',
+  chipBorder: 'rgba(24,0,173,0.28)',
+  chipText: '#1800ad',
+  surfaceMuted: 'rgba(244,245,255,0.9)',
+  ctaGradient: `linear-gradient(135deg, ${PALETTE.primary} 0%, ${PALETTE.primaryGlow} 100%)`
+} as const;
+
+const PLAN_THEME = {
+  standard: INDIGO_THEME,
+  premium: INDIGO_THEME
+} as const;
+
 interface SubscriptionPlan {
   id: string;
   name: string;
@@ -64,7 +108,7 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
     },
     popular: true,
     icon: Zap,
-    gradient: 'from-[#C0C0C0] to-[#E0E0E0]',
+    gradient: 'from-[#1800ad] via-[#3a1dda] to-[#6150ff]',
     serviceHours: 'We provide Sweepro kit once for the subscription period',
     coverage: 'Kitchen, Bathroom, All floor areas',
     teamSize: '1 professional cleaner',
@@ -101,7 +145,7 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       bufferDays: 'Buffer days included'
     },
     icon: Crown,
-    gradient: 'from-yellow-400 to-yellow-700',
+    gradient: 'from-[#1800ad] via-[#3a1dda] to-[#6150ff]',
     serviceHours: 'We provide Sweepro kit every month',
     coverage: 'Complete home + comprehensive cleaning',
     teamSize: '1 professional cleaner',
@@ -115,12 +159,14 @@ export default function SubscriptionDetailsPage() {
   const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState(planId || 'standard');
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
   // Get plan from URL params or default to standard
   const plan = subscriptionPlans[planId || 'standard'] || subscriptionPlans.standard;
+  const themeKey = (plan.id as keyof typeof PLAN_THEME) ?? 'standard';
+  const theme = PLAN_THEME[themeKey] ?? PLAN_THEME.standard;
+  const isPremium = themeKey === 'premium';
 
   useEffect(() => {
     setIsVisible(true);
@@ -226,8 +272,9 @@ export default function SubscriptionDetailsPage() {
   const IconComponent = plan.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background py-8 px-4">
+    <div className="min-h-screen bg-white py-8 px-4">
       <div className="max-w-6xl mx-auto">
+
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -268,64 +315,105 @@ export default function SubscriptionDetailsPage() {
         </div>
 
         {/* Main Hero Section */}
-        <div className={`text-center mb-12 transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="flex justify-center mb-6">
-            <div className={`relative p-6 rounded-3xl bg-gradient-to-br ${plan.gradient} shadow-2xl ring-4 ring-white/20 transform hover:scale-110 transition-transform duration-300`}
+        <div
+          className={`relative mb-12 overflow-hidden rounded-[32px] border transition-all duration-1000 ${
+            isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+          }`}
+          style={{
+            borderColor: theme.accentBorder,
+            background: theme.heroGradient,
+            boxShadow: theme.heroGlow
+          }}
+        >
+          <div
+            className="absolute inset-0 opacity-70"
+            style={{ background: 'rgba(24,0,173,0.28)' }}
+          />
+          <div className="absolute -top-24 -left-20 h-64 w-64 rounded-full blur-[120px] opacity-60"
+            style={{ background: 'rgba(24,0,173,0.28)' }}
+          />
+          <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full blur-[140px] opacity-60"
+            style={{ background: 'rgba(24,0,173,0.32)' }}
+          />
+
+          <div className="relative px-6 py-14 text-center md:px-14 md:py-16">
+            <div className="mx-auto mb-7 inline-flex h-20 w-20 items-center justify-center rounded-full ring-4 ring-white/25 shadow-xl"
               style={{
-                background: plan.id === 'standard' ? 'linear-gradient(135deg, #e5e7eb 60%, #f3f4f6 100%)' : undefined,
-                boxShadow: '0 0 40px 12px rgba(255,255,255,0.3)'
-              }}>
-              <IconComponent className={`h-12 w-12 ${plan.id === 'standard' ? 'text-slate-700' : 'text-white'} drop-shadow-[0_0_12px_rgba(255,255,255,0.8)]`}
-                style={{ filter: 'brightness(1.5) drop-shadow(0 0 12px #fff)' }} />
-              <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${plan.id === 'standard' ? 'from-slate-300 to-slate-100' : plan.gradient} blur-2xl opacity-50`}></div>
+                background: 'rgba(255,255,255,0.2)',
+                boxShadow: '0 24px 55px -35px rgba(24,0,173,0.65)'
+              }}
+            >
+              <IconComponent
+                className="h-10 w-10 drop-shadow-[0_0_18px_rgba(255,255,255,0.6)]"
+                style={{ color: '#ffffff' }}
+              />
+            </div>
+
+            <h1 className="text-4xl font-black tracking-tight text-white md:text-6xl">
+              {plan.name}
+            </h1>
+
+            <div
+              className="mx-auto mt-4 w-max rounded-full px-5 py-2 text-xs font-semibold uppercase tracking-[0.45em] text-white"
+              style={{ background: 'rgba(255,255,255,0.22)' }}
+            >
+              {plan.id === 'standard' ? 'Essential care' : 'Premium care'}
+            </div>
+
+            <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed" style={{ color: theme.heroDescription }}>
+              {plan.description}
+            </p>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              {plan.popular && (
+                <Badge className="rounded-full bg-white/24 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white backdrop-blur">
+                  Most loved tier
+                </Badge>
+              )}
+              <Badge className="rounded-full bg-white/18 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white backdrop-blur">
+                Trusted housekeeping
+              </Badge>
             </div>
           </div>
-
-          <h1 className={`text-5xl md:text-6xl font-black mb-4 ${plan.id === 'standard' ? 'text-slate-700' : 'bg-gradient-to-r from-yellow-600 to-yellow-800 bg-clip-text text-transparent'}`}>
-            {plan.name}
-          </h1>
-
-          <div className={`inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4 ${
-            plan.id === 'standard' ? 'bg-slate-200 text-slate-700' : 'bg-yellow-200 text-yellow-800'
-          }`}>
-            {plan.id === 'standard' ? 'ESSENTIAL CARE' : 'PREMIUM CARE'}
-          </div>
-
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
-            {plan.description}
-          </p>
-
-          {/* Badges */}
-          <div className="flex justify-center gap-3 mb-8">
-            {plan.popular && (
-              <Badge className="bg-purple-600 text-white font-bold px-4 py-2">Most Popular Choice</Badge>
-            )}
-            <Badge className="bg-blue-600 text-white font-bold px-4 py-2">Professional Service</Badge>
-          </div>
         </div>
-
-      
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           {/* Features Card */}
           <div className="lg:col-span-2">
-            <Card className="h-full shadow-xl border-0 bg-card/50 backdrop-blur-sm">
+            <Card
+              className="h-full border bg-white/95 shadow-xl backdrop-blur-sm"
+              style={{ borderColor: theme.accentBorder }}
+            >
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
+                <CardTitle className="flex items-center gap-2 text-2xl font-semibold"
+                  style={{ color: PALETTE.primary }}
+                >
+                  <CheckCircle className="h-6 w-6" style={{ color: PALETTE.primary }} />
                   Key Features & Benefits
                 </CardTitle>
-                <p className="text-muted-foreground">Everything included in your {plan.name} subscription</p>
+                <p className="text-sm" style={{ color: 'rgba(32,30,69,0.65)' }}>
+                  Everything included in your {plan.name} subscription
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {plan.features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors duration-200">
-                      <div className="bg-green-100 p-1.5 rounded-full mt-0.5 flex-shrink-0">
-                        <Check className="h-3 w-3 text-green-600" />
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 rounded-2xl border px-4 py-3 transition-colors duration-200"
+                      style={{
+                        borderColor: theme.accentBorder,
+                        background: theme.accentSurface
+                      }}
+                    >
+                      <div
+                        className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90"
+                        style={{ color: PALETTE.primary }}
+                      >
+                        <Check className="h-4 w-4" />
                       </div>
-                      <span className="text-foreground">{feature}</span>
+                      <span className="text-sm font-medium text-slate-800">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -335,80 +423,101 @@ export default function SubscriptionDetailsPage() {
 
           {/* Service Details Card */}
           <div>
-            <Card className="h-full shadow-xl border-0 bg-card/50 backdrop-blur-sm">
+            <Card
+              className="h-full border bg-white/95 shadow-xl backdrop-blur"
+              style={{ borderColor: theme.accentBorder }}
+            >
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
-                  <Star className="h-6 w-6 text-yellow-500" />
-                  Sweepro Care
+                <CardTitle className="flex items-center gap-2 text-2xl font-semibold"
+                  style={{ color: PALETTE.primary }}
+                >
+                  <Star className="h-6 w-6" style={{ color: PALETTE.primary }} />
+                  Sweepro Care Promise
                 </CardTitle>
-                <p className="text-muted-foreground text-sm">Professional standards and specifications</p>
+                <p className="text-sm" style={{ color: 'rgba(32,30,69,0.65)' }}>
+                  Professional standards and specifications
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-100 rounded-xl border border-blue-200">
-                  <div className="flex items-center gap-3 mb-2">
-                    <PiBagSimple className="h-5 w-5 text-blue-600"/>
-                    <p className="font-bold text-blue-900">Sweepro Kit</p>
+                {[
+                  {
+                    icon: PiBagSimple,
+                    label: 'Sweepro kit',
+                    copy: plan.serviceHours
+                  },
+                  {
+                    icon: MapPin,
+                    label: 'Coverage area',
+                    copy: plan.coverage
+                  },
+                  {
+                    icon: Users,
+                    label: 'Team size',
+                    copy: plan.teamSize
+                  },
+                  {
+                    icon: Calendar,
+                    label: 'Cancellation',
+                    copy: plan.cancellation
+                  }
+                ].map(({ icon: Icon, label, copy }) => (
+                  <div
+                    key={label}
+                    className="rounded-2xl border px-4 py-4"
+                    style={{
+                      borderColor: theme.accentBorder,
+                      background: theme.surface,
+                      boxShadow: theme.glow
+                    }}
+                  >
+                    <div className="mb-1 flex items-center gap-3">
+                      <Icon className="h-5 w-5" style={{ color: PALETTE.primary }} />
+                      <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-700">{label}</p>
+                    </div>
+                    <p className="text-sm text-slate-600">{copy}</p>
                   </div>
-                  <p className="text-blue-700">{plan.serviceHours}</p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-100 rounded-xl border border-green-200">
-                  <div className="flex items-center gap-3 mb-2">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                    <p className="font-bold text-green-900">Coverage Area</p>
-                  </div>
-                  <p className="text-green-700">{plan.coverage}</p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-violet-100 rounded-xl border border-purple-200">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Users className="h-5 w-5 text-purple-600" />
-                    <p className="font-bold text-purple-900">Team Size</p>
-                  </div>
-                  <p className="text-purple-700">{plan.teamSize}</p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-r from-orange-50 to-red-100 rounded-xl border border-orange-200">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Calendar className="h-5 w-5 text-orange-600" />
-                    <p className="font-bold text-orange-900">Cancellation</p>
-                  </div>
-                  <p className="text-orange-700">{plan.cancellation}</p>
-                </div>
+                ))}
               </CardContent>
             </Card>
           </div>
         </div>
 
         {/* CTA Section */}
-        <Card className="shadow-2xl border-0 bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm">
-          <CardContent className="p-8 text-center">
-            <h3 className="text-2xl font-bold text-foreground mb-4">Ready to See Pricing Options?</h3>
-            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Discover flexible payment plans and special offers tailored to fit your budget.
-              View transparent pricing with no hidden fees.
+        <Card
+          className="relative overflow-hidden border bg-white/95 text-center shadow-[0_35px_120px_-60px_rgba(24,0,173,0.6)]"
+          style={{ borderColor: theme.accentBorder }}
+        >
+          <div className="absolute inset-0 opacity-90"
+            style={{ background: 'radial-gradient(circle at 15% 20%, rgba(97,80,255,0.25) 0%, transparent 55%), rgba(24,0,173,0.14)' }}
+          />
+          <CardContent className="relative p-10">
+            <h3 className="text-2xl font-bold" style={{ color: PALETTE.primary }}>
+              Ready to shape your Sweep Pro experience?
+            </h3>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 md:text-base">
+              Discover flexible payment plans, seasonal perks and concierge-level scheduling crafted around your home.
             </p>
 
             <Button
-              className={`w-full max-w-md py-6 text-xl font-bold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-2xl shadow-2xl hover:shadow-xl transition-all duration-300 ${
-                isNavigating ? 'opacity-50 cursor-not-allowed transform-none' : 'transform hover:scale-105'
+              className={`mt-8 w-full max-w-md rounded-full px-10 py-6 text-lg font-semibold text-white shadow-xl transition duration-300 ${
+                isNavigating ? 'cursor-not-allowed opacity-70' : 'hover:scale-[1.02]'
               }`}
+              style={{ background: theme.ctaGradient }}
               onClick={handleProceedToPayment}
               disabled={isNavigating}
             >
               {isNavigating ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Loading...
+                  <div className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+                  Redirecting…
                 </>
               ) : (
                 <>
-                  View Pricing & Book Now
-                  <ArrowRight className="h-5 w-5 ml-2" />
+                  View payment options
+                  <ArrowRight className="ml-3 h-5 w-5" />
                 </>
               )}
             </Button>
-
           </CardContent>
         </Card>
       </div>

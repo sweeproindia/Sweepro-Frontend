@@ -1,13 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Camera, Mail, Phone, Calendar, Star, Quote, ThumbsUp, MapPin, Clock } from 'lucide-react';
+import {
+  Edit,
+  Camera,
+  Mail,
+  Phone,
+  Calendar,
+  Star,
+  Quote,
+  MapPin,
+  Clock,
+  TrendingUp,
+  Sparkles,
+  ShieldCheck
+} from 'lucide-react';
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
 import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
 import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MaidProfileData {
   id: string;
@@ -28,6 +42,7 @@ interface MaidProfileData {
   languages?: string[];
   address?: string;
   role?: string;
+  joinedDate?: string;
 }
 
 interface Review {
@@ -86,8 +101,17 @@ export const MaidProfilePage: React.FC = () => {
           rating: maidProfile?.rating,
           totalReviews: maidProfile?.totalRatings,
           languages: maidProfile?.languages,
-          address: data?.addressLine || data?.address,
-          role: data?.role
+          address: [
+            data?.addressLine || data?.address,
+            data?.locality,
+            data?.city,
+            data?.state,
+            data?.pincode
+          ]
+            .filter(Boolean)
+            .join(', '),
+          role: data?.role,
+          joinedDate: data?.createdAt
         };
 
         setProfileData(mappedProfile);
@@ -152,14 +176,85 @@ export const MaidProfilePage: React.FC = () => {
     setImageDialogOpen(true);
   };
 
-  if (loading) {
+  const displayName = useMemo(() => {
+    if (!profileData) return '';
     return (
-      <MaidDashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </MaidDashboardLayout>
+      profileData.fullName ||
+      user?.name ||
+      (profileData.email ? profileData.email.split('@')[0] : '') ||
+      'Sweep Pro Maid'
     );
+  }, [profileData, user]);
+
+  const membershipDays = useMemo(() => {
+    if (!profileData?.joinedDate) return 0;
+    const joined = new Date(profileData.joinedDate).getTime();
+    if (Number.isNaN(joined)) return 0;
+    return Math.max(0, Math.floor((Date.now() - joined) / (1000 * 60 * 60 * 24)));
+  }, [profileData?.joinedDate]);
+
+  const formattedEarnings = useMemo(() => {
+    if (!profileData?.totalEarnings) return '₹0';
+    return `₹${profileData.totalEarnings.toLocaleString('en-IN', {
+      maximumFractionDigits: 0
+    })}`;
+  }, [profileData?.totalEarnings]);
+
+  const primaryLanguages = useMemo(() => profileData?.languages ?? [], [profileData?.languages]);
+  const skills = useMemo(() => profileData?.skills ?? [], [profileData?.skills]);
+
+  const averageRating = useMemo(() => {
+    if (!profileData?.rating) return 0;
+    return Number(profileData.rating.toFixed(1));
+  }, [profileData?.rating]);
+
+  const loadingSkeleton = (
+    <MaidDashboardLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-full" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-1">
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-28 w-full rounded-xl" />
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-32 w-full rounded-2xl" />
+            </div>
+            <Skeleton className="h-56 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    </MaidDashboardLayout>
+  );
+
+  if (loading) {
+    return loadingSkeleton;
   }
 
   if (!profileData) {
@@ -184,7 +279,7 @@ export const MaidProfilePage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground mt-1">Maid Service Provider</p>
+            <p className="text-muted-foreground mt-1">Showcase your professional presence and track your service journey.</p>
           </div>
           <Button 
             onClick={() => setEditDialogOpen(true)}
@@ -195,14 +290,11 @@ export const MaidProfilePage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Main Section: Profile + Languages (Left) & Contact Info (Right) */}
+        {/* Main Section: Profile Snapshot & Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* LEFT COLUMN: Profile Card + Languages */}
-          <div className="space-y-4">
-            {/* Profile Card */}
+          {/* LEFT COLUMN */}
+          <div className="lg:col-span-1 space-y-4">
             <Card className="overflow-hidden">
-              {/* Cover Image */}
               <div className="relative h-32 bg-gradient-to-r from-primary/20 via-purple-200 to-pink-200">
                 {profileData.coverImage ? (
                   <img
@@ -220,12 +312,11 @@ export const MaidProfilePage: React.FC = () => {
               </div>
 
               <CardContent className="p-6">
-                {/* Profile Image */}
                 <div className="relative -mt-12 mb-4">
                   <div className="relative inline-block">
                     <img
                       src={profileData.profileImage || '/default-avatar.png'}
-                      alt={profileData.fullName}
+                      alt={displayName}
                       className="w-24 h-24 rounded-full border-4 border-white object-cover shadow-lg"
                     />
                     <button
@@ -237,39 +328,69 @@ export const MaidProfilePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Name */}
-                <h2 className="text-2xl font-bold mb-1">{profileData.fullName}</h2>
-
-                {/* Category & Verification Badge */}
-                <div className="flex items-center gap-2 mb-4">
-                  <Badge variant="outline" className="bg-blue-50">
-                    Maid
-                  </Badge>
-                  {profileData.isVerified && (
-                    <Badge className="bg-green-500 hover:bg-green-600">
-                      ✓ Verified
-                    </Badge>
+                <div className="mb-4 space-y-2">
+                  <h2 className="text-2xl font-bold">{displayName}</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700">Sweep Pro Maid</Badge>
+                    {profileData.isVerified ? (
+                      <Badge className="bg-emerald-500 hover:bg-emerald-600 flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" />
+                        Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="border-yellow-300 text-yellow-700">
+                        Pending Verification
+                      </Badge>
+                    )}
+                  </div>
+                  {profileData.bio ? (
+                    <p className="text-sm text-muted-foreground">{profileData.bio}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Add a short introduction to highlight your experience and specialties.
+                    </p>
                   )}
                 </div>
 
-                {/* Bio */}
-                {profileData.bio && (
-                  <p className="text-sm text-muted-foreground mb-4">{profileData.bio}</p>
-                )}
+                <div className="space-y-3 text-sm border-t pt-4">
+                  {profileData.email && (
+                    <div
+                      className="flex items-center gap-2 p-2 bg-muted rounded hover:bg-muted/80 cursor-pointer transition-colors"
+                      onClick={() => navigator.clipboard.writeText(profileData.email)}
+                    >
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate">{profileData.email}</span>
+                    </div>
+                  )}
+                  {profileData.phone && (
+                    <div
+                      className="flex items-center gap-2 p-2 bg-muted rounded hover:bg-muted/80 cursor-pointer transition-colors"
+                      onClick={() => navigator.clipboard.writeText(profileData.phone)}
+                    >
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate">{profileData.phone}</span>
+                    </div>
+                  )}
+                  {profileData.address && (
+                    <div className="flex items-start gap-2 p-2 bg-muted rounded">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <span className="text-xs leading-relaxed">{profileData.address}</span>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Languages Card */}
-            {profileData.languages && profileData.languages.length > 0 && (
+            {primaryLanguages.length > 0 && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">Languages</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {profileData.languages.map((lang) => (
-                      <Badge key={lang} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                        {lang}
+                    {primaryLanguages.map((language) => (
+                      <Badge key={language} variant="secondary" className="bg-blue-100 text-blue-800">
+                        {language}
                       </Badge>
                     ))}
                   </div>
@@ -277,15 +398,14 @@ export const MaidProfilePage: React.FC = () => {
               </Card>
             )}
 
-            {/* Skills Card */}
-            {profileData.skills && profileData.skills.length > 0 && (
+            {skills.length > 0 && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Skills</CardTitle>
+                  <CardTitle className="text-base">Core Skills</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {profileData.skills.map((skill) => (
+                    {skills.map((skill) => (
                       <Badge key={skill} variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
                         {skill}
                       </Badge>
@@ -296,171 +416,193 @@ export const MaidProfilePage: React.FC = () => {
             )}
           </div>
 
-          {/* RIGHT COLUMN: Contact Info Card */}
-          <div className="lg:col-span-2">
+          {/* RIGHT COLUMN */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <Card className="border-primary/10 bg-primary/5">
+                <CardContent className="flex flex-col gap-3 pt-6">
+                  <div className="flex items-center justify-between text-primary">
+                    <span className="text-sm font-medium">Jobs Completed</span>
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="text-3xl font-bold text-primary">{profileData.jobsCompleted ?? 0}</div>
+                  <p className="text-xs text-muted-foreground">Successful services you have completed.</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-emerald-200/60 bg-emerald-50">
+                <CardContent className="flex flex-col gap-3 pt-6">
+                  <div className="flex items-center justify-between text-emerald-600">
+                    <span className="text-sm font-medium">Total Earnings</span>
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div className="text-3xl font-bold text-emerald-600">{formattedEarnings}</div>
+                  <p className="text-xs text-muted-foreground">Across all completed and approved bookings.</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200/60 bg-blue-50">
+                <CardContent className="flex flex-col gap-3 pt-6">
+                  <div className="flex items-center justify-between text-blue-600">
+                    <span className="text-sm font-medium">Experience</span>
+                    <Clock className="h-4 w-4" />
+                  </div>
+                  <div className="text-3xl font-bold text-blue-600">{profileData.experience ?? 0} yrs</div>
+                  <p className="text-xs text-muted-foreground">Professional cleaning experience logged in your profile.</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-yellow-200/60 bg-yellow-50">
+                <CardContent className="flex flex-col gap-3 pt-6">
+                  <div className="flex items-center justify-between text-yellow-600">
+                    <span className="text-sm font-medium">Avg. Rating</span>
+                    <Star className="h-4 w-4" />
+                  </div>
+                  <div className="text-3xl font-bold text-yellow-600">{averageRating.toFixed(1)}</div>
+                  <p className="text-xs text-muted-foreground">From {profileData.totalReviews ?? 0} customer reviews.</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Account & Verification Details */}
             <Card>
               <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
+                <CardTitle>Professional Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Email */}
-                {profileData.email && (
-                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                    <Mail className="h-5 w-5 text-primary flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-semibold">EMAIL</p>
-                      <p className="text-sm font-medium cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigator.clipboard.writeText(profileData.email)}>
-                        {profileData.email}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Phone */}
-                {profileData.phone && (
-                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                    <Phone className="h-5 w-5 text-primary flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-semibold">PHONE</p>
-                      <p className="text-sm font-medium cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigator.clipboard.writeText(profileData.phone)}>
-                        {profileData.phone}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Address */}
-                {profileData.address && (
-                  <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-                    <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-semibold">ADDRESS</p>
-                      <p className="text-sm font-medium">{profileData.address}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Verification Status */}
-                <div className={`flex items-center gap-3 p-3 rounded-lg border ${profileData.isVerified 
-                  ? 'bg-green-50 border-green-200' 
-                  : 'bg-red-50 border-red-200'}`}>
-                  <div className={`h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 ${profileData.isVerified 
-                    ? 'bg-green-500' 
-                    : 'bg-red-500'}`}>
-                    <span className="text-white text-xs">{profileData.isVerified ? '✓' : '✕'}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Full Name</p>
+                    <p className="font-semibold">{displayName}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground font-semibold">VERIFICATION STATUS</p>
-                    <p className={`text-sm font-medium ${profileData.isVerified ? 'text-green-700' : 'text-red-700'}`}>
-                      {profileData.isVerified ? 'Verified' : 'Not Verified'}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-semibold">{profileData.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-semibold">{profileData.phone}</p>
+                  </div>
+                  {membershipDays > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Member Since</p>
+                      <p className="font-semibold flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {profileData.joinedDate ? new Date(profileData.joinedDate).toLocaleDateString() : ''}
+                        <span className="text-xs text-muted-foreground">({membershipDays} days)</span>
+                      </p>
+                    </div>
+                  )}
+                  {profileData.verificationDate && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Verification Date</p>
+                      <p className="font-semibold flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        {new Date(profileData.verificationDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className={`rounded-xl border border-dashed p-4 text-sm space-y-3 ${profileData.isVerified ? 'border-emerald-200 bg-emerald-50/70' : 'border-amber-200 bg-amber-50/70'}`}>
+                  <div className="flex items-start gap-3 text-muted-foreground">
+                    <ShieldCheck className="h-4 w-4 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Verification Status</p>
+                      <p>{profileData.isVerified ? 'Your documents have been approved by the admin team.' : 'Awaiting admin approval. Upload all required documents to speed up verification.'}</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
 
-        {/* FULL WIDTH: Rating & Reviews Section */}
-        <div className="space-y-6">
-          {/* Rating Stats - Full Width Prominent Card */}
-          <Card className="border-2 border-yellow-400 shadow-lg">
-            <CardContent className="pt-8 pb-8">
-              <div className="text-center">
-                {/* Stars - Larger and Prominent */}
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-10 w-10 ${
-                        i < Math.floor(profileData.rating || 0)
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                {/* Rating Number - Very Prominent */}
-                <div className="text-6xl font-bold text-primary mb-2">
-                  {profileData.rating?.toFixed(1) || '0'}
-                </div>
-                <p className="text-lg text-muted-foreground mb-4">
-                  Based on {profileData.totalReviews || 0} reviews
-                </p>
-                
-                {/* Additional Stats below rating */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t">
-                  <div>
-                    <div className="text-3xl font-bold text-green-600 mb-1">
-                      {profileData.jobsCompleted || 0}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Jobs Completed</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Customer Reviews */}
-          {reviews.length > 0 && (
+            {/* Service Overview */}
             <Card>
               <CardHeader>
-                <CardTitle>Customer Feedback ({reviews.length} Reviews)</CardTitle>
+                <CardTitle>Service Overview</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          {review.reviewer.profileImage && (
-                            <img
-                              src={review.reviewer.profileImage}
-                              alt={review.reviewer.name}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          )}
-                          <div>
-                            <p className="font-semibold text-sm">{review.reviewer.name}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(review.serviceDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < review.rating
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      {review.comment && (
-                        <p className="text-sm text-foreground mb-2 flex items-start gap-2">
-                          <Quote className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <span>{review.comment}</span>
-                        </p>
-                      )}
-                      {review.serviceDetails && (
-                        <p className="text-xs text-muted-foreground">{review.serviceDetails}</p>
-                      )}
-                    </div>
-                  ))}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-muted bg-background p-4 shadow-sm">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Jobs Completed</p>
+                    <p className="mt-2 text-2xl font-semibold text-foreground">{profileData.jobsCompleted ?? 0}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Bookings successfully completed for customers.</p>
+                  </div>
+                  <div className="rounded-2xl border border-muted bg-background p-4 shadow-sm">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Average Rating</p>
+                    <p className="mt-2 text-2xl font-semibold text-foreground">{averageRating.toFixed(1)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Based on recent customer feedback.</p>
+                  </div>
+                  <div className="rounded-2xl border border-muted bg-background p-4 shadow-sm">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Experience</p>
+                    <p className="mt-2 text-2xl font-semibold text-foreground">{profileData.experience ?? 0} yrs</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Professional cleaning experience on record.</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Skills Section */}
-          {/* Skills moved to left column with languages - removed from here to avoid duplication */}
+            {/* Customer Feedback */}
+            {reviews.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Customer Feedback ({reviews.length} Reviews)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            {review.reviewer.profileImage ? (
+                              <img
+                                src={review.reviewer.profileImage}
+                                alt={review.reviewer.name}
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-muted-foreground">
+                                {review.reviewer.name?.charAt(0).toUpperCase() ?? 'C'}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-semibold text-sm">{review.reviewer.name}</p>
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(review.serviceDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < Math.round(review.rating)
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-foreground mb-2 flex items-start gap-2">
+                            <Quote className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                            <span>{review.comment}</span>
+                          </p>
+                        )}
+                        {review.serviceDetails && (
+                          <p className="text-xs text-muted-foreground">Service: {review.serviceDetails}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
 
         {/* Dialogs */}

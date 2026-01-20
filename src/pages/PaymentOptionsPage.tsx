@@ -1,38 +1,167 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Calendar, Clock, MapPin, Home, Check } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
-import { saveServiceAddress, getServiceAddress, ServiceAddress } from '@/services/addressService';
-import { AuthService } from '@/services/authService';
-import { SubscriptionService } from '@/services/subscriptionService';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  Check,
+  Clock,
+  Home,
+  MapPin,
+  Sparkles
+} from 'lucide-react';
+
+const BRAND = {
+  indigo: '#1800ad',
+  // keep all indigo shades derived from the single brand hex
+  indigoTint: '#1800ad',
+} as const;
+
+const INDIGO_STYLES = {
+  gradient: BRAND.indigo,
+  softGradient: `linear-gradient(135deg, ${BRAND.indigo}1f 0%, ${BRAND.indigo}0d 100%)`,
+  subtleSurface: `linear-gradient(135deg, ${BRAND.indigo}14 0%, ${BRAND.indigo}05 100%)`,
+  surface: 'rgba(255,255,255,0.92)',
+  border: `${BRAND.indigo}26`
+} as const;
+
+const FALLBACK_PLANS: Record<string, SubscriptionPlan> = {
+  standard: {
+    id: 'standard',
+    name: 'Sweepro Touch',
+    description: 'Essential care plan for medium-sized homes with consistent daily cleaning support.',
+    duration: 'month',
+    features: [
+      'Utensil cleaning 3 days/week',
+      'Floor sweeping & mopping 3 days/week',
+      'Bathroom cleaning 2 times/month',
+      'Professional cleaning kit provided once',
+      'Fixed time slots for consistency',
+      'Basic backup maid guarantee',
+      'Standard customer support',
+      '2 days free trial'
+    ],
+    serviceBreakdown: {
+      utensilCleaning: '3 days/week',
+      floorCleaning: '3 days/week (Sweeping & Mopping)',
+      bathroomCleaning: '2 times/month',
+      homeDusting: 'Not included',
+      kitProvided: 'Professional kit provided once only',
+      timings: 'Fixed slots',
+      backupGuarantee: 'Basic backup maid guarantee',
+      customerCare: 'Standard support included',
+      bufferDays: 'No buffer days'
+    },
+    popular: true,
+    finalPrice: 1499,
+    sessionsPerWeek: 3,
+    sessionsPerMonth: 12
+  },
+  premium: {
+    id: 'premium',
+    name: 'Sweepro Lux',
+    description: 'Premium care plan with comprehensive daily cleaning and priority support for luxury homes.',
+    duration: 'month',
+    features: [
+      'Utensil cleaning 6 days/week',
+      'Floor sweeping & mopping 6 days/week',
+      'Bathroom cleaning 4 times/month',
+      'Home dusting 1 time/month',
+      'Professional kit provided monthly',
+      'Fixed time slots with flexibility',
+      'Priority backup maid guarantee',
+      'Priority customer care 24/7',
+      'Buffer days included for flexibility',
+      '2 days free trial'
+    ],
+    serviceBreakdown: {
+      utensilCleaning: '6 days/week',
+      floorCleaning: '6 days/week (Sweeping & Mopping)',
+      bathroomCleaning: '4 times/month',
+      homeDusting: '1 time/month',
+      kitProvided: 'Professional kit provided every month',
+      timings: 'Fixed slots with priority flexibility',
+      backupGuarantee: 'Priority backup maid guarantee',
+      customerCare: 'Priority customer care 24/7',
+      bufferDays: 'Buffer days included'
+    },
+    popular: true,
+    finalPrice: 2499,
+    sessionsPerWeek: 6,
+    sessionsPerMonth: 24
+  }
+};
 
 interface SubscriptionPlan {
   id: string;
   name: string;
-  price: number;
-  duration: string;
   description: string;
+  duration: string;
   features: string[];
+  serviceBreakdown: {
+    utensilCleaning: string;
+    floorCleaning: string;
+    bathroomCleaning: string;
+    homeDusting: string;
+    kitProvided: string;
+    timings: string;
+    backupGuarantee: string;
+    customerCare: string;
+    bufferDays: string;
+  };
   popular?: boolean;
-  discount?: number;
-  originalPrice?: number;
-  serviceHours: string;
-  coverage: string;
-  teamSize: string;
-  cancellation: string;
+  price?: number;
+  finalPrice?: number;
+  sessionsPerWeek?: number;
+  sessionsPerMonth?: number;
+}
+
+type PropertyTypeId = 'apartment' | 'bungalow';
+type BhkId = '2bhk' | '3bhk';
+type PlanDurationId = '1month' | '3month' | '6month';
+
+interface PlanDuration {
+  id: PlanDurationId;
+  label: string;
+  description: string;
+  multiplier: number;
+  discount: number;
+  popular?: boolean;
+}
+
+interface PropertyType {
+  id: PropertyTypeId;
+  name: string;
+  description: string;
+  pricePerSqFt: number;
+  icon: string;
+  disabled?: boolean;
+  comingSoonLabel?: string;
+}
+
+interface SquareFootOption {
+  value: number;
+  range: string;
+  pricing: Record<PlanDurationId, number>;
+}
+
+interface BhkConfig {
+  id: BhkId;
+  label: string;
+  sqftOptions: SquareFootOption[];
 }
 
 interface ServiceOptions {
   timeSlot: string;
   startDate: string;
-  frequency: string;
   address: string;
   latitude?: number;
   longitude?: number;
@@ -42,1131 +171,1404 @@ interface ServiceOptions {
   city: string;
   state: string;
   landmark: string;
-  propertyType: 'apartment' | 'bungalow' | null;
-  bhkType: '1bhk' | '2bhk' | '3bhk' | '4bhk' | null;
+  propertyType: PropertyTypeId;
+  bhkType: BhkId | null;
   squareFeet: number;
-  selectedPlanDuration: '1month' | '3month' | '6month' | null;
+  squareFeetLabel?: string;
+  selectedPlanDuration: PlanDurationId | null;
   finalTotalPrice: number;
-  pricing?: {
-    subtotal: number;
-    gstAmount: number;
-    totalWithGst: number;
-    discountPercent: number;
-    discountAmount: number;
-    totalBeforeDiscount: number;
-    basePricePerPeriod: number;
-  };
 }
 
-// Fixed frequency configuration
-const DAILY_FREQUENCY = { id: 'daily', name: 'Daily', description: 'Service every day', price: 0 } as const;
+interface PlanPriceBreakdown {
+  monthlyBaseCost: number;
+  propertyBaseCost: number;
+  totalBeforeDiscount: number;
+  discountPercent: number;
+  discountAmount: number;
+  monthlyAfterDiscount: number;
+  finalTotal: number;
+}
 
-// Enhanced Base plan configurations with service-specific pricing
-const BASE_PLANS = {
-  'standard': {
-    id: 'standard',
-    name: 'Sweepro Touch',
-    basePrice: 1299, // Base monthly price for essential care
-    description: 'Essential care plan for medium-sized homes with consistent daily cleaning support.',
-    serviceMultiplier: 1.0, // Standard multiplier
-  },
-  'premium': {
-    id: 'premium',
-    name: 'Sweepro Lux',
-    basePrice: 2299, // Base monthly price for premium care
-    description: 'Premium care plan with comprehensive daily cleaning and priority support for luxury homes.',
-    serviceMultiplier: 1.4, // 40% premium for enhanced service frequency
-  }
+const STORAGE_KEYS = {
+  SELECTED_PLAN: 'sweep_pro_selected_plan',
+  SERVICE_OPTIONS: 'sweep_pro_service_options'
 };
 
-// Property type configurations with realistic pricing per sq ft
-const PROPERTY_TYPES = [
+const PLAN_DURATIONS: PlanDuration[] = [
   {
-    id: 'apartment' as const,
-    name: 'Apartment',
-    description: 'Flats, Condos, Multi-story units',
-    icon: '🏢',
-    pricePerSqFt: 2.2, // ₹2.2 per sq ft for apartments
-    complexityFactor: 1.0 // Base complexity
-  }
-];
-
-// Enhanced BHK configurations with realistic square footage ranges
-const BHK_CONFIGS = [
-  {
-    id: '1bhk' as const,
-    label: '1 BHK',
-    baseComplexity: 0.85, // 15% discount for smaller size
-    sqftOptions: [
-      { value: 450, range: '300-500 sq ft', label: 'Compact', priceMultiplier: 0.9 },
-      { value: 550, range: '500-600 sq ft', label: 'Standard', priceMultiplier: 1.0 },
-      { value: 650, range: '600-700 sq ft', label: 'Spacious', priceMultiplier: 1.1 }
-    ]
-  },
-  {
-    id: '2bhk' as const,
-    label: '2 BHK',
-    baseComplexity: 1.0, // Base pricing
-    sqftOptions: [
-      { value: 750, range: '650-850 sq ft', label: 'Compact', priceMultiplier: 0.95 },
-      { value: 950, range: '850-1050 sq ft', label: 'Standard', priceMultiplier: 1.0 },
-      { value: 1150, range: '1050-1250 sq ft', label: 'Spacious', priceMultiplier: 1.05 }
-    ]
-  },
-  {
-    id: '3bhk' as const,
-    label: '3 BHK',
-    baseComplexity: 1.2, // 20% premium for additional room
-    sqftOptions: [
-      { value: 1150, range: '1000-1300 sq ft', label: 'Compact', priceMultiplier: 0.95 },
-      { value: 1400, range: '1300-1500 sq ft', label: 'Standard', priceMultiplier: 1.0 },
-      { value: 1650, range: '1500-1800 sq ft', label: 'Spacious', priceMultiplier: 1.1 }
-    ]
-  },
-  {
-    id: '4bhk' as const,
-    label: '4+ BHK',
-    baseComplexity: 1.45, // 45% premium for large homes
-    sqftOptions: [
-      { value: 1800, range: '1600-2000 sq ft', label: 'Standard', priceMultiplier: 1.0 },
-      { value: 2200, range: '2000-2400 sq ft', label: 'Large', priceMultiplier: 1.15 },
-      { value: 2600, range: '2400+ sq ft', label: 'Villa', priceMultiplier: 1.3 }
-    ]
-  }
-];
-
-// Plan duration options with attractive discounts
-const PLAN_DURATIONS = [
-  {
-    id: '1month' as const,
+    id: '1month',
     label: '1 Month',
+    description: 'Monthly billing with maximum flexibility',
     multiplier: 1,
-    discount: 0,
-    popular: false,
-    description: 'Monthly billing - flexibility',
-    badge: null
+    discount: 0
   },
   {
-    id: '3month' as const,
+    id: '3month',
     label: '3 Months',
+    description: 'Quarterly plan with 5% savings',
     multiplier: 3,
-    discount: 8, // 8% discount for quarterly
-    popular: true,
-    description: 'Save 8% with quarterly plan',
-    badge: 'Most Popular'
+    discount: 5,
+    popular: true
   },
   {
-    id: '6month' as const,
+    id: '6month',
     label: '6 Months',
+    description: 'Semi-annual plan with 10% savings',
     multiplier: 6,
-    discount: 15, // 15% discount for semi-annual
-    popular: false,
-    description: 'Save 15% with semi-annual plan',
-    badge: 'Best Value'
+    discount: 10
   }
 ];
 
-export default function PaymentOptionsPage() {
+const PROPERTY_TYPES: PropertyType[] = [
+  {
+    id: 'apartment',
+    name: 'Apartment',
+    description: 'Flats, condos & multi-storey units',
+    pricePerSqFt: 3.5,
+    icon: '🏢'
+  },
+  {
+    id: 'bungalow',
+    name: 'Bungalow',
+    description: 'Independent houses & villas',
+    pricePerSqFt: 4.2,
+    icon: '🏡',
+    disabled: true,
+    comingSoonLabel: 'Coming soon'
+  }
+];
+
+const DEFAULT_BHK_CONFIGS: BhkConfig[] = [
+  {
+    id: '2bhk',
+    label: '2 BHK',
+    sqftOptions: [
+      {
+        value: 1300,
+        range: '1200 - 1400 sq ft',
+        pricing: {
+          '1month': 5898,
+          '3month': 5681,
+          '6month': 5463
+        }
+      },
+      {
+        value: 1501,
+        range: '1401 - 1601 sq ft',
+        pricing: {
+          '1month': 6072,
+          '3month': 5838,
+          '6month': 5603
+        }
+      },
+      {
+        value: 1702,
+        range: '1602 - 1802 sq ft',
+        pricing: {
+          '1month': 6247,
+          '3month': 5995,
+          '6month': 5742
+        }
+      },
+      {
+        value: 1903,
+        range: '1803 - 2003 sq ft',
+        pricing: {
+          '1month': 6421,
+          '3month': 6152,
+          '6month': 5882
+        }
+      },
+      {
+        value: 2104,
+        range: '2004 - 2204 sq ft',
+        pricing: {
+          '1month': 6596,
+          '3month': 6309,
+          '6month': 6021
+        }
+      },
+      {
+        value: 2305,
+        range: '2205 - 2405 sq ft',
+        pricing: {
+          '1month': 6770,
+          '3month': 6465,
+          '6month': 6161
+        }
+      }
+    ]
+  },
+  {
+    id: '3bhk',
+    label: '3 BHK',
+    sqftOptions: [
+      {
+        value: 2506,
+        range: '2406 - 2606 sq ft',
+        pricing: {
+          '1month': 6944,
+          '3month': 6622,
+          '6month': 6300
+        }
+      },
+      {
+        value: 2707,
+        range: '2607 - 2807 sq ft',
+        pricing: {
+          '1month': 7119,
+          '3month': 6779,
+          '6month': 6440
+        }
+      },
+      {
+        value: 2908,
+        range: '2808 - 3008 sq ft',
+        pricing: {
+          '1month': 7293,
+          '3month': 6936,
+          '6month': 6580
+        }
+      },
+      {
+        value: 3109,
+        range: '3009 - 3209 sq ft',
+        pricing: {
+          '1month': 7468,
+          '3month': 7093,
+          '6month': 6719
+        }
+      },{
+        value: 3109,
+        range: '3010 - 3410 sq ft',
+        pricing: {
+          '1month': 7642,
+          '3month': 7250,
+          '6month': 6859
+        }
+      }
+    ]
+  }
+];
+
+const LUX_BHK_CONFIGS: BhkConfig[] = [
+  {
+    id: '2bhk',
+    label: '2 BHK',
+    sqftOptions: [
+      {
+        value: 1300,
+        range: '1200 - 1400 sq ft',
+        pricing: {
+          '1month': 7350,
+          '3month': 6950,
+          '6month': 6550
+        }
+      },
+      {
+        value: 1501,
+        range: '1401 - 1601 sq ft',
+        pricing: {
+          '1month': 7550,
+          '3month': 7150,
+          '6month': 6750
+        }
+      },
+      {
+        value: 1702,
+        range: '1602 - 1802 sq ft',
+        pricing: {
+          '1month': 7750,
+          '3month': 7350,
+          '6month': 6950
+        }
+      },
+      {
+        value: 1903,
+        range: '1803 - 2003 sq ft',
+        pricing: {
+          '1month': 7950,
+          '3month': 7550,
+          '6month': 7150
+        }
+      },
+      {
+        value: 2104,
+        range: '2004 - 2204 sq ft',
+        pricing: {
+          '1month': 8150,
+          '3month': 7750,
+          '6month': 7350
+        }
+      },
+      {
+        value: 2305,
+        range: '2205 - 2405 sq ft',
+        pricing: {
+          '1month': 8350,
+          '3month': 7950,
+          '6month': 7550
+        }
+      }
+    ]
+  },
+  {
+    id: '3bhk',
+    label: '3 BHK',
+    sqftOptions: [
+      {
+        value: 2506,
+        range: '2406 - 2606 sq ft',
+        pricing: {
+          '1month': 8550,
+          '3month': 8150,
+          '6month': 7750
+        }
+      },
+      {
+        value: 2707,
+        range: '2607 - 2807 sq ft',
+        pricing: {
+          '1month': 8750,
+          '3month': 8350,
+          '6month': 7950
+        }
+      },
+      {
+        value: 2908,
+        range: '2808 - 3008 sq ft',
+        pricing: {
+          '1month': 8950,
+          '3month': 8550,
+          '6month': 8150
+        }
+      },
+      {
+        value: 3109,
+        range: '3009 - 3209 sq ft',
+        pricing: {
+          '1month': 9150,
+          '3month': 8750,
+          '6month': 8350
+        }
+      },
+      {
+        value: 3310,
+        range: '3210 - 3410 sq ft',
+        pricing: {
+          '1month': 9350,
+          '3month': 8950,
+          '6month': 8550
+        }
+      },
+      {
+        value: 3458,
+        range: '3411 - 3505 sq ft',
+        pricing: {
+          '1month': 9550,
+          '3month': 9150,
+          '6month': 8750
+        }
+      }
+    ]
+  }
+];
+
+const TIME_SLOTS = [
+  '06:00 - 08:00',
+  '08:00 - 10:00',
+  '10:00 - 12:00',
+  '12:00 - 14:00',
+  '14:00 - 16:00',
+  '16:00 - 18:00'
+];
+
+const PaymentOptionsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const selectedPlan = location.state?.selectedPlan as SubscriptionPlan;
   const { toast } = useToast();
-  const { user, updateUser, isAuthenticated } = useUser();
+  const { user } = useUser();
 
-  // Generate half-hour time slots between 08:00 AM and 06:00 PM
-  const timeSlots = useMemo(() => {
-    const slots: string[] = [];
-    const start = new Date();
-    start.setHours(8, 0, 0, 0);
-    for (let i = 0; i <= 20; i++) {
-      const d = new Date(start.getTime() + i * 30 * 60000);
-      const hour = d.getHours();
-      const minutes = d.getMinutes();
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-      const label = `${hour12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-      slots.push(label);
-    }
-    return slots;
-  }, []);
+  const mapContainerIdRef = useRef(`payment-map-${Date.now()}`);
 
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [options, setOptions] = useState<ServiceOptions>({
-    timeSlot: '09:00 AM',
-    startDate: new Date().toISOString().split('T')[0],
-    frequency: 'daily',
+    timeSlot: '',
+    startDate: '',
     address: '',
+    latitude: undefined,
+    longitude: undefined,
     pincode: '',
     locality: '',
     addressLine: '',
     city: '',
     state: '',
     landmark: '',
-    propertyType: null, // Apartment not selected by default
+    propertyType: 'apartment',
     bhkType: null,
     squareFeet: 0,
+    squareFeetLabel: undefined,
     selectedPlanDuration: null,
     finalTotalPrice: 0
   });
-
-  const [hoveredBhk, setHoveredBhk] = useState<string | null>(null);
-  const [showSqftOptions, setShowSqftOptions] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [tempLat, setTempLat] = useState('');
+  const [tempLng, setTempLng] = useState('');
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [isMapOpen, setIsMapOpen] = useState(false);
-  const [tempLat, setTempLat] = useState<string>('');
-  const [tempLng, setTempLng] = useState<string>('');
-  const [coordError, setCoordError] = useState<string | null>(null);
-  const [autoDetecting, setAutoDetecting] = useState<boolean>(false);
-  const [autoDetected, setAutoDetected] = useState<boolean>(false);
-  const [accuracyMeters, setAccuracyMeters] = useState<number | null>(null);
-  const [refining, setRefining] = useState<boolean>(false);
-  const watchIdRef = useRef<number | null>(null);
-  const mapTypeRef = useRef<'google' | 'leaflet' | null>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const mapContainerIdRef = useRef<string>('map-container-' + Math.random().toString(36).slice(2));
-  const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-  const prefersGoogle = !!googleMapsKey;
-  const [savedAddress, setSavedAddress] = useState<Partial<Pick<ServiceOptions, 'pincode' | 'locality' | 'addressLine' | 'city' | 'state' | 'landmark' | 'address' | 'latitude' | 'longitude'>>>();
-  const [isSavingAddress, setIsSavingAddress] = useState(false);
+
+  const isLuxPlan = selectedPlan?.id === 'premium';
 
   useEffect(() => {
-    if (!selectedPlan) {
-      navigate('/subscription');
+    const savedPlan = location.state?.selectedPlan as SubscriptionPlan | undefined;
+    const savedOptions = location.state?.selectedOptions as ServiceOptions | undefined;
+
+    if (savedPlan) {
+      setSelectedPlan(savedPlan);
+      if (savedOptions) {
+        setOptions(savedOptions);
+      }
+      saveToStorage(STORAGE_KEYS.SELECTED_PLAN, savedPlan);
+      if (savedOptions) {
+        saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, savedOptions);
+      }
+      setIsLoading(false);
       return;
     }
-  }, [selectedPlan, navigate]);
 
-  useEffect(() => {
-    if (isMapOpen) {
-      setTempLat(options.latitude !== undefined ? String(options.latitude) : '');
-      setTempLng(options.longitude !== undefined ? String(options.longitude) : '');
-      setCoordError(null);
-      setTimeout(() => initMap(), 50);
-    } else {
-      destroyMap();
-    }
-  }, [isMapOpen]);
+    const storedPlan = getFromStorage(STORAGE_KEYS.SELECTED_PLAN) as SubscriptionPlan | null;
+    const storedOptions = getFromStorage(STORAGE_KEYS.SERVICE_OPTIONS) as ServiceOptions | null;
 
-  useEffect(() => {
-    try {
-      const saved = getServiceAddress();
-      if (saved) {
-        setOptions(prev => ({ ...prev, ...saved }));
-        setSavedAddress(saved);
+    if (storedPlan) {
+      setSelectedPlan(storedPlan);
+      if (storedOptions) {
+        setOptions(storedOptions);
       }
-    } catch { }
-  }, []);
+      setIsLoading(false);
+      return;
+    }
+
+    const searchParams = new URLSearchParams(location.search);
+    const planIdFromQuery = searchParams.get('planId') ?? 'standard';
+    const fallbackPlan = FALLBACK_PLANS[planIdFromQuery] ?? FALLBACK_PLANS.standard;
+
+    setSelectedPlan(fallbackPlan);
+    saveToStorage(STORAGE_KEYS.SELECTED_PLAN, fallbackPlan);
+    setIsLoading(false);
+  }, [location.search, location.state]);
 
   useEffect(() => {
-    if (options.latitude === undefined && options.longitude === undefined && !options.address) {
-      detectLocationAuto();
-    }
-  }, []);
+    if (!selectedPlan) return;
 
-  const handleOptionChange = (key: keyof ServiceOptions, value: string | number | null) => {
-    setOptions(prev => ({ ...prev, [key]: value as any }));
-  };
+    setOptions((prev) => {
+      const nextOptions = { ...prev };
 
-  const handleBhkSelect = (bhkId: string) => {
-    setOptions(prev => ({ 
-      ...prev, 
-      bhkType: bhkId as ServiceOptions['bhkType'],
-      squareFeet: 0,
-      selectedPlanDuration: null,
-      finalTotalPrice: 0
-    }));
-    setShowSqftOptions(bhkId);
-  };
-
-  const handleSqftSelect = (sqft: number) => {
-    setOptions(prev => ({ ...prev, squareFeet: sqft }));
-  };
-
-  const handlePlanDurationSelect = (durationId: string) => {
-    const duration = PLAN_DURATIONS.find(d => d.id === durationId);
-    if (duration) {
-      (async () => {
-        try {
-          const backendPlanId = await resolveBackendPlanId(selectedPlan);
-          if (!backendPlanId) {
-            throw new Error('Unable to load plan pricing.');
-          }
-          const pricingRes = await SubscriptionService.validatePricing(
-            backendPlanId,
-            durationId as ServiceOptions['selectedPlanDuration']
-          );
-          const pricingData: any = pricingRes.data;
-          if (!pricingRes.success || !pricingData) {
-            throw new Error('Failed to calculate pricing.');
-          }
-          setOptions(prev => ({
-            ...prev,
-            selectedPlanDuration: durationId as ServiceOptions['selectedPlanDuration'],
-            finalTotalPrice: Number(pricingData.subtotal || 0),
-            pricing: {
-              subtotal: Number(pricingData.subtotal || 0),
-              gstAmount: Number(pricingData.gstAmount || 0),
-              totalWithGst: Number(pricingData.totalWithGst || 0),
-              discountPercent: Number(pricingData.discountPercent || 0),
-              discountAmount: Number(pricingData.discountAmount || 0),
-              totalBeforeDiscount: Number(pricingData.totalBeforeDiscount || 0),
-              basePricePerPeriod: Number(pricingData.basePricePerPeriod || 0),
-            }
-          }));
-        } catch (e: any) {
-          const fallback = calculatePlanPrice(duration);
-          setOptions(prev => ({
-            ...prev,
-            selectedPlanDuration: durationId as ServiceOptions['selectedPlanDuration'],
-            finalTotalPrice: fallback.finalTotal,
-            pricing: undefined
-          }));
+      // Default property configuration for Lux plan
+      if (selectedPlan.id === 'premium') {
+        nextOptions.propertyType = 'apartment';
+        if (!nextOptions.bhkType || !['2bhk', '3bhk'].includes(nextOptions.bhkType)) {
+          nextOptions.bhkType = '2bhk';
         }
-      })();
+      } else if (!nextOptions.bhkType) {
+        nextOptions.bhkType = '2bhk';
+      }
+
+      // Default start date to tomorrow if empty
+      if (!nextOptions.startDate) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        nextOptions.startDate = tomorrow.toISOString().split('T')[0];
+      }
+
+      if (!nextOptions.timeSlot) {
+        nextOptions.timeSlot = TIME_SLOTS[2];
+      }
+
+      return nextOptions;
+    });
+  }, [selectedPlan]);
+
+  const bhkConfigs = useMemo<BhkConfig[]>(() => {
+    if (!selectedPlan) return [];
+    if (selectedPlan.id === 'premium' && options.propertyType === 'apartment') {
+      return LUX_BHK_CONFIGS;
+    }
+    return DEFAULT_BHK_CONFIGS;
+  }, [options.propertyType, selectedPlan]);
+
+  const selectedBhkConfig = useMemo(() => {
+    return bhkConfigs.find((config) => config.id === options.bhkType) ?? bhkConfigs[0] ?? null;
+  }, [bhkConfigs, options.bhkType]);
+
+  const selectedSqftOption = useMemo(() => {
+    if (!selectedBhkConfig) return null;
+    return (
+      selectedBhkConfig.sqftOptions.find((opt) => opt.value === options.squareFeet) ??
+      selectedBhkConfig.sqftOptions[0] ??
+      null
+    );
+  }, [options.squareFeet, selectedBhkConfig]);
+
+  useEffect(() => {
+    if (!selectedBhkConfig) return;
+
+    setOptions((prev) => {
+      const next = { ...prev };
+      if (!prev.bhkType || prev.bhkType !== selectedBhkConfig.id) {
+        next.bhkType = selectedBhkConfig.id;
+      }
+
+      if (!selectedSqftOption) {
+        const defaultSqft = selectedBhkConfig.sqftOptions[0];
+        next.squareFeet = defaultSqft.value;
+        next.squareFeetLabel = defaultSqft.range;
+      } else {
+        next.squareFeet = selectedSqftOption.value;
+        next.squareFeetLabel = selectedSqftOption.range;
+      }
+
+      return next;
+    });
+  }, [selectedBhkConfig, selectedSqftOption]);
+
+  const saveToStorage = (key: string, value: unknown) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (err) {
+      console.warn('Failed to write to storage', err);
     }
   };
 
-  const resolveBackendPlanId = async (uiPlan: SubscriptionPlan) => {
-    if (!uiPlan) return null;
-
-    if (typeof uiPlan.id === 'string' && uiPlan.id.length > 12 && uiPlan.id.includes('-')) {
-      return uiPlan.id;
-    }
-
-    const keyword = (uiPlan.name || '').toLowerCase().includes('lux') ? 'lux' : 'touch';
-
+  const getFromStorage = (key: string) => {
     try {
-      const plansRes = await SubscriptionService.getSubscriptionPlans();
-      const plans = Array.isArray(plansRes.data)
-        ? (plansRes.data as any[])
-        : (plansRes.data as any)?.plans || (plansRes as any)?.plans || [];
-
-      const match = (plans || []).find((p: any) =>
-        String(p?.name || '').toLowerCase().includes(keyword)
-      );
-
-      return match?.id || null;
-    } catch (e) {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : null;
+    } catch (err) {
+      console.warn('Failed to read from storage', err);
       return null;
     }
   };
 
-  // Enhanced pricing calculation function
-  const calculatePlanPrice = (duration: typeof PLAN_DURATIONS[0]) => {
-    // Determine plan type based on selectedPlan.id
-    const planType = selectedPlan.id === 'premium' ? 'premium' : 'standard';
-    
-    // Get configuration objects
-    const basePlan = BASE_PLANS[planType];
-    const propertyConfig = PROPERTY_TYPES.find(pt => pt.id === options.propertyType)!;
-    const bhkConfig = BHK_CONFIGS.find(bhk => bhk.id === options.bhkType)!;
-    
-    // Find the appropriate sqft option for multiplier
-    const sqftOption = bhkConfig.sqftOptions.find(opt => 
-      Math.abs(opt.value - options.squareFeet) <= 50
-    ) || bhkConfig.sqftOptions[1]; // Default to standard if not found
-    
-    // Calculate base monthly cost
-    let monthlyBaseCost = basePlan.basePrice;
-    
-    // Apply service frequency multiplier (Lux has more frequent service)
-    monthlyBaseCost *= basePlan.serviceMultiplier;
-    
-    // Calculate property-based cost
-    const propertyBaseCost = options.squareFeet * propertyConfig.pricePerSqFt;
-    
-    // Apply complexity factors
-    const complexityAdjustedCost = propertyBaseCost * 
-      propertyConfig.complexityFactor * 
-      bhkConfig.baseComplexity * 
-      sqftOption.priceMultiplier;
-    
-    // Total monthly cost
-    const monthlyTotal = monthlyBaseCost + complexityAdjustedCost;
-    
-    // Calculate for selected duration
-    const totalBeforeDiscount = monthlyTotal * duration.multiplier;
-    const discountAmount = (totalBeforeDiscount * duration.discount) / 100;
-    const finalTotal = totalBeforeDiscount - discountAmount;
-    
+  const calculatePlanPrice = (duration: PlanDuration): PlanPriceBreakdown => {
+    if (selectedSqftOption) {
+      const baseMonthly = selectedSqftOption.pricing['1month'];
+      const monthlyBaseCost = selectedSqftOption.pricing[duration.id];
+      const totalBeforeDiscount = Math.round(baseMonthly * duration.multiplier);
+      const discountAmount = Math.max(baseMonthly - monthlyBaseCost, 0);
+      const discountPercent = baseMonthly > 0 ? Math.max(Math.round((discountAmount / baseMonthly) * 100), 0) : 0;
+      const finalTotal = Math.round(monthlyBaseCost * duration.multiplier);
+
+      return {
+        monthlyBaseCost,
+        propertyBaseCost: 0,
+        totalBeforeDiscount,
+        discountPercent,
+        discountAmount,
+        monthlyAfterDiscount: monthlyBaseCost,
+        finalTotal
+      };
+    }
+
+    const selectedProperty = PROPERTY_TYPES.find((type) => type.id === options.propertyType);
+    const basePlanPrice = selectedPlan?.finalPrice ?? selectedPlan?.price ?? 0;
+    const propertyRate = selectedProperty?.pricePerSqFt ?? 0;
+    const propertyBaseCost = Math.round(propertyRate * (selectedSqftOption?.value ?? 0) * 0.1);
+    const monthlyBaseCost = Math.round(basePlanPrice + propertyBaseCost);
+    const discountPercent = duration.discount ?? 0;
+    const discountAmount = Math.round((monthlyBaseCost * discountPercent) / 100);
+    const monthlyAfterDiscount = monthlyBaseCost - discountAmount;
+    const finalTotal = Math.round(monthlyAfterDiscount * duration.multiplier);
+
     return {
-      monthlyBaseCost: Math.round(monthlyBaseCost),
-      propertyBaseCost: Math.round(complexityAdjustedCost),
-      monthlyTotal: Math.round(monthlyTotal),
-      totalBeforeDiscount: Math.round(totalBeforeDiscount),
-      discountAmount: Math.round(discountAmount),
-      finalTotal: Math.round(finalTotal),
-      monthlyAfterDiscount: Math.round(finalTotal / duration.multiplier),
-      effectiveMonthlyRate: Math.round(monthlyTotal * (1 - duration.discount / 100))
+      monthlyBaseCost,
+      propertyBaseCost,
+      totalBeforeDiscount: monthlyBaseCost,
+      discountPercent,
+      discountAmount,
+      monthlyAfterDiscount,
+      finalTotal
     };
   };
 
-  const reverseGeocode = async (lat: number, lng: number): Promise<Partial<ServiceOptions> | null> => {
-    try {
-      const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      const display = data?.display_name as string | undefined;
-      const addr = data?.address || {};
-      const addressLineParts = [addr.house_number, addr.road].filter(Boolean).join(' ');
-      const locality = (addr.suburb || addr.neighbourhood || addr.city_district || '') as string;
-      const city = (addr.city || addr.town || addr.village || '') as string;
-      const state = (addr.state || '') as string;
-      const pincode = (addr.postcode || '') as string;
-      return {
-        address: display || '',
-        addressLine: addressLineParts,
-        locality,
-        city,
-        state,
-        pincode
-      } as Partial<ServiceOptions>;
-    } catch {
-      return null;
-    }
-  };
+  useEffect(() => {
+    if (!options.selectedPlanDuration) return;
+    const duration = PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration);
+    if (!duration) return;
 
-  const detectLocationAuto = () => {
-    if (!('geolocation' in navigator)) {
-      setLocationError('Geolocation is not supported by your browser.');
+    const pricing = calculatePlanPrice(duration);
+    setOptions((prev) => {
+      if (prev.finalTotalPrice === pricing.finalTotal) {
+        return prev;
+      }
+      const next = { ...prev, finalTotalPrice: pricing.finalTotal };
+      saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, next);
+      return next;
+    });
+  }, [options.selectedPlanDuration, options.propertyType, options.squareFeet, selectedPlan, selectedSqftOption]);
+
+  const handlePropertyTypeSelect = (propertyType: PropertyTypeId) => {
+    const selectedType = PROPERTY_TYPES.find((type) => type.id === propertyType);
+    if (selectedType?.disabled) {
       return;
     }
-    setAutoDetecting(true);
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        const parsed = await reverseGeocode(latitude, longitude);
-        setOptions(prev => ({
-          ...prev,
-          latitude,
-          longitude,
-          ...(parsed || {})
-        }));
-        setAccuracyMeters(accuracy ?? null);
-        setAutoDetected(true);
-        setAutoDetecting(false);
-      },
-      (err) => {
-        setLocationError(err.message || 'Failed to detect your location.');
-        setAutoDetecting(false);
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-    );
+    setOptions((prev) => ({
+      ...prev,
+      propertyType,
+      bhkType: null,
+      squareFeet: 0,
+      squareFeetLabel: undefined
+    }));
+  };
+
+  const handleBhkSelect = (bhkId: BhkId) => {
+    setOptions((prev) => ({
+      ...prev,
+      bhkType: bhkId,
+      squareFeet: 0,
+      squareFeetLabel: undefined
+    }));
+  };
+
+  const handleSqftSelect = (value: string) => {
+    const sqftValue = Number(value);
+    const label = selectedBhkConfig?.sqftOptions.find((opt) => opt.value === sqftValue)?.range;
+    setOptions((prev) => ({
+      ...prev,
+      squareFeet: sqftValue,
+      squareFeetLabel: label
+    }));
+  };
+
+  const handlePlanDurationSelect = (durationId: PlanDurationId) => {
+    const duration = PLAN_DURATIONS.find((plan) => plan.id === durationId);
+    if (!duration) return;
+
+    const pricing = calculatePlanPrice(duration);
+    setOptions((prev) => {
+      const next = {
+        ...prev,
+        selectedPlanDuration: durationId,
+        finalTotalPrice: pricing.finalTotal
+      };
+      saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, next);
+      return next;
+    });
+  };
+
+  const handleOptionChange = (field: keyof ServiceOptions, value: string) => {
+    setOptions((prev) => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleUseCurrentLocation = () => {
-    if (!('geolocation' in navigator)) {
-      setLocationError('Geolocation is not supported by your browser.');
+    if (!navigator.geolocation) {
+      toast({
+        title: 'Location unavailable',
+        description: 'Your browser does not support geolocation.',
+        variant: 'destructive'
+      });
       return;
     }
+
     setIsLocating(true);
     setLocationError(null);
+
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        const parsed = await reverseGeocode(latitude, longitude);
-        setOptions(prev => ({
+      (position) => {
+        setIsLocating(false);
+        const { latitude, longitude } = position.coords;
+        setOptions((prev) => ({
           ...prev,
           latitude,
-          longitude,
-          ...(parsed || {})
+          longitude
         }));
-        setAccuracyMeters(accuracy ?? null);
-        setIsLocating(false);
+        setTempLat(latitude.toFixed(6));
+        setTempLng(longitude.toFixed(6));
       },
       (err) => {
-        setLocationError(err.message || 'Failed to get your location.');
         setIsLocating(false);
+        setLocationError(err.message);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true }
     );
   };
 
-  const startRefineWatch = () => {
-    if (!('geolocation' in navigator) || refining) return;
-    setRefining(true);
-    setLocationError(null);
-    const id = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        const parsed = await reverseGeocode(latitude, longitude);
-        setOptions(prev => ({ ...prev, latitude, longitude, ...(parsed || {}) }));
-        setAccuracyMeters(accuracy ?? null);
-        if (accuracy !== null && accuracy !== undefined && accuracy <= 30) {
-          stopRefineWatch();
-        }
-      },
-      (err) => {
-        setLocationError(err.message || 'Unable to refine location.');
-        stopRefineWatch();
-      },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
-    );
-    watchIdRef.current = id as unknown as number;
-  };
-
-  const stopRefineWatch = () => {
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    setRefining(false);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-      destroyMap();
-    };
-  }, []);
-
-  const openMapDialog = () => setIsMapOpen(true);
-  const closeMapDialog = () => setIsMapOpen(false);
-
-  const handleMapSave = async () => {
+  const handleMapSave = () => {
     const lat = Number(tempLat);
     const lng = Number(tempLng);
-    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-      setCoordError('Please enter valid latitude and longitude.');
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      toast({
+        title: 'Invalid coordinates',
+        description: 'Please provide valid latitude and longitude values.',
+        variant: 'destructive'
+      });
       return;
     }
-    const parsed = await reverseGeocode(lat, lng);
-    setOptions(prev => ({ ...prev, latitude: lat, longitude: lng, ...(parsed || {}) }));
+
+    setOptions((prev) => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng
+    }));
+
     setIsMapOpen(false);
   };
 
-  const handleSaveAddress = async () => {
-    const required = [options.pincode, options.addressLine, options.city, options.state];
-    const missingFields = required.map((v, i) => ({
-      field: ['pincode', 'addressLine', 'city', 'state'][i],
-      value: v,
-      isEmpty: !v || String(v).trim() === ''
-    })).filter(field => field.isEmpty);
-
-    if (missingFields.length > 0) {
-      toast({
-        title: 'Incomplete address',
-        description: `Please fill the following required fields: ${missingFields.map(f => f.field).join(', ')}`,
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsSavingAddress(true);
-
-    try {
-      const addressData: ServiceAddress = {
-        address: options.address,
-        pincode: options.pincode,
-        locality: options.locality,
-        addressLine: options.addressLine,
-        city: options.city,
-        state: options.state,
-        landmark: options.landmark,
-        latitude: options.latitude,
-        longitude: options.longitude,
-      };
-
-      saveServiceAddress(addressData);
-
-      try {
-        await AuthService.updateUserAddress(addressData);
-      } catch (e: any) {
-        console.warn('Backend address update failed:', e?.message || e);
-      }
-
-      if (options.address) {
-        updateUser({ address: options.address });
-      }
-
-      setSavedAddress({
-        pincode: options.pincode,
-        locality: options.locality,
-        addressLine: options.addressLine,
-        city: options.city,
-        state: options.state,
-        landmark: options.landmark,
-        address: options.address,
-        latitude: options.latitude,
-        longitude: options.longitude,
-      });
-
-      toast({
-        title: 'Address saved!',
-        description: 'We will use this address for your service visits. You can adjust it anytime before confirming.',
-        variant: 'default'
-      });
-    } catch (error: any) {
-      const errorMessage = error?.message || 'There was an error saving your address locally.';
-      toast({
-        title: 'Failed to save address',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-    } finally {
-      setIsSavingAddress(false);
-    }
-  };
-
   const handleNext = () => {
-    if (!options.bhkType || !options.squareFeet || !options.selectedPlanDuration) {
+    if (!user) {
       toast({
-        title: 'Incomplete Selection',
-        description: 'Please select BHK type, property size, and plan duration to continue.',
+        title: 'Login required',
+        description: 'Please sign in to continue.',
+        variant: 'destructive'
+      });
+      navigate('/login');
+      return;
+    }
+
+    if (!selectedPlan) {
+      toast({
+        title: 'Plan not found',
+        description: 'Please choose a subscription plan again.',
+        variant: 'destructive'
+      });
+      navigate('/subscription');
+      return;
+    }
+
+    if (!options.selectedPlanDuration) {
+      toast({
+        title: 'Select plan duration',
+        description: 'Choose a billing duration to proceed.',
         variant: 'destructive'
       });
       return;
     }
 
-    try {
-      saveServiceAddress({
-        address: options.address,
-        pincode: options.pincode,
-        locality: options.locality,
-        addressLine: options.addressLine,
-        city: options.city,
-        state: options.state,
-        landmark: options.landmark,
-        latitude: options.latitude,
-        longitude: options.longitude,
+    if (!options.bhkType) {
+      toast({
+        title: 'Select property configuration',
+        description: 'Choose a BHK configuration to continue.',
+        variant: 'destructive'
       });
-      
-      // Save to localStorage for persistence
-      localStorage.setItem('sweep_pro_selected_plan', JSON.stringify(selectedPlan));
-      localStorage.setItem('sweep_pro_service_options', JSON.stringify(options));
-    } catch { }
+      return;
+    }
+
+    if (!options.squareFeet) {
+      toast({
+        title: 'Select size range',
+        description: 'Choose the size range for your property.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!options.addressLine || !options.city || !options.pincode) {
+      toast({
+        title: 'Complete address details',
+        description: 'Please provide address, city and pincode to continue.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const duration = PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration)!;
+    const pricing = calculatePlanPrice(duration);
+
+    const optionsToPersist: ServiceOptions = {
+      ...options,
+      finalTotalPrice: pricing.finalTotal,
+      squareFeetLabel: options.squareFeetLabel ?? selectedSqftOption?.range
+    };
+
+    saveToStorage(STORAGE_KEYS.SELECTED_PLAN, selectedPlan);
+    saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, optionsToPersist);
 
     navigate('/review-payment', {
       state: {
         selectedPlan,
-        selectedOptions: options
+        selectedOptions: optionsToPersist
       }
     });
   };
 
   const handleBack = () => {
-    navigate(`/subscription/${selectedPlan.id}`, {
-      state: { selectedPlan }
-    });
+    navigate(-1);
   };
 
-  // Simplified map functions (keeping the existing map functionality)
-  async function initMap() { /* ... existing map code ... */ }
-  function destroyMap() { /* ... existing map code ... */ }
+  const handleDashboard=()=>{
+    navigate('/');
+  }
 
-  const selectedBhkConfig = options.bhkType ? BHK_CONFIGS.find(bhk => bhk.id === options.bhkType) : null;
-  const showPricingPlans = options.bhkType && options.squareFeet > 0;
+  if (isLoading || !selectedPlan) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white">
+        <div className="space-y-4 text-center">
+          <div
+            className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-t-transparent"
+            style={{ borderColor: BRAND.indigo }}
+          />
+          <p className="text-slate-500">Loading your plan details...</p>
+        </div>
+        {locationError && <p className="text-sm" style={{ color: BRAND.indigo }}>{locationError}</p>}
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          className="mb-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          onClick={handleBack}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Plan Details
-        </Button>
+    <div
+      className="relative min-h-screen overflow-hidden text-slate-900"
+      style={{
+        background: `radial-gradient(circle at 10% -10%, ${BRAND.indigo}1f 0%, transparent 60%), radial-gradient(circle at 85% 8%, ${BRAND.indigo}26 0%, transparent 55%), #ffffff`
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0">
+        <div
+          className="absolute -top-44 right-10 h-[26rem] w-[26rem] rounded-full blur-[140px]"
+          style={{ background: `${BRAND.indigo}29` }}
+        />
+        <div
+          className="absolute -bottom-56 left-16 h-[30rem] w-[30rem] rounded-full blur-[150px]"
+          style={{ background: `${BRAND.indigo}2e` }}
+        />
+      </div>
 
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Schedule Your Service
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Choose your preferred time, date, property details, and service location
-          </p>
-        </div>
-
-        {/* Subscription Info Section */}
-        <div className="mb-8">
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm">
-            <p className="text-md text-gray-800">
-              <strong>Note:</strong> Any subscription includes regular service provided <strong>every day</strong>.<br />
-              For <span className="font-semibold text-purple-700">Sweepro Lux</span> plans, <strong>buffer days</strong> are also provided for added flexibility. Please keep this in mind when choosing your plan.
-            </p>
-          </div>
-        </div>
-
-        {/* Selected Plan Summary */}
-        <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">{selectedPlan.name}</h3>
-                <p className="text-gray-600">{selectedPlan.description}</p>
-                {selectedPlan.popular && (
-                  <Badge className="mt-2 bg-blue-100 text-blue-800">Most Popular</Badge>
-                )}
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-blue-600">
-                  {options.finalTotalPrice > 0 ? `₹${options.finalTotalPrice.toLocaleString()}` : 'Configure below'}
-                </p>
-                <p className="text-gray-500">
-                  {options.selectedPlanDuration 
-                    ? `Total for ${PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.label.toLowerCase()}`
-                    : 'Total price will be calculated'
-                  }
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Service Frequency Card - move above the row */}
-        <div className="mb-8">
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Clock className="h-5 w-5 text-purple-600" />
-                Service Frequency
-              </CardTitle>
-              <CardDescription>Frequency is fixed based on your selected plan</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 rounded-xl border-2 border-purple-500 bg-purple-50 text-purple-700 font-semibold flex items-center justify-between">
-                <span>
-                  {selectedPlan.id === 'premium' ? '6 days/week (Sweepro Lux)' : '6 days/week (Sweepro Touch)'}
-                </span>
-                <Badge className="bg-green-500 text-white">Included</Badge>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                {selectedPlan.id === 'premium' 
-                  ? 'Daily cleaning service 6 days a week with premium care'
-                  : 'Regular cleaning service 6 days a week with essential care'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Row: Preferred Time, Service Date, Property Type */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {/* Preferred Time */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Clock className="h-5 w-5 text-blue-600" />
-                Preferred Time
-              </CardTitle>
-              <CardDescription>Select an exact start time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Select value={options.timeSlot} onValueChange={(v) => handleOptionChange('timeSlot', v)}>
-                <SelectTrigger className="h-12 text-base rounded-lg">
-                  <SelectValue placeholder="Select a time" />
-                </SelectTrigger>
-                <SelectContent position="popper" className="max-h-80 overflow-y-auto">
-                  {timeSlots.map((slot) => (
-                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          {/* Service Start Date */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Calendar className="h-5 w-5 text-green-600" />
-                Service Start Date
-              </CardTitle>
-              <CardDescription>When would you like to start the service?</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <input
-                type="date"
-                value={options.startDate}
-                onChange={(e) => handleOptionChange('startDate', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-colors"
-              />
-            </CardContent>
-          </Card>
-
-          {/* Property Type - Only Apartment */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Home className="h-5 w-5 text-orange-600" />
-                Property Type
-              </CardTitle>
-              <CardDescription>Select your property type</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-4">
-                {PROPERTY_TYPES.map((type) => (
-                  <div
-                    key={type.id}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                      options.propertyType === type.id
-                        ? 'border-orange-500 bg-orange-50 text-orange-700'
-                        : 'border-gray-200 bg-white hover:border-orange-300'
-                    }`}
-                    onClick={() => handleOptionChange('propertyType', options.propertyType === type.id ? null : type.id)}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{type.icon}</span>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{type.name}</h3>
-                        <p className="text-sm text-gray-600">{type.description}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          ₹{type.pricePerSqFt}/sq ft rate
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* BHK Selection - only visible after Apartment selected */}
-        {options.propertyType === 'apartment' && (
-          <div className="pt-8">
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  BHK Configuration
-                </CardTitle>
-                <CardDescription>Select your BHK type</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {BHK_CONFIGS.map((bhk) => (
-                    <div
-                      key={bhk.id}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 text-center ${
-                        options.bhkType === bhk.id
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 bg-white hover:border-blue-300'
-                      }`}
-                      onClick={() => handleBhkSelect(bhk.id)}
-                      onMouseEnter={() => setHoveredBhk(bhk.id)}
-                      onMouseLeave={() => setHoveredBhk(null)}
-                    >
-                      <div className="font-semibold text-lg">{bhk.label}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {bhk.sqftOptions.length} size options
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Size Selection - only visible after BHK selected */}
-        {options.bhkType && (
-          <div className="pt-8">
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  Size Selection
-                </CardTitle>
-                <CardDescription>Select your property size</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {BHK_CONFIGS.find(bhk => bhk.id === options.bhkType)?.sqftOptions.map((option) => (
-                    <div
-                      key={option.value}
-                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                        options.squareFeet === option.value
-                          ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-300 bg-white hover:border-green-300'
-                      }`}
-                      onClick={() => handleSqftSelect(option.value)}
-                    >
-                      <div className="font-semibold">{option.label}</div>
-                      <div className="text-sm text-gray-600">{option.value} sq ft</div>
-                      <div className="text-xs text-gray-500">{option.range}</div>
-                    </div>
-                  ))}
-                </div>
-                {/* Custom Size Input */}
-                <div className="mt-4 pt-4 border-t border-gray-300">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-600 whitespace-nowrap">Custom size:</span>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        type="number"
-                        value={options.squareFeet || ''}
-                        onChange={(e) => handleOptionChange('squareFeet', parseInt(e.target.value) || 0)}
-                        placeholder="Square feet"
-                        className="w-32"
-                        min="1"
-                        max="10000"
-                      />
-                      <span className="text-sm text-gray-600">sq ft</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Step 3: Plan Duration Selection (appears after sqft selection) */}
-        {showPricingPlans && (
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <label className="text-sm font-medium text-gray-700 mb-3 block">
-              Step 3: Choose Plan Duration & Pricing
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {PLAN_DURATIONS.map((duration) => {
-                const pricing = calculatePlanPrice(duration);
-                const isSelected = options.selectedPlanDuration === duration.id;
-                const resolvedTotal = isSelected && options.pricing
-                  ? Number(options.pricing.subtotal || 0)
-                  : pricing.finalTotal;
-                const resolvedTotalBeforeDiscount = isSelected && options.pricing
-                  ? Number(options.pricing.totalBeforeDiscount || 0)
-                  : pricing.totalBeforeDiscount;
-                const resolvedDiscountPercent = isSelected && options.pricing
-                  ? Number(options.pricing.discountPercent || 0)
-                  : (duration.discount || 0);
-                const resolvedDiscountAmount = isSelected && options.pricing
-                  ? Number(options.pricing.discountAmount || 0)
-                  : pricing.discountAmount;
-                const resolvedMonthly = duration.multiplier > 0
-                  ? Math.round(resolvedTotal / duration.multiplier)
-                  : pricing.monthlyAfterDiscount;
-                return (
-                  <div
-                    key={duration.id}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 relative ${
-                      options.selectedPlanDuration === duration.id
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-300 bg-white hover:border-purple-300'
-                    }`}
-                    onClick={() => handlePlanDurationSelect(duration.id)}
-                  >
-                    {duration.popular && (
-                      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white">
-                        Most Popular
-                      </Badge>
-                    )}
-                    
-                    <div className="text-center">
-                      <h4 className="font-bold text-lg text-gray-900">{duration.label}</h4>
-                      <p className="text-xs text-gray-600 mb-3">{duration.description}</p>
-                      
-                      <div className="space-y-2">
-                        <div className="text-2xl font-bold text-purple-600">
-                          ₹{resolvedTotal.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Total for {duration.label.toLowerCase()}
-                        </div>
-                        
-                        {resolvedDiscountPercent > 0 && (
-                          <>
-                            <div className="text-sm text-gray-500 line-through">
-                              ₹{resolvedTotalBeforeDiscount.toLocaleString()}
-                            </div>
-                            <div className="text-sm text-green-600 font-semibold">
-                              Save ₹{resolvedDiscountAmount.toFixed(0)} ({resolvedDiscountPercent}%)
-                            </div>
-                          </>
-                        )}
-                        
-                        <div className="text-sm text-gray-600 pt-2 border-t border-gray-200">
-                          ₹{resolvedMonthly.toFixed(0)}/month
-                        </div>
-                      </div>
-                    </div>
-
-                    {options.selectedPlanDuration === duration.id && (
-                      <Check className="absolute -top-2 -right-2 h-6 w-6 text-white bg-purple-600 rounded-full p-1" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {options.selectedPlanDuration && (
-              <div className="mt-4 p-4 bg-white rounded-lg border border-purple-200">
-                <h5 className="font-semibold text-gray-800 mb-2">Pricing Breakdown:</h5>
-                <div className="text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span>Base {selectedPlan.name} service:</span>
-                    <span>
-                      {options.pricing
-                        ? `₹${Number(options.pricing.basePricePerPeriod || 0).toLocaleString()}/month`
-                        : `₹${calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).monthlyBaseCost}/month`
-                      }
-                    </span>
-                  </div>
-                  {!options.pricing && (
-                    <div className="flex justify-between">
-                      <span>Property cost ({options.squareFeet} sq ft):</span>
-                      <span>₹{calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).propertyBaseCost}/month</span>
-                    </div>
-                  )}
-                  {(options.pricing ? options.pricing.discountPercent > 0 : (PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount! > 0)) && (
-                    <div className="flex justify-between text-green-600">
-                      <span>
-                        Discount ({options.pricing ? options.pricing.discountPercent : PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.discount}%):
-                      </span>
-                      <span>
-                        -₹{options.pricing
-                          ? Number(options.pricing.discountAmount || 0).toFixed(0)
-                          : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).discountAmount.toFixed(0)
-                        }
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-semibold text-purple-700 border-t pt-1">
-                    <span>Final total ({PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)?.label}):</span>
-                    <span>
-                      ₹{(options.pricing
-                        ? Number(options.pricing.subtotal || 0)
-                        : calculatePlanPrice(PLAN_DURATIONS.find(d => d.id === options.selectedPlanDuration)!).finalTotal
-                      ).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Service Address Section */}
-        <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <MapPin className="h-5 w-5 text-red-600" />
-              Service Address
-            </CardTitle>
-            <CardDescription>Use your current location or adjust on the map</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" onClick={handleUseCurrentLocation} disabled={isLocating}>
-                {isLocating ? 'Locating…' : 'Use my current location'}
-              </Button>
-              <Button variant="secondary" onClick={detectLocationAuto} disabled={autoDetecting}>
-                {autoDetecting ? 'Detecting…' : 'Auto-detect'}
-              </Button>
-              {!refining ? (
-                <Button variant="secondary" onClick={startRefineWatch}>Refine accuracy</Button>
-              ) : (
-                <Button variant="destructive" onClick={stopRefineWatch}>Stop refining</Button>
-              )}
-              <Button variant="secondary" onClick={openMapDialog}>Set on map</Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-gray-600">Pincode</label>
-                <Input value={options.pincode} onChange={(e) => handleOptionChange('pincode', e.target.value)} placeholder="Pincode" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">Locality</label>
-                <Input value={options.locality} onChange={(e) => handleOptionChange('locality', e.target.value)} placeholder="Area / Locality" />
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-sm text-gray-600">Address (Area and Street)</label>
-                <Input value={options.addressLine} onChange={(e) => handleOptionChange('addressLine', e.target.value)} placeholder="House no., street" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">City/District/Town</label>
-                <Input value={options.city} onChange={(e) => handleOptionChange('city', e.target.value)} placeholder="City / Town" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">State</label>
-                <Input value={options.state} onChange={(e) => handleOptionChange('state', e.target.value)} placeholder="State" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">Landmark (Optional)</label>
-                <Input value={options.landmark} onChange={(e) => handleOptionChange('landmark', e.target.value)} placeholder="Nearby landmark" />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">Full address</label>
-                <Input value={options.address} onChange={(e) => handleOptionChange('address', e.target.value)} placeholder="Auto-filled full address" />
-              </div>
-            </div>
-
-            {locationError && (
-              <p className="text-sm text-red-600">{locationError}</p>
-            )}
-
-            <div className="pt-2">
-              <Button
-                onClick={handleSaveAddress}
-                disabled={isSavingAddress}
-                className="font-semibold"
-              >
-                {isSavingAddress ? 'Saving address...' : 'Save as main address'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Next Button */}
-        <div className="text-center">
+      <div className="relative mx-auto flex max-w-7xl flex-col px-4 pb-20 pt-10 lg:px-10">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <Button
-            className={`px-8 py-4 text-xl font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
-              showPricingPlans && options.selectedPlanDuration
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-            onClick={handleNext}
-            disabled={!showPricingPlans || !options.selectedPlanDuration}
+            variant="ghost"
+            onClick={handleBack}
+            className="group flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium shadow-sm transition"
+            style={{
+              border: `1px solid ${BRAND.indigo}33`,
+              color: BRAND.indigo,
+              background: '#ffffff'
+            }}
           >
-            Next: Review & Payment
-            <ArrowRight className="h-5 w-5 ml-2" />
+            <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
+            Back to plans
           </Button>
-          <p className="text-sm text-gray-500 mt-3">
-            {!showPricingPlans 
-              ? 'Complete property configuration to continue'
-              : !options.selectedPlanDuration
-              ? 'Select a plan duration to continue'
-              : `Review your ₹${options.finalTotalPrice.toLocaleString()} plan before confirming`
-            }
-          </p>
+          <Badge
+            className="rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]"
+            style={{
+              border: `1px solid ${BRAND.indigo}33`,
+              background: `${BRAND.indigo}12`,
+              color: BRAND.indigo
+            }}
+          >
+            {selectedPlan.name}
+          </Badge>
+        </div>
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="min-w-0 space-y-8">
+            <section
+              className="space-y-4 rounded-[28px] px-6 py-8 shadow-xl"
+              style={{
+                border: `1px solid ${BRAND.indigo}26`,
+                background: `linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(238,235,227,0.82) 100%)`
+              }}
+            >
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em]"
+                style={{ background: `${BRAND.indigo}10`, color: BRAND.indigo, border: `1px solid ${BRAND.indigo}33` }}
+              >
+                Payment · Scheduling
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight md:text-4xl" style={{ color: BRAND.indigo }}>
+                Shape the perfect Sweep Pro subscription
+              </h1>
+              <p className="max-w-2xl text-sm md:text-base" style={{ color: 'rgba(32,30,69,0.7)' }}>
+                Tune every detail—from property profile and service rhythm to billing cadence—while we keep a live, crystal-clear summary of your investment.
+              </p>
+            </section>
+
+            <Card className="rounded-3xl border bg-white shadow-xl" style={{ borderColor: `${BRAND.indigo}26` }}>
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{
+                      border: `1px solid ${BRAND.indigo}33`,
+                      background: `${BRAND.indigo}12`
+                    }}
+                  >
+                    <Home className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Property type
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-600">
+                  Select the property format that best describes your space. This helps us tailor staffing and supplies.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {PROPERTY_TYPES.map((type) => {
+                    const isActive = options.propertyType === type.id;
+                    const disabledStyles = type.disabled
+                      ? {
+                          cursor: 'not-allowed' as const,
+                          opacity: 0.55,
+                          background: '#f1f5f9',
+                          borderColor: '#e2e8f0'
+                        }
+                      : {};
+
+                    return (
+                      <button
+                        key={type.id}
+                        type="button"
+                        onClick={() => handlePropertyTypeSelect(type.id)}
+                        disabled={type.disabled}
+                        className="group relative flex w-full flex-col gap-4 rounded-2xl px-5 py-6 text-left transition-all duration-200"
+                        style={{
+                          border: `1px solid ${isActive ? `${BRAND.indigo}55` : '#e2e8f0'}`,
+                          background: isActive ? INDIGO_STYLES.softGradient : '#ffffff',
+                          boxShadow: isActive
+                            ? `0 25px 60px -35px ${BRAND.indigo}59`
+                            : '0 1px 0 rgba(15,23,42,0.05)',
+                          color: '#1f2937',
+                          ...disabledStyles
+                        }}
+                      >
+                        <span className="text-2xl">{type.icon}</span>
+                        <div className="space-y-1">
+                          <p className="text-base font-semibold" style={{ color: BRAND.indigo }}>
+                            {type.name}
+                          </p>
+                          <p className="text-sm" style={{ color: 'rgba(32,30,69,0.65)' }}>
+                            {type.description}
+                          </p>
+                        </div>
+                        {type.disabled ? (
+                          <span
+                            className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.35em]"
+                            style={{
+                              border: '1px solid #d1d5db',
+                              background: '#fff',
+                              color: '#64748b'
+                            }}
+                          >
+                            <Sparkles className="h-3 w-3" /> {type.comingSoonLabel || 'Coming soon'}
+                          </span>
+                        ) : isActive ? (
+                          <span
+                            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]"
+                            style={{ color: BRAND.indigo }}
+                          >
+                            <Sparkles className="h-3.5 w-3.5" /> Selected
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+                {isLuxPlan && options.propertyType === 'apartment' && (
+                  <p
+                    className="mt-5 flex items-start gap-2 rounded-2xl px-5 py-4 text-sm"
+                    style={{
+                      border: `1px solid ${BRAND.indigo}33`,
+                      background: `${BRAND.indigo}0f`,
+                      color: BRAND.indigo
+                    }}
+                  >
+                    <Sparkles className="mt-0.5 h-4 w-4" style={{ color: BRAND.indigo }} /> Sweepro Lux apartment plans are calibrated for premium 2 and 3 BHK layouts. Choose from curated size ranges below for tailored staffing.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <Sparkles className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Property configuration
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-600">
+                  Pick the BHK format and size band. We use this to plan crew sizing and inventory.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-wrap gap-3">
+                  {bhkConfigs.map((config) => {
+                    const isActive = options.bhkType === config.id;
+                    return (
+                      <Button
+                        key={config.id}
+                        variant="outline"
+                        onClick={() => handleBhkSelect(config.id)}
+                        className="rounded-full border px-6 py-2 text-sm font-semibold transition"
+                        style={{
+                          borderColor: isActive ? `${BRAND.indigo}70` : '#e2e8f0',
+                          background: isActive ? `${BRAND.indigo}15` : '#ffffff',
+                          color: isActive ? BRAND.indigo : '#475569',
+                          boxShadow: isActive ? `0 18px 40px -25px ${BRAND.indigo}73` : undefined
+                        }}
+                      >
+                        {config.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                {selectedBhkConfig && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {selectedBhkConfig.sqftOptions.map((option) => {
+                      const isActive = options.squareFeet === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleSqftSelect(option.value.toString())}
+                          className="flex w-full flex-col gap-3 rounded-2xl border px-5 py-5 text-left transition"
+                          style={{
+                            border: `1px solid ${isActive ? `${BRAND.indigo}70` : '#e2e8f0'}`,
+                            background: isActive
+                              ? `linear-gradient(135deg, ${BRAND.indigo}14 0%, ${BRAND.indigo}05 100%)`
+                              : '#ffffff',
+                            boxShadow: isActive
+                              ? `0 25px 60px -35px ${BRAND.indigo}59`
+                              : undefined
+                          }}
+                        >
+                          <div>
+                            <p className="text-base font-semibold" style={{ color: BRAND.indigo }}>
+                              {option.range}
+                            </p>
+                            <p className="text-xs uppercase tracking-[0.35em]" style={{ color: 'rgba(32,30,69,0.45)' }}>
+                              Approx. {option.value} sq ft
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-1 text-sm">
+                            <span className="text-base font-semibold" style={{ color: BRAND.indigo }}>
+                              ₹{option.pricing['1month'].toLocaleString()}{' '}
+                              <span className="text-xs font-medium" style={{ color: `${BRAND.indigo}c2` }}>/ month</span>
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className="w-fit text-xs"
+                              style={{
+                                border: `1px solid ${BRAND.indigo}55`,
+                                background: `${BRAND.indigo}0f`,
+                                color: BRAND.indigo
+                              }}
+                            >
+                              3 Months ₹{option.pricing['3month'].toLocaleString()}
+                            </Badge>
+                          </div>
+                          {isActive && (
+                            <span
+                              className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]"
+                              style={{ color: BRAND.indigo }}
+                            >
+                              <Check className="h-4 w-4" /> Active selection
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <Calendar className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Plan duration & pricing
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-600">
+                  Lock in the billing cadence that fits you best. Savings surface instantly—no calculators required.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  {PLAN_DURATIONS.map((duration) => {
+                    const pricing = calculatePlanPrice(duration);
+                    const isActive = options.selectedPlanDuration === duration.id;
+                    const monthly = pricing.monthlyAfterDiscount;
+                    return (
+                      <button
+                        key={duration.id}
+                        type="button"
+                        onClick={() => handlePlanDurationSelect(duration.id)}
+                        className="relative flex h-full flex-col gap-3 rounded-2xl border px-5 py-6 text-left transition"
+                        style={{
+                          borderColor: isActive ? `${BRAND.indigo}70` : '#e2e8f0',
+                          background: isActive ? INDIGO_STYLES.softGradient : '#ffffff',
+                          boxShadow: isActive ? `0 25px 60px -35px ${BRAND.indigo}59` : '0 1px 0 rgba(15,23,42,0.05)'
+                        }}
+                      >
+                        {duration.popular && (
+                          <Badge
+                            className="absolute -top-3 left-4 rounded-full px-3 text-[11px] font-semibold uppercase tracking-[0.35em]"
+                            style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12`, color: BRAND.indigo }}
+                          >
+                            Most loved
+                          </Badge>
+                        )}
+                        <div>
+                          <p className="text-base font-semibold" style={{ color: BRAND.indigo }}>{duration.label}</p>
+                          <p className="text-xs text-slate-500">{duration.description}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-2xl font-semibold" style={{ color: BRAND.indigo }}>₹{pricing.finalTotal.toLocaleString()}</p>
+                          <p className="text-xs font-medium uppercase tracking-[0.3em] text-slate-500">
+                            ₹{monthly.toLocaleString()} per month
+                          </p>
+                        </div>
+                        {pricing.discountPercent > 0 && (
+                          <p className="text-xs font-medium" style={{ color: BRAND.indigo }}>
+                            Save {pricing.discountPercent}% (₹{pricing.discountAmount.toLocaleString()})
+                          </p>
+                        )}
+                        {isActive && <Check className="absolute right-4 top-4 h-5 w-5" style={{ color: BRAND.indigo }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {options.selectedPlanDuration && (
+                  <div
+                    className="rounded-2xl px-5 py-4 text-sm text-slate-700 shadow-inner"
+                    style={{ border: `1px solid ${BRAND.indigo}26`, background: `${BRAND.indigo}0d` }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Plan subtotal ({PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration)?.label}):</span>
+                      <span className="font-semibold text-slate-900">₹{options.finalTotalPrice.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <Clock className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Schedule preferences
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-600">
+                  Set the kickoff date and timing window. You can tweak everything later from your dashboard.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Start date</label>
+                    <Input
+                      type="date"
+                      value={options.startDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(event) => handleOptionChange('startDate', event.target.value)}
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                      style={{
+                        outline: 'none',
+                        boxShadow: 'none'
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Time slot</label>
+                    <Select value={options.timeSlot} onValueChange={(value) => handleOptionChange('timeSlot', value)}>
+                      <SelectTrigger className="rounded-xl border border-slate-200 bg-white text-left text-slate-800">
+                        <SelectValue placeholder="Pick a slot" />
+                      </SelectTrigger>
+                      <SelectContent className="border border-slate-200 bg-white text-slate-800">
+                        {TIME_SLOTS.map((slot) => (
+                          <SelectItem key={slot} value={slot}>
+                            {slot}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <MapPin className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Service address
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-600">
+                  Drop the exact location. Autofill from GPS or manually tune the address so our crew arrives precisely.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleUseCurrentLocation}
+                    disabled={isLocating}
+                    className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition disabled:opacity-60"
+                    style={{ borderColor: `${BRAND.indigo}26` }}
+                  >
+                    {isLocating ? 'Locating…' : 'Use current location'}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsMapOpen(true)}
+                    className="rounded-full border px-5 py-2 text-sm font-semibold text-white"
+                    style={{
+                      borderColor: `${BRAND.indigo}33`,
+                      background: INDIGO_STYLES.gradient,
+                      boxShadow: `0 18px 40px -22px ${BRAND.indigo}73`
+                    }}
+                  >
+                    Set on map
+                  </Button>
+                  {options.latitude && options.longitude && (
+                    <Badge
+                      variant="outline"
+                      className="rounded-full px-4 py-1 text-xs font-semibold"
+                      style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}0f`, color: BRAND.indigo }}
+                    >
+                      GPS: {options.latitude.toFixed(4)}, {options.longitude.toFixed(4)}
+                    </Badge>
+                  )}
+                </div>
+
+                {locationError && <p className="text-sm font-medium" style={{ color: BRAND.indigo }}>{locationError}</p>}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Pincode</label>
+                    <Input
+                      value={options.pincode}
+                      onChange={(event) => handleOptionChange('pincode', event.target.value)}
+                      placeholder="110001"
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Locality</label>
+                    <Input
+                      value={options.locality}
+                      onChange={(event) => handleOptionChange('locality', event.target.value)}
+                      placeholder="Area / Locality"
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Address (area & street)</label>
+                    <Input
+                      value={options.addressLine}
+                      onChange={(event) => handleOptionChange('addressLine', event.target.value)}
+                      placeholder="House no., street"
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">City / Town</label>
+                    <Input
+                      value={options.city}
+                      onChange={(event) => handleOptionChange('city', event.target.value)}
+                      placeholder="City"
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">State</label>
+                    <Input
+                      value={options.state}
+                      onChange={(event) => handleOptionChange('state', event.target.value)}
+                      placeholder="State"
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Landmark (optional)</label>
+                    <Input
+                      value={options.landmark}
+                      onChange={(event) => handleOptionChange('landmark', event.target.value)}
+                      placeholder="Nearby landmark"
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Additional address notes</label>
+                    <Input
+                      value={options.address}
+                      onChange={(event) => handleOptionChange('address', event.target.value)}
+                      placeholder="Apartment, block, other instructions"
+                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div
+              className="flex flex-col gap-4 rounded-3xl bg-white px-6 py-6 text-slate-700 md:flex-row md:items-center md:justify-between"
+              style={{ border: `1px solid ${BRAND.indigo}26`, boxShadow: `0 20px 60px -35px ${BRAND.indigo}59` }}
+            >
+              <div className="text-sm text-slate-600">
+                {options.selectedPlanDuration
+                  ? `Billing summary: ₹${options.finalTotalPrice.toLocaleString()} for ${PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration)?.label}`
+                  : 'Select a plan duration to reveal your billing summary'}
+              </div>
+              <Button
+                size="lg"
+                onClick={handleNext}
+                disabled={!options.selectedPlanDuration}
+                className="group flex items-center gap-3 rounded-full border-none px-8 py-6 text-base font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+                style={{ background: INDIGO_STYLES.gradient, boxShadow: `0 25px 65px -30px ${BRAND.indigo}8c` }}
+              >
+                Proceed to review
+                <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
+              </Button>
+            </div>
+          </div>
+
+          <aside className="space-y-6">
+            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+              <CardHeader className="space-y-2">
+                <CardTitle className="text-lg font-semibold text-slate-900">Live summary</CardTitle>
+                <CardDescription className="text-sm text-slate-600">
+                  Reference snapshot of everything selected so far. Updates in real time.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5 text-sm text-slate-700">
+                <section className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <h3 className="text-sm font-semibold text-slate-900">Plan</h3>
+                  <p className="text-base font-medium" style={{ color: BRAND.indigo }}>{selectedPlan.name}</p>
+                  <p className="text-xs text-slate-500">{selectedPlan.description}</p>
+                </section>
+                <section className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <h3 className="text-sm font-semibold text-slate-900">Property</h3>
+                  <p>{PROPERTY_TYPES.find((type) => type.id === options.propertyType)?.name}</p>
+                  {options.bhkType && <p>{bhkConfigs.find((config) => config.id === options.bhkType)?.label}</p>}
+                  {options.squareFeetLabel && <p className="text-xs text-slate-500">{options.squareFeetLabel}</p>}
+                </section>
+                <section className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <h3 className="text-sm font-semibold text-slate-900">Schedule</h3>
+                  <p>{options.timeSlot || 'No slot selected'}</p>
+                  <p>{options.startDate || 'Select start date'}</p>
+                </section>
+                <section className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <h3 className="text-sm font-semibold text-slate-900">Billing</h3>
+                  {options.selectedPlanDuration ? (
+                    <>
+                      <p>Duration: {PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration)?.label}</p>
+                      <p className="text-lg font-bold" style={{ color: BRAND.indigo }}>₹{options.finalTotalPrice.toLocaleString()}</p>
+                    </>
+                  ) : (
+                    <p>Select a duration to view billing.</p>
+                  )}
+                </section>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+              <CardHeader className="space-y-2">
+                <CardTitle className="flex items-center gap-3 text-lg text-slate-900">
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <Sparkles className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Why Sweep Pro?
+                </CardTitle>
+                <CardDescription className="text-sm text-slate-600">
+                  Premium perks included with every subscription—no hidden extras.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm text-slate-700">
+                <div className="flex items-start gap-3">
+                  <Check className="mt-1 h-4 w-4" style={{ color: BRAND.indigo }} />
+                  <p>Dedicated relationship manager for rapid scheduling changes.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="mt-1 h-4 w-4" style={{ color: BRAND.indigo }} />
+                  <p>Backup crew commitment within 6 hours if your primary pro needs a break.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Check className="mt-1 h-4 w-4" style={{ color: BRAND.indigo }} />
+                  <p>Hospital-grade sanitation supplies and eco-friendly essentials restocked automatically.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
         </div>
       </div>
 
-      {/* Map Dialog */}
       <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent
+          className="sm:max-w-xl rounded-3xl border border-slate-200 bg-white text-slate-900"
+          style={{ boxShadow: `0 45px 90px -40px ${BRAND.indigo}47` }}
+        >
           <DialogHeader>
-            <DialogTitle>Set location on map</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-slate-900">Set location on map</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="w-full h-[360px] overflow-hidden rounded-lg border">
-              <div id={mapContainerIdRef.current} className="h-full w-full" />
+            <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-100 text-sm text-slate-500">
+              Map preview placeholder (enable integration)
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm text-gray-600">Latitude</label>
-                <Input value={tempLat} onChange={(e) => setTempLat(e.target.value)} placeholder="e.g., 17.3850" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Latitude</label>
+                <Input
+                  value={tempLat}
+                  onChange={(event) => setTempLat(event.target.value)}
+                  placeholder="17.3850"
+                  className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                />
               </div>
-              <div>
-                <label className="text-sm text-gray-600">Longitude</label>
-                <Input value={tempLng} onChange={(e) => setTempLng(e.target.value)} placeholder="e.g., 78.4867" />
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Longitude</label>
+                <Input
+                  value={tempLng}
+                  onChange={(event) => setTempLng(event.target.value)}
+                  placeholder="78.4867"
+                  className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                />
               </div>
             </div>
-            {coordError && <p className="text-sm text-red-600">{coordError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={closeMapDialog}>Cancel</Button>
-            <Button onClick={handleMapSave}>Save location</Button>
+            <Button variant="ghost" onClick={() => setIsMapOpen(false)} className="rounded-full text-slate-600 hover:bg-slate-100">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleMapSave}
+              className="rounded-full px-6 text-white hover:opacity-95"
+              style={{ background: INDIGO_STYLES.gradient }}
+            >
+              Save location
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   );
-}
+};
+
+export default PaymentOptionsPage;
