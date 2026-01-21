@@ -21,6 +21,11 @@ export class FirebaseAuth {
    */
   static async signInWithGoogle(): Promise<FirebaseAuthResult> {
     try {
+      if (!auth) {
+        throw new Error(
+          'Google sign-in is not available because Firebase is not configured for this deployment.'
+        );
+      }
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
 
@@ -54,7 +59,7 @@ export class FirebaseAuth {
    * Get current Firebase user
    */
   static getCurrentFirebaseUser(): FirebaseUser | null {
-    return auth.currentUser;
+    return auth?.currentUser ?? null;
   }
 
   /**
@@ -62,7 +67,7 @@ export class FirebaseAuth {
    */
   static async getFirebaseIdToken(forceRefresh: boolean = false): Promise<string | null> {
     try {
-      const user = auth.currentUser;
+      const user = auth?.currentUser;
       if (!user) {
         return null;
       }
@@ -78,6 +83,7 @@ export class FirebaseAuth {
    */
   static async logout(): Promise<void> {
     try {
+      if (!auth) return;
       await signOut(auth);
     } catch (error) {
       console.error('Logout error:', error);

@@ -38,11 +38,13 @@ const getFirebaseConfig = (): FirebaseConfig => {
 };
 
 // Initialize Firebase
-let app: FirebaseApp;
-let auth: Auth;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let isFirebaseConfigured = false;
 
 try {
   const config = getFirebaseConfig();
+  isFirebaseConfigured = true;
   
   // Initialize Firebase only if it hasn't been initialized
   if (getApps().length === 0) {
@@ -54,10 +56,12 @@ try {
   auth = getAuth(app);
 } catch (error) {
   console.error('Firebase initialization error:', error);
-  throw error;
+  app = null;
+  auth = null;
+  isFirebaseConfigured = false;
 }
 
-export { app, auth };
+export { app, auth, isFirebaseConfigured };
 export default app;
 
 
