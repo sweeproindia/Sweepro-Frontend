@@ -55,7 +55,11 @@ try {
   
   auth = getAuth(app);
 } catch (error) {
-  console.error('Firebase initialization error:', error);
+  if (import.meta.env.DEV) {
+    console.error('Firebase initialization error:', error);
+  } else {
+    console.warn('Firebase not configured for this deployment. Skipping Firebase initialization.');
+  }
   app = null;
   auth = null;
   isFirebaseConfigured = false;
