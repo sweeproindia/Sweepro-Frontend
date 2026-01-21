@@ -53,7 +53,7 @@ const SweepProAboutUs: React.FC = () => {
       whileInView="visible"
       viewport={{ once: true, amount: 0.2 }}
       variants={containerVariants}
-      className="min-h-screen p-8 relative overflow-hidden"
+      className="min-h-screen p-8 relative overflow-hidden bg-gradient-to-b from-white via-[#eeebe3]/60 to-white"
     >
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -120,7 +120,7 @@ const SweepProAboutUs: React.FC = () => {
           >
             {/* About Us Badge */}
             <motion.div variants={itemVariants}>
-              <span className="inline-block bg-blue-100 text-blue-600 px-6 py-3 rounded-full text-sm font-semibold tracking-wide">
+              <span className="inline-block bg-[#eeebe3] text-[#1800ad] px-6 py-3 rounded-full text-sm font-semibold tracking-wide">
                 About Us
               </span>
             </motion.div>
@@ -130,7 +130,7 @@ const SweepProAboutUs: React.FC = () => {
               <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-4">
                 <span className="text-gray-900">Professional Home Care,</span>
                 <br />
-                <span className="text-blue-600">Built on Hygiene & Trust</span>
+                <span className="text-[#1800ad]">Built on Hygiene & Trust</span>
               </h1>
             </motion.div>
 
@@ -138,7 +138,7 @@ const SweepProAboutUs: React.FC = () => {
             <motion.div variants={itemVariants}>
               <p className="text-lg text-gray-700 leading-relaxed space-y-4">
                 <span className="block mb-4">
-                  <strong className="text-blue-600">SWEEPRO</strong>, a modern home care service with a traditional touch, built for reliability, hygiene, and professionalism in everyday housekeeping.
+                  <strong className="text-[#1800ad]">SWEEPRO</strong>, a modern home care service with a traditional touch, built for reliability, hygiene, and professionalism in everyday housekeeping.
                 </span>
 
                 <span className="block mb-4">

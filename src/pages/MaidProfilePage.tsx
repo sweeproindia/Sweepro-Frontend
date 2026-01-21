@@ -8,6 +8,7 @@ import { Edit, Camera, Mail, Phone, Calendar, Star, Quote, ThumbsUp, MapPin, Clo
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
 import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
 import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MaidProfileData {
   id: string;
@@ -155,8 +156,84 @@ export const MaidProfilePage: React.FC = () => {
   if (loading) {
     return (
       <MaidDashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Loading profile...</p>
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-48" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+            <Skeleton className="h-10 w-32 rounded-md" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
+              <Card className="overflow-hidden">
+                <Skeleton className="h-32 w-full" />
+                <CardContent className="p-6">
+                  <div className="relative -mt-12 mb-4">
+                    <Skeleton className="h-24 w-24 rounded-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-7 w-44" />
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-6 w-16 rounded" />
+                      <Skeleton className="h-6 w-24 rounded" />
+                    </div>
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <Skeleton className="h-5 w-28" />
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-6 w-20 rounded" />
+                    <Skeleton className="h-6 w-24 rounded" />
+                    <Skeleton className="h-6 w-16 rounded" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Skeleton className="h-16 w-full rounded-lg" />
+                  <Skeleton className="h-16 w-full rounded-lg" />
+                  <Skeleton className="h-16 w-full rounded-lg" />
+                  <Skeleton className="h-16 w-full rounded-lg" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <Card className="border-2 border-yellow-400 shadow-lg">
+            <CardContent className="pt-8 pb-8">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <Skeleton className="h-10 w-10 rounded" />
+                </div>
+                <Skeleton className="h-14 w-40 mx-auto mb-3" />
+                <Skeleton className="h-5 w-56 mx-auto" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t">
+                  <div>
+                    <Skeleton className="h-9 w-20 mx-auto mb-2" />
+                    <Skeleton className="h-4 w-32 mx-auto" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </MaidDashboardLayout>
     );

@@ -29,7 +29,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     description:
       'A premium silver plan for medium-sized homes. Enjoy enhanced cleaning and priority service.',
     icon: Zap,
-    gradient: 'from-blue-200 to-blue-300',
+    gradient: 'from-[#bcdcff] to-[#a9cfff]',
     features: [
       'AI-assisted cleaning',
       'Weekly deep clean',
@@ -44,7 +44,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     description:
       'Ultimate cleaning experience for large homes and villas with luxury service.',
     icon: Crown,
-    gradient: 'from-blue-900 to-red-600',
+    gradient: 'from-[#1800ad] to-[#1800ad]',
     features: [
       'Dedicated luxury team',
       'Daily upkeep option',
@@ -66,7 +66,7 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
   return (
     <motion.section
       id="subscription-plans"
-      className="relative min-h-screen py-24 bg-gradient-to-t from-white via-blue-200 to-white overflow-hidden"
+      className="relative min-h-screen py-24 bg-gradient-to-t from-white via-[#eeebe3] to-white overflow-hidden"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -78,7 +78,7 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
-        <h2 className="text-6xl font-black bg-gradient-to-r from-blue-900 to-red-900 bg-clip-text text-transparent mb-6">
+        <h2 className="text-6xl font-black bg-gradient-to-r from-[#1800ad] to-[#ca0013] bg-clip-text text-transparent mb-6">
           Home Care, Your Way
         </h2>
         <p className="text-xl text-gray-700 max-w-3xl mx-auto">
@@ -103,18 +103,30 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                 <Card
                   className={`relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${
                     plan.gradient
-                  } shadow-2xl ring-2 ring-white/10 transition-all duration-500 ${
+                  } shadow-2xl ring-2 ring-white/10 transition-all duration-700 will-change-transform ${
                     hoveredCard === plan.id
-                      ? 'scale-105 ring-white/30'
-                      : 'hover:scale-[1.02]'
+                      ? `scale-[1.06] -translate-y-2 ring-white/40 ${
+                          plan.id === 'standard'
+                            ? 'shadow-[0_35px_90px_-30px_rgba(80,140,255,0.65)]'
+                            : 'shadow-[0_35px_90px_-30px_rgba(24,0,173,0.55)]'
+                        }`
+                      : `${
+                          plan.id === 'standard'
+                            ? 'hover:shadow-[0_30px_80px_-35px_rgba(80,140,255,0.55)]'
+                            : 'hover:shadow-[0_30px_80px_-35px_rgba(24,0,173,0.5)]'
+                        } hover:scale-[1.03] hover:-translate-y-1`
                   }`}
                 >
                   {/* SHINE */}
                   <div
-                    className={`absolute inset-0 pointer-events-none bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transition-all duration-1000 ${
-                      hoveredCard === plan.id
-                        ? 'translate-x-[-50%] opacity-100'
-                        : 'translate-x-full opacity-0'
+                    className={`absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 ${
+                      hoveredCard === plan.id ? 'opacity-100' : ''
+                    } bg-[radial-gradient(900px_circle_at_25%_0%,rgba(255,255,255,0.55),transparent_55%)]`}
+                  />
+
+                  <div
+                    className={`absolute -inset-y-16 -left-1/2 w-[200%] pointer-events-none bg-gradient-to-r from-transparent via-white/55 to-transparent blur-md mix-blend-overlay opacity-0 ${
+                      hoveredCard === plan.id ? 'animate-card-shine' : ''
                     }`}
                   />
 
@@ -133,8 +145,8 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                             style={{
                               background:
                                 plan.id === 'standard'
-                                  ? 'linear-gradient(135deg,#e5e7eb,#f3f4f6)'
-                                  : 'linear-gradient(135deg,#fbbf24,#f59e0b)'
+                                  ? 'linear-gradient(135deg,#ffffff,#eaf3ff)'
+                                  : 'linear-gradient(135deg,#1800ad,#1800ad)'
                             }}
                           >
                             <Icon
@@ -170,7 +182,9 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
 
                         <div className="flex justify-center gap-4">
                           <Button
-                            className="rounded-full px-6"
+                            className={`rounded-full px-6 !bg-white hover:!bg-[#eeebe3] ${
+                              plan.id === 'premium' ? 'text-[#1800ad]' : 'text-slate-900'
+                            }`}
                             onClick={() => setFlippedCard(plan.id)}
                           >
                             See More
@@ -182,7 +196,11 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                     {/* BACK */}
                     <div className="absolute inset-0 backface-hidden rotate-y-180 px-10 py-12 flex flex-col justify-between">
                       <div>
-                        <h3 className="text-3xl font-bold text-center mb-6 text-white">
+                        <h3
+                          className={`text-3xl font-bold text-center mb-6 ${
+                            plan.id === 'standard' ? 'text-[#1800ad]' : 'text-white'
+                          }`}
+                        >
                           Features
                         </h3>
 
@@ -190,9 +208,15 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                           {plan.features.map((f, i) => (
                             <li
                               key={i}
-                              className="flex items-center gap-3 text-white text-lg"
+                              className={`flex items-center gap-3 text-lg ${
+                                plan.id === 'standard' ? 'text-slate-700' : 'text-white'
+                              }`}
                             >
-                              <Check className="h-5 w-5 text-green-400" />
+                              <Check
+                                className={`h-5 w-5 ${
+                                  plan.id === 'standard' ? 'text-[#1800ad]' : 'text-green-400'
+                                }`}
+                              />
                               {f}
                             </li>
                           ))}
@@ -201,13 +225,17 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
 
                       <div className="space-y-3">
                         <Button
-                          className="w-full rounded-full"
+                          className={`w-full rounded-full !bg-white hover:!bg-[#eeebe3] ${
+                            plan.id === 'premium' ? 'text-[#1800ad]' : 'text-slate-900'
+                          }`}
                           onClick={() => onPlanSelect?.(plan.id)}
                         >
                           Buy Now
                         </Button>
                         <button
-                          className="w-full text-sm underline text-white/80"
+                          className={`w-full text-sm underline ${
+                            plan.id === 'standard' ? 'text-[#1800ad]' : 'text-white/80'
+                          }`}
                           onClick={() => setFlippedCard(null)}
                         >
                           Back
@@ -231,6 +259,25 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
         }
         .rotate-y-180 {
           transform: rotateY(180deg);
+        }
+        @keyframes card-shine {
+          0% {
+            transform: translateX(-120%) skewX(-12deg);
+            opacity: 0;
+          }
+          15% {
+            opacity: 0.95;
+          }
+          55% {
+            opacity: 0.95;
+          }
+          100% {
+            transform: translateX(120%) skewX(-12deg);
+            opacity: 0;
+          }
+        }
+        .animate-card-shine {
+          animation: card-shine 1.8s ease-in-out infinite;
         }
       `}</style>
     </motion.section>

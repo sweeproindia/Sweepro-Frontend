@@ -18,21 +18,24 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 20% 12%;
 
-    --primary: 195 100% 42%; /* Trust-building teal */
+    --primary: 248 100% 34%; /* Trust-building teal */
     --primary-foreground: 0 0% 100%;
-    --primary-light: 195 100% 88%;
-    --primary-gradient: linear-gradient(135deg, hsl(195 100% 42%), hsl(210 100% 56%));
+    --primary-light: 248 100% 94%;
+    --primary-gradient: linear-gradient(135deg, hsl(248 100% 34%), hsl(354 100% 40%));
 
-    --secondary: 210 17% 95%;
-    --secondary-foreground: 210 20% 12%;
+    --secondary: 45 24% 91%;
+    --secondary-foreground: 248 100% 18%;
 
-    --muted: 210 17% 96%;
+    --muted: 45 24% 95%;
     --muted-foreground: 210 16% 46%;
 
-    --accent: 195 100% 88%;
-    --accent-foreground: 195 100% 20%;
+    --accent: 45 24% 91%;
+    --accent-foreground: 248 100% 18%;
 
-    --destructive: 0 84% 60%;
+    --tertiary: 354 100% 40%;
+    --tertiary-foreground: 0 0% 100%;
+
+    --destructive: 354 100% 40%;
     --destructive-foreground: 0 0% 98%;
 
     --success: 142 71% 45%;
@@ -44,20 +47,20 @@
 
     --border: 210 20% 90%;
     --input: 210 20% 94%;
-    --ring: 195 100% 42%;
+    --ring: 248 100% 34%;
 
     --radius: 0.75rem;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(195 100% 42%) 0%, hsl(210 100% 56%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(248 100% 34%) 0%, hsl(354 100% 40%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 17% 98%) 100%);
-    --gradient-feature: linear-gradient(135deg, hsl(195 100% 95%) 0%, hsl(210 100% 95%) 100%);
+    --gradient-feature: linear-gradient(135deg, hsl(45 24% 95%) 0%, hsl(248 100% 97%) 100%);
 
     /* Shadows */
     --shadow-soft: 0 2px 8px -2px hsl(210 20% 12% / 0.08);
     --shadow-medium: 0 4px 16px -4px hsl(210 20% 12% / 0.12);
     --shadow-large: 0 12px 32px -8px hsl(210 20% 12% / 0.16);
-    --shadow-feature: 0 8px 24px -6px hsl(195 100% 42% / 0.15);
+    --shadow-feature: 0 8px 24px -6px hsl(248 100% 34% / 0.15);
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -132,9 +135,10 @@
 @layer components {
   /* Hero Button Variant */
   .btn-hero {
-    @apply bg-gradient-to-r from-primary to-blue-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg;
+    @apply text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg;
     @apply hover:shadow-feature transform hover:-translate-y-1 transition-all duration-300;
     @apply shadow-medium;
+    background: var(--gradient-hero);
   }
 
   /* Feature Card Style */

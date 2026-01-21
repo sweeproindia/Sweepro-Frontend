@@ -17,7 +17,7 @@ import { useUser } from '@/contexts/UserContext';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
 import { BookingService } from '@/services/bookingService';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { useBookingForm, withBookingForm } from '@/contexts/BookingFormContext';
@@ -63,7 +63,7 @@ const enhancedPlans: EnhancedSubscriptionPlan[] = [
     ],
     popular: true,
     icon: Zap,
-    gradient: 'from-[#C0C0C0] to-[#E0E0E0]', // EXACT SILVER GRADIENT
+    gradient: 'from-[#bcdcff] to-[#a9cfff]',
     sessionsPerWeek: 2,
     sessionsPerMonth: 8,
     discountPercent: 0,
@@ -89,7 +89,7 @@ const enhancedPlans: EnhancedSubscriptionPlan[] = [
     ],
     discount: 20,
     icon: Crown,
-    gradient: 'from-[#C0C0C0] to-[#E0E0E0]', // CHANGED TO SILVER GRADIENT
+    gradient: 'from-[#1800ad] to-[#1800ad]',
     sessionsPerWeek: 4,
     sessionsPerMonth: 16,
     discountPercent: 20,
@@ -117,19 +117,9 @@ function SubscriptionPage() {
 
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [animateCounters, setAnimateCounters] = useState(false);
-  const hasAnimated = useRef(false); // Track if counters have animated
 
   useEffect(() => {
     setIsVisible(true);
-    // Only animate counters once when component first mounts
-    if (!hasAnimated.current) {
-      const timer = setTimeout(() => {
-        setAnimateCounters(true);
-        hasAnimated.current = true;
-      }, 800);
-      return () => clearTimeout(timer);
-    }
   }, []);
 
   useEffect(() => {
@@ -198,50 +188,8 @@ function SubscriptionPage() {
   };
 
   const handlePlanSelect = (planId: string) => {
-    navigate(`/subscription/${planId}`);
-  };
-
-  // Counter component that animates only once
-  const Counter = ({
-    end,
-    duration = 2000,
-  }: {
-    end: string | number;
-    duration?: number;
-  }) => {
-    const [count, setCount] = useState<string | number>(0);
-    const hasCounterAnimated = useRef(false);
-
-    useEffect(() => {
-      // Only animate if counters are enabled and haven't animated before
-      if (!animateCounters || hasCounterAnimated.current) return;
-
-      hasCounterAnimated.current = true;
-      let startTime = Date.now();
-
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-
-        if (typeof end === 'string') {
-          if (progress === 1) setCount(end);
-          else {
-            const numericValue = parseFloat(end.replace(/[^0-9.]/g, ''));
-            const currentValue = Math.floor(numericValue * easeOutQuart);
-            setCount(end.includes('%') ? `${currentValue}%` : `${currentValue}K+`);
-          }
-        } else {
-          setCount(Math.floor(end * easeOutQuart));
-        }
-
-        if (progress < 1) requestAnimationFrame(animate);
-      };
-
-      requestAnimationFrame(animate);
-    }, [animateCounters, end, duration]);
-
-    return <span>{count}</span>;
+    const slug = planId === 'standard' ? 'sweeprotouch' : planId === 'premium' ? 'sweeprolux' : planId;
+    navigate(`/subscription/${slug}`);
   };
 
   if (loading) {
@@ -632,6 +580,7 @@ function SubscriptionPage() {
               {enhancedPlans.map((plan, index) => {
                 const IconComponent = plan.icon;
                 const isCurrent = subscription?.plan?.id === plan.id;
+
                 return (
                   <div
                     key={plan.id}
@@ -644,10 +593,24 @@ function SubscriptionPage() {
                     onMouseLeave={() => setHoveredCard(null)}
                   >
                     {/* EXACT CARD DESIGN WITH GLOW EFFECTS FROM PRICING SECTION */}
-                    <Card className={`relative group overflow-hidden border-0 rounded-3xl bg-gradient-to-br ${plan.gradient} backdrop-blur-2xl shadow-2xl transition-all duration-500 ring-2 ring-white/10 hover:ring-white/30 ${hoveredCard === plan.id ? 'scale-105 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]' : 'hover:scale-[1.02]'
-                      } ${plan.popular ? 'shadow-[0_0_50px_rgba(168,85,247,0.4)]' : ''} ${isCurrent ? 'ring-yellow-400/50 shadow-[0_0_30px_rgba(255,215,0,0.3)]' : ''}`}>
-
-                      {/* Current Plan Badge */}
+                    <Card
+                      className={`relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${
+                        plan.gradient
+                      } shadow-2xl ring-2 ring-white/10 transition-all duration-700 will-change-transform h-[420px] ${
+                        hoveredCard === plan.id
+                          ? `scale-[1.06] -translate-y-2 ring-white/40 ${
+                              plan.id === 'standard'
+                                ? 'shadow-[0_35px_90px_-30px_rgba(80,140,255,0.65)]'
+                                : 'shadow-[0_35px_90px_-30px_rgba(24,0,173,0.55)]'
+                            }`
+                          : `${
+                              plan.id === 'standard'
+                                ? 'hover:shadow-[0_30px_80px_-35px_rgba(80,140,255,0.55)]'
+                                : 'hover:shadow-[0_30px_80px_-35px_rgba(24,0,173,0.5)]'
+                            } hover:scale-[1.03] hover:-translate-y-1`
+                      } ${isCurrent ? 'ring-yellow-400/50' : ''}`}
+                    >
+                                           {/* Current Plan Badge */}
                       {isCurrent && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
                           <Badge className="bg-primary text-primary-foreground font-bold">
@@ -656,39 +619,63 @@ function SubscriptionPage() {
                         </div>
                       )}
 
-                      <div className="relative">
+                      <div className="relative h-full flex flex-col">
                         {/* EXACT SHINE EFFECT FROM PRICING SECTION */}
-                        <div className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${hoveredCard === plan.id ? 'opacity-100' : 'opacity-0'} bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-full group-hover:-translate-x-1/2 transition-transform duration-1000 ease-out`}></div>
+                        <div
+                          className={`absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 ${
+                            hoveredCard === plan.id ? 'opacity-100' : ''
+                          } bg-[radial-gradient(900px_circle_at_25%_0%,rgba(255,255,255,0.55),transparent_55%)]`}
+                        />
 
-                        <CardHeader className="text-center pb-8 relative z-10">
+                        <div
+                          className={`absolute -inset-y-16 -left-1/2 w-[200%] pointer-events-none bg-gradient-to-r from-transparent via-white/55 to-transparent blur-md mix-blend-overlay opacity-0 ${
+                            hoveredCard === plan.id ? 'animate-card-shine' : ''
+                          }`}
+                        />
+
+                        <CardHeader className="text-center pt-12 relative z-10">
                           <div className="flex justify-center mb-6">
                             {/* EXACT ICON WITH GLOW EFFECTS FROM PRICING SECTION */}
-                            <div className={`relative p-4 rounded-2xl bg-gradient-to-br ${plan.gradient} shadow-xl ring-4 ring-white/20 group-hover:scale-110 transition-transform duration-300`}
+                            <div
+                              className="relative p-4 rounded-2xl ring-4 ring-white/20 shadow-xl transition-transform duration-300 group-hover:scale-110"
                               style={{
-                                background: plan.id === 'standard' ? 'linear-gradient(135deg, #e5e7eb 60%, #f3f4f6 100%)' : undefined,
-                                boxShadow: hoveredCard === plan.id ? '0 0 32px 8px #fff, 0 0 64px 16px #fff' : '0 4px 32px 0 #0003'
-                              }}>
-                              <IconComponent className={`h-8 w-8 ${plan.id === 'standard' ? 'text-slate-700' : 'text-white'} drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${hoveredCard === plan.id ? 'animate-shine' : 'animate-pulse'}`}
-                                style={{ filter: 'brightness(1.5) drop-shadow(0 0 8px #fff)' }} />
-                              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${plan.id === 'standard' ? 'from-slate-300 to-slate-100' : plan.gradient} blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300`}></div>
-                              {/* Sharp shine effect on hover for icon - EXACT FROM PRICING */}
-                              {hoveredCard === plan.id && (
-                                <div className="absolute inset-0 rounded-2xl pointer-events-none animate-shine-effect" style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.0) 60%)', opacity: 0.8 }}></div>
-                              )}
+                                background:
+                                  plan.id === 'standard'
+                                    ? 'linear-gradient(135deg,#ffffff,#eaf3ff)'
+                                    : 'linear-gradient(135deg,#1800ad,#1800ad)',
+                              }}
+                            >
+                              <IconComponent
+                                className={`h-8 w-8 ${
+                                  plan.id === 'standard' ? 'text-slate-700' : 'text-white'
+                                } drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]`}
+                              />
                             </div>
                           </div>
-                          <CardTitle className={`text-3xl font-bold mb-3 group-hover:scale-105 transition-transform duration-300 ${plan.id === 'standard' ? 'text-black' : 'text-white'}`}>
+
+                          <CardTitle
+                            className={`text-3xl font-bold mb-3 group-hover:scale-105 transition-transform duration-300 ${
+                              plan.id === 'standard' ? 'text-black' : 'text-white'
+                            }`}
+                          >
                             {plan.name}
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-8 relative z-10">
-                          <p className={`text-base text-center mb-2 ${plan.id === 'standard' ? 'text-black' : 'text-blue-100/90'}`}>
+
+                        <CardContent className="px-8 pb-12 space-y-6 relative z-10 flex-1 flex flex-col justify-between">
+                          <p
+                            className={`text-lg text-center ${
+                              plan.id === 'standard' ? 'text-black' : 'text-white/90'
+                            }`}
+                          >
                             {plan.description}
                           </p>
-                          <div className="flex justify-center mt-8">
+
+                          <div className="flex justify-center gap-4">
                             <Button
-                              variant="secondary"
-                              className="px-6 py-2 rounded-full text-base font-semibold shadow-lg hover:bg-white/20 transition-colors duration-300"
+                              className={`rounded-full px-6 !bg-white hover:!bg-[#eeebe3] ${
+                                plan.id === 'premium' ? 'text-[#1800ad]' : 'text-slate-900'
+                              }`}
                               onClick={() => handlePlanSelect(plan.id)}
                             >
                               Learn More
@@ -700,47 +687,6 @@ function SubscriptionPage() {
                   </div>
                 );
               })}
-            </div>
-
-            {/* Stats with EXACT Glow Effects from PricingSection */}
-            <div
-              className={`text-center transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
-                }`}
-              style={{ transitionDelay: '600ms' }}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                {[
-                  { value: '24/7', label: 'Customer Support', icon: Shield, gradient: 'from-sky-400 to-blue-500' },
-                  { value: '10K+', label: 'Happy Customers', icon: Star, gradient: 'from-sky-400 to-blue-500' },
-                  { value: '99.9%', label: 'Satisfaction Rate', icon: Zap, gradient: 'from-sky-400 to-blue-500' },
-                ].map((stat, index) => {
-                  const IconComponent = stat.icon;
-                  return (
-                    <div
-                      key={index}
-                      className="group relative bg-card/50 backdrop-blur-sm rounded-3xl shadow-lg py-10 px-8 border border-border hover:border-primary/30 transition-all duration-500 hover:scale-105 hover:shadow-xl"
-                    >
-                      {/* EXACT BACKGROUND GLOW FROM PRICING SECTION */}
-                      <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
-
-                      <div className="relative z-10">
-                        <div className="flex justify-center mb-4">
-                          {/* EXACT ICON GLOW FROM PRICING SECTION */}
-                          <div className={`p-3 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-xl ring-4 ring-white/20 group-hover:scale-110 transition-transform duration-300`}>
-                            <IconComponent className="h-6 w-6 text-white" />
-                          </div>
-                        </div>
-                        <div className="text-4xl font-black text-foreground mb-3 group-hover:scale-110 transition-transform duration-300">
-                          <Counter end={stat.value} duration={2000 + index * 200} />
-                        </div>
-                        <div className="text-muted-foreground text-sm font-medium">
-                          {stat.label}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           </div>
         </div>
@@ -762,18 +708,21 @@ function SubscriptionPage() {
                   </div>
                   <div className="text-sm text-muted-foreground">Visits Completed</div>
                 </div>
+
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
                     {stats.totalHours}
                   </div>
                   <div className="text-sm text-muted-foreground">Hours of Service</div>
                 </div>
+
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
                     {stats.averageRating}
                   </div>
                   <div className="text-sm text-muted-foreground">Average Rating</div>
                 </div>
+
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
                     ₹
@@ -791,13 +740,24 @@ function SubscriptionPage() {
 
       {/* EXACT CSS FROM PRICING SECTION */}
       <style>{`
-        @keyframes shine-effect {
-          0% { transform: translateX(-100%); opacity: 0; }
-          50% { opacity: 1; }
-          100% { transform: translateX(100%); opacity: 0; }
+        @keyframes card-shine {
+          0% {
+            transform: translateX(-120%) skewX(-12deg);
+            opacity: 0;
+          }
+          15% {
+            opacity: 0.95;
+          }
+          55% {
+            opacity: 0.95;
+          }
+          100% {
+            transform: translateX(120%) skewX(-12deg);
+            opacity: 0;
+          }
         }
-        .animate-shine-effect {
-          animation: shine-effect 1.2s linear;
+        .animate-card-shine {
+          animation: card-shine 1.8s ease-in-out infinite;
         }
       `}</style>
     </DashboardLayout>

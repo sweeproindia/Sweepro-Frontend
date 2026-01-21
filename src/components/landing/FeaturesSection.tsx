@@ -33,8 +33,8 @@ const features = [
 const colorClasses = {
   primary: {
     icon: "text-[#1800ad]",
-    bg: "bg-blue-50 hover:bg-blue-100",
-    ring: "ring-[#1800ad] hover:ring-[#1800ad]",
+    bg: "bg-[#eeebe3] hover:bg-[#eeebe3]/80",
+    ring: "ring-[#1800ad]/30 hover:ring-[#1800ad]/50",
   },
   black: {
     icon: "text-gray-900",
@@ -47,9 +47,9 @@ const colorClasses = {
     ring: "ring-emerald-200 hover:ring-emerald-300",
   },
   blue: {
-    icon: "text-blue-600",
-    bg: "bg-blue-50 hover:bg-blue-100",
-    ring: "ring-blue-200 hover:ring-blue-300",
+    icon: "text-[#1800ad]",
+    bg: "bg-[#eeebe3] hover:bg-[#eeebe3]/80",
+    ring: "ring-[#1800ad]/30 hover:ring-[#1800ad]/50",
   },
   amber: {
     icon: "text-amber-600",
@@ -57,9 +57,9 @@ const colorClasses = {
     ring: "ring-amber-200 hover:ring-amber-300",
   },
   indigo: {
-    icon: "text-indigo-600",
-    bg: "bg-indigo-50 hover:bg-indigo-100",
-    ring: "ring-indigo-200 hover:ring-indigo-300",
+    icon: "text-[#1800ad]",
+    bg: "bg-[#eeebe3] hover:bg-[#eeebe3]/80",
+    ring: "ring-[#1800ad]/30 hover:ring-[#1800ad]/50",
   },
 };
 
@@ -77,13 +77,13 @@ export default function FeaturesSection() {
         {/* Header */}
         <div className="text-center mb-10 sm:mb-20">
           <div className="inline-block mb-4">
-            <span className="bg-blue-100 text-blue-700 px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium tracking-wide">
+            <span className="bg-[#eeebe3] text-[#1800ad] px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium tracking-wide">
               Why Choose Us
             </span>
           </div>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
             Essential Homecare
-            <span className="block text-blue-600">Made Simple</span>
+            <span className="block text-[#1800ad]">Made Simple</span>
           </h2>
           <p className="text-base sm:text-xl text-gray-600 max-w-xs sm:max-w-3xl mx-auto leading-relaxed">
             Experience the difference with our trusted professionals and flexible service options

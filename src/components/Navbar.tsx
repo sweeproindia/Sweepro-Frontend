@@ -116,11 +116,11 @@ export const Navbar = ({
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'admin':
-        return <Shield className="h-4 w-4 text-blue-600" />;
+        return <Shield className="h-4 w-4 text-[#1800ad]" />;
       case 'user':
-        return <User className="h-4 w-4 text-green-600" />;
+        return <User className="h-4 w-4 text-[#1800ad]" />;
       case 'maid':
-        return <MessageCircle className="h-4 w-4 text-orange-600" />;
+        return <MessageCircle className="h-4 w-4 text-[#ca0013]" />;
       default:
         return <Bell className="h-4 w-4 text-gray-600" />;
     }
@@ -129,11 +129,11 @@ export const Navbar = ({
   const getNotificationColor = (type: string) => {
     switch (type) {
       case 'admin':
-        return 'border-l-blue-500 bg-blue-50';
+        return 'border-l-[#1800ad] bg-[#eeebe3]/60';
       case 'user':
-        return 'border-l-green-500 bg-green-50';
+        return 'border-l-[#1800ad] bg-[#eeebe3]/60';
       case 'maid':
-        return 'border-l-orange-500 bg-orange-50';
+        return 'border-l-[#ca0013] bg-[#eeebe3]/60';
       default:
         return 'border-l-gray-500 bg-gray-50';
     }
@@ -220,12 +220,12 @@ export const Navbar = ({
                 <button
                   key={link.href}
                   onClick={() => handleNavLinkClick(link.href)}
-                  className={`font-medium text-[15px] hover:text-blue-600 transition-all duration-200 relative group ${
-                    scrolled ? 'text-gray-800' : 'text-white'
+                  className={`font-medium text-[15px] transition-all duration-200 relative group ${
+                    scrolled ? 'text-gray-800 hover:text-[#1800ad]' : 'text-white hover:text-[#eeebe3]'
                   }`}
                 >
                   {link.label}
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#ca0013] transition-all duration-300 group-hover:w-full"></span>
                 </button>
               ))}
             </div>
@@ -237,7 +237,7 @@ export const Navbar = ({
               <div className="flex items-center gap-3">
                 <Button
                   onClick={handleDashboardClick}
-                  className="hidden md:inline-flex rounded-full font-semibold px-6 py-2.5 bg-blue-900 text-white hover:bg-blue-800 transition-all duration-300 shadow-md hover:shadow-lg"
+                  className="hidden md:inline-flex h-11 rounded-full border-2 border-transparent bg-[#1800ad] px-6 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#ca0013] hover:shadow-lg"
                 >
                   Dashboard
                 </Button>
@@ -246,10 +246,10 @@ export const Navbar = ({
                   <Button
                     variant="outline"
                     onClick={toggleUserMenu}
-                    className={`rounded-full font-semibold px-4 py-2.5 transition-all duration-300 flex items-center gap-2 ${
+                    className={`flex h-11 items-center gap-2 rounded-full border-2 px-4 text-sm font-semibold transition-all duration-300 ${
                       scrolled
-                        ? 'border border-blue-900 text-blue-900 hover:bg-blue-50'
-                        : 'border border-white text-white hover:bg-white/20'
+                        ? 'bg-white border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
+                        : 'bg-transparent border-white text-white hover:bg-white/20'
                     }`}
                   >
                     <User className="h-4 w-4" />
@@ -263,14 +263,14 @@ export const Navbar = ({
                         <p className="text-sm font-semibold text-gray-900">{user.name}</p>
                         <p className="text-xs text-gray-500">{user.email}</p>
                         <div className="mt-2">
-                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                          <span className="inline-block px-2 py-1 text-xs font-medium bg-[#eeebe3] text-[#1800ad] rounded-full">
                             {user.role}
                           </span>
                         </div>
                       </div>
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        className="w-full text-left px-4 py-3 text-sm text-[#ca0013] hover:bg-[#ca0013]/10 flex items-center gap-2"
                       >
                         <LogOut className="h-4 w-4" />
                         Logout
@@ -284,10 +284,10 @@ export const Navbar = ({
                 <Link to="/login" className="hidden md:block">
                   <Button
                     variant="outline"
-                    className={`rounded-full font-semibold px-6 py-2.5 transition-all duration-300 ${
+                    className={`h-11 rounded-full border-2 px-6 text-sm font-semibold transition-all duration-300 ${
                       scrolled
-                        ? 'border border-blue-900 text-blue-900 hover:bg-blue-50 hover:text-blue-800'
-                        : 'border-2 border-white bg-transparent text-white hover:bg-white/20 hover:border-white/90'
+                        ? 'border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
+                        : 'border-white bg-transparent text-white hover:border-white/90 hover:bg-white/20'
                     }`}
                   >
                     Login
@@ -296,10 +296,10 @@ export const Navbar = ({
                 {/* Hide Sign Up button on mobile - only show on desktop */}
                 <Link to="/signup" className="hidden md:block">
                   <Button 
-                    className={`rounded-full font-bold px-6 py-2.5 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 ${
+                    className={`h-11 rounded-full border-2 border-transparent px-6 text-sm font-bold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl ${
                       scrolled
-                        ? 'bg-gradient-to-r from-blue-900 to-blue-700 text-white'
-                        : 'bg-white text-blue-900 hover:bg-blue-50'
+                        ? 'bg-[#1800ad] text-white hover:bg-[#ca0013]'
+                        : 'bg-[#eeebe3] text-[#1800ad] hover:bg-white'
                     }`}
                   >
                     Sign Up
@@ -334,7 +334,7 @@ export const Navbar = ({
                   <button
                     key={link.href}
                     type="button"
-                    className="w-full text-left rounded-lg px-4 py-3 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all"
+                    className="w-full text-left rounded-lg px-4 py-3 text-base font-medium text-gray-700 hover:bg-[#eeebe3] hover:text-[#1800ad] transition-all"
                     onClick={() => handleNavLinkClick(link.href)}
                   >
                     {link.label}
@@ -347,7 +347,7 @@ export const Navbar = ({
                 {isAuthenticated && user ? (
                   <>
                     {/* User Info - More compact */}
-                    <div className="rounded-xl bg-gradient-to-r from-blue-900 to-blue-700 px-4 py-3 text-white">
+                    <div className="rounded-xl bg-gradient-to-r from-[#1800ad] to-[#12006b] px-4 py-3 text-white">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center">
                           <User className="h-5 w-5" />
@@ -367,7 +367,7 @@ export const Navbar = ({
                     {/* Mobile Buttons */}
                     <div className="space-y-3">
                       <Button
-                        className="w-full rounded-lg bg-blue-900 text-white py-3 text-sm font-semibold"
+                        className="w-full rounded-lg bg-[#1800ad] text-white py-3 text-sm font-semibold hover:bg-[#ca0013]"
                         onClick={() => {
                           toggleMenu();
                           handleDashboardClick();
@@ -377,7 +377,7 @@ export const Navbar = ({
                       </Button>
                       <Button
                         variant="outline"
-                        className="w-full rounded-lg border-gray-200 text-gray-700 hover:bg-gray-50 py-3 text-sm"
+                        className="w-full rounded-lg border-[#1800ad]/30 text-[#1800ad] hover:bg-[#eeebe3] py-3 text-sm"
                         onClick={() => {
                           handleLogout();
                           toggleMenu();
@@ -393,13 +393,13 @@ export const Navbar = ({
                     <Link to="/login" onClick={toggleMenu}>
                       <Button
                         variant="outline"
-                        className="w-full rounded-lg border-gray-300 text-gray-700 hover:border-blue-500 hover:text-blue-700 py-3 text-sm"
+                        className="w-full rounded-lg border-[#1800ad]/30 text-[#1800ad] hover:bg-[#eeebe3] py-3 text-sm"
                       >
                         Login
                       </Button>
                     </Link>
                     <Link to="/signup" onClick={toggleMenu}>
-                      <Button className="w-full rounded-lg bg-gradient-to-r from-blue-900 to-blue-700 text-white py-3 text-sm font-semibold">
+                      <Button className="w-full rounded-lg bg-[#1800ad] hover:bg-[#ca0013] text-white py-3 text-sm font-semibold">
                         Get Started
                       </Button>
                     </Link>

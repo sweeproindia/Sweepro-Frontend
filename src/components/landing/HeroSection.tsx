@@ -122,7 +122,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             {isAuthenticated ? (
               <>
                 <button
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-blue-900 text-white font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-red-600 active:scale-95 border-2 border-blue-900 ring-2 ring-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-900 min-w-[180px]"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#1800ad] text-white font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-[#ca0013] active:scale-95 border-2 border-[#1800ad] ring-2 ring-[#eeebe3] focus:outline-none focus:ring-4 focus:ring-[#1800ad] min-w-[180px]"
                   onClick={onDashboardClick}
                   style={{ letterSpacing: '1px' }}
                 >
@@ -132,14 +132,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             ) : (
               <>
                 <button
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-blue-900 text-white font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-red-600 active:scale-95 border-2 border-blue-900 ring-2 ring-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-900 min-w-[180px]"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#1800ad] text-white font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-[#ca0013] active:scale-95 border-2 border-[#1800ad] ring-2 ring-[#eeebe3] focus:outline-none focus:ring-4 focus:ring-[#1800ad] min-w-[180px]"
                   onClick={() => navigate('/login')}
                   style={{ letterSpacing: '1px' }}
                 >
                   Hire Me
                 </button>
                 <button
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-blue-50 text-blue-900 font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-white active:scale-95 border-2 border-blue-900 ring-2 ring-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-900 min-w-[180px]"
+                  className="flex items-center justify-center gap-2 sm:gap-3 bg-[#eeebe3] text-[#1800ad] font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-white active:scale-95 border-2 border-[#1800ad] ring-2 ring-[#eeebe3] focus:outline-none focus:ring-4 focus:ring-[#1800ad] min-w-[180px]"
                   onClick={() => navigate('/signup')}
                   style={{ letterSpacing: '1px' }}
                 >
@@ -156,7 +156,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           style={{ minHeight: '0', marginTop: '0' }}
           variants={imageVariant}
         >
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] sm:w-[480px] sm:h-[480px] bg-gradient-to-br from-blue-900 via-blue-50 to-red-600 rounded-full blur-3xl opacity-60 z-0"></div>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] sm:w-[480px] sm:h-[480px] bg-gradient-to-br from-[#1800ad] via-[#eeebe3] to-[#ca0013] rounded-full blur-3xl opacity-60 z-0"></div>
 
           <img
             src="/assets/hero.png"
@@ -164,13 +164,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="w-full max-w-[220px] sm:max-w-[420px] md:max-w-[600px] lg:max-w-[700px] object-contain object-bottom relative z-10"
           />
 
-          {/* Floating Feature Cards (Unchanged) */}
+          {/* Floating Feature Cards */}
           <div
             className="absolute left-0 sm:-left-8 md:-left-32 top-[28%] sm:top-1/4 animate-floating-card"
             style={{ animationDelay: '0.2s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
-              <span className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
+              <span className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#1800ad]">
                 <Sparkles size={32} color="#fff" />
               </span>
               <span className="font-semibold text-gray-900 text-xs sm:text-base">Professional Cleaning</span>
@@ -182,7 +182,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             style={{ animationDelay: '0.5s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
-              <span className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
+              <span className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#1800ad]">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7-7-7-7 7 7 7z"></path></svg>
               </span>
               <span className="font-semibold text-gray-900 text-xs sm:text-base">Cleaning Kit</span>
@@ -194,7 +194,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             style={{ animationDelay: '0.8s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
-              <span className="w-9 h-9 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-900">
+              <span className="w-9 h-9 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#1800ad]">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14.2 18.5 21 12 17.8 5.5 21 7 14.2 2 9.3 9 8.5 12 2"></polygon></svg>
               </span>
               <span className="font-semibold text-gray-900 text-xs sm:text-base">Verified Cleaners</span>

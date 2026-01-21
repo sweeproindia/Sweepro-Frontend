@@ -7,6 +7,7 @@ import { Edit, Camera, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
 import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
 import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface CustomerProfileData {
   id: string;
@@ -61,8 +62,85 @@ export const CustomerProfilePage: React.FC = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Loading profile...</p>
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-32 rounded-md" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <Card className="overflow-hidden">
+                <Skeleton className="h-32 w-full" />
+                <CardContent className="p-6">
+                  <div className="relative -mt-12 mb-4">
+                    <Skeleton className="h-24 w-24 rounded-full" />
+                  </div>
+                  <div className="mb-4 space-y-2">
+                    <Skeleton className="h-7 w-40" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                  <div className="space-y-3 border-t pt-4">
+                    <Skeleton className="h-10 w-full rounded" />
+                    <Skeleton className="h-10 w-full rounded" />
+                    <Skeleton className="h-10 w-full rounded" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-2 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="pt-6 text-center space-y-2">
+                    <Skeleton className="h-9 w-20 mx-auto" />
+                    <Skeleton className="h-4 w-28 mx-auto" />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6 text-center space-y-2">
+                    <Skeleton className="h-9 w-24 mx-auto" />
+                    <Skeleton className="h-4 w-24 mx-auto" />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6 text-center space-y-2">
+                    <Skeleton className="h-9 w-24 mx-auto" />
+                    <Skeleton className="h-4 w-24 mx-auto" />
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-5 w-40" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-5 w-56" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-5 w-36" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </DashboardLayout>
     );

@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { ArrowLeft, Calendar, Check, Clock, CreditCard, Shield, Sparkles, Home, MapPin, CheckCircle, Users, Package } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -7,6 +9,19 @@ import { PaymentService } from '@/services/paymentService';
 import { SubscriptionService } from '@/services/subscriptionService';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
+
+const BRAND = {
+  indigo: '#1800ad',
+  // keep all indigo shades derived from the single brand hex
+  indigoTint: '#1800ad1f'
+} as const;
+
+const INDIGO_STYLES = {
+  gradient: BRAND.indigo,
+  softGradient: `linear-gradient(135deg, ${BRAND.indigo}1f 0%, ${BRAND.indigo}0d 100%)`,
+  subtleSurface: `linear-gradient(135deg, ${BRAND.indigo}14 0%, ${BRAND.indigo}05 100%)`,
+  border: `${BRAND.indigo}26`
+} as const;
 
 // Updated interface to match the detailed subscription plan structure
 interface SubscriptionPlan {
@@ -54,7 +69,7 @@ interface ServiceOptions {
   state: string;
   landmark: string;
   propertyType: 'apartment' | 'bungalow';
-  bhkType: '1bhk' | '2bhk' | '3bhk' | '4bhk' | null;
+  bhkType: '2bhk' | '3bhk' | null;
   squareFeet: number;
   selectedPlanDuration: '1month' | '3month' | '6month' | null;
   finalTotalPrice: number;
@@ -81,10 +96,8 @@ const PROPERTY_TYPES = [
 
 // BHK configurations for display
 const BHK_CONFIGS = [
-  { id: '1bhk' as const, label: '1 BHK' },
   { id: '2bhk' as const, label: '2 BHK' },
   { id: '3bhk' as const, label: '3 BHK' },
-  { id: '4bhk' as const, label: '4+ BHK' },
 ];
 
 // Plan duration options for display
@@ -181,11 +194,20 @@ export default function ReviewPaymentPage() {
 
   if (isLoading || !selectedPlan || !selectedOptions) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      <div
+        className="min-h-screen flex items-center justify-center bg-white"
+        style={{
+          background:
+            `radial-gradient(circle at 12% -10%, ${BRAND.indigo}1f 0%, transparent 60%), radial-gradient(circle at 88% 14%, ${BRAND.indigo}1f 0%, transparent 55%), #ffffff`
+        }}
+      >
         <div className="text-center">
           {isLoading ? (
             <>
-              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <div
+                className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+                style={{ borderColor: BRAND.indigo }}
+              ></div>
               <p className="text-gray-600">Loading your selections...</p>
             </>
           ) : (
@@ -365,7 +387,7 @@ export default function ReviewPaymentPage() {
           latitude: selectedOptions.latitude?.toString() || '',
           longitude: selectedOptions.longitude?.toString() || ''
         },
-        theme: { color: '#3B82F6' },
+        theme: { color: BRAND.indigo },
         modal: {
           ondismiss: () => {
             setIsProcessing(false);
@@ -482,361 +504,409 @@ export default function ReviewPaymentPage() {
       selectedOptions.city,
       selectedOptions.state,
       selectedOptions.pincode
-    ].filter(Boolean);
-    
-    return parts.join(', ') || selectedOptions.address || 'Address not provided';
+    ];
+
+    const formatted = parts.filter(Boolean).join(', ');
+    if (formatted) return formatted;
+
+    return selectedOptions.address || '—';
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <Button 
-          variant="ghost" 
-          className="mb-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50" 
-          onClick={handleBackToOptions}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Options
-        </Button>
+    <div
+      className="relative min-h-screen overflow-hidden text-slate-900"
+      style={{
+        background:
+          `radial-gradient(circle at 10% -12%, ${BRAND.indigo}1f 0%, transparent 60%), radial-gradient(circle at 85% 10%, ${BRAND.indigo}24 0%, transparent 55%), #ffffff`
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at top, ${BRAND.indigo}24, transparent 55%)` }} />
+        <div className="absolute -top-64 right-0 h-[32rem] w-[32rem] rounded-full blur-3xl" style={{ background: `${BRAND.indigo}24` }} />
+        <div className="absolute -bottom-72 left-20 h-[36rem] w-[36rem] rounded-full blur-3xl" style={{ background: `${BRAND.indigo}1f` }} />
+      </div>
 
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-2"> {/* Changed mb-4 to mb-2 to decrease gap */}
-              <img src="public\assets\logo.png" alt='logo' className="h-32 " />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Review & Payment</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">Review your selections and complete the payment to start your cleaning service</p>
+      <div className="relative mx-auto flex max-w-7xl flex-col px-4 pb-24 pt-10 lg:px-10">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <Button
+            variant="ghost"
+            onClick={handleBackToOptions}
+            className="group flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-semibold shadow-sm transition hover:opacity-95"
+            style={{ border: `1px solid ${BRAND.indigo}33`, color: BRAND.indigo }}
+          >
+            <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
+            Back to options
+          </Button>
+
+          <Badge
+            className="rounded-full px-4 py-1"
+            style={{ border: `1px solid ${BRAND.indigo}33`, background: BRAND.indigoTint, color: BRAND.indigo }}
+          >
+            {selectedPlan.name}
+          </Badge>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-8">
-          <div className="lg:col-span-7 space-y-6">
-            {/* Selected Plan with Duration */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Shield className="h-6 w-6 text-blue-600" />
-                  Selected Plan & Duration
+        <section
+          className="mt-10 grid gap-6 rounded-3xl border bg-white/80 px-6 py-10 backdrop-blur"
+          style={{
+            borderColor: INDIGO_STYLES.border,
+            boxShadow: `0 20px 80px -50px ${BRAND.indigo}8c`
+          }}
+        >
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em]"
+              style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12`, color: BRAND.indigo }}
+            >
+              Review · Payment
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+              Finalise your Sweep Pro subscription
+            </h1>
+            <p className="max-w-3xl text-base text-slate-600 md:text-lg">
+              Confirm the property, schedule and billing details for your {selectedPlan.name} plan. When you are ready,
+              settle the secure Razorpay checkout and we will activate your daily concierge cleaning experience.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div
+              className="rounded-2xl border px-4 py-3 text-left"
+              style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: BRAND.indigo }}>Plan cadence</p>
+              <p className="mt-1 text-lg font-semibold" style={{ color: BRAND.indigo }}>{getPlanDurationInfo()?.label}</p>
+              <p className="text-sm" style={{ color: BRAND.indigo }}>{getPlanDurationInfo()?.description}</p>
+            </div>
+            <div
+              className="rounded-2xl border px-4 py-3 text-left"
+              style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: BRAND.indigo }}>Service window</p>
+              <p className="mt-1 text-lg font-semibold" style={{ color: BRAND.indigo }}>{formatDate(selectedOptions.startDate)}</p>
+              <p className="text-sm" style={{ color: BRAND.indigo }}>{selectedOptions.timeSlot} · {DAILY_FREQUENCY.name}</p>
+            </div>
+
+            <div
+              className="rounded-2xl border px-4 py-3 text-left"
+              style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: BRAND.indigo }}>Property</p>
+              <p className="mt-1 text-lg font-semibold" style={{ color: BRAND.indigo }}>{getBhkInfo()?.label}</p>
+              <p className="text-sm" style={{ color: BRAND.indigo }}>{getPropertyTypeInfo()?.name} • {selectedOptions.squareFeet} sq ft</p>
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-12 flex flex-col gap-8 lg:flex-row">
+          <div className="flex-1 space-y-8">
+            <Card className="rounded-3xl border bg-white/90 shadow-xl" style={{ borderColor: INDIGO_STYLES.border }}>
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <Shield className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Selected plan & billing
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">{selectedPlan.name}</h3>
-                    <p className="text-gray-600">{selectedPlan.description}</p>
-                    {selectedPlan.popular && (
-                      <span className="inline-block mt-2 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
-                        Most Popular
-                      </span>
-                    )}
-                    <div className="mt-2">
-                      <span className="inline-block px-2 py-1 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full">
-                        {getPlanDurationInfo()?.label} Plan
-                      </span>
+              <CardContent className="space-y-5">
+                <div
+                  className="flex flex-col gap-4 rounded-2xl border px-5 py-5 md:flex-row md:items-center md:justify-between"
+                  style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}
+                >
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold" style={{ color: BRAND.indigo }}>{selectedPlan.name}</h3>
+                    <p className="max-w-xl text-sm" style={{ color: `${BRAND.indigo}cc` }}>{selectedPlan.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedPlan.popular && (
+                        <Badge
+                          className="rounded-full text-xs font-semibold"
+                          style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12`, color: BRAND.indigo }}
+                        >
+                          Most loved tier
+                        </Badge>
+                      )}
+                      <Badge
+                        className="rounded-full text-xs font-semibold"
+                        style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12`, color: BRAND.indigo }}
+                      >
+                        {getPlanDurationInfo()?.label} plan
+                      </Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">₹{finalTotal.toLocaleString()}</p>
-                    <p className="text-gray-500">{getPlanDurationInfo()?.description}</p>
-                    <p className="text-sm text-gray-400">Before GST</p>
+                  <div className="text-left md:text-right">
+                    <p className="text-3xl font-bold" style={{ color: BRAND.indigo }}>₹{finalTotal.toLocaleString()}</p>
+                    <p className="text-sm" style={{ color: `${BRAND.indigo}b3` }}>{getPlanDurationInfo()?.description}</p>
+                    <p className="text-xs" style={{ color: `${BRAND.indigo}8c` }}>Amount before GST</p>
                   </div>
                 </div>
-                <div className="p-4 bg-green-100 rounded-lg border border-green-200">
-                  <p className="text-sm font-medium text-green-800 mb-1">✨ All-inclusive pricing</p>
-                  <p className="text-sm text-green-700">
-                    This plan covers your {getBhkInfo()?.label} property with daily cleaning service. No hidden charges!
+
+                <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
+                  <p className="text-sm font-semibold" style={{ color: BRAND.indigo }}>Inclusive concierge care</p>
+                  <p className="text-sm" style={{ color: `${BRAND.indigo}cc` }}>
+                    Daily staffing for your {getBhkInfo()?.label} footprint with premium supplies, rotation backups and proactive quality checks.
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Detailed Service Breakdown */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Package className="h-6 w-6 text-purple-600" />
-                  Detailed Service Breakdown
+            <Card className="rounded-3xl border border-slate-200 bg-white/90 shadow-xl">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <Package className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Detailed service breakdown
                 </CardTitle>
-                <p className="text-gray-600 mt-1">Complete breakdown of what's included in your {selectedPlan.name} plan</p>
+                <CardDescription className="text-sm text-slate-600">
+                  Everything bundled with your {selectedPlan.name} experience.
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                {/* Mixed color breakdown cards, alternating blue, orange, green */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent className="space-y-6 text-sm">
+                <div className="grid gap-4 md:grid-cols-2">
                   {(() => {
-                    // List of breakdown items with label, value, and icon
                     const breakdownItems = [
-                      {
-                        label: 'Utensil Cleaning',
-                        value: selectedPlan.serviceBreakdown.utensilCleaning,
-                        icon: <Package className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Floor Cleaning',
-                        value: selectedPlan.serviceBreakdown.floorCleaning,
-                        icon: <Home className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Bathroom Cleaning',
-                        value: selectedPlan.serviceBreakdown.bathroomCleaning,
-                        icon: <Shield className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Home Dusting',
-                        value: selectedPlan.serviceBreakdown.homeDusting,
-                        icon: <Sparkles className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Cleaning Kit',
-                        value: selectedPlan.serviceBreakdown.kitProvided,
-                        icon: <Package className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Timings',
-                        value: selectedPlan.serviceBreakdown.timings,
-                        icon: <Clock className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Backup Guarantee',
-                        value: selectedPlan.serviceBreakdown.backupGuarantee,
-                        icon: <Shield className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Customer Care',
-                        value: selectedPlan.serviceBreakdown.customerCare,
-                        icon: <Users className="h-4 w-4" />,
-                      },
-                      {
-                        label: 'Buffer Days',
-                        value: selectedPlan.serviceBreakdown.bufferDays,
-                        icon: <Calendar className="h-4 w-4" />,
-                        colSpan: true, // Make this card span 2 columns on md+
-                      },
+                      { label: 'Utensil Cleaning', value: selectedPlan.serviceBreakdown.utensilCleaning, icon: Package },
+                      { label: 'Floor Cleaning', value: selectedPlan.serviceBreakdown.floorCleaning, icon: Home },
+                      { label: 'Bathroom Detailing', value: selectedPlan.serviceBreakdown.bathroomCleaning, icon: Shield },
+                      { label: 'Dusting Coverage', value: selectedPlan.serviceBreakdown.homeDusting, icon: Sparkles },
+                      { label: 'Kit & Supplies', value: selectedPlan.serviceBreakdown.kitProvided, icon: Package },
+                      { label: 'Timing Flow', value: selectedPlan.serviceBreakdown.timings, icon: Clock },
+                      { label: 'Backup Promise', value: selectedPlan.serviceBreakdown.backupGuarantee, icon: Shield },
+                      { label: 'Customer Care', value: selectedPlan.serviceBreakdown.customerCare, icon: Users },
+                      { label: 'Buffer Days', value: selectedPlan.serviceBreakdown.bufferDays, icon: Calendar, span: true }
                     ];
-                    // Color schemes
-                    const colorSchemes = [
-                      {
-                        bg: 'bg-gradient-to-r from-blue-50 to-blue-100',
-                        border: 'border-blue-200',
-                        iconBg: 'bg-blue-100',
-                        text: 'text-blue-900',
-                        value: 'text-blue-700',
-                      },
-                      {
-                        bg: 'bg-gradient-to-r from-orange-50 to-orange-100',
-                        border: 'border-orange-200',
-                        iconBg: 'bg-orange-100',
-                        text: 'text-orange-900',
-                        value: 'text-orange-700',
-                      },
-                      {
-                        bg: 'bg-gradient-to-r from-green-50 to-green-100',
-                        border: 'border-green-200',
-                        iconBg: 'bg-green-100',
-                        text: 'text-green-900',
-                        value: 'text-green-700',
-                      },
-                    ];
-                    // Render cards with alternating colors
-                    return breakdownItems.map((item, idx) => {
-                      const color = colorSchemes[idx % colorSchemes.length];
+
+                    return breakdownItems.map((item, index) => {
+                      const Icon = item.icon;
                       return (
                         <div
                           key={item.label}
-                          className={`p-4 rounded-xl ${color.bg} ${color.border} ${item.colSpan ? 'md:col-span-2' : ''}`}
+                          className={`rounded-2xl border ${item.span ? 'md:col-span-2' : ''} px-4 py-4 shadow-sm`}
+                          style={{
+                            borderColor: INDIGO_STYLES.border,
+                            background: INDIGO_STYLES.softGradient
+                          }}
                         >
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className={`${color.iconBg} p-2 rounded-full`}>{item.icon}</div>
-                            <p className={`font-bold ${color.text}`}>{item.label}</p>
+                          <div className="flex items-center gap-3">
+                            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-white/70 text-slate-700">
+                              <Icon className="h-4 w-4" style={{ color: BRAND.indigo }} />
+                            </span>
+                            <span className="text-sm font-semibold text-slate-900">{item.label}</span>
                           </div>
-                          <p className={color.value}>{item.value}</p>
+                          <p className="mt-2 text-sm text-slate-700">{item.value}</p>
                         </div>
                       );
                     });
                   })()}
                 </div>
-                <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200">
-                  <div className="flex items-center gap-3 mb-2">
-                    <CheckCircle className="h-5 w-5 text-emerald-600" />
-                    <p className="font-bold text-emerald-900">Service Summary</p>
+
+                <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                    <p className="font-semibold" style={{ color: BRAND.indigo }}>Service rhythm</p>
                   </div>
-                  <p className="text-emerald-700">
-                    {selectedPlan.sessionsPerWeek} sessions per week • {selectedPlan.sessionsPerMonth} sessions per month
+                  <p className="mt-2" style={{ color: `${BRAND.indigo}cc` }}>
+                    {selectedPlan.sessionsPerWeek} sessions every week • {selectedPlan.sessionsPerMonth} expertly supervised visits each month.
                   </p>
-                  <p className="text-emerald-600 text-sm mt-1">
-                    Consistent daily service with {selectedPlan.cancellation}
-                  </p>
+                  <p className="text-xs" style={{ color: `${BRAND.indigo}99` }}>Flexible rescheduling and two-day cancellation window included.</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Service Schedule & Location */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Clock className="h-6 w-6 text-orange-600" />
-                  Service Schedule & Location
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Time Slot</p>
-                      <p className="text-gray-600">{selectedOptions.timeSlot}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <Calendar className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Start Date</p>
-                      <p className="text-gray-600">{formatDate(selectedOptions.startDate)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Frequency</p>
-                      <p className="text-gray-600">{DAILY_FREQUENCY.name}</p>
-                      <p className="text-xs text-gray-500">{DAILY_FREQUENCY.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                    <MapPin className="h-5 w-5 text-green-600 mt-1" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">Service Address</p>
-                      <p className="text-gray-600 text-sm break-words">{formatAddress()}</p>
-                      {selectedOptions.landmark && (
-                        <p className="text-xs text-gray-500 mt-1">Landmark: {selectedOptions.landmark}</p>
-                      )}
-                      {(selectedOptions.latitude && selectedOptions.longitude) && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          GPS: {selectedOptions.latitude.toFixed(4)}, {selectedOptions.longitude.toFixed(4)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Property Information */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Home className="h-6 w-6 text-orange-600" />
-                  Property Configuration
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg">
-                    <span className="text-2xl">{getPropertyTypeInfo()?.icon}</span>
-                    <div>
-                      <p className="font-semibold text-gray-900">Property Type</p>
-                      <p className="text-gray-600">{getPropertyTypeInfo()?.name}</p>
-                      <p className="text-xs text-gray-500">{getPropertyTypeInfo()?.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg">
-                    <Home className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Property Configuration</p>
-                      <p className="text-gray-600">{getBhkInfo()?.label}</p>
-                      <p className="text-xs text-gray-500">{selectedOptions.squareFeet} sq ft</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-lg">
-                    <Check className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Plan Duration</p>
-                      <p className="text-gray-600">{getPlanDurationInfo()?.label}</p>
-                      <p className="text-xs text-gray-500">With applicable discounts</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 p-4 bg-green-100 rounded-lg border border-green-200">
-                  <p className="text-sm font-medium text-green-800 mb-1">✅ Configuration Complete</p>
-                  <p className="text-sm text-green-700">
-                    Our team will provide daily cleaning service customized for your {getBhkInfo()?.label} {getPropertyTypeInfo()?.name.toLowerCase()} 
-                    of {selectedOptions.squareFeet} sq ft.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Payment Summary */}
-          <div className="lg:col-span-3">
-            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm sticky top-8">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
-                  Payment Summary
+            <Card className="rounded-3xl border border-slate-200 bg-white/90 shadow-xl">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                  >
+                    <Clock className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Schedule & location
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Plan Total ({getPlanDurationInfo()?.label}):</span>
-                    <span className="font-semibold">₹{finalTotal.toLocaleString()}</span>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Preferred slot</p>
+                    <p className="mt-1 text-base font-semibold">{selectedOptions.timeSlot}</p>
+                    <p className="text-xs text-slate-500">Daily rhythm {DAILY_FREQUENCY.description.toLowerCase()}</p>
                   </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Daily Service:</span>
-                    <span className="font-semibold text-green-600">Included</span>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Kick-off date</p>
+                    <p className="mt-1 text-base font-semibold">{formatDate(selectedOptions.startDate)}</p>
+                    <p className="text-xs text-slate-500">Auto-renews with confirmation</p>
                   </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Property Coverage:</span>
-                    <span className="font-semibold text-green-600">Included</span>
-                  </div>
-
-                  <hr className="border-gray-200" />
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-semibold">₹{finalTotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">GST (18%):</span>
-                    <span className="font-semibold">₹{gst.toFixed(0)}</span>
-                  </div>
-                  <hr className="border-gray-300" />
-                  <div className="flex justify-between text-xl font-bold">
-                    <span>Final Amount:</span>
-                    <span className="text-blue-600">₹{totalWithGst.toFixed(0)}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    One-time payment for {getPlanDurationInfo()?.label.toLowerCase()} of service
-                  </p>
                 </div>
 
-                <div className="pt-4 border-t border-gray-200">
-                  <Button 
-                    className="w-full py-4 text-lg font-bold bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200" 
-                    onClick={handleMakePayment} 
-                    disabled={isProcessing}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Service address</p>
+                  <p className="mt-2 text-sm text-slate-700">{formatAddress()}</p>
+                  {selectedOptions.landmark && (
+                    <p className="text-xs text-slate-500">Landmark — {selectedOptions.landmark}</p>
+                  )}
+                  {(selectedOptions.latitude && selectedOptions.longitude) && (
+                    <p className="text-xs text-slate-400">
+                      GPS · {selectedOptions.latitude.toFixed(4)}, {selectedOptions.longitude.toFixed(4)}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border border-slate-200 bg-white/90 shadow-xl">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
                   >
-                    {isProcessing ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>Processing...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <CreditCard className="h-5 w-5 mr-2" />
-                        Pay ₹{totalWithGst.toFixed(0)}
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center mt-3">
-                    🔒 Secure payment powered by Razorpay
-                  </p>
-                  <p className="text-xs text-gray-400 text-center mt-1">
-                    Your payment information is encrypted and secure
+                    <Home className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                  </span>
+                  Property configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: BRAND.indigo }}>Type</p>
+                    <p className="mt-1 text-base font-semibold" style={{ color: BRAND.indigo }}>{getPropertyTypeInfo()?.name}</p>
+                    <p className="text-xs" style={{ color: `${BRAND.indigo}b3` }}>{getPropertyTypeInfo()?.description}</p>
+                  </div>
+
+                  <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: BRAND.indigo }}>Configuration</p>
+                    <p className="mt-1 text-base font-semibold" style={{ color: BRAND.indigo }}>{getBhkInfo()?.label}</p>
+                    <p className="text-xs" style={{ color: `${BRAND.indigo}b3` }}>{selectedOptions.squareFeet} sq ft</p>
+                  </div>
+
+                  <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: BRAND.indigo }}>Plan duration</p>
+                    <p className="mt-1 text-base font-semibold" style={{ color: BRAND.indigo }}>{getPlanDurationInfo()?.label}</p>
+                    <p className="text-xs" style={{ color: `${BRAND.indigo}b3` }}>Savings auto-applied</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
+                  <p className="text-sm font-semibold" style={{ color: BRAND.indigo }}>Configuration locked in</p>
+                  <p className="text-sm" style={{ color: `${BRAND.indigo}cc` }}>
+                    Your Sweep Pro concierge is matched for a {getBhkInfo()?.label?.toLowerCase()} {getPropertyTypeInfo()?.name?.toLowerCase()} with {selectedOptions.squareFeet} sq ft. Adjustments can be made with a quick chat post payment.
                   </p>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          <aside className="lg:w-[360px] lg:flex-shrink-0">
+            <div className="space-y-6">
+              <Card className="rounded-3xl border bg-white shadow-xl" style={{ borderColor: INDIGO_STYLES.border }}>
+                <CardHeader className="space-y-2">
+                  <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
+                    <span
+                      className="flex h-10 w-10 items-center justify-center rounded-full"
+                      style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}12` }}
+                    >
+                      <CreditCard className="h-5 w-5" style={{ color: BRAND.indigo }} />
+                    </span>
+                    Payment summary
+                  </CardTitle>
+                  <CardDescription className="text-sm text-slate-600">
+                    Transparent totals with taxes previewed up-front.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5 text-sm">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Plan total ({getPlanDurationInfo()?.label})</span>
+                      <span className="font-semibold text-slate-900">₹{finalTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Daily concierge staffing</span>
+                      <span className="font-semibold" style={{ color: BRAND.indigo }}>Included</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Supplies & travel</span>
+                      <span className="font-semibold" style={{ color: BRAND.indigo }}>Included</span>
+                    </div>
+
+                    <hr className="border-slate-200" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Subtotal</span>
+                      <span className="font-semibold text-slate-900">₹{finalTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">GST 18%</span>
+                      <span className="font-semibold text-slate-900">₹{gst.toFixed(0)}</span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border px-4 py-3" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
+                    <div className="flex items-center justify-between text-base font-semibold">
+                      <span>Total payable</span>
+                      <span style={{ color: BRAND.indigo }}>₹{totalWithGst.toFixed(0)}</span>
+                    </div>
+
+                    <p className="mt-1 text-xs text-center" style={{ color: `${BRAND.indigo}b3` }}>Charged once for the selected billing cycle</p>
+                  </div>
+
+                  <div className="pt-3">
+                    <Button
+                      className="w-full rounded-2xl py-4 text-lg font-semibold text-white shadow-lg transition hover:shadow-xl"
+                      style={{ background: INDIGO_STYLES.gradient, boxShadow: `0 25px 65px -30px ${BRAND.indigo}8c` }}
+                      onClick={handleMakePayment}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          Processing…
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <CreditCard className="h-5 w-5" />
+                          Pay ₹{totalWithGst.toFixed(0)}
+                        </span>
+                      )}
+                    </Button>
+                    <p className="mt-3 text-center text-xs text-slate-500">🔒 Secured by Razorpay · Instant confirmation on success</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-3xl border border-slate-200 bg-white shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-base text-slate-900">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+                      <Shield className="h-4 w-4 text-slate-600" />
+                    </span>
+                    Sweep Pro assurance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm text-slate-600">
+                  <div className="flex items-start gap-2">
+                    <Check className="mt-1 h-4 w-4" style={{ color: BRAND.indigo }} />
+
+                    <span>Dedicated relationship manager for rapid reschedules and concierge support.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="mt-1 h-4 w-4" style={{ color: BRAND.indigo }} />
+                    <span>Backup crew commitment within six hours if your primary expert needs a break.</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="mt-1 h-4 w-4" style={{ color: BRAND.indigo }} />
+                    <span>Hospital-grade sanitation and eco-friendly essentials restocked proactively.</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </aside>
         </div>
       </div>
     </div>

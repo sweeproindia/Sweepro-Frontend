@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AuthService, RegisterData } from '@/services/authService';
 import { useUser } from '@/contexts/UserContext';
 
-import { Eye, EyeOff, Home, Lock, Mail, Phone, Shield, Sparkles, User, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Home, Lock, Mail, MapPin, Phone, Shield, Sparkles, User, Loader2, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/services/api';
@@ -297,6 +297,12 @@ export default function SignupPage() {
 
   const isCustomer = formData.role === 'CUSTOMER';
   const isMaid = formData.role === 'MAID';
+  const liveArea = 'Gachibowli';
+  const liveComplexes = SERVICE_ADDRESSES.filter((a) => a.area === liveArea);
+  const liveComplexesToShow = liveComplexes.slice(0, 4);
+
+  const liveComplexesExtraCount = Math.max(0, liveComplexes.length - liveComplexesToShow.length);
+  const comingSoonAreas = ['Kondapur', 'Hitech City', 'Kokapet', 'Madhapur', 'Manikonda', 'Narsingi'];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
@@ -436,7 +442,9 @@ export default function SignupPage() {
                     {fieldErrors.phone && (
                       <p className="text-sm text-red-600">{fieldErrors.phone}</p>
                     )}
-                    <p className="text-xs text-gray-500">10-digit mobile number</p>
+                    <p className="text-xs text-gray-500">
+                      10-digit mobile number
+                    </p>
                   </div>
 
                   {/* Address Section - Different for Customers and Maids */}
@@ -719,7 +727,11 @@ export default function SignupPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-6 text-base font-medium ${isMaid ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  className={`w-full py-6 text-base font-medium ${
+                    isMaid
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-[#1800ad] text-white hover:bg-[#ca0013]'
+                  }`}
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center">
@@ -736,10 +748,18 @@ export default function SignupPage() {
 
                 {/* Login Link */}
                 <div className="text-center text-sm text-gray-600">
-                  Already have an account?{' '}
-                  <Link to="/login" className="font-medium text-blue-600 hover:text-blue-800 hover:underline">
-                    Sign in
-                  </Link>
+                  {!isMaid && (
+                    <div className="mb-2 inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700">
+                      <MapPin className="h-3.5 w-3.5 text-[#1800ad]" />
+                      <span>Now serving {liveArea} • More areas coming soon</span>
+                    </div>
+                  )}
+                  <div>
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                      Sign in
+                    </Link>
+                  </div>
                 </div>
               </form>
             </CardContent>
@@ -748,94 +768,147 @@ export default function SignupPage() {
       </div>
 
       {/* Right Column - Illustration/Info */}
-      <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+      <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-[#1800ad] via-[#12006b] to-[#ca0013] text-white">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-15 blur-3xl"></div>
         </div>
         
-        <div className="relative z-10 flex flex-col justify-center p-12 max-w-lg mx-auto">
-          <div className="mb-8">
-            <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-xl mb-6">
-              <Home className="h-8 w-8" />
+        <div className="relative z-10 flex w-full items-center justify-center px-12 py-14">
+          <div className="w-full max-w-xl">
+            <div className="mb-8">
+              <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-xl mb-6">
+                {isMaid ? <Shield className="h-8 w-8" /> : <MapPin className="h-8 w-8" />}
+              </div>
+              <h2 className="text-4xl font-bold mb-4">
+                {isMaid ? 'Join Our Professional Network!' : `Now serving ${liveArea}`}
+              </h2>
+              <p className="text-lg text-[#eeebe3]/85 mb-8">
+                {isMaid
+                  ? 'Register as a cleaning professional and start accepting jobs from verified customers in premium apartments.'
+                  : 'We are currently live only in Gachibowli. More Hyderabad areas are coming soon.'}
+              </p>
             </div>
-            <h2 className="text-4xl font-bold mb-4">
-              {isMaid ? 'Join Our Professional Network!' : 'Services Available in Your Area!'}
-            </h2>
-            <p className="text-lg text-blue-100 mb-8">
-              {isMaid 
-                ? 'Register as a cleaning professional and start accepting jobs from verified customers in premium apartments.'
-                : 'We currently serve 39 premium apartment complexes across Hyderabad. Select your complex during signup to access our cleaning services.'}
-            </p>
-          </div>
 
-          <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {isMaid ? 'Verified Customers' : 'Verified Communities'}
-                </h3>
-                <p className="text-blue-100">
-                  {isMaid 
-                    ? 'Work with pre-verified customers from premium apartment complexes'
-                    : 'Services available only in pre-approved apartment complexes'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {isMaid ? 'Flexible Schedule' : 'Quality Assured'}
-                </h3>
-                <p className="text-blue-100">
-                  {isMaid 
-                    ? 'Choose your working hours and accept jobs that fit your schedule'
-                    : 'Vetted and background-checked cleaning professionals in your area'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                <User className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">
-                  {isMaid ? 'Competitive Earnings' : 'Area-Specific'}
-                </h3>
-                <p className="text-blue-100">
-                  {isMaid 
-                    ? 'Earn competitive rates with transparent payment system'
-                    : 'Currently serving Hyderabad\'s premium residential communities'}
-                </p>
-              </div>
-            </div>
-          </div>
+            <div className="space-y-6">
+              {isMaid ? (
+                <>
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                      <Shield className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Verified Customers</h3>
+                      <p className="text-[#eeebe3]/85">Work with pre-verified customers from premium apartment communities.</p>
+                    </div>
+                  </div>
 
-          <div className="mt-12 p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
-            <p className="text-sm font-medium">
-              {isMaid 
-                ? "\"Joining Sweepro as a cleaning professional changed my life. I now have steady income and flexible hours!\""
-                : "\"Living in Aparna CyberLife, Sweepro made getting regular cleaning services so convenient!\""}
-            </p>
-            <div className="flex items-center mt-4">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <User className="h-5 w-5" />
-              </div>
-              <div className="ml-3">
-                <p className="font-semibold">
-                  {isMaid ? 'Anjali Verma' : 'Priya Sharma'}
-                </p>
-                <p className="text-sm text-blue-200">
-                  {isMaid ? 'Professional Cleaner, 2 years' : 'Resident, Aparna CyberLife'}
-                </p>
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Flexible Schedule</h3>
+                      <p className="text-[#eeebe3]/85">Choose your working hours and accept jobs that fit your routine.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Competitive Earnings</h3>
+                      <p className="text-[#eeebe3]/85">Earn with a transparent, on-time payment system.</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-white/15 flex items-center justify-center">
+                          <MapPin className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-[#eeebe3]/80">Currently live in</p>
+                          <p className="font-semibold text-lg">{liveArea}, Hyderabad</p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide">
+                        Limited rollout
+                      </span>
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="text-sm font-semibold mb-3">Available communities</p>
+                      <div className="space-y-2">
+                        {liveComplexesToShow.map((c) => (
+                          <div key={c.id} className="flex items-center gap-2 text-sm text-[#eeebe3]/90">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#eeebe3]" />
+                            <span>{c.name}</span>
+                          </div>
+                        ))}
+                        {liveComplexesExtraCount > 0 && (
+                          <div className="text-sm text-[#eeebe3]/80">+ {liveComplexesExtraCount} more</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                      <Shield className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Verified & Trusted</h3>
+                      <p className="text-[#eeebe3]/85">Background-verified professionals and quality-checked service.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div className="w-full">
+                      <h3 className="font-semibold text-lg">Coming soon</h3>
+                      <p className="text-[#eeebe3]/85">Expanding to these Hyderabad areas next.</p>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {comingSoonAreas.map((area) => (
+                          <span
+                            key={area}
+                            className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-semibold text-[#eeebe3]/90"
+                          >
+                            {area}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="mt-12 p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+              <p className="text-sm font-medium">
+                {isMaid 
+                  ? "\"Joining Sweepro as a cleaning professional changed my life. I now have steady income and flexible hours!\""
+                  : `"We are rolling out step-by-step. If you’re outside ${liveArea}, your area will be live soon."`}
+              </p>
+              <div className="flex items-center mt-4">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="ml-3">
+                  <p className="font-semibold">
+                    {isMaid ? 'Anjali Verma' : 'Priya Sharma'}
+                  </p>
+                  <p className="text-sm text-[#eeebe3]/80">
+                    {isMaid ? 'Professional Cleaner, 2 years' : `Resident, ${liveArea}`}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

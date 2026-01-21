@@ -3,65 +3,55 @@
  * Full page view of all notifications with filters and actions
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Bell, 
-  Check, 
   CheckCheck, 
   Trash2, 
-  Filter,
   Wifi,
   WifiOff,
   RefreshCw
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { useClearReadNotificationsMutation, useDeleteNotificationMutation, useMarkAllAsReadMutation, useMarkAsReadMutation, useNotificationsListQuery, useUnreadCountQuery } from '@/features/notifications/hooks';
+import { NotificationEmptyState } from '@/features/notifications/components/NotificationEmptyState';
+import { NotificationSkeletonList } from '@/features/notifications/components/NotificationSkeletonList';
+import { NotificationItem } from '@/features/notifications/components/NotificationItem';
+import type { Notification } from '@/features/notifications/types';
+import { getNotificationHref } from '@/features/notifications/utils';
+import { useNavigate } from 'react-router-dom';
 
 export const NotificationsPage: React.FC = () => {
-  const {
-    notifications,
-    unreadCount,
-    isConnected,
-    loading,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    clearReadNotifications,
-    fetchNotifications,
-  } = useNotifications();
+  const navigate = useNavigate();
+  const { isConnected } = useNotifications();
+
+  const listQuery = useNotificationsListQuery({ limit: 50 });
+  const notifications = useMemo(() => listQuery.data?.notifications ?? [], [listQuery.data]);
+  const { data: unreadCount = 0 } = useUnreadCountQuery();
+
+  const markAllMutation = useMarkAllAsReadMutation();
+  const markReadMutation = useMarkAsReadMutation();
+  const deleteMutation = useDeleteNotificationMutation();
+  const clearReadMutation = useClearReadNotificationsMutation();
 
   const [activeTab, setActiveTab] = useState<string>('all');
 
-  const filteredNotifications = notifications.filter(notif => {
+  const filteredNotifications = notifications.filter((notif) => {
     if (activeTab === 'unread') return !notif.read;
     if (activeTab === 'read') return notif.read;
     return true;
   });
 
-  const getNotificationIcon = (type: string) => {
-    const iconClass = "h-5 w-5";
-    
-    if (type.includes('BOOKING')) return <Bell className={`${iconClass} text-blue-500`} />;
-    if (type.includes('PAYMENT')) return <Bell className={`${iconClass} text-green-500`} />;
-    if (type.includes('MAID') || type.includes('SERVICE')) return <Bell className={`${iconClass} text-purple-500`} />;
-    if (type.includes('SUBSCRIPTION')) return <Bell className={`${iconClass} text-orange-500`} />;
-    if (type.includes('BUFFER')) return <Bell className={`${iconClass} text-yellow-500`} />;
-    
-    return <Bell className={`${iconClass} text-gray-500`} />;
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return format(date, 'MMM d, yyyy • h:mm a');
-  };
-
-  const handleNotificationClick = async (notification: any) => {
+  const handleOpen = async (notification: Notification) => {
     if (!notification.read) {
-      await markAsRead(notification.id);
+      await markReadMutation.mutateAsync(notification.id);
+    }
+
+    const href = getNotificationHref(notification);
+    if (href) {
+      navigate(href);
     }
   };
 
@@ -83,10 +73,10 @@ export const NotificationsPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchNotifications}
-            disabled={loading}
+            onClick={() => listQuery.refetch()}
+            disabled={listQuery.isFetching}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${listQuery.isFetching ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
@@ -103,17 +93,19 @@ export const NotificationsPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={markAllAsRead}
+            onClick={() => markAllMutation.mutate()}
+            disabled={markAllMutation.isPending}
           >
             <CheckCheck className="h-4 w-4 mr-2" />
             Mark all as read
           </Button>
         )}
-        {notifications.some(n => n.read) && (
+        {notifications.some((n) => n.read) && (
           <Button
             variant="outline"
             size="sm"
-            onClick={clearReadNotifications}
+            onClick={() => clearReadMutation.mutate()}
+            disabled={clearReadMutation.isPending}
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Clear read
@@ -136,106 +128,40 @@ export const NotificationsPage: React.FC = () => {
         </TabsList>
 
         <TabsContent value={activeTab} className="space-y-3">
-          {loading ? (
+          {listQuery.isLoading ? (
             <Card>
-              <CardContent className="p-12 text-center">
-                <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground">Loading notifications...</p>
-              </CardContent>
+              <NotificationSkeletonList rows={8} />
             </Card>
           ) : filteredNotifications.length === 0 ? (
             <Card>
-              <CardContent className="p-12 text-center">
-                <Bell className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground" />
-                <p className="text-lg font-medium mb-2">No notifications</p>
-                <p className="text-sm text-muted-foreground">
-                  {activeTab === 'unread' 
-                    ? "You're all caught up!"
+              <NotificationEmptyState
+                title="No notifications"
+                description={
+                  activeTab === 'unread'
+                    ? "You're all caught up."
                     : activeTab === 'read'
-                    ? "No read notifications"
-                    : "You don't have any notifications yet"}
-                </p>
-              </CardContent>
+                    ? "No read notifications."
+                    : "You don't have any notifications yet."
+                }
+              />
             </Card>
           ) : (
-            filteredNotifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  !notification.read ? 'border-l-4 border-l-blue-500 bg-blue-50/30 dark:bg-blue-950/20' : ''
-                }`}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-start gap-4">
-                    <div className="mt-1">
-                      {getNotificationIcon(notification.type)}
+            <Card>
+              <CardContent className="p-0">
+                <div role="list" aria-label="Notifications">
+                  {filteredNotifications.map((notification) => (
+                    <div key={notification.id} role="listitem">
+                      <NotificationItem
+                        notification={notification}
+                        onOpen={handleOpen}
+                        onDelete={(id) => deleteMutation.mutate(id)}
+                        showUnreadDot={activeTab !== 'read'}
+                      />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <CardTitle className="text-base">
-                              {notification.title}
-                            </CardTitle>
-                            {!notification.read && (
-                              <Badge variant="default" className="text-xs">New</Badge>
-                            )}
-                          </div>
-                          <CardDescription className="text-sm">
-                            {formatTime(notification.createdAt)}
-                          </CardDescription>
-                        </div>
-                        <div className="flex gap-2">
-                          {!notification.read && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markAsRead(notification.id);
-                              }}
-                              title="Mark as read"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteNotification(notification.id);
-                            }}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{notification.message}</p>
-                  {notification.data && Object.keys(notification.data).length > 0 && (
-                    <div className="mt-3 p-3 bg-muted rounded-md">
-                      <p className="text-xs font-medium mb-2">Additional Details:</p>
-                      <div className="space-y-1">
-                        {Object.entries(notification.data).map(([key, value]) => (
-                          <div key={key} className="flex gap-2 text-xs">
-                            <span className="font-medium capitalize">{key}:</span>
-                            <span className="text-muted-foreground">
-                              {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
       </Tabs>

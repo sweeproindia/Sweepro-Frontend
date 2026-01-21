@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Sparkles, User, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Clock, Eye, EyeOff, Loader2, Lock, Mail, MapPin, Shield, Sparkles, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthService } from '@/services/authService';
@@ -16,6 +16,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const liveArea = 'Gachibowli';
+  const comingSoonAreas = ['Kondapur', 'Hitech City', 'Kokapet', 'Madhapur', 'Manikonda', 'Narsingi'];
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const {
@@ -74,7 +78,7 @@ export default function LoginPage() {
 
         toast({
           title: 'Login successful!',
-          description: `Welcome to Sweep-Pro, ${user.name}!`,
+          description: `Welcome to Sweepro, ${user.name}!`,
         });
 
         await navigateAfterAuth(user);
@@ -133,7 +137,7 @@ export default function LoginPage() {
 
           <Card className="border-none shadow-lg">
             <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Sweep-Pro</CardTitle>
+              <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Sweepro</CardTitle>
               <CardDescription className="text-gray-600">
                 Sign in with email/password or Google
               </CardDescription>
@@ -188,7 +192,11 @@ export default function LoginPage() {
                   </Link>
                 </div>
 
-                <Button type="submit" disabled={isEmailLoading || isLoading} className="w-full py-6 text-base font-medium">
+                <Button
+                  type="submit"
+                  disabled={isEmailLoading || isLoading}
+                  className="w-full py-6 text-base font-medium bg-[#1800ad] text-white hover:bg-[#ca0013]"
+                >
                   {isEmailLoading ? (
                     <span className="flex items-center justify-center">
                       <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
@@ -239,6 +247,10 @@ export default function LoginPage() {
               </div>
 
               <div className="text-center text-sm text-gray-600">
+                <div className="mb-2 inline-flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700">
+                  <MapPin className="h-3.5 w-3.5 text-[#1800ad]" />
+                  <span>Now serving {liveArea} • More areas coming soon</span>
+                </div>
                 New here?{' '}
                 <Link to="/signup" className="font-medium text-blue-600 hover:text-blue-700">
                   Create an account
@@ -250,53 +262,70 @@ export default function LoginPage() {
       </div>
 
       {/* Right Column - Illustration/Info */}
-      <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+      <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-[#1800ad] via-[#12006b] to-[#ca0013] text-white">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-15 blur-3xl"></div>
         </div>
-        
-        <div className="relative z-10 flex flex-col justify-center p-12 max-w-lg mx-auto">
-          <div className="mb-8">
-            <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-xl mb-6">
-              <Sparkles className="h-8 w-8" />
-            </div>
-            <h2 className="text-4xl font-bold mb-4">
-              Welcome to Sweep-Pro!
-            </h2>
-            <p className="text-lg text-blue-100 mb-8">
-              Your trusted platform for professional cleaning services. Sign in with Google to get started.
-            </p>
-          </div>
 
-          <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                <Shield className="h-5 w-5" />
+        <div className="relative z-10 flex w-full items-center justify-center px-12 py-14">
+          <div className="w-full max-w-xl">
+            <div className="mb-8">
+              <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-xl mb-6">
+                <MapPin className="h-8 w-8" />
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">Secure Authentication</h3>
-                <p className="text-blue-100">Your account is protected with Google's secure authentication</p>
-              </div>
+              <h2 className="text-4xl font-bold mb-4">{`Now serving ${liveArea}`}</h2>
+              <p className="text-lg text-[#eeebe3]/85 mb-8">
+                We are currently live only in Gachibowli. More Hyderabad areas are coming soon.
+              </p>
             </div>
-            
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                <User className="h-5 w-5" />
+
+            <div className="space-y-6">
+              <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-white/15 flex items-center justify-center">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#eeebe3]/80">Currently live in</p>
+                      <p className="font-semibold text-lg">{liveArea}, Hyderabad</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide">
+                    Limited rollout
+                  </span>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">Quick Setup</h3>
-                <p className="text-blue-100">Complete your profile in seconds and start using our services</p>
+
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Verified & Trusted</h3>
+                  <p className="text-[#eeebe3]/85">Background-verified professionals and quality-checked service.</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Easy Access</h3>
-                <p className="text-blue-100">One-click sign-in with your Google account</p>
+
+              <div className="flex items-start space-x-4">
+                <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div className="w-full">
+                  <h3 className="font-semibold text-lg">Coming soon</h3>
+                  <p className="text-[#eeebe3]/85">Expanding to these Hyderabad areas next.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {comingSoonAreas.map((area) => (
+                      <span
+                        key={area}
+                        className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-semibold text-[#eeebe3]/90"
+                      >
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -68,8 +68,8 @@ const testimonials: Testimonial[] = [
 const TestimonialCard: React.FC<{ testimonial: Testimonial; isEven: boolean }> = ({ testimonial, isEven }) => (
   <div className={`rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-300 ease-in-out mb-4 hover:scale-105 hover:-rotate-1 hover:shadow-xl hover:z-10 ${
     isEven 
-      ? 'bg-[#1455FD] text-white' 
-      : 'bg-[#F5F5F5] text-gray-800'
+      ? 'bg-[#1800ad] text-white' 
+      : 'bg-[#eeebe3] text-gray-800'
   }`}>
     <div className="flex items-center mb-3 sm:mb-4" >
       <img 
@@ -142,7 +142,7 @@ export default function TestimonialsSection() {
           They Satisfied With Our Service
         </h1>
         <div className="md:text-right text-center">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1455FD] mb-2">Testimonials</h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#1800ad] mb-2">Testimonials</h2>
           <p className="text-sm sm:text-base text-gray-600 max-w-xs mx-auto md:mx-0">"Have many related needs, we present a suitable package for you needs"</p>
         </div>
       </div>
