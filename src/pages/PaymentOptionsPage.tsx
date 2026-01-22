@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
+import { apiRequest, API_ENDPOINTS, HttpMethod, getAuthTokenType } from '@/services/api';
+
+import { AuthService, Apartment } from '@/services/authService';
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,7 +25,7 @@ const BRAND = {
   indigo: '#1800ad',
   // keep all indigo shades derived from the single brand hex
   indigoTint: '#1800ad',
-} as const;
+};
 
 const INDIGO_STYLES = {
   gradient: BRAND.indigo,
@@ -125,7 +127,7 @@ interface SubscriptionPlan {
 }
 
 type PropertyTypeId = 'apartment' | 'bungalow';
-type BhkId = '2bhk' | '3bhk';
+type BhkId = '2bhk' | '3bhk' | '4bhk';
 type PlanDurationId = '1month' | '3month' | '6month';
 
 interface PlanDuration {
@@ -163,14 +165,9 @@ interface ServiceOptions {
   timeSlot: string;
   startDate: string;
   address: string;
-  latitude?: number;
-  longitude?: number;
-  pincode: string;
-  locality: string;
-  addressLine: string;
-  city: string;
-  state: string;
-  landmark: string;
+  apartmentId: string;
+  apartmentNumber: string;
+  floorNumber: string;
   propertyType: PropertyTypeId;
   bhkType: BhkId | null;
   squareFeet: number;
@@ -338,13 +335,56 @@ const DEFAULT_BHK_CONFIGS: BhkConfig[] = [
           '3month': 7093,
           '6month': 6719
         }
-      },{
-        value: 3109,
-        range: '3010 - 3410 sq ft',
+      },
+      {
+        value: 3310,
+        range: '3210 - 3410 sq ft',
         pricing: {
           '1month': 7642,
           '3month': 7250,
           '6month': 6859
+        }
+      }
+    ]
+  },
+  {
+    id: '4bhk',
+    label: '4 BHK',
+    sqftOptions: [
+      {
+        value: 3606,
+        range: '3506 - 3706 sq ft',
+        pricing: {
+          '1month': 8240,
+          '3month': 7830,
+          '6month': 7420
+        }
+      },
+      {
+        value: 3807,
+        range: '3707 - 3907 sq ft',
+        pricing: {
+          '1month': 8440,
+          '3month': 8010,
+          '6month': 7580
+        }
+      },
+      {
+        value: 4008,
+        range: '3908 - 4108 sq ft',
+        pricing: {
+          '1month': 8640,
+          '3month': 8190,
+          '6month': 7740
+        }
+      },
+      {
+        value: 4209,
+        range: '4109 - 4309 sq ft',
+        pricing: {
+          '1month': 8840,
+          '3month': 8370,
+          '6month': 7900
         }
       }
     ]
@@ -471,6 +511,48 @@ const LUX_BHK_CONFIGS: BhkConfig[] = [
         }
       }
     ]
+  },
+  {
+    id: '4bhk',
+    label: '4 BHK',
+    sqftOptions: [
+      {
+        value: 3606,
+        range: '3506 - 3706 sq ft',
+        pricing: {
+          '1month': 10550,
+          '3month': 10050,
+          '6month': 9550
+        }
+      },
+      {
+        value: 3807,
+        range: '3707 - 3907 sq ft',
+        pricing: {
+          '1month': 10850,
+          '3month': 10350,
+          '6month': 9850
+        }
+      },
+      {
+        value: 4008,
+        range: '3908 - 4108 sq ft',
+        pricing: {
+          '1month': 11150,
+          '3month': 10650,
+          '6month': 10150
+        }
+      },
+      {
+        value: 4209,
+        range: '4109 - 4309 sq ft',
+        pricing: {
+          '1month': 11450,
+          '3month': 10950,
+          '6month': 10450
+        }
+      }
+    ]
   }
 ];
 
@@ -487,23 +569,16 @@ const PaymentOptionsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user } = useUser();
-
-  const mapContainerIdRef = useRef(`payment-map-${Date.now()}`);
+  const { user, updateUser } = useUser();
 
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [options, setOptions] = useState<ServiceOptions>({
     timeSlot: '',
     startDate: '',
     address: '',
-    latitude: undefined,
-    longitude: undefined,
-    pincode: '',
-    locality: '',
-    addressLine: '',
-    city: '',
-    state: '',
-    landmark: '',
+    apartmentId: '',
+    apartmentNumber: '',
+    floorNumber: '',
     propertyType: 'apartment',
     bhkType: null,
     squareFeet: 0,
@@ -512,212 +587,149 @@ const PaymentOptionsPage = () => {
     finalTotalPrice: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isMapOpen, setIsMapOpen] = useState(false);
-  const [tempLat, setTempLat] = useState('');
-  const [tempLng, setTempLng] = useState('');
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [addressMode, setAddressMode] = useState<'confirm' | 'edit'>('confirm');
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [isLoadingApartments, setIsLoadingApartments] = useState(false);
+  const [selectedApartmentId, setSelectedApartmentId] = useState<string>('');
+  const [apartmentNumber, setApartmentNumber] = useState('');
+  const [floorNumber, setFloorNumber] = useState('');
 
   const isLuxPlan = selectedPlan?.id === 'premium';
-
-  useEffect(() => {
-    const savedPlan = location.state?.selectedPlan as SubscriptionPlan | undefined;
-    const savedOptions = location.state?.selectedOptions as ServiceOptions | undefined;
-
-    if (savedPlan) {
-      setSelectedPlan(savedPlan);
-      if (savedOptions) {
-        setOptions(savedOptions);
-      }
-      saveToStorage(STORAGE_KEYS.SELECTED_PLAN, savedPlan);
-      if (savedOptions) {
-        saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, savedOptions);
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    const storedPlan = getFromStorage(STORAGE_KEYS.SELECTED_PLAN) as SubscriptionPlan | null;
-    const storedOptions = getFromStorage(STORAGE_KEYS.SERVICE_OPTIONS) as ServiceOptions | null;
-
-    if (storedPlan) {
-      setSelectedPlan(storedPlan);
-      if (storedOptions) {
-        setOptions(storedOptions);
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    const searchParams = new URLSearchParams(location.search);
-    const planIdFromQuery = searchParams.get('planId') ?? 'standard';
-    const fallbackPlan = FALLBACK_PLANS[planIdFromQuery] ?? FALLBACK_PLANS.standard;
-
-    setSelectedPlan(fallbackPlan);
-    saveToStorage(STORAGE_KEYS.SELECTED_PLAN, fallbackPlan);
-    setIsLoading(false);
-  }, [location.search, location.state]);
-
-  useEffect(() => {
-    if (!selectedPlan) return;
-
-    setOptions((prev) => {
-      const nextOptions = { ...prev };
-
-      // Default property configuration for Lux plan
-      if (selectedPlan.id === 'premium') {
-        nextOptions.propertyType = 'apartment';
-        if (!nextOptions.bhkType || !['2bhk', '3bhk'].includes(nextOptions.bhkType)) {
-          nextOptions.bhkType = '2bhk';
-        }
-      } else if (!nextOptions.bhkType) {
-        nextOptions.bhkType = '2bhk';
-      }
-
-      // Default start date to tomorrow if empty
-      if (!nextOptions.startDate) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        nextOptions.startDate = tomorrow.toISOString().split('T')[0];
-      }
-
-      if (!nextOptions.timeSlot) {
-        nextOptions.timeSlot = TIME_SLOTS[2];
-      }
-
-      return nextOptions;
-    });
-  }, [selectedPlan]);
-
-  const bhkConfigs = useMemo<BhkConfig[]>(() => {
-    if (!selectedPlan) return [];
-    if (selectedPlan.id === 'premium' && options.propertyType === 'apartment') {
-      return LUX_BHK_CONFIGS;
-    }
-    return DEFAULT_BHK_CONFIGS;
-  }, [options.propertyType, selectedPlan]);
-
-  const selectedBhkConfig = useMemo(() => {
-    return bhkConfigs.find((config) => config.id === options.bhkType) ?? bhkConfigs[0] ?? null;
-  }, [bhkConfigs, options.bhkType]);
-
-  const selectedSqftOption = useMemo(() => {
-    if (!selectedBhkConfig) return null;
-    return (
-      selectedBhkConfig.sqftOptions.find((opt) => opt.value === options.squareFeet) ??
-      selectedBhkConfig.sqftOptions[0] ??
-      null
-    );
-  }, [options.squareFeet, selectedBhkConfig]);
-
-  useEffect(() => {
-    if (!selectedBhkConfig) return;
-
-    setOptions((prev) => {
-      const next = { ...prev };
-      if (!prev.bhkType || prev.bhkType !== selectedBhkConfig.id) {
-        next.bhkType = selectedBhkConfig.id;
-      }
-
-      if (!selectedSqftOption) {
-        const defaultSqft = selectedBhkConfig.sqftOptions[0];
-        next.squareFeet = defaultSqft.value;
-        next.squareFeetLabel = defaultSqft.range;
-      } else {
-        next.squareFeet = selectedSqftOption.value;
-        next.squareFeetLabel = selectedSqftOption.range;
-      }
-
-      return next;
-    });
-  }, [selectedBhkConfig, selectedSqftOption]);
 
   const saveToStorage = (key: string, value: unknown) => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch (err) {
-      console.warn('Failed to write to storage', err);
-    }
+    } catch {}
   };
 
   const getFromStorage = (key: string) => {
     try {
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : null;
-    } catch (err) {
-      console.warn('Failed to read from storage', err);
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
       return null;
     }
   };
 
-  const calculatePlanPrice = (duration: PlanDuration): PlanPriceBreakdown => {
-    if (selectedSqftOption) {
-      const baseMonthly = selectedSqftOption.pricing['1month'];
-      const monthlyBaseCost = selectedSqftOption.pricing[duration.id];
-      const totalBeforeDiscount = Math.round(baseMonthly * duration.multiplier);
-      const discountAmount = Math.max(baseMonthly - monthlyBaseCost, 0);
-      const discountPercent = baseMonthly > 0 ? Math.max(Math.round((discountAmount / baseMonthly) * 100), 0) : 0;
-      const finalTotal = Math.round(monthlyBaseCost * duration.multiplier);
+  const parseUnitDetails = (raw: string) => {
+    const aptMatch = raw.match(/\bApt:\s*([^,]+)/i);
+    const floorMatch = raw.match(/\bFloor:\s*([^,]+)/i);
+    return {
+      apartmentNumber: aptMatch?.[1]?.trim() || '',
+      floorNumber: floorMatch?.[1]?.trim() || ''
+    };
+  };
 
-      return {
-        monthlyBaseCost,
-        propertyBaseCost: 0,
-        totalBeforeDiscount,
-        discountPercent,
-        discountAmount,
-        monthlyAfterDiscount: monthlyBaseCost,
-        finalTotal
-      };
+  const buildAddressFromApartment = (apt: Apartment | null, unit: string, floor: string) => {
+    const base = apt ? `${apt.name} - ${apt.area}` : '';
+    return `${base}${unit ? `, Apt: ${unit}` : ''}${floor ? `, Floor: ${floor}` : ''}`;
+  };
+
+  useEffect(() => {
+    try {
+      const savedPlan = (location.state as any)?.selectedPlan as SubscriptionPlan | undefined;
+      const savedOptions = (location.state as any)?.selectedOptions as ServiceOptions | undefined;
+
+      if (savedPlan) {
+        setSelectedPlan(savedPlan);
+        if (savedOptions) {
+          setOptions(savedOptions);
+        }
+        saveToStorage(STORAGE_KEYS.SELECTED_PLAN, savedPlan);
+        if (savedOptions) {
+          saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, savedOptions);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      const storedPlan = getFromStorage(STORAGE_KEYS.SELECTED_PLAN) as SubscriptionPlan | null;
+      const storedOptions = getFromStorage(STORAGE_KEYS.SERVICE_OPTIONS) as ServiceOptions | null;
+
+      if (storedPlan) {
+        setSelectedPlan(storedPlan);
+        if (storedOptions) {
+          setOptions(storedOptions);
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      const searchParams = new URLSearchParams(location.search);
+      const planIdFromQuery = searchParams.get('planId') ?? 'standard';
+      const fallbackPlan = FALLBACK_PLANS[planIdFromQuery] ?? FALLBACK_PLANS.standard;
+
+      setSelectedPlan(fallbackPlan);
+      saveToStorage(STORAGE_KEYS.SELECTED_PLAN, fallbackPlan);
+      setIsLoading(false);
+    } catch {
+      setSelectedPlan(FALLBACK_PLANS.standard);
+      setIsLoading(false);
+    }
+  }, [location.search, location.state]);
+
+  const bhkConfigs = useMemo(() => {
+    if (options.propertyType !== 'apartment') {
+      return [] as BhkConfig[];
     }
 
-    const selectedProperty = PROPERTY_TYPES.find((type) => type.id === options.propertyType);
-    const basePlanPrice = selectedPlan?.finalPrice ?? selectedPlan?.price ?? 0;
-    const propertyRate = selectedProperty?.pricePerSqFt ?? 0;
-    const propertyBaseCost = Math.round(propertyRate * (selectedSqftOption?.value ?? 0) * 0.1);
-    const monthlyBaseCost = Math.round(basePlanPrice + propertyBaseCost);
-    const discountPercent = duration.discount ?? 0;
-    const discountAmount = Math.round((monthlyBaseCost * discountPercent) / 100);
-    const monthlyAfterDiscount = monthlyBaseCost - discountAmount;
-    const finalTotal = Math.round(monthlyAfterDiscount * duration.multiplier);
+    return isLuxPlan ? LUX_BHK_CONFIGS : DEFAULT_BHK_CONFIGS;
+  }, [isLuxPlan, options.propertyType]);
+
+  const selectedBhkConfig = useMemo(() => {
+    if (!options.bhkType) return null;
+    return bhkConfigs.find((config) => config.id === options.bhkType) ?? null;
+  }, [bhkConfigs, options.bhkType]);
+
+  const selectedSqftOption = useMemo(() => {
+    if (!selectedBhkConfig || !options.squareFeet) return null;
+    return selectedBhkConfig.sqftOptions.find((opt) => opt.value === options.squareFeet) ?? null;
+  }, [options.squareFeet, selectedBhkConfig]);
+
+  const calculatePlanPrice = (duration: PlanDuration): PlanPriceBreakdown => {
+    const monthlyBaseCost =
+      selectedSqftOption?.pricing?.['1month'] ?? selectedPlan?.finalPrice ?? selectedPlan?.price ?? 0;
+
+    const monthlyAfterDiscount =
+      selectedSqftOption?.pricing?.[duration.id] ?? Math.round(monthlyBaseCost * (1 - duration.discount / 100));
+
+    const totalBeforeDiscount = monthlyBaseCost * duration.multiplier;
+    const finalTotal = monthlyAfterDiscount * duration.multiplier;
 
     return {
       monthlyBaseCost,
-      propertyBaseCost,
-      totalBeforeDiscount: monthlyBaseCost,
-      discountPercent,
-      discountAmount,
+      propertyBaseCost: monthlyBaseCost,
+      totalBeforeDiscount,
+      discountPercent: duration.discount,
+      discountAmount: Math.max(0, totalBeforeDiscount - finalTotal),
       monthlyAfterDiscount,
       finalTotal
     };
   };
 
-  useEffect(() => {
-    if (!options.selectedPlanDuration) return;
-    const duration = PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration);
+  const handlePlanDurationSelect = (durationId: PlanDurationId) => {
+    const duration = PLAN_DURATIONS.find((d) => d.id === durationId);
     if (!duration) return;
-
     const pricing = calculatePlanPrice(duration);
-    setOptions((prev) => {
-      if (prev.finalTotalPrice === pricing.finalTotal) {
-        return prev;
-      }
-      const next = { ...prev, finalTotalPrice: pricing.finalTotal };
-      saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, next);
-      return next;
-    });
-  }, [options.selectedPlanDuration, options.propertyType, options.squareFeet, selectedPlan, selectedSqftOption]);
+    setOptions((prev) => ({
+      ...prev,
+      selectedPlanDuration: durationId,
+      finalTotalPrice: pricing.finalTotal
+    }));
+  };
 
   const handlePropertyTypeSelect = (propertyType: PropertyTypeId) => {
     const selectedType = PROPERTY_TYPES.find((type) => type.id === propertyType);
-    if (selectedType?.disabled) {
-      return;
-    }
+    if (selectedType?.disabled) return;
     setOptions((prev) => ({
       ...prev,
       propertyType,
       bhkType: null,
       squareFeet: 0,
-      squareFeetLabel: undefined
+      squareFeetLabel: undefined,
+      selectedPlanDuration: null,
+      finalTotalPrice: 0
     }));
   };
 
@@ -726,35 +738,74 @@ const PaymentOptionsPage = () => {
       ...prev,
       bhkType: bhkId,
       squareFeet: 0,
-      squareFeetLabel: undefined
+      squareFeetLabel: undefined,
+      selectedPlanDuration: null,
+      finalTotalPrice: 0
     }));
   };
 
   const handleSqftSelect = (value: string) => {
-    const sqftValue = Number(value);
+    const sqftValue = Number.parseInt(value, 10);
+    if (Number.isNaN(sqftValue)) return;
     const label = selectedBhkConfig?.sqftOptions.find((opt) => opt.value === sqftValue)?.range;
     setOptions((prev) => ({
       ...prev,
       squareFeet: sqftValue,
-      squareFeetLabel: label
+      squareFeetLabel: label,
+      selectedPlanDuration: null,
+      finalTotalPrice: 0
     }));
   };
 
-  const handlePlanDurationSelect = (durationId: PlanDurationId) => {
-    const duration = PLAN_DURATIONS.find((plan) => plan.id === durationId);
+  useEffect(() => {
+    if (!options.selectedPlanDuration) return;
+    const duration = PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration);
     if (!duration) return;
-
     const pricing = calculatePlanPrice(duration);
-    setOptions((prev) => {
-      const next = {
+    setOptions((prev) => (prev.finalTotalPrice === pricing.finalTotal ? prev : { ...prev, finalTotalPrice: pricing.finalTotal }));
+  }, [calculatePlanPrice, options.selectedPlanDuration]);
+
+  useEffect(() => {
+    const addr = (user as any)?.address || '';
+    const parsed = addr ? parseUnitDetails(addr) : { apartmentNumber: '', floorNumber: '' };
+    setApartmentNumber(parsed.apartmentNumber);
+    setFloorNumber(parsed.floorNumber);
+
+    if (!options.address && addr) {
+      setOptions((prev) => ({
         ...prev,
-        selectedPlanDuration: durationId,
-        finalTotalPrice: pricing.finalTotal
-      };
-      saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, next);
-      return next;
-    });
-  };
+        address: addr
+      }));
+    }
+
+    if (!addr && !options.address) {
+      setAddressMode('edit');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!apartments.length) return;
+    if (selectedApartmentId) return;
+
+    const signupApartmentId = (user as any)?.apartment_id;
+    if (signupApartmentId && apartments.some((a) => a.id === signupApartmentId)) {
+      setSelectedApartmentId(signupApartmentId);
+      return;
+    }
+
+    const raw = options.address || (user as any)?.address || '';
+    if (!raw) return;
+
+    const match = apartments.find(
+      (apt) =>
+        raw.includes(`${apt.name} - ${apt.area}`) ||
+        (raw.includes(apt.name) && raw.includes(apt.area))
+    );
+
+    if (match) {
+      setSelectedApartmentId(match.id);
+    }
+  }, [apartments, options.address, selectedApartmentId, user]);
 
   const handleOptionChange = (field: keyof ServiceOptions, value: string) => {
     setOptions((prev) => ({
@@ -763,82 +814,91 @@ const PaymentOptionsPage = () => {
     }));
   };
 
-  const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: 'Location unavailable',
-        description: 'Your browser does not support geolocation.',
-        variant: 'destructive'
-      });
-      return;
-    }
+  const handleCancelAddressEdit = () => {
+    const addr = (user as any)?.address || '';
+    const parsed = addr ? parseUnitDetails(addr) : { apartmentNumber: '', floorNumber: '' };
+    setApartmentNumber(parsed.apartmentNumber);
+    setFloorNumber(parsed.floorNumber);
 
-    setIsLocating(true);
-    setLocationError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setIsLocating(false);
-        const { latitude, longitude } = position.coords;
-        setOptions((prev) => ({
-          ...prev,
-          latitude,
-          longitude
-        }));
-        setTempLat(latitude.toFixed(6));
-        setTempLng(longitude.toFixed(6));
-      },
-      (err) => {
-        setIsLocating(false);
-        setLocationError(err.message);
-      },
-      { enableHighAccuracy: true }
-    );
-  };
-
-  const handleMapSave = () => {
-    const lat = Number(tempLat);
-    const lng = Number(tempLng);
-
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      toast({
-        title: 'Invalid coordinates',
-        description: 'Please provide valid latitude and longitude values.',
-        variant: 'destructive'
-      });
-      return;
+    const signupApartmentId = (user as any)?.apartment_id;
+    if (signupApartmentId && apartments.some((a) => a.id === signupApartmentId)) {
+      setSelectedApartmentId(signupApartmentId);
+    } else {
+      setSelectedApartmentId('');
     }
 
     setOptions((prev) => ({
       ...prev,
-      latitude: lat,
-      longitude: lng
+      address: addr
     }));
-
-    setIsMapOpen(false);
+    setAddressMode('confirm');
   };
 
+  const handleSaveAddress = async () => {
+    const apt = apartments.find((a) => a.id === selectedApartmentId) || null;
+    const nextAddress = buildAddressFromApartment(apt, apartmentNumber, floorNumber);
+
+    setIsSavingAddress(true);
+    try {
+      const tokenType = getAuthTokenType();
+      const endpoint = tokenType === 'firebase' ? '/auth/firebase/update-profile' : API_ENDPOINTS.USER.UPDATE;
+
+      await apiRequest(endpoint, {
+        method: HttpMethod.PUT,
+        requiresAuth: true,
+        body: {
+          address: nextAddress,
+          apartment_id: selectedApartmentId
+        }
+      });
+
+      updateUser({ address: nextAddress, apartment_id: selectedApartmentId } as any);
+      setOptions((prev) => ({
+        ...prev,
+        apartmentId: selectedApartmentId,
+        apartmentNumber,
+        floorNumber,
+        address: nextAddress
+      }));
+      setAddressMode('confirm');
+      toast({
+        title: 'Address updated',
+        description: 'Your service address has been saved.'
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Failed to update address',
+        description: err?.message || 'Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
+
+  const loadApartments = async () => {
+    setIsLoadingApartments(true);
+    try {
+      const response = await AuthService.getApartments();
+      if (response.success && response.data?.apartments) {
+        setApartments(response.data.apartments);
+      }
+    } catch {
+      toast({
+        title: 'Failed to load apartments',
+        description: 'Please refresh and try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoadingApartments(false);
+    }
+  };
+
+  useEffect(() => {
+    loadApartments();
+  }, [toast]);
+
   const handleNext = () => {
-    if (!user) {
-      toast({
-        title: 'Login required',
-        description: 'Please sign in to continue.',
-        variant: 'destructive'
-      });
-      navigate('/login');
-      return;
-    }
-
-    if (!selectedPlan) {
-      toast({
-        title: 'Plan not found',
-        description: 'Please choose a subscription plan again.',
-        variant: 'destructive'
-      });
-      navigate('/subscription');
-      return;
-    }
-
     if (!options.selectedPlanDuration) {
       toast({
         title: 'Select plan duration',
@@ -866,42 +926,25 @@ const PaymentOptionsPage = () => {
       return;
     }
 
-    if (!options.addressLine || !options.city || !options.pincode) {
+    if (!options.address) {
       toast({
         title: 'Complete address details',
-        description: 'Please provide address, city and pincode to continue.',
+        description: 'Please confirm your saved service address to continue.',
         variant: 'destructive'
       });
       return;
     }
 
-    const duration = PLAN_DURATIONS.find((d) => d.id === options.selectedPlanDuration)!;
-    const pricing = calculatePlanPrice(duration);
-
-    const optionsToPersist: ServiceOptions = {
-      ...options,
-      finalTotalPrice: pricing.finalTotal,
-      squareFeetLabel: options.squareFeetLabel ?? selectedSqftOption?.range
-    };
-
     saveToStorage(STORAGE_KEYS.SELECTED_PLAN, selectedPlan);
-    saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, optionsToPersist);
+    saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, options);
 
     navigate('/review-payment', {
       state: {
         selectedPlan,
-        selectedOptions: optionsToPersist
+        selectedOptions: options
       }
     });
   };
-
-  const handleBack = () => {
-    navigate(-1);
-  };
-
-  const handleDashboard=()=>{
-    navigate('/');
-  }
 
   if (isLoading || !selectedPlan) {
     return (
@@ -913,7 +956,6 @@ const PaymentOptionsPage = () => {
           />
           <p className="text-slate-500">Loading your plan details...</p>
         </div>
-        {locationError && <p className="text-sm" style={{ color: BRAND.indigo }}>{locationError}</p>}
       </div>
     );
   }
@@ -940,7 +982,7 @@ const PaymentOptionsPage = () => {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <Button
             variant="ghost"
-            onClick={handleBack}
+            onClick={() => navigate(-1)}
             className="group flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium shadow-sm transition"
             style={{
               border: `1px solid ${BRAND.indigo}33`,
@@ -1078,7 +1120,7 @@ const PaymentOptionsPage = () => {
                       color: BRAND.indigo
                     }}
                   >
-                    <Sparkles className="mt-0.5 h-4 w-4" style={{ color: BRAND.indigo }} /> Sweepro Lux apartment plans are calibrated for premium 2 and 3 BHK layouts. Choose from curated size ranges below for tailored staffing.
+                    <Sparkles className="mt-0.5 h-4 w-4" style={{ color: BRAND.indigo }} /> Sweepro Lux apartment plans are calibrated for premium 2, 3 and 4 BHK layouts. Choose from curated size ranges below for tailored staffing.
                   </p>
                 )}
               </CardContent>
@@ -1134,12 +1176,8 @@ const PaymentOptionsPage = () => {
                           className="flex w-full flex-col gap-3 rounded-2xl border px-5 py-5 text-left transition"
                           style={{
                             border: `1px solid ${isActive ? `${BRAND.indigo}70` : '#e2e8f0'}`,
-                            background: isActive
-                              ? `linear-gradient(135deg, ${BRAND.indigo}14 0%, ${BRAND.indigo}05 100%)`
-                              : '#ffffff',
-                            boxShadow: isActive
-                              ? `0 25px 60px -35px ${BRAND.indigo}59`
-                              : undefined
+                            background: isActive ? `linear-gradient(135deg, ${BRAND.indigo}14 0%, ${BRAND.indigo}05 100%)` : '#ffffff',
+                            boxShadow: isActive ? `0 25px 60px -35px ${BRAND.indigo}59` : '0 1px 0 rgba(15,23,42,0.05)'
                           }}
                         >
                           <div>
@@ -1151,21 +1189,26 @@ const PaymentOptionsPage = () => {
                             </p>
                           </div>
                           <div className="flex flex-col gap-1 text-sm">
-                            <span className="text-base font-semibold" style={{ color: BRAND.indigo }}>
-                              ₹{option.pricing['1month'].toLocaleString()}{' '}
-                              <span className="text-xs font-medium" style={{ color: `${BRAND.indigo}c2` }}>/ month</span>
-                            </span>
-                            <Badge
-                              variant="outline"
-                              className="w-fit text-xs"
-                              style={{
-                                border: `1px solid ${BRAND.indigo}55`,
-                                background: `${BRAND.indigo}0f`,
-                                color: BRAND.indigo
-                              }}
-                            >
-                              3 Months ₹{option.pricing['3month'].toLocaleString()}
-                            </Badge>
+                            {isActive ? (
+                              <>
+                                <span className="text-base font-semibold" style={{ color: BRAND.indigo }}>₹{option.pricing['1month'].toLocaleString()}{' '}
+                                  <span className="text-xs font-medium" style={{ color: `${BRAND.indigo}c2` }}>/ month</span>
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className="w-fit text-xs"
+                                  style={{
+                                    border: `1px solid ${BRAND.indigo}55`,
+                                    background: `${BRAND.indigo}0f`,
+                                    color: BRAND.indigo
+                                  }}
+                                >
+                                  3 Months ₹{option.pricing['3month'].toLocaleString()}
+                                </Badge>
+                              </>
+                            ) : (
+                              <span className="text-xs font-medium uppercase tracking-[0.3em] text-slate-400">Select to view pricing</span>
+                            )}
                           </div>
                           {isActive && (
                             <span
@@ -1322,109 +1365,124 @@ const PaymentOptionsPage = () => {
                   Service address
                 </CardTitle>
                 <CardDescription className="text-sm text-slate-600">
-                  Drop the exact location. Autofill from GPS or manually tune the address so our crew arrives precisely.
+                  Select your apartment complex and add your apartment/house and floor number.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleUseCurrentLocation}
-                    disabled={isLocating}
-                    className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition disabled:opacity-60"
-                    style={{ borderColor: `${BRAND.indigo}26` }}
-                  >
-                    {isLocating ? 'Locating…' : 'Use current location'}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsMapOpen(true)}
-                    className="rounded-full border px-5 py-2 text-sm font-semibold text-white"
-                    style={{
-                      borderColor: `${BRAND.indigo}33`,
-                      background: INDIGO_STYLES.gradient,
-                      boxShadow: `0 18px 40px -22px ${BRAND.indigo}73`
-                    }}
-                  >
-                    Set on map
-                  </Button>
-                  {options.latitude && options.longitude && (
-                    <Badge
-                      variant="outline"
-                      className="rounded-full px-4 py-1 text-xs font-semibold"
-                      style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}0f`, color: BRAND.indigo }}
-                    >
-                      GPS: {options.latitude.toFixed(4)}, {options.longitude.toFixed(4)}
-                    </Badge>
-                  )}
-                </div>
-
-                {locationError && <p className="text-sm font-medium" style={{ color: BRAND.indigo }}>{locationError}</p>}
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Pincode</label>
-                    <Input
-                      value={options.pincode}
-                      onChange={(event) => handleOptionChange('pincode', event.target.value)}
-                      placeholder="110001"
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                    />
+                {addressMode === 'confirm' ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Saved address</p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">{options.address || 'No address found'}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setAddressMode('edit')}
+                        className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition"
+                        style={{ borderColor: `${BRAND.indigo}26` }}
+                      >
+                        Edit address
+                      </Button>
+                      <Badge
+                        variant="outline"
+                        className="rounded-full px-4 py-1 text-xs font-semibold"
+                        style={{ border: `1px solid ${BRAND.indigo}33`, background: `${BRAND.indigo}0f`, color: BRAND.indigo }}
+                      >
+                        Confirmed
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Locality</label>
-                    <Input
-                      value={options.locality}
-                      onChange={(event) => handleOptionChange('locality', event.target.value)}
-                      placeholder="Area / Locality"
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                    />
+                ) : (
+                  <div className="space-y-5">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="md:col-span-2 space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Apartment complex</label>
+                        {isLoadingApartments ? (
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                            Loading apartments…
+                          </div>
+                        ) : (
+                          <Select value={selectedApartmentId} onValueChange={(value) => {
+                            setSelectedApartmentId(value);
+                            const apt = apartments.find((a) => a.id === value);
+                            if (apt) {
+                              setOptions((prev) => ({
+                                ...prev,
+                                apartmentId: value,
+                                address: buildAddressFromApartment(apt, apartmentNumber, floorNumber)
+                              }));
+                            }
+                          }}>
+                            <SelectTrigger className="rounded-xl border border-slate-200 bg-white text-left text-slate-800">
+                              <SelectValue placeholder="Select your apartment complex" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60 border border-slate-200 bg-white text-slate-800">
+                              {apartments.map((apt) => (
+                                <SelectItem key={apt.id} value={apt.id} className="py-3">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{apt.name}</span>
+                                    <span className="text-xs text-slate-500">{apt.area}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Apartment/House number</label>
+                        <Input
+                          value={apartmentNumber}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setApartmentNumber(value);
+                            const apt = apartments.find((a) => a.id === selectedApartmentId) || null;
+                            if (apt) {
+                              setOptions((prev) => ({ ...prev, address: buildAddressFromApartment(apt, value, floorNumber) }));
+                            }
+                          }}
+                          placeholder="e.g., 203, Tower B"
+                          className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Floor number</label>
+                        <Input
+                          value={floorNumber}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setFloorNumber(value);
+                            const apt = apartments.find((a) => a.id === selectedApartmentId) || null;
+                            if (apt) {
+                              setOptions((prev) => ({ ...prev, address: buildAddressFromApartment(apt, apartmentNumber, value) }));
+                            }
+                          }}
+                          placeholder="e.g., 2nd Floor"
+                          className="rounded-xl border border-slate-200 bg-white text-slate-800"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={handleCancelAddressEdit}
+                        className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition"
+                        style={{ borderColor: `${BRAND.indigo}26` }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSaveAddress}
+                        disabled={isSavingAddress}
+                        className="rounded-full px-6 text-white hover:opacity-95 disabled:opacity-60"
+                        style={{ background: INDIGO_STYLES.gradient }}
+                      >
+                        {isSavingAddress ? 'Saving…' : 'Save address'}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Address (area & street)</label>
-                    <Input
-                      value={options.addressLine}
-                      onChange={(event) => handleOptionChange('addressLine', event.target.value)}
-                      placeholder="House no., street"
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">City / Town</label>
-                    <Input
-                      value={options.city}
-                      onChange={(event) => handleOptionChange('city', event.target.value)}
-                      placeholder="City"
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">State</label>
-                    <Input
-                      value={options.state}
-                      onChange={(event) => handleOptionChange('state', event.target.value)}
-                      placeholder="State"
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Landmark (optional)</label>
-                    <Input
-                      value={options.landmark}
-                      onChange={(event) => handleOptionChange('landmark', event.target.value)}
-                      placeholder="Nearby landmark"
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                    />
-                  </div>
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Additional address notes</label>
-                    <Input
-                      value={options.address}
-                      onChange={(event) => handleOptionChange('address', event.target.value)}
-                      placeholder="Apartment, block, other instructions"
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                    />
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1523,53 +1581,16 @@ const PaymentOptionsPage = () => {
         </div>
       </div>
 
-      <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
-        <DialogContent
-          className="sm:max-w-xl rounded-3xl border border-slate-200 bg-white text-slate-900"
-          style={{ boxShadow: `0 45px 90px -40px ${BRAND.indigo}47` }}
+      <div className="flex justify-center pt-10">
+        <Button
+          size="lg"
+          onClick={() => navigate('/')}
+          className="rounded-full border-none px-8 py-6 text-base font-semibold text-slate-900 transition hover:opacity-95"
+          style={{ background: '#ffffff', boxShadow: `0 10px 30px -10px ${BRAND.indigo}4c` }}
         >
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-slate-900">Set location on map</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-100 text-sm text-slate-500">
-              Map preview placeholder (enable integration)
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Latitude</label>
-                <Input
-                  value={tempLat}
-                  onChange={(event) => setTempLat(event.target.value)}
-                  placeholder="17.3850"
-                  className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Longitude</label>
-                <Input
-                  value={tempLng}
-                  onChange={(event) => setTempLng(event.target.value)}
-                  placeholder="78.4867"
-                  className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsMapOpen(false)} className="rounded-full text-slate-600 hover:bg-slate-100">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleMapSave}
-              className="rounded-full px-6 text-white hover:opacity-95"
-              style={{ background: INDIGO_STYLES.gradient }}
-            >
-              Save location
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          Back to dashboard
+        </Button>
+      </div>
     </div>
   );
 };

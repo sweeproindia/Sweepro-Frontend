@@ -69,7 +69,7 @@ interface ServiceOptions {
   state: string;
   landmark: string;
   propertyType: 'apartment' | 'bungalow';
-  bhkType: '2bhk' | '3bhk' | null;
+  bhkType: '2bhk' | '3bhk' | '4bhk' | null;
   squareFeet: number;
   selectedPlanDuration: '1month' | '3month' | '6month' | null;
   finalTotalPrice: number;
@@ -98,6 +98,7 @@ const PROPERTY_TYPES = [
 const BHK_CONFIGS = [
   { id: '2bhk' as const, label: '2 BHK' },
   { id: '3bhk' as const, label: '3 BHK' },
+  { id: '4bhk' as const, label: '4 BHK' },
 ];
 
 // Plan duration options for display

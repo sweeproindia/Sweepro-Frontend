@@ -9,6 +9,10 @@ export interface User {
   phone: string | null;
   role: 'CUSTOMER' | 'MAID' | 'ADMIN' | null;
   apartment_id: string | null;
+  address?: string | null;
+  locality?: string | null;
+  pincode?: string | null;
+  timeSlot?: string | null;
   profile_completed: boolean;
   status: string;
   createdAt: string;
