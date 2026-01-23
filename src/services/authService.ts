@@ -47,8 +47,10 @@ export interface RegisterData {
 
 export interface CompleteProfileData {
   phone: string;
-  apartment_id: string;
   role: 'CUSTOMER' | 'MAID';
+  apartment_id?: string;
+  address?: string;
+  pincode?: string;
 }
 
 export interface Apartment {

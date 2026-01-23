@@ -66,8 +66,8 @@ export default function LandingPage() {
       // User is logged in, navigate directly to subscription details
       navigate(`/subscription-details/${planId}`);
     } else {
-      // User is not logged in, redirect to signup page
-      navigate('/signup');
+      // User is not logged in, redirect to signup page with role preselected as CUSTOMER
+      navigate('/signup?role=CUSTOMER');
     }
   };
 

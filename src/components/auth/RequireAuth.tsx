@@ -43,6 +43,46 @@ export function RequireAuth({ children, requireProfileCompletion = true }: Requi
 }
 
 /**
+ * Guest-only route guard
+ * - If authenticated: redirects to complete-profile (if required) or the correct dashboard
+ * - If not authenticated: allows rendering the public page
+ */
+export function RequireGuest({ children }: { children: JSX.Element }) {
+  const token = getAuthToken();
+  const tokenType = getAuthTokenType();
+  const { user, isLoading, authInitialized } = useUser();
+
+  // While auth is initializing, avoid rendering guest pages if we already have a token.
+  if (!authInitialized) {
+    return token ? null : children;
+  }
+
+  if (isLoading && token) {
+    return null;
+  }
+
+  if (!token || !user) {
+    return children;
+  }
+
+  const shouldEnforceProfileCompletion = tokenType === 'firebase' || Boolean((user as any).firebase_uid);
+
+  if (shouldEnforceProfileCompletion && !user.profile_completed) {
+    return <Navigate to="/complete-profile" replace />;
+  }
+
+  if (user.role === 'ADMIN') {
+    return <Navigate to="/admin-dashboard" replace />;
+  }
+
+  if (user.role === 'MAID') {
+    return <Navigate to="/maid-dashboard" replace />;
+  }
+
+  return <Navigate to="/dashboard" replace />;
+}
+
+/**
  * Route guard that requires specific role
  */
 interface RequireRoleProps {

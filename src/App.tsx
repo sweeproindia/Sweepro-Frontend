@@ -7,7 +7,7 @@ import { UserProvider } from "@/contexts/UserContext";
 import { BookingFormProvider } from "@/contexts/BookingFormContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ScrollToTop from '@/components/ScrollToTop';
-import { RequireAuth, RequireRole } from '@/components/auth/RequireAuth';
+import { RequireAuth, RequireGuest, RequireRole } from '@/components/auth/RequireAuth';
 
 import AdminDashboard from "./pages/AdminDashboard";
 import BookingsPage from "./pages/BookingsPage";
@@ -39,6 +39,9 @@ import AdminFeedbackPage from "./pages/AdminFeedbackPage";
 import CompleteProfilePage from "./pages/CompleteProfilePage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import CookiePolicyPage from "./pages/CookiePolicyPage";
 
 const queryClient = new QueryClient();
 
@@ -56,11 +59,27 @@ const App = () => (
               <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/test-login" element={<TestLoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/login" element={
+                    <RequireGuest>
+                      <LoginPage />
+                    </RequireGuest>
+                  } />
+                  <Route path="/test-login" element={
+                    <RequireGuest>
+                      <TestLoginPage />
+                    </RequireGuest>
+                  } />
+                  <Route path="/signup" element={
+                    <RequireGuest>
+                      <SignupPage />
+                    </RequireGuest>
+                  } />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                  <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  <Route path="/cookies" element={<CookiePolicyPage />} />
                   
                   {/* Profile completion (accessible when authenticated but profile not completed) */}
                   <Route path="/complete-profile" element={

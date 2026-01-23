@@ -92,16 +92,19 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center space-x-3">
                 <Phone className="h-4 w-4 text-[#eeebe3]/80" />
-                <span className="text-[#eeebe3] font-medium">+91 98765 43210</span>
+                <span className="text-[#eeebe3] font-medium">+91 81433 53030</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-[#eeebe3]/80" />
-                <span className="text-[#eeebe3] font-medium">support@cleanease.com</span>
+                <span className="text-[#eeebe3] font-medium">support@sweepro.in</span>
               </li>
               <li className="flex items-start space-x-3">
-                <MapPin className="h-4 w-4 text-[#eeebe3]/80 mt-1" />
-                <span className="text-[#eeebe3] font-medium">
-                  123 Business Park,<br />Mumbai, Maharashtra 400001
+                <MapPin className="h-4 w-4 text-[#eeebe3]/80 mt-0.5" />
+                <span className="text-[#eeebe3] font-medium leading-snug">
+                  <span className="block">Flat No. 519, 5th Floor, B-Block</span>
+                  <span className="block">Saara Homes Residency, Upperpally (Pill No. 174)</span>
+                  <span className="block">Attapur, Hyderabad</span>
+                  <span className="block">Telangana – 500048, India</span>
                 </span>
               </li>
             </ul>

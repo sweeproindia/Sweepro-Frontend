@@ -27,7 +27,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     name: 'Sweepro Touch',
     tagline: 'Sweepro Touch',
     description:
-      'A premium silver plan for medium-sized homes. Enjoy enhanced cleaning and priority service.',
+      'A thoughtfully designed premium cleaning plan that offers reliable, efficient service for a smooth and hassle-free experience.',
     icon: Zap,
     gradient: 'from-[#bcdcff] to-[#a9cfff]',
     features: [
@@ -42,7 +42,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
     name: 'Sweepro Lux',
     tagline: 'Sweepro Lux',
     description:
-      'Ultimate cleaning experience for large homes and villas with luxury service.',
+      'A premium upgrade that delivers superior care, greater attention to detail, and a more personalized cleaning experience.',
     icon: Crown,
     gradient: 'from-[#1800ad] to-[#1800ad]',
     features: [
@@ -74,16 +74,15 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
     >
       {/* Header */}
       <div
-        className={`text-center mb-20 transition-all duration-1000 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-        }`}
+        className={`text-center mb-20 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
       >
         <h2 className="text-6xl font-black bg-gradient-to-r from-[#1800ad] to-[#ca0013] bg-clip-text text-transparent mb-6">
           Home Care, Your Way
         </h2>
         <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-          Experience the future of home cleaning with our AI-powered plans.
-        </p>
+          Experience professional home care with flexible plans, trusted staff, and a service standard
+          you can rely on.        </p>
       </div>
 
       {/* Cards */}
@@ -101,33 +100,27 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                 onMouseLeave={() => setHoveredCard(null)}
               >
                 <Card
-                  className={`relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${
-                    plan.gradient
-                  } shadow-2xl ring-2 ring-white/10 transition-all duration-700 will-change-transform ${
-                    hoveredCard === plan.id
-                      ? `scale-[1.06] -translate-y-2 ring-white/40 ${
-                          plan.id === 'standard'
-                            ? 'shadow-[0_35px_90px_-30px_rgba(80,140,255,0.65)]'
-                            : 'shadow-[0_35px_90px_-30px_rgba(24,0,173,0.55)]'
-                        }`
-                      : `${
-                          plan.id === 'standard'
-                            ? 'hover:shadow-[0_30px_80px_-35px_rgba(80,140,255,0.55)]'
-                            : 'hover:shadow-[0_30px_80px_-35px_rgba(24,0,173,0.5)]'
-                        } hover:scale-[1.03] hover:-translate-y-1`
-                  }`}
+                  className={`relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${plan.gradient
+                    } shadow-2xl ring-2 ring-white/10 transition-all duration-700 will-change-transform ${hoveredCard === plan.id
+                      ? `scale-[1.06] -translate-y-2 ring-white/40 ${plan.id === 'standard'
+                        ? 'shadow-[0_35px_90px_-30px_rgba(80,140,255,0.65)]'
+                        : 'shadow-[0_35px_90px_-30px_rgba(24,0,173,0.55)]'
+                      }`
+                      : `${plan.id === 'standard'
+                        ? 'hover:shadow-[0_30px_80px_-35px_rgba(80,140,255,0.55)]'
+                        : 'hover:shadow-[0_30px_80px_-35px_rgba(24,0,173,0.5)]'
+                      } hover:scale-[1.03] hover:-translate-y-1`
+                    }`}
                 >
                   {/* SHINE */}
                   <div
-                    className={`absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 ${
-                      hoveredCard === plan.id ? 'opacity-100' : ''
-                    } bg-[radial-gradient(900px_circle_at_25%_0%,rgba(255,255,255,0.55),transparent_55%)]`}
+                    className={`absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-500 ${hoveredCard === plan.id ? 'opacity-100' : ''
+                      } bg-[radial-gradient(900px_circle_at_25%_0%,rgba(255,255,255,0.55),transparent_55%)]`}
                   />
 
                   <div
-                    className={`absolute -inset-y-16 -left-1/2 w-[200%] pointer-events-none bg-gradient-to-r from-transparent via-white/55 to-transparent blur-md mix-blend-overlay opacity-0 ${
-                      hoveredCard === plan.id ? 'animate-card-shine' : ''
-                    }`}
+                    className={`absolute -inset-y-16 -left-1/2 w-[200%] pointer-events-none bg-gradient-to-r from-transparent via-white/55 to-transparent blur-md mix-blend-overlay opacity-0 ${hoveredCard === plan.id ? 'animate-card-shine' : ''
+                      }`}
                   />
 
                   {/* FLIP WRAPPER */}
@@ -150,20 +143,18 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                             }}
                           >
                             <Icon
-                              className={`h-8 w-8 ${
-                                plan.id === 'standard'
+                              className={`h-8 w-8 ${plan.id === 'standard'
                                   ? 'text-slate-700'
                                   : 'text-white'
-                              } drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]`}
+                                } drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]`}
                             />
                           </div>
                         </div>
                         <CardTitle
-                          className={`text-3xl font-bold ${
-                            plan.id === 'standard'
+                          className={`text-3xl font-bold ${plan.id === 'standard'
                               ? 'text-black'
                               : 'text-white'
-                          }`}
+                            }`}
                         >
                           {plan.tagline}
                         </CardTitle>
@@ -171,20 +162,18 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
 
                       <CardContent className="px-8 pb-12 space-y-6">
                         <p
-                          className={`text-lg text-center ${
-                            plan.id === 'standard'
+                          className={`text-lg text-center ${plan.id === 'standard'
                               ? 'text-black'
                               : 'text-white/90'
-                          }`}
+                            }`}
                         >
                           {plan.description}
                         </p>
 
                         <div className="flex justify-center gap-4">
                           <Button
-                            className={`rounded-full px-6 !bg-white hover:!bg-[#eeebe3] ${
-                              plan.id === 'premium' ? 'text-[#1800ad]' : 'text-slate-900'
-                            }`}
+                            className={`rounded-full px-6 !bg-white hover:!bg-[#eeebe3] ${plan.id === 'premium' ? 'text-[#1800ad]' : 'text-slate-900'
+                              }`}
                             onClick={() => setFlippedCard(plan.id)}
                           >
                             See More
@@ -197,9 +186,8 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                     <div className="absolute inset-0 backface-hidden rotate-y-180 px-10 py-12 flex flex-col justify-between">
                       <div>
                         <h3
-                          className={`text-3xl font-bold text-center mb-6 ${
-                            plan.id === 'standard' ? 'text-[#1800ad]' : 'text-white'
-                          }`}
+                          className={`text-3xl font-bold text-center mb-6 ${plan.id === 'standard' ? 'text-[#1800ad]' : 'text-white'
+                            }`}
                         >
                           Features
                         </h3>
@@ -208,14 +196,12 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
                           {plan.features.map((f, i) => (
                             <li
                               key={i}
-                              className={`flex items-center gap-3 text-lg ${
-                                plan.id === 'standard' ? 'text-slate-700' : 'text-white'
-                              }`}
+                              className={`flex items-center gap-3 text-lg ${plan.id === 'standard' ? 'text-slate-700' : 'text-white'
+                                }`}
                             >
                               <Check
-                                className={`h-5 w-5 ${
-                                  plan.id === 'standard' ? 'text-[#1800ad]' : 'text-green-400'
-                                }`}
+                                className={`h-5 w-5 ${plan.id === 'standard' ? 'text-[#1800ad]' : 'text-green-400'
+                                  }`}
                               />
                               {f}
                             </li>
@@ -225,17 +211,15 @@ export const PricingSection = ({ onPlanSelect }: PricingSectionProps) => {
 
                       <div className="space-y-3">
                         <Button
-                          className={`w-full rounded-full !bg-white hover:!bg-[#eeebe3] ${
-                            plan.id === 'premium' ? 'text-[#1800ad]' : 'text-slate-900'
-                          }`}
+                          className={`w-full rounded-full !bg-white hover:!bg-[#eeebe3] ${plan.id === 'premium' ? 'text-[#1800ad]' : 'text-slate-900'
+                            }`}
                           onClick={() => onPlanSelect?.(plan.id)}
                         >
                           Buy Now
                         </Button>
                         <button
-                          className={`w-full text-sm underline ${
-                            plan.id === 'standard' ? 'text-[#1800ad]' : 'text-white/80'
-                          }`}
+                          className={`w-full text-sm underline ${plan.id === 'standard' ? 'text-[#1800ad]' : 'text-white/80'
+                            }`}
                           onClick={() => setFlippedCard(null)}
                         >
                           Back

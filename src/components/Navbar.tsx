@@ -142,7 +142,7 @@ export const Navbar = ({
   const navLinks = [
     {
       href: 'about-us',
-      label: 'Services',
+      label: 'About us',
     },
     {
       href: 'how-it-works',

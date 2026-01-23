@@ -1,7 +1,7 @@
 //HeroSection.tsx
 
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { BadgeCheck, Crown, Package } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -99,11 +99,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="text-white text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 leading-snug md:leading-[1.15]"
             variants={framerTitle}
           >
-            Effortless Home<br className="hidden sm:block" />
-            Cleaning,
-            <span className="block mt-2">
-              <AnimatedTypingBlueText text="Every Day." />
-            </span>
+            <span className="block">Expert Home Care</span>
+            <span className="block">You Can Rely On</span>
           </motion.h1>
 
           <motion.p
@@ -171,9 +168,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
               <span className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#1800ad]">
-                <Sparkles size={32} color="#fff" />
+                <Crown className="w-6 h-6 sm:w-5 sm:h-5 text-white" />
               </span>
-              <span className="font-semibold text-gray-900 text-xs sm:text-base">Professional Cleaning</span>
+              <span className="font-semibold text-gray-900 text-xs sm:text-base">Premium Subscriptions</span>
             </div>
           </div>
 
@@ -183,7 +180,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
               <span className="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#1800ad]">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7-7-7-7 7 7 7z"></path></svg>
+                <Package className="w-6 h-6 sm:w-5 sm:h-5 text-white" />
               </span>
               <span className="font-semibold text-gray-900 text-xs sm:text-base">Cleaning Kit</span>
             </div>
@@ -195,9 +192,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">
               <span className="w-9 h-9 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#1800ad]">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14.2 18.5 21 12 17.8 5.5 21 7 14.2 2 9.3 9 8.5 12 2"></polygon></svg>
+                <BadgeCheck className="w-6 h-6 sm:w-5 sm:h-5 text-white" />
               </span>
-              <span className="font-semibold text-gray-900 text-xs sm:text-base">Verified Cleaners</span>
+              <span className="font-semibold text-gray-900 text-xs sm:text-base">Trusted Cleaners</span>
             </div>
           </div>
         </motion.div>

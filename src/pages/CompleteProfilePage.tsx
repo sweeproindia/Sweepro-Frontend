@@ -1,20 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Phone, Home, User, Loader2, AlertCircle } from 'lucide-react';
+import { Phone, Home, User, Loader2, AlertCircle, MapPin } from 'lucide-react';
 import { AuthService, CompleteProfileData, Apartment } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
+import { TermsContent } from '@/components/legal/TermsContent';
 
 export default function CompleteProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user, refreshUser } = useUser();
+
+  const stateRole = (location.state as any)?.role as 'CUSTOMER' | 'MAID' | undefined;
+  const storedRole = (sessionStorage.getItem('selectedRole') as 'CUSTOMER' | 'MAID' | null) ?? undefined;
+  const resolvedRole = stateRole ?? storedRole;
+  const roleLocked = Boolean(resolvedRole);
   
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingApartments, setIsLoadingApartments] = useState(true);
@@ -22,10 +29,22 @@ export default function CompleteProfilePage() {
   const [formData, setFormData] = useState<CompleteProfileData>({
     phone: '',
     apartment_id: '',
-    role: 'CUSTOMER'
+    role: resolvedRole ?? 'CUSTOMER',
+    address: '',
+    pincode: ''
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  const termsScrollRef = useRef<HTMLDivElement | null>(null);
+  const [hasScrolledTerms, setHasScrolledTerms] = useState(false);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+
+  useEffect(() => {
+    if (resolvedRole && formData.role !== resolvedRole) {
+      setFormData((prev) => ({ ...prev, role: resolvedRole }));
+    }
+  }, [resolvedRole, formData.role]);
 
   // Load apartments on mount
   useEffect(() => {
@@ -71,18 +90,39 @@ export default function CompleteProfilePage() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
+    const isCustomer = formData.role === 'CUSTOMER';
+    const isMaid = formData.role === 'MAID';
+
     if (!formData.phone) {
       errors.phone = 'Phone number is required';
     } else if (!/^[6-9]\d{9}$/.test(formData.phone)) {
       errors.phone = 'Invalid phone number. Must be 10 digits starting with 6-9';
     }
 
-    if (!formData.apartment_id) {
+    if (isCustomer && !formData.apartment_id) {
       errors.apartment_id = 'Service address is required';
+    }
+
+    if (isMaid) {
+      if (!formData.address || !String(formData.address).trim()) {
+        errors.address = 'Residential address is required';
+      }
+
+      if (!formData.pincode || !String(formData.pincode).trim()) {
+        errors.pincode = 'Pincode is required';
+      } else if (!/^\d{6}$/.test(String(formData.pincode).trim())) {
+        errors.pincode = 'Enter a valid 6-digit pincode';
+      }
     }
 
     if (!formData.role) {
       errors.role = 'Account type is required';
+    }
+
+    if (!hasScrolledTerms) {
+      errors.terms = 'Please scroll through the Terms & Conditions.';
+    } else if (!hasAcceptedTerms) {
+      errors.terms = 'Please accept the Terms & Conditions to continue.';
     }
 
     setFieldErrors(errors);
@@ -108,6 +148,8 @@ export default function CompleteProfilePage() {
           title: 'Profile completed!',
           description: `Welcome to Sweep-Pro, ${response.data.user.name}!`,
         });
+
+        sessionStorage.removeItem('selectedRole');
 
         // Refresh user context
         await refreshUser();
@@ -152,10 +194,20 @@ export default function CompleteProfilePage() {
   };
 
   const handleInputChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value } as CompleteProfileData;
+
+      if (name === 'role') {
+        if (value === 'CUSTOMER') {
+          next.address = '';
+          next.pincode = '';
+        } else if (value === 'MAID') {
+          next.apartment_id = '';
+        }
+      }
+
+      return next;
+    });
     setFieldErrors(prev => ({ ...prev, [name]: undefined }));
     setFormError(null);
   };
@@ -220,119 +272,216 @@ export default function CompleteProfilePage() {
                 <p className="text-xs text-gray-500">10-digit mobile number</p>
               </div>
 
-              {/* Service Address (Apartment) */}
-              <div className="space-y-2">
-                <Label htmlFor="apartment_id" className="text-sm font-medium text-gray-700">
-                  Service Address <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <Home className="absolute left-3 top-3 h-4 w-4 text-gray-400 z-10" />
-                  {isLoadingApartments ? (
-                    <div className="flex items-center justify-center py-6 border rounded-md">
-                      <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                      <span className="ml-2 text-sm text-gray-500">Loading apartments...</span>
-                    </div>
-                  ) : (
-                    <Select
-                      value={formData.apartment_id}
-                      onValueChange={(value) => handleInputChange('apartment_id', value)}
-                      required
-                    >
-                      <SelectTrigger className={`pl-10 py-6 ${fieldErrors.apartment_id ? 'border-red-500 focus:ring-red-500' : ''}`}>
-                        <SelectValue placeholder="Select your apartment complex" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {Object.entries(apartmentsByArea).map(([area, areaApartments]) => (
-                          <div key={area}>
-                            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
-                              {area}
+              {formData.role === 'CUSTOMER' ? (
+                /* Service Address (Apartment) */
+                <div className="space-y-2">
+                  <Label htmlFor="apartment_id" className="text-sm font-medium text-gray-700">
+                    Service Address <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Home className="absolute left-3 top-3 h-4 w-4 text-gray-400 z-10" />
+                    {isLoadingApartments ? (
+                      <div className="flex items-center justify-center py-6 border rounded-md">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                        <span className="ml-2 text-sm text-gray-500">Loading apartments...</span>
+                      </div>
+                    ) : (
+                      <Select
+                        value={formData.apartment_id ?? ''}
+                        onValueChange={(value) => handleInputChange('apartment_id', value)}
+                        required
+                      >
+                        <SelectTrigger className={`pl-10 py-6 ${fieldErrors.apartment_id ? 'border-red-500 focus:ring-red-500' : ''}`}>
+                          <SelectValue placeholder="Select your apartment complex" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {Object.entries(apartmentsByArea).map(([area, areaApartments]) => (
+                            <div key={area}>
+                              <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+                                {area}
+                              </div>
+                              {areaApartments.map((apt) => (
+                                <SelectItem
+                                  key={apt.id}
+                                  value={apt.id}
+                                  className="py-3"
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{apt.name}</span>
+                                    <span className="text-xs text-gray-500">
+                                      {apt.area} • {apt.pincode}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
                             </div>
-                            {areaApartments.map((apt) => (
-                              <SelectItem
-                                key={apt.id}
-                                value={apt.id}
-                                className="py-3"
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{apt.name}</span>
-                                  <span className="text-xs text-gray-500">
-                                    {apt.area} • {apt.pincode}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </div>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  {fieldErrors.apartment_id && (
+                    <p className="text-sm text-red-600">{fieldErrors.apartment_id}</p>
                   )}
+                  <p className="text-xs text-gray-500">
+                    Services are currently available only in these apartments
+                  </p>
                 </div>
-                {fieldErrors.apartment_id && (
-                  <p className="text-sm text-red-600">{fieldErrors.apartment_id}</p>
-                )}
-                <p className="text-xs text-gray-500">
-                  Services are currently available only in these apartments
-                </p>
-              </div>
+              ) : (
+                /* Maid Address + Pincode */
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                      Residential Address <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Home className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="address"
+                        type="text"
+                        placeholder="Full address with city"
+                        value={formData.address ?? ''}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        className={`pl-10 py-6 ${fieldErrors.address ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                        required
+                      />
+                    </div>
+                    {fieldErrors.address && (
+                      <p className="text-sm text-red-600">{fieldErrors.address}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pincode" className="text-sm font-medium text-gray-700">
+                      Pincode <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="pincode"
+                        type="text"
+                        placeholder="500032"
+                        value={formData.pincode ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          handleInputChange('pincode', value);
+                        }}
+                        className={`pl-10 py-6 ${fieldErrors.pincode ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                        required
+                        maxLength={6}
+                        inputMode="numeric"
+                      />
+                    </div>
+                    {fieldErrors.pincode && (
+                      <p className="text-sm text-red-600">{fieldErrors.pincode}</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Account Type */}
+              {!roleLocked && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Account Type <span className="text-red-500">*</span>
+                  </Label>
+                  <RadioGroup
+                    value={formData.role}
+                    onValueChange={(value) => handleInputChange('role', value as 'CUSTOMER' | 'MAID')}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                  >
+                    <div className="relative">
+                      <RadioGroupItem
+                        value="CUSTOMER"
+                        id="customer"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="customer"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-blue-50 hover:border-blue-200 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50 cursor-pointer"
+                      >
+                        <div className="mb-2 p-2 bg-blue-100 rounded-full">
+                          <User className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <span className="font-medium">Customer</span>
+                        <span className="text-sm text-gray-500 text-center">
+                          I need cleaning services
+                        </span>
+                      </Label>
+                    </div>
+                    <div className="relative">
+                      <RadioGroupItem
+                        value="MAID"
+                        id="maid"
+                        className="peer sr-only"
+                      />
+                      <Label
+                        htmlFor="maid"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-green-50 hover:border-green-200 peer-data-[state=checked]:border-green-600 peer-data-[state=checked]:bg-green-50 cursor-pointer"
+                      >
+                        <div className="mb-2 p-2 bg-green-100 rounded-full">
+                          <User className="h-5 w-5 text-green-600" />
+                        </div>
+                        <span className="font-medium">Maid</span>
+                        <span className="text-sm text-gray-500 text-center">
+                          I provide cleaning services
+                        </span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  {fieldErrors.role && (
+                    <p className="text-sm text-red-600">{fieldErrors.role}</p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-700">
-                  Account Type <span className="text-red-500">*</span>
+                  Terms &amp; Conditions <span className="text-red-500">*</span>
                 </Label>
-                <RadioGroup
-                  value={formData.role}
-                  onValueChange={(value) => handleInputChange('role', value as 'CUSTOMER' | 'MAID')}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-3"
+
+                <div
+                  ref={termsScrollRef}
+                  onScroll={() => {
+                    const el = termsScrollRef.current;
+                    if (!el) return;
+                    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+                    if (reachedBottom) setHasScrolledTerms(true);
+                  }}
+                  className="rounded-md border border-gray-200 bg-white max-h-64 overflow-y-auto px-4 py-4"
                 >
-                  <div className="relative">
-                    <RadioGroupItem
-                      value="CUSTOMER"
-                      id="customer"
-                      className="peer sr-only"
-                    />
-                    <Label
-                      htmlFor="customer"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-blue-50 hover:border-blue-200 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50 cursor-pointer"
-                    >
-                      <div className="mb-2 p-2 bg-blue-100 rounded-full">
-                        <User className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <span className="font-medium">Customer</span>
-                      <span className="text-sm text-gray-500 text-center">
-                        I need cleaning services
-                      </span>
-                    </Label>
+                  <div className="text-xs text-gray-500 mb-4">
+                    Please scroll to the bottom to enable acceptance.
                   </div>
-                  <div className="relative">
-                    <RadioGroupItem
-                      value="MAID"
-                      id="maid"
-                      className="peer sr-only"
-                    />
-                    <Label
-                      htmlFor="maid"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-green-50 hover:border-green-200 peer-data-[state=checked]:border-green-600 peer-data-[state=checked]:bg-green-50 cursor-pointer"
-                    >
-                      <div className="mb-2 p-2 bg-green-100 rounded-full">
-                        <User className="h-5 w-5 text-green-600" />
-                      </div>
-                      <span className="font-medium">Maid</span>
-                      <span className="text-sm text-gray-500 text-center">
-                        I provide cleaning services
-                      </span>
-                    </Label>
-                  </div>
-                </RadioGroup>
-                {fieldErrors.role && (
-                  <p className="text-sm text-red-600">{fieldErrors.role}</p>
+                  <TermsContent />
+                </div>
+
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    className="rounded border-blue-400 mt-1"
+                    disabled={!hasScrolledTerms}
+                    checked={hasAcceptedTerms}
+                    onChange={(e) => setHasAcceptedTerms(e.target.checked)}
+                  />
+                  <span className="text-sm text-gray-700">
+                    I have read and agree to the{' '}
+                    <a href="/terms" className="text-blue-600 hover:underline" target="_blank" rel="noreferrer">
+                      Terms &amp; Conditions
+                    </a>
+                    .
+                  </span>
+                </div>
+
+                {fieldErrors.terms && (
+                  <p className="text-sm text-red-600">{fieldErrors.terms}</p>
                 )}
               </div>
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isLoading || isLoadingApartments}
+                disabled={isLoading || (formData.role === 'CUSTOMER' && isLoadingApartments)}
                 className="w-full py-6 text-base font-medium bg-blue-600 hover:bg-blue-700"
               >
                 {isLoading ? (

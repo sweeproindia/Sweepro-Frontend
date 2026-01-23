@@ -10,7 +10,7 @@ import { AuthService, RegisterData } from '@/services/authService';
 import { useUser } from '@/contexts/UserContext';
 
 import { Eye, EyeOff, Home, Lock, Mail, MapPin, Phone, Shield, Sparkles, User, Loader2, Clock } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/services/api';
 import { parseApiError } from '@/utils/errorUtils';
@@ -75,17 +75,20 @@ export default function SignupPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
+  type RoleOption = 'CUSTOMER' | 'MAID';
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    role: 'CUSTOMER' as 'CUSTOMER' | 'MAID',
+    role: '' as '' | RoleOption,
     password: '',
     confirmPassword: '',
     address: '',
     apartmentNumber: '',
     floorNumber: '',
     maidAddress: '', // Separate field for maid's address
+    maidPincode: '',
   });
 
   const navigate = useNavigate();
@@ -98,6 +101,15 @@ export default function SignupPage() {
   const handleGoogleSignUp = async () => {
     setFormError(null);
     setFieldErrors({});
+
+    if (!formData.role) {
+      setFieldErrors({ role: 'Please select an account type.' });
+      setFormError('Please select an account type to continue.');
+      return;
+    }
+
+    sessionStorage.setItem('selectedRole', formData.role);
+
     setIsGoogleLoading(true);
 
     try {
@@ -113,7 +125,7 @@ export default function SignupPage() {
         });
 
         if (!loggedInUser.profile_completed) {
-          navigate('/complete-profile');
+          navigate('/complete-profile', { state: { role: formData.role } });
         } else {
           switch (loggedInUser.role) {
             case 'ADMIN':
@@ -160,6 +172,9 @@ export default function SignupPage() {
     const email = formData.email.trim();
     const phone = formData.phone.trim();
     const maidAddress = formData.maidAddress.trim();
+    const maidPincode = formData.maidPincode.trim();
+
+    if (!formData.role) nextErrors.role = 'Please select an account type.';
 
     if (!name) nextErrors.name = 'Full name is required.';
     else if (name.length < 2) nextErrors.name = 'Name must be at least 2 characters.';
@@ -177,6 +192,12 @@ export default function SignupPage() {
 
     if (formData.role === 'MAID' && !maidAddress) {
       nextErrors.maidAddress = 'Residential address is required.';
+    }
+
+    if (formData.role === 'MAID' && !maidPincode) {
+      nextErrors.maidPincode = 'Pincode is required.';
+    } else if (maidPincode && !/^\d{6}$/.test(maidPincode)) {
+      nextErrors.maidPincode = 'Enter a valid 6-digit pincode.';
     }
 
     const passwordError = validatePassword(formData.password);
@@ -209,13 +230,14 @@ export default function SignupPage() {
       } else {
         // Use normal address for maids
         finalAddress = formData.maidAddress;
+        pincode = formData.maidPincode.trim();
       }
 
       const registerData: RegisterData = {
         name,
         email,
         phone,
-        role: formData.role,
+        role: formData.role as RoleOption,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         address: finalAddress,
@@ -283,20 +305,45 @@ export default function SignupPage() {
   };
 
   const handleRoleChange = (value: string) => {
-    const newRole = value as 'CUSTOMER' | 'MAID';
+    const newRole = value as RoleOption;
+
+    const nextParams = new URLSearchParams(location.search);
+    if (newRole) nextParams.set('role', newRole);
+    else nextParams.delete('role');
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextParams.toString() ? `?${nextParams.toString()}` : ''
+      },
+      {
+        replace: true,
+        state: location.state
+      }
+    );
+
     setFormData(prev => ({
       ...prev,
       role: newRole,
       // Clear address fields when switching roles
       address: newRole === 'MAID' ? '' : prev.address,
       maidAddress: newRole === 'CUSTOMER' ? '' : prev.maidAddress,
+      maidPincode: newRole === 'CUSTOMER' ? '' : prev.maidPincode,
       apartmentNumber: '',
       floorNumber: ''
     }));
   };
 
+  useEffect(() => {
+    const roleFromQuery = (new URLSearchParams(location.search).get('role') || '').toUpperCase();
+    if ((roleFromQuery === 'CUSTOMER' || roleFromQuery === 'MAID') && formData.role !== roleFromQuery) {
+      handleRoleChange(roleFromQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
   const isCustomer = formData.role === 'CUSTOMER';
   const isMaid = formData.role === 'MAID';
+  const hasSelectedRole = isCustomer || isMaid;
   const liveArea = 'Gachibowli';
   const liveComplexes = SERVICE_ADDRESSES.filter((a) => a.area === liveArea);
   const liveComplexesToShow = liveComplexes.slice(0, 4);
@@ -325,16 +372,73 @@ export default function SignupPage() {
                 {isMaid ? 'Join as Cleaning Professional' : 'Create Your Account'}
               </CardTitle>
               <CardDescription className="text-gray-600">
-                {isMaid
-                  ? 'Register to start accepting cleaning jobs'
-                  : 'Services currently available in select Hyderabad apartments'}
+                {hasSelectedRole
+                  ? (isMaid
+                    ? 'Register to start accepting cleaning jobs'
+                    : 'Services currently available in select Hyderabad apartments')
+                  : 'Select account type to continue'}
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="space-y-3 mb-6">
+                <Label className="text-sm font-medium text-gray-700">Account Type</Label>
+                <RadioGroup
+                  value={formData.role}
+                  onValueChange={handleRoleChange}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                >
+                  <div className="relative">
+                    <RadioGroupItem
+                      value="CUSTOMER"
+                      id="customer"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="customer"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 hover:border-gray-300 peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 [&:has([data-state=checked])]:bg-blue-50 cursor-pointer"
+                    >
+                      <img
+                        src="/assets/user.png"
+                        alt="Customer"
+                        className="mb-3 h-7 w-7 object-contain"
+                      />
+                      <span className="text-sm font-medium">Customer</span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        Book cleaning services
+                      </span>
+                    </Label>
+                  </div>
+                  <div className="relative">
+                    <RadioGroupItem
+                      value="MAID"
+                      id="maid"
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor="maid"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-gray-200 bg-white p-4 hover:bg-gray-50 hover:border-gray-300 peer-data-[state=checked]:border-blue-500 peer-data-[state=checked]:bg-blue-50 [&:has([data-state=checked])]:border-blue-500 [&:has([data-state=checked])]:bg-blue-50 cursor-pointer"
+                    >
+                      <img
+                        src="/assets/cleaning-lady.png"
+                        alt="Maid"
+                        className="mb-3 h-7 w-7 object-contain"
+                      />
+                      <span className="text-sm font-medium">Maid</span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        Accept cleaning jobs
+                      </span>
+                    </Label>
+                  </div>
+                </RadioGroup>
+                {fieldErrors.role && (
+                  <p className="text-sm text-red-600">{fieldErrors.role}</p>
+                )}
+              </div>
+
               <Button
                 type="button"
                 onClick={handleGoogleSignUp}
-                disabled={isGoogleLoading || isLoading}
+                disabled={isGoogleLoading || isLoading || !hasSelectedRole}
                 className="w-full py-6 text-base font-medium bg-white hover:bg-gray-50 border-2 border-gray-300 text-gray-700"
               >
                 {isGoogleLoading ? (
@@ -448,179 +552,156 @@ export default function SignupPage() {
                   </div>
 
                   {/* Address Section - Different for Customers and Maids */}
-                  <div className={`space-y-4 p-4 rounded-lg border ${isCustomer ? 'bg-blue-50 border-blue-100' : 'bg-green-50 border-green-100'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Home className={`h-5 w-5 ${isCustomer ? 'text-blue-600' : 'text-green-600'}`} />
-                      <Label className="text-sm font-medium text-gray-700">
-                        {isCustomer ? 'Select Your Apartment Complex' : 'Your Residential Address'}
-                      </Label>
-                    </div>
+                  {hasSelectedRole && (
+                    <div className="space-y-4 p-4 rounded-lg border bg-blue-50 border-blue-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Home className="h-5 w-5 text-blue-600" />
+                        <Label className="text-sm font-medium text-gray-700">
+                          {isCustomer ? 'Select Your Apartment Complex' : 'Your Residential Address'}
+                        </Label>
+                      </div>
 
-                    {isCustomer ? (
-                      // Customer Address Selection
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="address" className="text-sm font-medium text-gray-700">
-                            Service Address *
-                          </Label>
-                          <Select
-                            value={formData.address}
-                            onValueChange={(value) => {
-                              setFormData(prev => ({ ...prev, address: value }));
-                              setFieldErrors((prev) => ({ ...prev, address: undefined }));
-                              setFormError(null);
-                            }}
-                            required={isCustomer}
-                          >
-                            <SelectTrigger className={`w-full py-6 ${fieldErrors.address ? 'border-red-500 focus:ring-red-500' : ''}`}>
-                              <SelectValue placeholder="Select your apartment complex" />
-                            </SelectTrigger>
+                      {isCustomer ? (
+                        // Customer Address Selection
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="address" className="text-sm font-medium text-gray-700">
+                              Service Address *
+                            </Label>
+                            <Select
+                              value={formData.address}
+                              onValueChange={(value) => {
+                                setFormData(prev => ({ ...prev, address: value }));
+                                setFieldErrors((prev) => ({ ...prev, address: undefined }));
+                                setFormError(null);
+                              }}
+                              required={isCustomer}
+                            >
+                              <SelectTrigger className={`w-full py-6 ${fieldErrors.address ? 'border-red-500 focus:ring-red-500' : ''}`}>
+                                <SelectValue placeholder="Select your apartment complex" />
+                              </SelectTrigger>
 
-                            <SelectContent className="max-h-60">
-                              {Object.entries(AREA_GROUPS).map(([area, addresses]) => (
-                                <div key={area}>
-                                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
-                                    {area}
+                              <SelectContent className="max-h-60">
+                                {Object.entries(AREA_GROUPS).map(([area, addresses]) => (
+                                  <div key={area}>
+                                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+                                      {area}
+                                    </div>
+                                    {addresses.map((address) => (
+                                      <SelectItem
+                                        key={address.id}
+                                        value={`${address.name} - ${address.area} - ${address.pincode}`}
+                                        className="py-3"
+                                      >
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{address.name}</span>
+                                          <span className="text-xs text-gray-500">
+                                            {address.area} • {address.pincode}
+                                          </span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
                                   </div>
-                                  {addresses.map((address) => (
-                                    <SelectItem
-                                      key={address.id}
-                                      value={`${address.name} - ${address.area} - ${address.pincode}`}
-                                      className="py-3"
-                                    >
-                                      <div className="flex flex-col">
-                                        <span className="font-medium">{address.name}</span>
-                                        <span className="text-xs text-gray-500">
-                                          {address.area} • {address.pincode}
-                                        </span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </div>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-gray-500">
-                            Services are currently available only in these apartments
-                          </p>
-                          {fieldErrors.address && (
-                            <p className="text-sm text-red-600">{fieldErrors.address}</p>
-                          )}
-                        </div>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500">
+                              Services are currently available only in these apartments
+                            </p>
+                            {fieldErrors.address && (
+                              <p className="text-sm text-red-600">{fieldErrors.address}</p>
+                            )}
+                          </div>
 
-                        {/* Apartment Details */}
-                        {formData.address && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-blue-100">
-                            <div className="space-y-2">
-                              <Label htmlFor="apartmentNumber" className="text-sm font-medium text-gray-700">
-                                Apartment/House Number
-                              </Label>
+                          {/* Apartment Details */}
+                          {formData.address && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-blue-100">
+                              <div className="space-y-2">
+                                <Label htmlFor="apartmentNumber" className="text-sm font-medium text-gray-700">
+                                  Apartment/House Number
+                                </Label>
+                                <Input
+                                  id="apartmentNumber"
+                                  name="apartmentNumber"
+                                  type="text"
+                                  value={formData.apartmentNumber}
+                                  onChange={handleInputChange}
+                                  className="py-6"
+                                  placeholder="e.g., 203, Tower B"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="floorNumber" className="text-sm font-medium text-gray-700">
+                                  Floor Number
+                                </Label>
+                                <Input
+                                  id="floorNumber"
+                                  name="floorNumber"
+                                  type="text"
+                                  value={formData.floorNumber}
+                                  onChange={handleInputChange}
+                                  className="py-6"
+                                  placeholder="e.g., 2nd Floor"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        // Maid Normal Address Input
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="maidAddress" className="text-sm font-medium text-gray-700">
+                              Residential Address *
+                            </Label>
+                            <div className="relative">
+                              <Home className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                               <Input
-                                id="apartmentNumber"
-                                name="apartmentNumber"
+                                id="maidAddress"
+                                name="maidAddress"
                                 type="text"
-                                value={formData.apartmentNumber}
+                                required={isMaid}
+                                value={formData.maidAddress}
                                 onChange={handleInputChange}
-                                className="py-6"
-                                placeholder="e.g., 203, Tower B"
+                                className={`pl-10 py-6 ${fieldErrors.maidAddress ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                placeholder="Full address with city"
                               />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="floorNumber" className="text-sm font-medium text-gray-700">
-                                Floor Number
-                              </Label>
+                            {fieldErrors.maidAddress && (
+                              <p className="text-sm text-red-600">{fieldErrors.maidAddress}</p>
+                            )}
+                            <p className="text-xs text-gray-500">
+                              This helps us match you with nearby cleaning jobs
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="maidPincode" className="text-sm font-medium text-gray-700">
+                              Pincode *
+                            </Label>
+                            <div className="relative">
+                              <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                               <Input
-                                id="floorNumber"
-                                name="floorNumber"
+                                id="maidPincode"
+                                name="maidPincode"
                                 type="text"
-                                value={formData.floorNumber}
+                                required={isMaid}
+                                inputMode="numeric"
+                                maxLength={6}
+                                value={formData.maidPincode}
                                 onChange={handleInputChange}
-                                className="py-6"
-                                placeholder="e.g., 2nd Floor"
+                                className={`pl-10 py-6 ${fieldErrors.maidPincode ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                                placeholder="500032"
                               />
                             </div>
+                            {fieldErrors.maidPincode && (
+                              <p className="text-sm text-red-600">{fieldErrors.maidPincode}</p>
+                            )}
                           </div>
-                        )}
-                      </>
-                    ) : (
-                      // Maid Normal Address Input
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="maidAddress" className="text-sm font-medium text-gray-700">
-                            Residential Address *
-                          </Label>
-                          <div className="relative">
-                            <Home className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input
-                              id="maidAddress"
-                              name="maidAddress"
-                              type="text"
-                              required={isMaid}
-                              value={formData.maidAddress}
-                              onChange={handleInputChange}
-                              className={`pl-10 py-6 ${fieldErrors.maidAddress ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-                              placeholder="Full address with city and pincode"
-                            />
-                          </div>
-                          {fieldErrors.maidAddress && (
-                            <p className="text-sm text-red-600">{fieldErrors.maidAddress}</p>
-                          )}
-                          <p className="text-xs text-gray-500">
-                            This helps us match you with nearby cleaning jobs
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Role Selection */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium text-gray-700">Account Type</Label>
-                  <RadioGroup
-                    value={formData.role}
-                    onValueChange={handleRoleChange}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-3"
-                  >
-                    <div className="relative">
-                      <RadioGroupItem
-                        value="CUSTOMER"
-                        id="customer"
-                        className="peer sr-only"
-                      />
-                      <Label
-                        htmlFor="customer"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-blue-50 hover:border-blue-200 peer-data-[state=checked]:border-blue-600 peer-data-[state=checked]:bg-blue-50"
-                      >
-                        <div className="mb-2 p-2 bg-blue-100 rounded-full">
-                          <User className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <span className="font-medium">Customer</span>
-                        <span className="text-sm text-gray-500 text-center">
-                          I need cleaning services
-                        </span>
-                      </Label>
+                        </>
+                      )}
                     </div>
-                    <div className="relative">
-                      <RadioGroupItem
-                        value="MAID"
-                        id="maid"
-                        className="peer sr-only"
-                      />
-                      <Label
-                        htmlFor="maid"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-white p-4 hover:bg-green-50 hover:border-green-200 peer-data-[state=checked]:border-green-600 peer-data-[state=checked]:bg-green-50"
-                      >
-                        <div className="mb-2 p-2 bg-green-100 rounded-full">
-                          <Sparkles className="h-5 w-5 text-green-600" />
-                        </div>
-                        <span className="font-medium">Maid</span>
-                        <span className="text-sm text-gray-500 text-center">
-                          I provide cleaning services
-                        </span>
-                      </Label>
-                    </div>
-                  </RadioGroup>
+                  )}
                 </div>
 
                 {/* Password Section */}
@@ -727,11 +808,7 @@ export default function SignupPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-6 text-base font-medium ${
-                    isMaid
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-[#1800ad] text-white hover:bg-[#ca0013]'
-                  }`}
+                  className="w-full py-6 text-base font-medium bg-[#1800ad] text-white hover:bg-[#ca0013]"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center">

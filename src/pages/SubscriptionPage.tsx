@@ -51,7 +51,7 @@ const enhancedPlans: EnhancedSubscriptionPlan[] = [
     finalPrice: 1499,
     duration: 'month',
     description:
-      'A premium silver plan for medium-sized homes. Enjoy enhanced cleaning and priority service.',
+      'A thoughtfully designed premium cleaning plan that offers reliable, efficient service for a smooth and hassle-free experience.',
     features: [
       'Bi-weekly deep cleaning',
       'Premium cleaning supplies',
@@ -76,7 +76,7 @@ const enhancedPlans: EnhancedSubscriptionPlan[] = [
     originalPrice: 2499,
     duration: 'month',
     description:
-      'Ultimate cleaning experience for large homes and villas with luxury service.',
+      'A premium upgrade that delivers superior care, greater attention to detail, and a more personalized cleaning experience.',
     features: [
       'Weekly premium cleaning',
       'Luxury cleaning supplies',
