@@ -159,14 +159,14 @@ export function FeedbackForm({ booking, assignedMaids = [], defaultMaidId, onSuc
           {/* Maid Selection Dropdown - Only show if multiple assigned maids */}
           {assignedMaids.length > 1 && (
             <div className="space-y-2">
-              <Label htmlFor="maid-select">Select Maid to Rate *</Label>
+              <Label htmlFor="maid-select">Select Homecare Partner to Rate *</Label>
               <Select
                 value={selectedMaidId}
                 onValueChange={setSelectedMaidId}
                 disabled={loading}
               >
                 <SelectTrigger id="maid-select">
-                  <SelectValue placeholder="Select a maid">
+                  <SelectValue placeholder="Select a homecare partner">
                     {selectedMaid ? (
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />

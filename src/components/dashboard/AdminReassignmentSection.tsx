@@ -300,7 +300,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                 <RotateCcw className="h-5 w-5 text-destructive" />
                 Reassignment Required ({reassignmentBookings.length})
               </CardTitle>
-              <CardDescription>Bookings needing reassignment due to rejection, expiry, or maid weekly leave</CardDescription>
+              <CardDescription>Bookings needing reassignment due to rejection, expiry, or homecare partner weekly leave</CardDescription>
             </div>
             <Button
               variant="outline"
@@ -451,7 +451,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
       <Dialog open={reassignDialogOpen} onOpenChange={setReassignDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Reassign Booking to New Maid</DialogTitle>
+            <DialogTitle>Reassign Booking to New Homecare Partner</DialogTitle>
             <DialogDescription>
               Select a different verified maid for this rejected booking. The new maid will be notified and has 24 hours to respond.
             </DialogDescription>
@@ -489,10 +489,10 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Select New Verified Maid</label>
+                <label className="text-sm font-medium mb-2 block">Select New Verified Homecare Partner</label>
                 <Select value={selectedMaidId} onValueChange={setSelectedMaidId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a different verified maid..." />
+                    <SelectValue placeholder="Choose a different verified homecare partner..." />
                   </SelectTrigger>
                   <SelectContent>
                     {availableMaids

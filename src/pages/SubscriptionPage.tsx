@@ -12,6 +12,10 @@ import {
   Shield,
   Star,
   CheckCircle,
+  Clock,
+  Home,
+  Sparkles,
+  Users,
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
@@ -188,7 +192,8 @@ function SubscriptionPage() {
   };
 
   const handlePlanSelect = (planId: string) => {
-    const slug = planId === 'standard' ? 'sweeprotouch' : planId === 'premium' ? 'sweeprolux' : planId;
+    // Navigate using canonical ids so details page resolves correctly
+    const slug = planId === 'standard' ? 'standard' : planId === 'premium' ? 'premium' : planId;
     navigate(`/subscription/${slug}`);
   };
 
@@ -410,28 +415,30 @@ function SubscriptionPage() {
 
                     <div className="space-y-3">
                       <h4 className="font-semibold text-sm">Included Features:</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-foreground">Professional cleaning services</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-foreground">{subscription.plan.sessionsPerMonth || 0} sessions per month</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-foreground">Dedicated maid assignment</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-foreground">Priority customer support</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-foreground">Flexible scheduling</span>
-                        </div>
-                      </div>
+                      {(() => {
+                        const currentPlanId = subscription.plan.id as string | undefined;
+                        const featuresFromSubscription = Array.isArray((subscription.plan as any).features)
+                          ? ((subscription.plan as any).features as string[])
+                          : [];
+                        const fallbackFeatures = enhancedPlans.find(p => p.id === currentPlanId)?.features || [];
+                        const features = featuresFromSubscription.length > 0 ? featuresFromSubscription : fallbackFeatures;
+
+                        return (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {features.map((feature) => (
+                              <div
+                                key={feature}
+                                className="rounded-lg border px-3 py-3 bg-muted/20"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
+                                  <span className="text-sm text-foreground font-medium">{feature}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="pt-4 border-t border-border">
@@ -448,6 +455,70 @@ function SubscriptionPage() {
                 ) : null}
               </CardContent>
             </Card>
+
+            {/* Detailed Service Breakdown */}
+            {subscription && subscription.plan && (subscription.plan as any).serviceBreakdown && (
+              <Card className="dashboard-card slide-up">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Detailed service breakdown
+                  </CardTitle>
+                  <CardDescription>
+                    Everything bundled with your {subscription.plan.name} experience.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {(() => {
+                      const breakdown = (subscription.plan as any).serviceBreakdown;
+                      const breakdownItems = [
+                        { label: 'Utensil Cleaning', value: breakdown.utensilCleaning, icon: Package },
+                        { label: 'Floor Cleaning', value: breakdown.floorCleaning, icon: Home },
+                        { label: 'Bathroom Detailing', value: breakdown.bathroomCleaning, icon: Shield },
+                        { label: 'Dusting Coverage', value: breakdown.homeDusting, icon: Sparkles },
+                        { label: 'Kit & Supplies', value: breakdown.kitProvided, icon: Package },
+                        { label: 'Timing Flow', value: breakdown.timings, icon: Clock },
+                        { label: 'Backup Promise', value: breakdown.backupGuarantee, icon: Shield },
+                        { label: 'Customer Care', value: breakdown.customerCare, icon: Users },
+                        { label: 'Buffer Days', value: breakdown.bufferDays, icon: Calendar, span: true }
+                      ];
+
+                      return breakdownItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <div
+                            key={item.label}
+                            className={`rounded-xl border px-4 py-4 bg-muted/20 ${item.span ? 'md:col-span-2' : ''}`}
+                          >
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-primary/10">
+                                <Icon className="h-4 w-4 text-primary" />
+                              </span>
+                              <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{item.value}</p>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+
+                  <div className="rounded-xl border px-5 py-4 bg-primary/5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                      <p className="font-semibold text-primary">Service rhythm</p>
+                    </div>
+                    <p className="text-sm text-foreground">
+                      {subscription.plan.sessionsPerWeek} sessions every week • {subscription.plan.sessionsPerMonth} expertly supervised visits each month.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Flexible rescheduling and two-day cancellation window included.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Property configuration used for pricing (from Review Payment) */}
             {location.state?.fromPayment && propertyConfigFromNav && (
@@ -692,7 +763,7 @@ function SubscriptionPage() {
         </div>
 
         {/* Usage Statistics */}
-        {subscription && (
+        {/* {subscription && (
           <Card className="dashboard-card slide-up">
             <CardHeader>
               <CardTitle>Usage Statistics</CardTitle>
@@ -735,7 +806,7 @@ function SubscriptionPage() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
       </div>
 
       {/* EXACT CSS FROM PRICING SECTION */}

@@ -261,7 +261,7 @@ export const MaidProfilePage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground mt-1">Maid Service Provider</p>
+            <p className="text-muted-foreground mt-1">Homecare Partner Service Provider</p>
           </div>
           <Button 
             onClick={() => setEditDialogOpen(true)}

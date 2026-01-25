@@ -322,7 +322,7 @@ export default function UserDashboard() {
           <div className="space-x-4">
             {user.role === 'MAID' && (
               <Link to="/maid-dashboard">
-                <Button>Go to Maid Dashboard</Button>
+                <Button>Go to Homecare Partner Dashboard</Button>
               </Link>
             )}
             {user.role === 'ADMIN' && (
@@ -479,7 +479,7 @@ export default function UserDashboard() {
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-foreground">Dedicated maid assignment</span>
+                        <span className="text-sm text-foreground">Dedicated homecare partner assignment</span>
                       </div>
                     </div>
                   </div>

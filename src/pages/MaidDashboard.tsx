@@ -261,7 +261,7 @@ export default function MaidDashboard() {
     return (
       <MaidDashboardLayout>
         <div className="text-center p-8">
-          <p className="text-muted-foreground">Please log in as a maid to view this dashboard.</p>
+          <p className="text-muted-foreground">Please log in as a homecare partner to view this dashboard.</p>
         </div>
       </MaidDashboardLayout>
     );

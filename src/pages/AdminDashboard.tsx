@@ -299,9 +299,9 @@ export default function AdminDashboard() {
   
   // Admin notifications
   const notifications: Notification[] = [
-    { id: 1, type: 'user', title: 'New Booking Pending', message: 'A new booking requires maid assignment', time: '5 minutes ago', unread: true },
+    { id: 1, type: 'user', title: 'New Booking Pending', message: 'A new booking requires homecare partner assignment', time: '5 minutes ago', unread: true },
     { id: 2, type: 'admin', title: 'Payment Received', message: '₹1,200 payment received from customer', time: '1 hour ago', unread: true },
-    { id: 3, type: 'maid', title: 'Maid Registration', message: 'New maid registration awaiting approval', time: '2 hours ago', unread: false },
+    { id: 3, type: 'maid', title: 'Homecare Partner Registration', message: 'New homecare partner registration awaiting approval', time: '2 hours ago', unread: false },
     { id: 4, type: 'user', title: 'Service Reminder', message: "Don't forget your scheduled cleaning service tomorrow", time: '1 day ago', unread: false },
     { id: 5, type: 'admin', title: 'System Update', message: 'System maintenance scheduled for tonight', time: '2 days ago', unread: false },
   ];
@@ -631,13 +631,13 @@ export default function AdminDashboard() {
 
         toast({
           title: 'Success',
-          description: 'Maid assigned to booking successfully'
+          description: 'Homecare partner assigned to booking successfully'
         });
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to assign maid to booking',
+        description: 'Failed to assign homecare partner to booking',
         variant: 'destructive'
       });
     } finally {
@@ -763,7 +763,7 @@ export default function AdminDashboard() {
             )}
             {user.role === 'MAID' && (
               <Link to="/maid-dashboard">
-                <Button>Go to Maid Dashboard</Button>
+                <Button>Go to Homecare Partner Dashboard</Button>
               </Link>
             )}
             <Link to="/">
@@ -784,8 +784,8 @@ export default function AdminDashboard() {
           {activeSection === 'bookings' && 'All Bookings'}
           {activeSection === 'pending-bookings' && 'Pending Bookings'}
           {activeSection === 'users' && 'Customer Management'}
-          {activeSection === 'maids' && 'Maid Management'}
-          {activeSection === 'maid-verification' && 'Maid Verification'}
+          {activeSection === 'maids' && 'Homecare Partner Management'}
+          {activeSection === 'maid-verification' && 'Homecare Partner Verification'}
           {activeSection === 'subscriptions' && 'Subscriptions'}
           {activeSection === 'buffer-management' && 'Buffer Period Management'}
           {activeSection === 'automatic-assignments' && 'Automatic Assignment System'}
@@ -795,10 +795,10 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground mt-1">
           {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
           {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
-          {activeSection === 'pending-bookings' && 'Assign maids to pending bookings'}
+          {activeSection === 'pending-bookings' && 'Assign homecare partners to pending bookings'}
           {activeSection === 'users' && 'Manage customer accounts and profiles'}
           {activeSection === 'maids' && 'Manage service providers and performance'}
-          {activeSection === 'maid-verification' && 'Review and manage maid verification requests'}
+          {activeSection === 'maid-verification' && 'Review and manage homecare partner verification requests'}
           {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
           {activeSection === 'buffer-management' && 'Review buffer requests and manage service interruptions'}
           {activeSection === 'automatic-assignments' && 'Monitor and manage automatic assignment requests based on customer time slots'}
@@ -965,8 +965,8 @@ export default function AdminDashboard() {
                     }))}
                     onAddMaid={(maidData) => {
                       toast({
-                        title: 'Maid Added',
-                        description: 'New maid has been added successfully'
+                        title: 'Homecare Partner Added',
+                        description: 'New homecare partner has been added successfully'
                       });
                     }}
                     onVerifyMaid={(maidId) => updateUserStatus(maidId, 'ACTIVE')}

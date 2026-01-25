@@ -397,7 +397,7 @@ export const AdminAutomaticAssignmentsSection: React.FC = () => {
                             
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                               <div>
-                                <p className="text-gray-500">Assigned Maid</p>
+                                <p className="text-gray-500">Assigned Homecare Partner</p>
                                 <p className="font-medium">{request.maidName}</p>
                               </div>
                               <div>

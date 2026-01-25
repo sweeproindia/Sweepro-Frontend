@@ -456,7 +456,7 @@ export default function AdminFeedbackPage() {
         <TabsContent value="analytics" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Maid Performance Analytics</CardTitle>
+              <CardTitle>Homecare Partner Performance Analytics</CardTitle>
               <CardDescription>
                 Select a maid to view comprehensive performance metrics and analytics
               </CardDescription>
@@ -464,10 +464,10 @@ export default function AdminFeedbackPage() {
             <CardContent className="space-y-6">
               {/* Maid Selector */}
               <div className="space-y-3">
-                <Label htmlFor="maid-select">Select Maid</Label>
+                <Label htmlFor="maid-select">Select Homecare Partner</Label>
                 <Select value={selectedMaidId} onValueChange={handleMaidSelect}>
                   <SelectTrigger id="maid-select">
-                    <SelectValue placeholder="Choose a maid to view analytics..." />
+                    <SelectValue placeholder="Choose a homecare partner to view analytics..." />
                   </SelectTrigger>
                   <SelectContent>
                     {maidsList.map((maid: any) => (
@@ -666,9 +666,9 @@ export default function AdminFeedbackPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Maid ID</Label>
+                <Label>Homecare Partner ID</Label>
                 <Input
-                  placeholder="Filter by Maid ID"
+                  placeholder="Filter by Homecare Partner ID"
                   value={filters.maidId}
                   onChange={(e) => setFilters({ ...filters, maidId: e.target.value })}
                 />
@@ -738,7 +738,7 @@ export default function AdminFeedbackPage() {
                                   {feedback.customer?.name || 'Unknown'}
                                 </p>
                                 <p>
-                                  <span className="font-medium">Maid:</span>{' '}
+                                  <span className="font-medium">Homecare Partner:</span>{' '}
                                   {feedback.booking?.maid?.name || 'N/A'}
                                 </p>
                                 <p>

@@ -91,7 +91,7 @@ export default function MaidAvailabilityPage() {
     <MaidDashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Maid Availability</h1>
+          <h1 className="text-3xl font-bold">Homecare Partner Availability</h1>
           <p className="text-muted-foreground mt-2">
             Your weekly leave is configured by admin. You can also temporarily toggle your availability.
           </p>

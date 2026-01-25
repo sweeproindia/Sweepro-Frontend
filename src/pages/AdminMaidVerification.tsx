@@ -330,9 +330,9 @@ export default function AdminMaidVerification() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Maid Verification</h1>
+            <h1 className="text-3xl font-bold text-foreground">Homecare Partner Verification</h1>
             <p className="text-muted-foreground mt-2">
-              Review and approve maid verification documents
+              Review and approve homecare partner verification documents
             </p>
           </div>
           <Button onClick={fetchVerifications} variant="outline" size="sm">
@@ -507,7 +507,7 @@ export default function AdminMaidVerification() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Maid Info */}
                     <div>
-                      <h4 className="font-medium text-foreground mb-3">Maid Information</h4>
+                      <h4 className="font-medium text-foreground mb-3">Homecare Partner Information</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Joined Date:</span>
@@ -677,7 +677,7 @@ export default function AdminMaidVerification() {
                 <p className="text-muted-foreground">
                   {searchTerm || statusFilter !== 'ALL'
                     ? 'Try adjusting your search or filters'
-                    : 'No maid verifications have been submitted yet'}
+                    : 'No homecare partner verifications have been submitted yet'}
                 </p>
               </CardContent>
             </Card>

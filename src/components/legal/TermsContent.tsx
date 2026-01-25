@@ -37,7 +37,7 @@ export function TermsContent() {
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-gray-900">3.1 Service Overview</h3>
             <p className="text-sm leading-6 text-gray-700">
-              Sweepro provides professional housekeeping and maid services on a subscription basis (Monthly, 3‑Month, and 6‑Month plans), which may include cleaning, mopping,
+              Sweepro provides professional housekeeping and homecare partner services on a subscription basis (Monthly, 3‑Month, and 6‑Month plans), which may include cleaning, mopping,
               utensils washing, laundry, and related domestic tasks as specified in your selected plan.
             </p>
           </div>

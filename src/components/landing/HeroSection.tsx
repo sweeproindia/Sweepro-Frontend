@@ -99,7 +99,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             className="text-white text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold mb-4 sm:mb-6 leading-snug md:leading-[1.15]"
             variants={framerTitle}
           >
-            <span className="block">Expert Home Care</span>
+            <span className="block">Daily Home Care</span>
             <span className="block">You Can Rely On</span>
           </motion.h1>
 
@@ -175,7 +175,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </div>
 
           <div
-            className="absolute right-0 sm:right-[-40px] md:right-[-90px] top-1/2 animate-floating-card "
+            className="absolute right-0 sm:right-[-40px] md:right-[-40px] top-1/2 animate-floating-card z-20"
             style={{ animationDelay: '0.5s' }}
           >
             <div className="flex items-center gap-2 bg-white rounded-full shadow-lg px-3 sm:px-5 py-2">

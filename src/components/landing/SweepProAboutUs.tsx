@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, easeInOut } from 'framer-motion';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -21,7 +21,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: 'easeOut',
+      ease: easeInOut,
     },
   },
 };
@@ -33,12 +33,12 @@ const floatingVariants = {
     scale: 1,
     transition: {
       duration: 0.8,
-      ease: 'easeOut',
+      ease: easeInOut,
     },
   },
 };
 
-const SweepProAboutUs: React.FC = () => {
+const  SweepProAboutUs: React.FC = () => {
 
   const features = [
     'Verified Professionals',

@@ -205,7 +205,7 @@ export const AdminAssignedBookingsSection: React.FC<AdminAssignedBookingsSection
               <UserCheck className="h-5 w-5 text-success" />
               Assigned Bookings ({assignedBookings.length})
             </CardTitle>
-            <CardDescription>Bookings assigned to maids - tracking responses and progress</CardDescription>
+            <CardDescription>Bookings assigned to homecare partners - tracking responses and progress</CardDescription>
           </div>
           <Button
             variant="outline"
@@ -352,7 +352,7 @@ export const AdminAssignedBookingsSection: React.FC<AdminAssignedBookingsSection
                 <div className="text-center py-8 text-muted-foreground">
                   <UserCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                   <h3 className="text-lg font-medium mb-2">No Assigned Bookings</h3>
-                  <p>No bookings have been assigned to maids yet.</p>
+                  <p>No bookings have been assigned to homecare partners yet.</p>
                 </div>
               )}
               

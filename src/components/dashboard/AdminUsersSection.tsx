@@ -199,7 +199,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
         }));
       }
 
-      toast.success('Assignment request sent to maid successfully');
+      toast.success('Assignment request sent to homecare partner successfully');
       setAssignDialog({ open: false, customer: null });
       setSelectedMaidId('');
       setAssignmentNotes('');
@@ -584,16 +584,16 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
       <Dialog open={assignDialog.open} onOpenChange={(open) => setAssignDialog({ open, customer: assignDialog.customer })}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Assign Maid to Customer</DialogTitle>
+            <DialogTitle>Assign Homecare Partner to Customer</DialogTitle>
             <DialogDescription>
               Select a maid to send an assignment request to for {assignDialog.customer?.name}. 
-              The maid will receive the request and can accept or reject it. If accepted, they will receive daily booking requests for this customer.
+              The homecare partner will receive the request and can accept or reject it. If accepted, they will receive daily booking requests for this customer.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="maid-select">Select Maid</Label>
+              <Label htmlFor="maid-select">Select Homecare Partner</Label>
               <Select 
                 value={selectedMaidId} 
                 onValueChange={(value) => {
@@ -604,7 +604,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a maid..." />
+                  <SelectValue placeholder="Choose a homecare partner..." />
                 </SelectTrigger>
                 <SelectContent>
                   {availableMaids.map((maid) => (

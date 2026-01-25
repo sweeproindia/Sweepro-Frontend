@@ -93,7 +93,7 @@ const QrScannerDialog: React.FC<QrScannerDialogProps> = ({ open, onOpenChange, o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
-          <DialogTitle>Scan Maid QR</DialogTitle>
+          <DialogTitle>Scan Homecare Partner QR</DialogTitle>
           <DialogDescription>Align the QR within the frame. Grant camera permission if prompted.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

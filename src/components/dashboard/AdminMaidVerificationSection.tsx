@@ -1308,7 +1308,7 @@ export const AdminMaidVerificationSection: React.FC = () => {
                 <Textarea
                   value={rejectionNotes}
                   onChange={(e) => setRejectionNotes(e.target.value)}
-                  placeholder="Provide specific feedback to help the maid resubmit..."
+                  placeholder="Provide specific feedback to help the homecare partner resubmit..."
                   className="mt-2"
                 />
               </div>

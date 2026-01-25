@@ -141,10 +141,10 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
     setSendingToMaid(bookingId);
     try {
       await AutomaticBookingService.sendBookingToMaid(bookingId, maidId);
-      toast.success('Booking sent to maid successfully');
+      toast.success('Booking sent to homecare partner successfully');
       await loadAllData();
     } catch (error) {
-      toast.error('Failed to send booking to maid');
+      toast.error('Failed to send booking to homecare partner');
       console.error('Send to maid error:', error);
     } finally {
       setSendingToMaid(null);
@@ -167,7 +167,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
       });
 
       if (response.success) {
-        toast.success('Reassignment request sent to maid successfully');
+        toast.success('Reassignment request sent to homecare partner successfully');
         setReassignDialog({ open: false, booking: null });
         setSelectedMaidId('');
         setReassignReason('');
@@ -313,10 +313,10 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                                 <p className="text-sm text-muted-foreground">{booking.customer?.phone ?? '-'}</p>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Assigned Maid</h4>
+                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Assigned Homecare Partner</h4>
                                 <div className="flex items-center gap-2">
                                   <User className="h-4 w-4 text-green-600" />
-                                  <span className="font-medium">{booking.maid?.name ?? '(no maid)'}</span>
+                                  <span className="font-medium">{booking.maid?.name ?? '(no homecare partner)'}</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                   Rating: {booking.maid?.rating?.toFixed(1) ?? 'N/A'}★
@@ -351,7 +351,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                           
                           {/* Actions */}
                           <div className="border-l lg:border-l-2 lg:pl-6">
-                            <h4 className="font-medium mb-3">Send to Maid</h4>
+                            <h4 className="font-medium mb-3">Send to Homecare Partner</h4>
                             <div className="space-y-3">
                               <Button
                                 className="w-full"
@@ -445,8 +445,8 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                                 <p className="text-sm text-muted-foreground">{booking.customer?.email ?? '-'}</p>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Previous Maid</h4>
-                                <p className="font-medium text-red-600">{booking.maid?.name ?? '(no maid)'}</p>
+                                <h4 className="font-medium text-sm text-muted-foreground mb-1">Previous Homecare Partner</h4>
+                                <p className="font-medium text-red-600">{booking.maid?.name ?? '(no homecare partner)'}</p>
                                 <p className="text-sm text-muted-foreground">Rejected this booking</p>
                               </div>
                             </div>
@@ -474,7 +474,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                           
                           {/* Reassignment Actions */}
                           <div className="border-l lg:border-l-2 lg:pl-6">
-                            <h4 className="font-medium mb-3">Reassign to New Maid</h4>
+                            <h4 className="font-medium mb-3">Reassign to New Homecare Partner</h4>
                             <Button
                               className="w-full"
                               onClick={() => setReassignDialog({ open: true, booking })}
@@ -518,7 +518,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                 <TableHeader>
                   <TableRow>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Maid</TableHead>
+                    <TableHead>Homecare Partner</TableHead>
                     <TableHead>Service</TableHead>
                     <TableHead>Scheduled</TableHead>
                     <TableHead>Status</TableHead>
@@ -537,7 +537,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{booking.maid?.name ?? '(no maid)'}</p>
+                          <p className="font-medium">{booking.maid?.name ?? '(no homecare partner)'}</p>
                           <p className="text-sm text-muted-foreground">
                             {booking.maid?.rating?.toFixed(1) ?? 'N/A'}★
                           </p>
@@ -613,10 +613,10 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
               </div>
 
               <div>
-                <Label htmlFor="new-maid">Select New Maid</Label>
+                <Label htmlFor="new-maid">Select New Homecare Partner</Label>
                 <Select value={selectedMaidId} onValueChange={setSelectedMaidId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a maid..." />
+                    <SelectValue placeholder="Choose a homecare partner..." />
                   </SelectTrigger>
                   <SelectContent>
                     {availableMaids

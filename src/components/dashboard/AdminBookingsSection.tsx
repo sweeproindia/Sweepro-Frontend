@@ -169,7 +169,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
       return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Pending Assignment</Badge>;
     }
     if (booking.status === 'ASSIGNED' && booking.assignmentStatus === 'ASSIGNED_PENDING_RESPONSE') {
-      return <Badge variant="outline" className="text-blue-600 border-blue-600">Awaiting Maid Response</Badge>;
+      return <Badge variant="outline" className="text-blue-600 border-blue-600">Awaiting Homecare Partner Response</Badge>;
     }
     if (booking.status === 'ASSIGNED' && booking.assignmentStatus === 'REJECTED') {
       return <Badge variant="destructive">Rejected - Needs Reassignment</Badge>;
@@ -225,7 +225,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
               <Clock className="h-5 w-5 text-warning" />
               Pending Bookings ({pendingBookings.length})
             </CardTitle>
-            <CardDescription>Assign maids to pending bookings</CardDescription>
+            <CardDescription>Assign homecare partners to pending bookings</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -332,7 +332,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                 <div className="text-center py-8 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                   <h3 className="text-lg font-medium mb-2">No Pending Bookings</h3>
-                  <p>All bookings have been assigned to maids.</p>
+                  <p>All bookings have been assigned to homecare partners.</p>
                 </div>
               )}
               
@@ -354,7 +354,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
               <UserCheck className="h-5 w-5 text-success" />
               Assigned Bookings ({assignedBookings.length})
             </CardTitle>
-            <CardDescription>Bookings with assigned maids</CardDescription>
+            <CardDescription>Bookings with assigned homecare partners</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -431,7 +431,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                 <div className="text-center py-8 text-muted-foreground">
                   <UserCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                   <h3 className="text-lg font-medium mb-2">No Assigned Bookings</h3>
-                  <p>No bookings have been assigned to maids yet.</p>
+                  <p>No bookings have been assigned to homecare partners yet.</p>
                 </div>
               )}
               
@@ -451,9 +451,9 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Assign Maid to Booking</DialogTitle>
+            <DialogTitle>Assign Homecare Partner to Booking</DialogTitle>
             <DialogDescription>
-              Select a maid to assign to this booking. The maid will be notified and can accept or reject the assignment.
+              Select a homecare partner to assign to this booking. The homecare partner will be notified and can accept or reject the assignment.
             </DialogDescription>
           </DialogHeader>
 
@@ -481,10 +481,10 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Select Maid</label>
+                <label className="text-sm font-medium mb-2 block">Select Homecare Partner</label>
                 <Select value={selectedMaidId} onValueChange={setSelectedMaidId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a maid..." />
+                    <SelectValue placeholder="Choose a homecare partner..." />
                   </SelectTrigger>
                   <SelectContent>
                     {availableMaids.filter(maid => maid.status === 'ACTIVE').map((maid) => (

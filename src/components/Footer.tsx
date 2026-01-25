@@ -74,7 +74,7 @@ export const Footer = () => {
               <li>
                 <Link to="/careers" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Careers</Link>
               </li>
-              <li>
+              {/* <li>
                 <Link to="/blog" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Blog</Link>
               </li>
               <li>
@@ -82,7 +82,7 @@ export const Footer = () => {
               </li>
               <li>
                 <Link to="/partners" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Partners</Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -101,9 +101,9 @@ export const Footer = () => {
               <li className="flex items-start space-x-3">
                 <MapPin className="h-4 w-4 text-[#eeebe3]/80 mt-0.5" />
                 <span className="text-[#eeebe3] font-medium leading-snug">
-                  <span className="block">Flat No. 519, 5th Floor, B-Block</span>
-                  <span className="block">Saara Homes Residency, Upperpally (Pill No. 174)</span>
-                  <span className="block">Attapur, Hyderabad</span>
+                  {/* <span className="block">Flat No. 519, 5th Floor, B-Block</span>
+                  <span className="block">Saara Homes Residency, Upperpally (Pill No. 174)</span> */}
+                  <span className="block">Hyderabad</span>
                   <span className="block">Telangana – 500048, India</span>
                 </span>
               </li>

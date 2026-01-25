@@ -1,7 +1,7 @@
 // FeatureSection.tsx
 
 import { motion } from "framer-motion";
-import { Clock, Shield, Users, Package } from "lucide-react";
+import { Clock, Shield, Users, Package, RefreshCw, Calendar } from "lucide-react";
 
 const features = [
   {
@@ -26,6 +26,18 @@ const features = [
     icon: "/assets/product.png",
     title: "Sweepro Kit",
     description: "We equip our team with a curated cleaning kit to ensure effective, hygienic, and consistent results – every single time",
+    color: "primary",
+  },
+  {
+    icon: RefreshCw,
+    title: "Instant Replacement",
+    description: "When a homecare partner is unavailable, another will be assigned immediately to maintain the proper flow of your service.",
+    color: "primary",
+  },
+  {
+    icon: Calendar,
+    title: "Buffer Days",
+    description: "Flexibility when you need it – pause your service for a particular period of time without any hassle.",
     color: "primary",
   },
 ];
@@ -91,7 +103,7 @@ export default function FeaturesSection() {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 w-full">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             const colors = colorClasses[feature.color];

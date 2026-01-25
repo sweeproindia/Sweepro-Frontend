@@ -423,7 +423,7 @@ export default function SignupPage() {
                         alt="Maid"
                         className="mb-3 h-7 w-7 object-contain"
                       />
-                      <span className="text-sm font-medium">Maid</span>
+                      <span className="text-sm font-medium">Homecare Partner</span>
                       <span className="text-xs text-gray-500 mt-1">
                         Accept cleaning jobs
                       </span>

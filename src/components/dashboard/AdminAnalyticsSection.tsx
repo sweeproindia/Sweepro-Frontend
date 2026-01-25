@@ -71,7 +71,7 @@ export const AdminAnalyticsSection: React.FC<AdminAnalyticsSectionProps> = ({
 
         <Card className="dashboard-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Maids</CardTitle>
+            <CardTitle className="text-sm font-medium">Active Homecare Partners</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -155,7 +155,7 @@ export const AdminAnalyticsSection: React.FC<AdminAnalyticsSectionProps> = ({
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Maid Recruitment</span>
+                <span className="text-sm font-medium">Homecare Partner Recruitment</span>
                 <span className={`text-sm ${getGrowthColor(analyticsData.maidGrowth)}`}>
                   {analyticsData.maidGrowth > 0 ? '+' : ''}{analyticsData.maidGrowth}%
                 </span>
@@ -187,7 +187,7 @@ export const AdminAnalyticsSection: React.FC<AdminAnalyticsSectionProps> = ({
             </div>
             <div className="text-center p-4 border rounded-lg hover:bg-muted cursor-pointer">
               <Shield className="h-8 w-8 mx-auto mb-2 text-primary" />
-              <p className="text-sm font-medium">Verify Maids</p>
+              <p className="text-sm font-medium">Verify Homecare Partners</p>
             </div>
             <div className="text-center p-4 border rounded-lg hover:bg-muted cursor-pointer">
               <DollarSign className="h-8 w-8 mx-auto mb-2 text-primary" />

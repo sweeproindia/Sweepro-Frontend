@@ -260,7 +260,7 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
                 <Clock className="h-5 w-5 text-warning" />
                 Pending Assignments ({pendingBookings.length})
               </CardTitle>
-              <CardDescription>Assign verified maids to customer bookings</CardDescription>
+              <CardDescription>Assign verified homecare partners to customer bookings</CardDescription>
             </div>
             <Button
               variant="outline"
@@ -371,7 +371,7 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
                   <div className="text-center py-8 text-muted-foreground">
                     <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                     <h3 className="text-lg font-medium mb-2">No Pending Assignments</h3>
-                    <p>All bookings have been assigned to maids.</p>
+                    <p>All bookings have been assigned to homecare partners.</p>
                   </div>
                 )}
                 
@@ -386,9 +386,9 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Assign Maid to Booking</DialogTitle>
+            <DialogTitle>Assign Homecare Partner to Booking</DialogTitle>
             <DialogDescription>
-              Select a verified maid to assign to this booking. The maid will be notified and has 24 hours to respond.
+              Select a verified homecare partner to assign to this booking. The homecare partner will be notified and has 24 hours to respond.
             </DialogDescription>
           </DialogHeader>
 
@@ -416,10 +416,10 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Select Verified Maid</label>
+                <label className="text-sm font-medium mb-2 block">Select Verified Homecare Partner</label>
                 <Select value={selectedMaidId} onValueChange={setSelectedMaidId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a verified maid..." />
+                    <SelectValue placeholder="Choose a verified homecare partner..." />
                   </SelectTrigger>
                   <SelectContent>
                     {availableMaids.map((maid) => (

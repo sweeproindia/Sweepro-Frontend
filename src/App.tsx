@@ -8,6 +8,7 @@ import { BookingFormProvider } from "@/contexts/BookingFormContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import ScrollToTop from '@/components/ScrollToTop';
 import { RequireAuth, RequireGuest, RequireRole } from '@/components/auth/RequireAuth';
+import { useEffect } from 'react';
 
 import AdminDashboard from "./pages/AdminDashboard";
 import BookingsPage from "./pages/BookingsPage";
@@ -45,220 +46,310 @@ import CookiePolicyPage from "./pages/CookiePolicyPage";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <UserProvider>
-      <NotificationProvider>
-        <BookingFormProvider>
-          <TooltipProvider>
-            {/* Global toast components */}
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-            <ScrollToTop>
-              <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={
-                    <RequireGuest>
-                      <LoginPage />
-                    </RequireGuest>
-                  } />
-                  <Route path="/test-login" element={
-                    <RequireGuest>
-                      <TestLoginPage />
-                    </RequireGuest>
-                  } />
-                  <Route path="/signup" element={
-                    <RequireGuest>
-                      <SignupPage />
-                    </RequireGuest>
-                  } />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
+const App = () => {
+  // Disable browser scroll restoration on page reload
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
 
-                  <Route path="/terms" element={<TermsPage />} />
-                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                  <Route path="/cookies" element={<CookiePolicyPage />} />
-                  
-                  {/* Profile completion (accessible when authenticated but profile not completed) */}
-                  <Route path="/complete-profile" element={
-                    <RequireAuth requireProfileCompletion={false}>
-                      <CompleteProfilePage />
-                    </RequireAuth>
-                  } />
-                  
-                  {/* Protected routes - require authentication and profile completion */}
-                  <Route path="/dashboard" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <UserDashboard />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/bookings" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <BookingsPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/subscription" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <SubscriptionPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/monthly-subscription" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <MonthlySubscriptionDashboard />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/calendar" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <MonthlyServiceCalendar />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/buffer" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <BufferManagementPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/subscription/:planId" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <SubscriptionDetailsPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/payment-options" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <PaymentOptionsPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/review-payment" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <ReviewPaymentPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/payments" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <PaymentsPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/support" element={
-                    <RequireAuth>
-                      <RequireRole roles={['CUSTOMER']}>
-                        <SupportPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/profile" element={
-                    <RequireAuth>
-                      <ProfilePage />
-                    </RequireAuth>
-                  } />
-                  <Route path="/profile/enhanced" element={
-                    <RequireAuth>
-                      <EnhancedProfilePage />
-                    </RequireAuth>
-                  } />
-                  <Route path="/notifications" element={
-                    <RequireAuth>
-                      <NotificationsPage />
-                    </RequireAuth>
-                  } />
-                  
-                  {/* Maid routes */}
-                  <Route path="/maid-verification" element={
-                    <RequireAuth>
-                      <RequireRole roles={['MAID']}>
-                        <MaidVerification />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/maid" element={
-                    <RequireAuth>
-                      <RequireRole roles={['MAID']}>
-                        <UserMaidDashboard />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/maid-dashboard" element={
-                    <RequireAuth>
-                      <RequireRole roles={['MAID']}>
-                        <MaidDashboard />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/maid-bookings" element={
-                    <RequireAuth>
-                      <RequireRole roles={['MAID']}>
-                        <MaidBookingsPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/maid-support" element={
-                    <RequireAuth>
-                      <RequireRole roles={['MAID']}>
-                        <MaidSupportPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/maid-availability" element={
-                    <RequireAuth>
-                      <RequireRole roles={['MAID']}>
-                        <MaidAvailabilityPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  
-                  {/* Admin routes */}
-                  <Route path="/admin" element={
-                    <RequireAuth>
-                      <RequireRole roles={['ADMIN']}>
-                        <AdminDashboard />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/admin-dashboard" element={
-                    <RequireAuth>
-                      <RequireRole roles={['ADMIN']}>
-                        <AdminDashboard />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  <Route path="/admin/feedback" element={
-                    <RequireAuth>
-                      <RequireRole roles={['ADMIN']}>
-                        <AdminFeedbackPage />
-                      </RequireRole>
-                    </RequireAuth>
-                  } />
-                  
-                  {/* Catch-all route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-            </ScrollToTop>
-          </BrowserRouter>
-        </TooltipProvider>
-      </BookingFormProvider>
-      </NotificationProvider>
-    </UserProvider>
-  </QueryClientProvider>
-);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <UserProvider>
+        <NotificationProvider>
+          <BookingFormProvider>
+            <TooltipProvider>
+              {/* Global toast components */}
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ScrollToTop>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route
+                      path="/login"
+                      element={
+                        <RequireGuest>
+                          <LoginPage />
+                        </RequireGuest>
+                      }
+                    />
+                    <Route
+                      path="/test-login"
+                      element={
+                        <RequireGuest>
+                          <TestLoginPage />
+                        </RequireGuest>
+                      }
+                    />
+                    <Route
+                      path="/signup"
+                      element={
+                        <RequireGuest>
+                          <SignupPage />
+                        </RequireGuest>
+                      }
+                    />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+                    <Route path="/terms" element={<TermsPage />} />
+                    <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                    <Route path="/cookies" element={<CookiePolicyPage />} />
+
+                    {/* Profile completion (accessible when authenticated but profile not completed) */}
+                    <Route
+                      path="/complete-profile"
+                      element={
+                        <RequireAuth requireProfileCompletion={false}>
+                          <CompleteProfilePage />
+                        </RequireAuth>
+                      }
+                    />
+
+                    {/* Protected routes - require authentication and profile completion */}
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <UserDashboard />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/bookings"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <BookingsPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/subscription"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <SubscriptionPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/monthly-subscription"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <MonthlySubscriptionDashboard />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/calendar"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <MonthlyServiceCalendar />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/buffer"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <BufferManagementPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/subscription/:planId"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <SubscriptionDetailsPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/payment-options"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <PaymentOptionsPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/review-payment"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <ReviewPaymentPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/payments"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <PaymentsPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/support"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["CUSTOMER"]}>
+                            <SupportPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <RequireAuth>
+                          <ProfilePage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/profile/enhanced"
+                      element={
+                        <RequireAuth>
+                          <EnhancedProfilePage />
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/notifications"
+                      element={
+                        <RequireAuth>
+                          <NotificationsPage />
+                        </RequireAuth>
+                      }
+                    />
+
+                    {/* Maid routes */}
+                    <Route
+                      path="/maid-verification"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["MAID"]}>
+                            <MaidVerification />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/maid"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["MAID"]}>
+                            <UserMaidDashboard />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/maid-dashboard"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["MAID"]}>
+                            <MaidDashboard />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/maid-bookings"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["MAID"]}>
+                            <MaidBookingsPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/maid-support"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["MAID"]}>
+                            <MaidSupportPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/maid-availability"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["MAID"]}>
+                            <MaidAvailabilityPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+
+                    {/* Admin routes */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["ADMIN"]}>
+                            <AdminDashboard />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/admin-dashboard"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["ADMIN"]}>
+                            <AdminDashboard />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+                    <Route
+                      path="/admin/feedback"
+                      element={
+                        <RequireAuth>
+                          <RequireRole roles={["ADMIN"]}>
+                            <AdminFeedbackPage />
+                          </RequireRole>
+                        </RequireAuth>
+                      }
+                    />
+
+                    {/* Catch-all route */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </ScrollToTop>
+              </BrowserRouter>
+            </TooltipProvider>
+          </BookingFormProvider>
+        </NotificationProvider>
+      </UserProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

@@ -17,6 +17,16 @@ export default function LandingPage() {
   const location = useLocation();
   const { user: contextUser, isAuthenticated: contextIsAuthenticated, authInitialized, isLoading } = useUser();
 
+  // Scroll to top on initial page load/reload - force immediate scroll
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    // Also force scroll after a brief moment to override any other scroll behavior
+    const timeoutId = setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }, 0);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   // Handle smooth scroll when coming from other routes with target section
   useEffect(() => {
     const state = location.state as { scrollTo?: string } | null;

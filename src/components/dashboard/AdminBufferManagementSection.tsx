@@ -720,7 +720,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                     <TableHead>Customer</TableHead>
                     <TableHead>Service</TableHead>
                     <TableHead>Scheduled Time</TableHead>
-                    <TableHead>Maid</TableHead>
+                    <TableHead>Homecare Partner</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>

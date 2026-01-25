@@ -222,11 +222,11 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
       });
 
       if (response.success) {
-        toast.success('Maid profile updated successfully');
+        toast.success('Homecare partner profile updated successfully');
         onProfileUpdated();
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update maid profile');
+      toast.error(error.message || 'Failed to update homecare partner profile');
     } finally {
       setLoading(false);
     }

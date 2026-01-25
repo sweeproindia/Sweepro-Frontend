@@ -102,7 +102,7 @@ interface SubscriptionPlan {
   serviceHours: string;
   coverage: string;
   teamSize: string;
-  cancellation: string;
+  replacement: string;
   sessionsPerWeek: number;
   sessionsPerMonth: number;
 }
@@ -117,10 +117,10 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
     features: [
       'Utensil cleaning 3 days/week',
       'Floor sweeping & mopping 3 days/week', 
-      'Bathroom cleaning 2 times/month',
-      'Professional cleaning kit provided once',
-      'Fixed time slots for consistency',
-      'Basic backup maid guarantee',
+      ' Basic Bathroom care',
+      'Essential cleaning kit ',
+      'Dish Care',
+      'Basic backup homecare partner guarantee',
       'Standard customer support',
       '2 days free trial'
     ],
@@ -129,19 +129,19 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       floorCleaning: '3 days/week (Sweeping & Mopping)',
       bathroomCleaning: '2 times/month',
       homeDusting: 'Not included',
-      kitProvided: 'Professional kit provided once only',
+      kitProvided: 'Essential kit provided ',
       timings: 'Fixed slots',
-      backupGuarantee: 'Basic backup maid guarantee',
+      backupGuarantee: 'Basic backup homecare partner guarantee',
       customerCare: 'Standard support included',
       bufferDays: 'No buffer days'
     },
-    popular: true,
+   
     icon: Zap,
     gradient: 'from-[#1800ad] via-[#3a1dda] to-[#6150ff]',
     serviceHours: 'We provide Sweepro kit once for the subscription period',
     coverage: 'Kitchen, Bathroom, All floor areas',
     teamSize: '1 professional cleaner',
-    cancellation: '2 days cancellation period',
+    replacement: 'Instant Replacement in home care partner unavailability',
     sessionsPerWeek: 3,
     sessionsPerMonth: 12
   },
@@ -156,9 +156,9 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       'Bathroom cleaning 4 times/month',
       'Home dusting 1 time/month',
       'Professional kit provided monthly',
-      'Fixed time slots with flexibility',
-      'Priority backup maid guarantee',
-      'Priority customer care 24/7',
+      'Dish Care',
+      'Priority backup homecare partner guarantee',
+      'Priority customer care',
       'Buffer days included for flexibility',
       '2 days free trial'
     ],
@@ -167,18 +167,19 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       floorCleaning: '6 days/week (Sweeping & Mopping)',
       bathroomCleaning: '4 times/month',
       homeDusting: '1 time/month',
-      kitProvided: 'Professional kit provided every month',
+      kitProvided: 'Essential kit provided every month',
       timings: 'Fixed slots with priority flexibility',
-      backupGuarantee: 'Priority backup maid guarantee',
-      customerCare: 'Priority customer care 24/7',
+      backupGuarantee: 'Priority backup homecare partner guarantee',
+      customerCare: 'Priority customer care',
       bufferDays: 'Buffer days included'
     },
+    popular: true,
     icon: Crown,
     gradient: 'from-[#1800ad] via-[#3a1dda] to-[#6150ff]',
     serviceHours: 'We provide Sweepro kit every month',
     coverage: 'Complete home + comprehensive cleaning',
     teamSize: '1 professional cleaner',
-    cancellation: '2 days cancellation period',
+    replacement: 'Instant Replacement in home care partner unavailability',
     sessionsPerWeek: 6,
     sessionsPerMonth: 24
   }
@@ -219,7 +220,7 @@ export default function SubscriptionDetailsPage() {
         serviceHours: plan.serviceHours,
         coverage: plan.coverage,
         teamSize: plan.teamSize,
-        cancellation: plan.cancellation,
+        replacement: plan.replacement,
         sessionsPerWeek: plan.sessionsPerWeek,
         sessionsPerMonth: plan.sessionsPerMonth,
         popular: plan.popular,
@@ -426,23 +427,22 @@ export default function SubscriptionDetailsPage() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   {plan.features.map((feature, index) => (
                     <div
-                      key={index}
-                      className="flex items-start gap-3 rounded-2xl border px-4 py-3 transition-colors duration-200"
+                      key={feature}
+                      className={`rounded-2xl border px-4 py-4 shadow-sm`}
                       style={{
                         borderColor: theme.accentBorder,
                         background: theme.accentSurface
                       }}
                     >
-                      <div
-                        className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90"
-                        style={{ color: PALETTE.primary }}
-                      >
-                        <Check className="h-4 w-4" />
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-white/80">
+                          <Check className="h-4 w-4" style={{ color: PALETTE.primary }} />
+                        </span>
+                        <span className="text-sm font-semibold text-slate-900">{feature}</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-800">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -486,8 +486,8 @@ export default function SubscriptionDetailsPage() {
                   },
                   {
                     icon: Calendar,
-                    label: 'Cancellation',
-                    copy: plan.cancellation
+                    label: 'Replacement',
+                    copy: plan.replacement
                   }
                 ].map(({ icon: Icon, label, copy }) => (
                   <div

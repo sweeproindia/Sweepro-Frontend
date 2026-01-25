@@ -422,7 +422,7 @@ export default function CompleteProfilePage() {
                         <div className="mb-2 p-2 bg-green-100 rounded-full">
                           <User className="h-5 w-5 text-green-600" />
                         </div>
-                        <span className="font-medium">Maid</span>
+                        <span className="font-medium">Homecare Partner</span>
                         <span className="text-sm text-gray-500 text-center">
                           I provide cleaning services
                         </span>

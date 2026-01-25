@@ -37,12 +37,12 @@ const adminNavigationItems = [
     icon: <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
-    name: 'Maids', 
+    name: 'Homecare Partners', 
     href: '/admin#maids', 
     icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },
   { 
-    name: 'Maid Verification', 
+    name: 'Homecare Partner Verification', 
     href: '/admin#maid-verification', 
     icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
   },

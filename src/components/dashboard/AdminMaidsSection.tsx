@@ -248,7 +248,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
               <Shield className="h-5 w-5 text-primary" />
               Maid Management
             </CardTitle>
-            <CardDescription>Manage maid accounts, verify new maids, and monitor performance</CardDescription>
+            <CardDescription>Manage homecare partner accounts, verify new homecare partners, and monitor performance</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="bg-success/20 text-success">
@@ -269,9 +269,9 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                  <DialogTitle>Add New Maid</DialogTitle>
+                  <DialogTitle>Add New Homecare Partner</DialogTitle>
                   <DialogDescription>
-                    Fill in the maid's details to register them in the system.
+                    Fill in the homecare partner's details to register them in the system.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -398,7 +398,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[80px]">S.No</TableHead>
-                <TableHead>Maid</TableHead>
+                <TableHead>Homecare Partner</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Weekly Leave</TableHead>
@@ -530,7 +530,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
       >
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
-            <DialogTitle>Maid QR Code</DialogTitle>
+            <DialogTitle>Homecare Partner QR Code</DialogTitle>
             <DialogDescription>Customer can scan this QR to verify and complete the booking.</DialogDescription>
           </DialogHeader>
           <div className="grid place-items-center gap-3">
@@ -550,7 +550,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
           <DialogHeader>
             <DialogTitle>Set Weekly Leave</DialogTitle>
             <DialogDescription>
-              Choose the maid's weekly leave day. On that day, auto-generated assignments will go to reassignment as MAID_ON_LEAVE.
+              Choose the homecare partner's weekly leave day. On that day, auto-generated assignments will go to reassignment as MAID_ON_LEAVE.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

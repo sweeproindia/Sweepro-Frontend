@@ -24,7 +24,7 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
             <Users className="h-5 w-5" />
             Maid Assignment
           </CardTitle>
-          <CardDescription>Your dedicated maid for the month</CardDescription>
+          <CardDescription>Your dedicated homecare partner for the month</CardDescription>
         </CardHeader>
         <CardContent className="text-center py-8">
           <div className="relative">

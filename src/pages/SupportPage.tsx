@@ -24,7 +24,7 @@ const faqItems = [
     answer: 'Yes, you can pause your subscription for up to 3 months. Go to Subscription Details and click "Pause Subscription". Your plan will resume automatically.'
   },
   {
-    question: 'What cleaning supplies do the maids bring?',
+    question: 'What cleaning supplies do the homecare partners bring?',
     answer: 'Our cleaners bring all necessary supplies including eco-friendly cleaning products, vacuum cleaners, mops, and other equipment.'
   },
   {
