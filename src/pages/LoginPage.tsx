@@ -10,6 +10,49 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAuthTokenType } from '@/services/api';
 
+// Predefined addresses for displaying available communities
+const SERVICE_ADDRESSES = [
+  { id: 1, name: 'Aparna CyberLife', area: 'Nallagandla', pincode: '500019' },
+  { id: 2, name: 'Aparna HillPark Avenue', area: 'Chandanagar', pincode: '500050' },
+  { id: 3, name: 'Aparna Kanopy Tulip', area: 'Kompally', pincode: '500100' },
+  { id: 4, name: 'Aparna Sarovar Grande', area: 'Nallagandla', pincode: '500019' },
+  { id: 5, name: 'Aparna Serene Park', area: 'Kondapur', pincode: '500084' },
+  { id: 6, name: 'Bollineni Bion', area: 'Kothaguda', pincode: '500084' },
+  { id: 7, name: 'Brigade Citadel', area: 'Moti Nagar', pincode: '500018' },
+  { id: 8, name: 'Cybercity Oriana', area: 'Moosapet', pincode: '500018' },
+  { id: 9, name: 'Fortune Green Homes Sapphire', area: 'Bachupally', pincode: '500090' },
+  { id: 10, name: 'Fortune Sky Villas', area: 'Kokapet', pincode: '500075' },
+  { id: 11, name: 'Godrej Madison Avenue', area: 'Kokapet', pincode: '500075' },
+  { id: 12, name: 'L&T Serene County', area: 'Gachibowli', pincode: '500032' },
+  { id: 13, name: 'Lanco Hills Apartments', area: 'Manikonda', pincode: '500089' },
+  { id: 14, name: 'Lodha Bellezza', area: 'Kukatpally', pincode: '500072' },
+  { id: 15, name: 'Malaysian Township', area: 'Kukatpally', pincode: '500072' },
+  { id: 16, name: 'My Home Abhra', area: 'Madhapur', pincode: '500081' },
+  { id: 17, name: 'My Home Apas', area: 'Kokapet', pincode: '500075' },
+  { id: 18, name: 'My Home Avali', area: 'Gopanpally', pincode: '500075' },
+  { id: 19, name: 'My Home Bhooja', area: 'Hitech City', pincode: '500081' },
+  { id: 20, name: 'My Home Grava', area: 'Kokapet', pincode: '500075' },
+  { id: 21, name: 'My Home Krishe', area: 'Gachibowli', pincode: '500032' },
+  { id: 22, name: 'My Home Mangala', area: 'Kondapur', pincode: '500084' },
+  { id: 23, name: 'My Home Nishada', area: 'Kokapet', pincode: '500075' },
+  { id: 24, name: 'My Home Raka', area: 'Madinaguda', pincode: '500049' },
+  { id: 25, name: 'My Home Sayuk', area: 'Tellapur', pincode: '500019' },
+  { id: 26, name: 'My Home Tridasa', area: 'Tellapur', pincode: '500019' },
+  { id: 27, name: 'My Home Vipina', area: 'Tellapur', pincode: '500019' },
+  { id: 28, name: 'Prestige Beverly Hills', area: 'Kokapet', pincode: '500075' },
+  { id: 29, name: 'Prestige High Fields', area: 'Gachibowli', pincode: '500032' },
+  { id: 30, name: 'Prestige Ivy League', area: 'Hitech City', pincode: '500081' },
+  { id: 31, name: 'Prestige Rainbow Waters', area: 'Gachibowli', pincode: '500032' },
+  { id: 32, name: 'Rainbow Vistas Rock Garden', area: 'Moosapet', pincode: '500018' },
+  { id: 33, name: 'Rajapushpa Atria', area: 'Kokapet', pincode: '500075' },
+  { id: 34, name: 'Rajapushpa Provincia', area: 'Narsingi', pincode: '500075' },
+  { id: 35, name: 'Ramky One Astra', area: 'Kokapet', pincode: '500075' },
+  { id: 36, name: 'Ramky One Harmony', area: 'Pragathi Nagar', pincode: '500090' },
+  { id: 37, name: 'SMR Vinay Iconia', area: 'Kondapur', pincode: '500084' },
+  { id: 38, name: 'Vasavi Atlantis', area: 'Narsingi', pincode: '500075' },
+  { id: 39, name: 'Vasavi Skyla', area: 'Hitech City', pincode: '500081' },
+];
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
@@ -19,6 +62,9 @@ export default function LoginPage() {
 
   const liveArea = 'Gachibowli';
   const comingSoonAreas = ['Kondapur', 'Hitech City', 'Kokapet', 'Madhapur', 'Manikonda', 'Narsingi'];
+  const liveComplexes = SERVICE_ADDRESSES.filter((a) => a.area === liveArea);
+  const liveComplexesToShow = liveComplexes.slice(0, 4);
+  const liveComplexesExtraCount = Math.max(0, liveComplexes.length - liveComplexesToShow.length);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -128,7 +174,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Left Column - Form */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
         <div className="w-full max-w-2xl">
           {/* Logo */}
           <div className="flex items-center justify-center mb-8">
@@ -262,13 +308,13 @@ export default function LoginPage() {
       </div>
 
       {/* Right Column - Illustration/Info */}
-      <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-[#1800ad] via-[#12006b] to-[#ca0013] text-white">
+      <div className="hidden lg:flex flex-1 fixed right-0 top-0 h-screen w-1/2 bg-gradient-to-br from-[#1800ad] via-[#12006b] to-[#ca0013] text-white overflow-y-auto">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-20 blur-3xl"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-15 blur-3xl"></div>
         </div>
-
-        <div className="relative z-10 flex w-full items-center justify-center px-12 py-14">
+        
+        <div className="relative z-10 flex w-full items-start justify-center px-12 py-16">
           <div className="w-full max-w-xl">
             <div className="mb-8">
               <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-xl mb-6">
@@ -296,6 +342,21 @@ export default function LoginPage() {
                     Limited rollout
                   </span>
                 </div>
+
+                <div className="mt-4">
+                  <p className="text-sm font-semibold mb-3">Available communities</p>
+                  <div className="space-y-2">
+                    {liveComplexesToShow.map((c) => (
+                      <div key={c.id} className="flex items-center gap-2 text-sm text-[#eeebe3]/90">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#eeebe3]" />
+                        <span>{c.name}</span>
+                      </div>
+                    ))}
+                    {liveComplexesExtraCount > 0 && (
+                      <div className="text-sm text-[#eeebe3]/80">+ {liveComplexesExtraCount} more</div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-start space-x-4">
@@ -315,11 +376,15 @@ export default function LoginPage() {
                 <div className="w-full">
                   <h3 className="font-semibold text-lg">Coming soon</h3>
                   <p className="text-[#eeebe3]/85">Expanding to these Hyderabad areas next.</p>
+
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {comingSoonAreas.map((area) => (
+                    {comingSoonAreas.map((area, index) => (
                       <span
                         key={area}
                         className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-semibold text-[#eeebe3]/90"
+                        style={{
+                          animation: `float 3s ease-in-out ${index * 0.1}s infinite`,
+                        }}
                       >
                         {area}
                       </span>
@@ -330,6 +395,12 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+          }
+        `}</style>
       </div>
     </div>
   );

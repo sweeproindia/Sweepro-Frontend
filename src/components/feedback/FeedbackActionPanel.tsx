@@ -160,7 +160,7 @@ const FeedbackActionPanel: React.FC<FeedbackActionPanelProps> = ({
         await onRecalculate();
         toast({
           title: 'Success',
-          description: 'Maid rating recalculated successfully'
+          description: 'Homecare partner rating recalculated successfully'
         });
       }
     } catch (error: any) {

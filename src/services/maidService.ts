@@ -54,7 +54,7 @@ export const MaidService = {
       console.error('Error fetching maid assignment:', error);
       return {
         success: false,
-        error: 'Failed to fetch maid assignment'
+        error: 'Failed to fetch homecare partner assignment'
       };
     }
   },
@@ -89,7 +89,7 @@ export const MaidService = {
       );
       return response as AvailableMaidsResponse;
     } catch (error) {
-      console.error('Error fetching available maids:', error);
+      console.error('Error fetching available homecare partners:', error);
       return {
         success: false,
         data: []
@@ -109,7 +109,7 @@ export const MaidService = {
       );
       return response as { success: boolean; message?: string };
     } catch (error) {
-      console.error('Error requesting maid change:', error);
+      console.error('Error requesting homecare partner change:', error);
       return {
         success: false,
         message: 'Failed to submit change request'
@@ -128,7 +128,7 @@ export const MaidService = {
       );
       return response;
     } catch (error) {
-      console.error('Error fetching maid schedule:', error);
+      console.error('Error fetching homecare partner schedule:', error);
       return { success: false };
     }
   },
@@ -145,7 +145,7 @@ export const MaidService = {
       );
       return response as { success: boolean; message?: string };
     } catch (error) {
-      console.error('Error setting maid availability:', error);
+      console.error('Error setting homecare partner availability:', error);
       return {
         success: false,
         message: 'Failed to update availability'

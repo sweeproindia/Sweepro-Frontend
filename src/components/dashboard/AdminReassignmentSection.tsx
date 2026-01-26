@@ -194,7 +194,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
     if (!selectedBooking || !selectedMaidId) {
       toast({
         title: 'Selection Required',
-        description: 'Please select a maid for reassignment',
+        description: 'Please select a homecare partner for reassignment',
         variant: 'destructive'
       });
       return;
@@ -216,7 +216,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
 
         toast({
           title: 'Reassignment Request Sent',
-          description: 'New maid has been notified and has 24 hours to accept or reject this assignment',
+          description: 'New homecare partner has been notified and has 24 hours to accept or reject this assignment',
           variant: 'default'
         });
 
@@ -397,7 +397,7 @@ export const AdminReassignmentSection: React.FC<AdminReassignmentSectionProps> =
                                   </p>
                                 ) : (
                                 <p className="text-sm text-red-700 dark:text-red-300">
-                                  <strong>Reason:</strong> {booking.lastAttempt?.reason || booking.rejectionReason || 'Maid declined the assignment'}
+                                  <strong>Reason:</strong> {booking.lastAttempt?.reason || booking.rejectionReason || 'Homecare partner declined the assignment'}
                                 </p>
                                 )}
                                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">

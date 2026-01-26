@@ -189,7 +189,7 @@ export default function AdminFeedbackPage() {
       });
       toast({
         title: 'Success',
-        description: 'Maid rating recalculated successfully'
+        description: 'Homecare partner rating recalculated successfully'
       });
       fetchMaidAnalytics(selectedMaidId);
     } catch (error) {

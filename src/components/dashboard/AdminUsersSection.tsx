@@ -142,7 +142,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
 
   const handleAssignMaid = async () => {
     if (!assignDialog.customer || !selectedMaidId) {
-      toast.error('Please select a maid');
+      toast.error('Please select a homecare partner');
       return;
     }
 
@@ -221,12 +221,12 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
         if (conflictType === 'TIMESLOT_CONFLICT') {
           toast.error(`Timeslot Conflict: ${errorMessage}`, {
             duration: 6000,
-            description: 'This maid is already assigned to another customer with the same timeslot.',
+            description: 'This homecare partner is already assigned to another customer with the same timeslot.',
           });
         } else if (conflictType === 'CAPACITY_EXCEEDED') {
           toast.error(`Capacity Exceeded: ${errorMessage}`, {
             duration: 6000,
-            description: 'This maid has reached their maximum daily booking capacity.',
+            description: 'This homecare partner has reached their maximum daily booking capacity.',
           });
         } else {
           toast.error(`Assignment Conflict: ${errorMessage}`, {
@@ -254,7 +254,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
       }));
 
       await CustomerAssignmentService.removeCustomerAssignment(customerId);
-      toast.success('Maid assignment removed');
+      toast.success('Homecare partner assignment removed');
 
       // Refresh data in background
       setTimeout(async () => {

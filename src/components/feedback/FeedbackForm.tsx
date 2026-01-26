@@ -96,8 +96,8 @@ export function FeedbackForm({ booking, assignedMaids = [], defaultMaidId, onSuc
     // If there are assigned maids, maid selection is required
     if (assignedMaids.length > 0 && !selectedMaidId) {
       toast({
-        title: 'Maid Selection Required',
-        description: 'Please select a maid to rate',
+        title: 'Homecare Partner Selection Required',
+        description: 'Please select a homecare partner to rate',
         variant: 'destructive'
       });
       return;

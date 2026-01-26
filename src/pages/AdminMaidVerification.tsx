@@ -174,7 +174,7 @@ export default function AdminMaidVerification() {
       console.error('Error fetching verifications:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to load maid verifications',
+        description: error instanceof Error ? error.message : 'Failed to load homecare partner verifications',
         variant: 'destructive'
       });
     } finally {

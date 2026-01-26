@@ -47,19 +47,22 @@ export const Footer = () => {
             <h3 className="text-lg font-bold text-white mb-4 tracking-wide"> Upcoming Services</h3>
             <ul className="space-y-3">
               <li>
-                <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Regular Cleaning</Link>
+                <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Cooking</Link>
+              </li>
+              <li>
+                <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Baby Care</Link>
+              </li>
+              <li>
+                <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Elder Care</Link>
               </li>
               <li>
                 <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Deep Cleaning</Link>
               </li>
               <li>
+                <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Car Wash</Link>
+              </li>
+               <li>
                 <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Move-in/Move-out</Link>
-              </li>
-              <li>
-                <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Post-construction</Link>
-              </li>
-              <li>
-                <Link to="/#services" className="text-[#eeebe3] hover:text-white transition-colors font-medium">Office Cleaning</Link>
               </li>
             </ul>
           </div>

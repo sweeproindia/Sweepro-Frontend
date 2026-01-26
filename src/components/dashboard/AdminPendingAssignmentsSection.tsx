@@ -154,7 +154,7 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
     if (!selectedBooking || !selectedMaidId) {
       toast({
         title: 'Selection Required',
-        description: 'Please select a maid to assign',
+        description: 'Please select a homecare partner to assign',
         variant: 'destructive'
       });
       return;
@@ -176,7 +176,7 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
 
         toast({
           title: 'Assignment Request Sent',
-          description: 'Maid has been notified and has 24 hours to accept or reject this assignment',
+          description: 'Homecare partner has been notified and has 24 hours to accept or reject this assignment',
           variant: 'default'
         });
 
@@ -360,7 +360,7 @@ export const AdminPendingAssignmentsSection: React.FC<AdminPendingAssignmentsSec
                           size="sm"
                         >
                           <UserCheck className="h-4 w-4 mr-2" />
-                          {booking.rejectionReason ? 'Reassign Maid' : 'Assign Maid'}
+                          {booking.rejectionReason ? 'Reassign Homecare Partner' : 'Assign Homecare Partner'}
                         </Button>
                       </div>
                     </div>

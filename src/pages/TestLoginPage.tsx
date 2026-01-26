@@ -37,9 +37,9 @@ const TestLoginPage: React.FC = () => {
       role: 'MAID',
       email: 'maid@test.com',
       password: 'password123',
-      name: 'Test Maid',
+      name: 'Test Homecare Partner',
       icon: Wrench,
-      description: 'Maid account for service assignments'
+      description: 'Homecare Partner account for service assignments'
     }
   ];
 

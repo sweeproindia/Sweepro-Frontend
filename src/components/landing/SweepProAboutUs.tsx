@@ -55,7 +55,7 @@ const  SweepProAboutUs: React.FC = () => {
       variants={containerVariants}
       className="min-h-screen p-8 relative overflow-hidden bg-gradient-to-b from-white via-[#eeebe3]/60 to-white"
     >
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-6xl mx-auto relative z-10 p-4">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left side - Images */}
           <div className="relative pt-16">
@@ -65,9 +65,9 @@ const  SweepProAboutUs: React.FC = () => {
               className="relative bg-gray-200 rounded-3xl shadow-2xl overflow-hidden"
             >
               <img 
-                src="/assets/about-2.jpg" 
+                src="/assets/sweepro-washing.png" 
                 alt="Professional cleaner in uniform"
-                className="w-full h-[600px] object-cover"
+                className="w-full h-[600px] object-fit"
               />
             </motion.div>
 
@@ -84,9 +84,9 @@ const  SweepProAboutUs: React.FC = () => {
             >
               <div className="w-52 h-36 bg-white rounded-2xl shadow-2xl border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
                 <img 
-                  src="/assets/about-1.jpg" 
+                  src="/assets/sweepro-kitchen.png" 
                   alt="Office cleaning team"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-fit"
                 />
               </div>
             </motion.div>
@@ -105,9 +105,9 @@ const  SweepProAboutUs: React.FC = () => {
             >
               <div className="w-56 h-40 bg-white rounded-2xl shadow-2xl border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
                 <img 
-                  src="/assets/image-2.jpg" 
+                  src="/assets/sweepro-clothes.png" 
                   alt="Professional cleaning team"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-fit"
                 />
               </div>
             </motion.div>

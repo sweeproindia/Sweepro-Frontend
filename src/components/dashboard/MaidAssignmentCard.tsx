@@ -22,7 +22,7 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Maid Assignment
+            Homecare Partner Assignment
           </CardTitle>
           <CardDescription>Your dedicated homecare partner for the month</CardDescription>
         </CardHeader>
@@ -34,12 +34,12 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
             </div>
           </div>
           <h4 className="font-semibold mb-2 text-lg">
-            {hasSubscription ? 'Maid Coming Soon!' : 'Unlock Your Dedicated Maid'}
+            {hasSubscription ? 'Homecare Partner Coming Soon!' : 'Unlock Your Dedicated Homecare Partner'}
           </h4>
           <p className="text-muted-foreground text-sm mb-6">
             {hasSubscription 
-              ? 'A dedicated maid will be assigned to you within 24 hours of subscription activation'
-              : 'Subscribe to a plan to get a dedicated maid assigned to your home. Enjoy personalized, consistent cleaning service!'}
+              ? 'A dedicated homecare partner will be assigned to you within 24 hours of subscription activation'
+              : 'Subscribe to a plan to get a dedicated homecare partner assigned to your home. Enjoy personalized, consistent cleaning service!'}
           </p>
           {!hasSubscription ? (
             <Link to="/subscription">
@@ -71,7 +71,7 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
     } else {
       toast({
         title: 'Contact Information',
-        description: 'Maid contact details are available through our support team for privacy reasons.',
+        description: 'Homecare partner contact details are available through our support team for privacy reasons.',
         variant: 'default'
       });
     }
@@ -79,8 +79,8 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
 
   const handleRequestChange = () => {
     toast({
-      title: 'Request Maid Change',
-      description: 'Please contact support to request a maid change.',
+      title: 'Request Homecare Partner Change',
+      description: 'Please contact support to request a homecare partner change.',
       action: (
         <Button
           variant="outline"
@@ -100,7 +100,7 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
           <div>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              Your Dedicated Maid
+              Your Dedicated Homecare Partner
             </CardTitle>
             <CardDescription>
               Assigned for {assignedMonthLabel}
@@ -113,7 +113,7 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Maid Profile */}
+          {/* Homecare Partner Profile */}
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             <div className="flex-shrink-0">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
@@ -238,7 +238,7 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
           <div className="flex flex-col sm:flex-row gap-3">
             <Button onClick={handleContactMaid} className="flex-1">
               <Phone className="h-4 w-4 mr-2" />
-              Contact Maid
+              Contact Homecare Partner
             </Button>
             <Button variant="outline" onClick={handleRequestChange} className="flex-1">
               <Users className="h-4 w-4 mr-2" />

@@ -149,7 +149,7 @@ export class AuthService {
   static async getApartments(): Promise<ApiResponse<{ apartments: Apartment[] }>> {
     try {
       return await apiRequest<{ apartments: Apartment[] }>(
-        '/auth/firebase/apartments',
+        API_ENDPOINTS.APARTMENTS,
         {
           method: HttpMethod.GET,
           requiresAuth: false

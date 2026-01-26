@@ -119,7 +119,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
     if (!selectedBooking || !selectedMaidId) {
       toast({
         title: 'Selection Required',
-        description: 'Please select a maid to assign',
+        description: 'Please select a homecare partner to assign',
         variant: 'destructive'
       });
       return;
@@ -131,7 +131,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
       
       toast({
         title: 'Assignment Successful',
-        description: 'Maid has been assigned successfully. They will be notified to accept or reject.',
+        description: 'Homecare Partner has been assigned successfully. They will be notified to accept or reject.',
         variant: 'default'
       });
       
@@ -144,7 +144,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
     } catch (error) {
       toast({
         title: 'Assignment Failed',
-        description: 'Failed to assign maid. Please try again.',
+        description: 'Failed to assign homecare partner. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -321,7 +321,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                         size="sm"
                       >
                         <UserCheck className="h-4 w-4 mr-2" />
-                        {booking.rejectionReason ? 'Reassign Maid' : 'Assign Maid'}
+                        {booking.rejectionReason ? 'Reassign Homecare Partner' : 'Assign Homecare Partner'}
                       </Button>
                     </div>
                   </div>
@@ -508,7 +508,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Only active maids are shown. The selected maid will receive a notification to accept or reject this assignment.
+                  Only active homecare partners are shown. The selected homecare partner will receive a notification to accept or reject this assignment.
                 </p>
               </div>
             </div>
@@ -526,7 +526,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
               onClick={handleConfirmAssignment}
               disabled={assigning || !selectedMaidId}
             >
-              {assigning ? 'Assigning...' : 'Assign Maid'}
+              {assigning ? 'Assigning...' : 'Assign Homecare Partner'}
             </Button>
           </DialogFooter>
         </DialogContent>

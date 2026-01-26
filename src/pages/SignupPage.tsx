@@ -353,15 +353,15 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
-      {/* Left Column - Form */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+      {/* Left Column - Form - Adjusted for fixed right column */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
         <div className="w-full max-w-2xl">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <img
               src="/assets/logo.png"
               alt="Sweepro Logo"
-              className="w-40 h-40 object-contain mb-2"
+              className="w-40 h-30 object-contain mb-2"
               style={{ maxWidth: '180px', maxHeight: '180px' }}
             />
           </div>
@@ -420,7 +420,7 @@ export default function SignupPage() {
                     >
                       <img
                         src="/assets/cleaning-lady.png"
-                        alt="Maid"
+                        alt="Homecare Partner"
                         className="mb-3 h-7 w-7 object-contain"
                       />
                       <span className="text-sm font-medium">Homecare Partner</span>
@@ -845,13 +845,13 @@ export default function SignupPage() {
       </div>
 
       {/* Right Column - Illustration/Info */}
-      <div className="hidden lg:flex flex-1 relative bg-gradient-to-br from-[#1800ad] via-[#12006b] to-[#ca0013] text-white">
+      <div className="hidden lg:flex flex-1 fixed right-0 top-0 h-screen w-1/2 bg-gradient-to-br from-[#1800ad] via-[#12006b] to-[#ca0013] text-white overflow-y-auto">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-20 blur-3xl"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-15 blur-3xl"></div>
         </div>
         
-        <div className="relative z-10 flex w-full items-center justify-center px-12 py-14">
+        <div className="relative z-10 flex w-full items-start justify-center px-12 py-16">
           <div className="w-full max-w-xl">
             <div className="mb-8">
               <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-xl mb-6">
@@ -953,14 +953,23 @@ export default function SignupPage() {
                       <p className="text-[#eeebe3]/85">Expanding to these Hyderabad areas next.</p>
 
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {comingSoonAreas.map((area) => (
+                        {comingSoonAreas.map((area, index) => (
                           <span
                             key={area}
                             className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-semibold text-[#eeebe3]/90"
+                            style={{
+                              animation: `float 3s ease-in-out ${index * 0.1}s infinite`,
+                            }}
                           >
                             {area}
                           </span>
                         ))}
+                        <style>{`
+                          @keyframes float {
+                            0%, 100% { transform: translateY(0px); }
+                            50% { transform: translateY(-8px); }
+                          }
+                        `}</style>
                       </div>
                     </div>
                   </div>
@@ -968,7 +977,7 @@ export default function SignupPage() {
               )}
             </div>
 
-            <div className="mt-12 p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+            {/* <div className="mt-12 p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
               <p className="text-sm font-medium">
                 {isMaid 
                   ? "\"Joining Sweepro as a cleaning professional changed my life. I now have steady income and flexible hours!\""
@@ -987,7 +996,7 @@ export default function SignupPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

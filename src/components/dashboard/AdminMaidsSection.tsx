@@ -97,7 +97,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
 
       toast({
         title: 'Weekly Leave Updated',
-        description: 'Maid weekly off day updated successfully.'
+        description: 'Homecare partner weekly off day updated successfully.'
       });
 
       setWeeklyOffDialogOpen(false);

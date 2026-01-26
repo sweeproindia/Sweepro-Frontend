@@ -365,7 +365,7 @@ export default function ReviewPaymentPage() {
         key,
         amount,
         currency,
-        name: 'Sweep Pro',
+        name: 'Sweepro',
         description: `${selectedPlan.name} Subscription - ${getPlanDurationInfo()?.label}`,
         order_id: orderId,
         prefill: {
@@ -562,7 +562,7 @@ export default function ReviewPaymentPage() {
               Review · Payment
             </div>
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              Finalise your Sweep Pro subscription
+              Finalise your SweePro subscription
             </h1>
             <p className="max-w-3xl text-base text-slate-600 md:text-lg">
               Confirm the property, schedule and billing details for your {selectedPlan.name} plan. When you are ready,
@@ -798,7 +798,7 @@ export default function ReviewPaymentPage() {
                 <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
                   <p className="text-sm font-semibold" style={{ color: BRAND.indigo }}>Configuration locked in</p>
                   <p className="text-sm" style={{ color: `${BRAND.indigo}cc` }}>
-                    Your Sweep Pro concierge is matched for a {getBhkInfo()?.label?.toLowerCase()} {getPropertyTypeInfo()?.name?.toLowerCase()} with {selectedOptions.squareFeet} sq ft. Adjustments can be made with a quick chat post payment.
+                    Your Sweepro concierge is matched for a {getBhkInfo()?.label?.toLowerCase()} {getPropertyTypeInfo()?.name?.toLowerCase()} with {selectedOptions.squareFeet} sq ft. Adjustments can be made with a quick chat post payment.
                   </p>
                 </div>
               </CardContent>
@@ -887,7 +887,7 @@ export default function ReviewPaymentPage() {
                     <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
                       <Shield className="h-4 w-4 text-slate-600" />
                     </span>
-                    Sweep Pro assurance
+                    SweePro assurance
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-slate-600">

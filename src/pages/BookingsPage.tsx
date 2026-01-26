@@ -345,7 +345,7 @@ export default function BookingsPage() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">
-                        {booking.maid?.name || 'Maid to be assigned'}
+                        {booking.maid?.name || 'Homecare Partner to be assigned'}
                       </CardTitle>
                       <div className="flex items-center space-x-1 mt-1">
                         {booking.maid?.rating && (
@@ -472,7 +472,7 @@ export default function BookingsPage() {
                       disabled={completingWithQr}
                     >
                       <ScanLine className={`h-4 w-4 mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
-                      Scan Maid QR
+                      Scan Homecare Partner QR
                     </Button>
                   )}
                   {booking.status === 'COMPLETED' && (

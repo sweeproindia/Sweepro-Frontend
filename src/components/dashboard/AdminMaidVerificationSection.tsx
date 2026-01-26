@@ -1175,7 +1175,7 @@ export const AdminMaidVerificationSection: React.FC = () => {
             <p className="text-muted-foreground">
               {searchTerm || statusFilter !== 'all' 
                 ? 'Try adjusting your search or filter criteria'
-                : 'No maid verification requests have been submitted yet'
+                : 'No homecare partner verification requests have been submitted yet'
               }
             </p>
           </div>

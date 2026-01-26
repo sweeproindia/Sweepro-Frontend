@@ -47,7 +47,7 @@ const FALLBACK_PLANS: Record<string, SubscriptionPlan> = {
       'Bathroom cleaning 2 times/month',
       'Professional cleaning kit provided once',
       'Fixed time slots for consistency',
-      'Basic backup maid guarantee',
+      'Basic backup homecare partner guarantee',
       'Standard customer support',
       '2 days free trial'
     ],
@@ -58,7 +58,7 @@ const FALLBACK_PLANS: Record<string, SubscriptionPlan> = {
       homeDusting: 'Not included',
       kitProvided: 'Professional kit provided once only',
       timings: 'Fixed slots',
-      backupGuarantee: 'Basic backup maid guarantee',
+      backupGuarantee: 'Basic backup homecare partner guarantee',
       customerCare: 'Standard support included',
       bufferDays: 'No buffer days'
     },
@@ -79,7 +79,7 @@ const FALLBACK_PLANS: Record<string, SubscriptionPlan> = {
       'Home dusting 1 time/month',
       'Professional kit provided monthly',
       'Fixed time slots with flexibility',
-      'Priority backup maid guarantee',
+      'Priority backup homecare partner guarantee',
       'Priority customer care 24/7',
       'Buffer days included for flexibility',
       '2 days free trial'
@@ -91,7 +91,7 @@ const FALLBACK_PLANS: Record<string, SubscriptionPlan> = {
       homeDusting: '1 time/month',
       kitProvided: 'Professional kit provided every month',
       timings: 'Fixed slots with priority flexibility',
-      backupGuarantee: 'Priority backup maid guarantee',
+      backupGuarantee: 'Priority backup homecare partner guarantee',
       customerCare: 'Priority customer care 24/7',
       bufferDays: 'Buffer days included'
     },
@@ -899,6 +899,24 @@ const PaymentOptionsPage = () => {
   }, [toast]);
 
   const handleNext = () => {
+    if (!options.startDate) {
+      toast({
+        title: 'Select start date',
+        description: 'Pick a service start date to proceed.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!options.timeSlot) {
+      toast({
+        title: 'Select time slot',
+        description: 'Choose a preferred time window to continue.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     if (!options.selectedPlanDuration) {
       toast({
         title: 'Select plan duration',
@@ -993,16 +1011,22 @@ const PaymentOptionsPage = () => {
             <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
             Back to plans
           </Button>
-          <Badge
-            className="rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]"
-            style={{
+          <div  className="rounded-full px-4 py-1 flex " 
+          style={{
               border: `1px solid ${BRAND.indigo}33`,
-              background: `${BRAND.indigo}12`,
+            
               color: BRAND.indigo
-            }}
+            }}>
+            <img src='/apple-touch-icon.png' alt='Sweepro Logo' className='h-6 w-6 inline-block mr-2' />
+          <Badge
+            className="rounded-full bg-transpernt text- px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]"
+           style={{
+            color:BRAND.indigo
+           }}
           >
             {selectedPlan.name}
           </Badge>
+          </div>
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -1498,7 +1522,7 @@ const PaymentOptionsPage = () => {
               <Button
                 size="lg"
                 onClick={handleNext}
-                disabled={!options.selectedPlanDuration}
+                disabled={!options.selectedPlanDuration || !options.startDate || !options.timeSlot}
                 className="group flex items-center gap-3 rounded-full border-none px-8 py-6 text-base font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
                 style={{ background: INDIGO_STYLES.gradient, boxShadow: `0 25px 65px -30px ${BRAND.indigo}8c` }}
               >
@@ -1546,7 +1570,7 @@ const PaymentOptionsPage = () => {
                 </section>
               </CardContent>
             </Card>
-
+{/* 
             <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
               <CardHeader className="space-y-2">
                 <CardTitle className="flex items-center gap-3 text-lg text-slate-900">
@@ -1556,7 +1580,7 @@ const PaymentOptionsPage = () => {
                   >
                     <Sparkles className="h-5 w-5" style={{ color: BRAND.indigo }} />
                   </span>
-                  Why Sweep Pro?
+                  Why Sweepro?
                 </CardTitle>
                 <CardDescription className="text-sm text-slate-600">
                   Premium perks included with every subscription—no hidden extras.
@@ -1576,12 +1600,12 @@ const PaymentOptionsPage = () => {
                   <p>Hospital-grade sanitation supplies and eco-friendly essentials restocked automatically.</p>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </aside>
         </div>
       </div>
 
-      <div className="flex justify-center pt-10">
+      {/* <div className="flex justify-center pt-10">
         <Button
           size="lg"
           onClick={() => navigate('/')}
@@ -1590,7 +1614,7 @@ const PaymentOptionsPage = () => {
         >
           Back to dashboard
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 };

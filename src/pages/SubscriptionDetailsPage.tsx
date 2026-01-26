@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PiBagSimple } from "react-icons/pi";
-import { ArrowLeft, Check, Crown, Zap, Star, Shield, Calendar, Clock, Users, MapPin, CheckCircle, ArrowRight, Package, Headphones, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Zap, Star, Shield, Calendar, Clock, Users, MapPin, CheckCircle, ArrowRight, Package, Headphones, RefreshCw, Home, Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -133,7 +133,7 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       timings: 'Fixed slots',
       backupGuarantee: 'Basic backup homecare partner guarantee',
       customerCare: 'Standard support included',
-      bufferDays: 'No buffer days'
+      bufferDays: 'No buffer days - Service continues uninterrupted'
     },
    
     icon: Zap,
@@ -171,7 +171,7 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       timings: 'Fixed slots with priority flexibility',
       backupGuarantee: 'Priority backup homecare partner guarantee',
       customerCare: 'Priority customer care',
-      bufferDays: 'Buffer days included'
+      bufferDays: '4 buffer days per month - Pause service anytime you\'re unavailable'
     },
     popular: true,
     icon: Crown,
@@ -346,7 +346,7 @@ export default function SubscriptionDetailsPage() {
 
         {/* Main Hero Section */}
         <div
-          className={`relative mb-12 overflow-hidden rounded-[32px] border transition-all duration-1000 ${
+          className={`relative mb-12 overflow-hidden rounded-[32px] border transition-all duration-500 ${
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
           style={{
@@ -409,42 +409,71 @@ export default function SubscriptionDetailsPage() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* Features Card */}
+          {/* Detailed Service Breakdown Card */}
           <div className="lg:col-span-2">
             <Card
               className="h-full border bg-white/95 shadow-xl backdrop-blur-sm"
               style={{ borderColor: theme.accentBorder }}
             >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl font-semibold"
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl font-semibold"
                   style={{ color: PALETTE.primary }}
                 >
-                  <CheckCircle className="h-6 w-6" style={{ color: PALETTE.primary }} />
-                  Key Features & Benefits
+                  <Package className="h-5 w-5" style={{ color: PALETTE.primary }} />
+                  Detailed Service Breakdown
                 </CardTitle>
-                <p className="text-sm" style={{ color: 'rgba(32,30,69,0.65)' }}>
-                  Everything included in your {plan.name} subscription
+                <p className="text-sm mt-1" style={{ color: 'rgba(32,30,69,0.65)' }}>
+                  Everything bundled with your {plan.name} experience.
                 </p>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {plan.features.map((feature, index) => (
-                    <div
-                      key={feature}
-                      className={`rounded-2xl border px-4 py-4 shadow-sm`}
-                      style={{
-                        borderColor: theme.accentBorder,
-                        background: theme.accentSurface
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-white/80">
-                          <Check className="h-4 w-4" style={{ color: PALETTE.primary }} />
-                        </span>
-                        <span className="text-sm font-semibold text-slate-900">{feature}</span>
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="space-y-4 text-sm">
+                <div className="grid gap-3 md:grid-cols-2">
+                  {(() => {
+                    const breakdownItems = [
+                      { label: 'Utensil Cleaning', value: plan.serviceBreakdown.utensilCleaning, icon: Package },
+                      { label: 'Floor Cleaning', value: plan.serviceBreakdown.floorCleaning, icon: Home },
+                      { label: 'Bathroom Detailing', value: plan.serviceBreakdown.bathroomCleaning, icon: Shield },
+                      { label: 'Dusting Coverage', value: plan.serviceBreakdown.homeDusting, icon: Sparkles },
+                      { label: 'Kit & Supplies', value: plan.serviceBreakdown.kitProvided, icon: Package },
+                      { label: 'Timing Flow', value: plan.serviceBreakdown.timings, icon: Clock },
+                      { label: 'Backup Promise', value: plan.serviceBreakdown.backupGuarantee, icon: Shield },
+                      { label: 'Customer Care', value: plan.serviceBreakdown.customerCare, icon: Users },
+                      { label: 'Buffer Days', value: plan.serviceBreakdown.bufferDays, icon: Calendar, span: true }
+                    ];
+
+                    return breakdownItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div
+                          key={item.label}
+                          className={`rounded-lg border ${item.span ? 'md:col-span-2' : ''} px-4 py-3 shadow-sm`}
+                          style={{
+                            borderColor: theme.accentBorder,
+                            background: theme.accentSurface
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/40 bg-white/80">
+                              <Icon className="h-4 w-4" style={{ color: PALETTE.primary }} />
+                            </span>
+                            <span className="text-sm font-semibold text-slate-900">{item.label}</span>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-700">{item.value}</p>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
+                <div className="rounded-lg border px-4 py-3" style={{ borderColor: theme.accentBorder, background: theme.accentSurfaceBold }}>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" style={{ color: PALETTE.primary }} />
+                    <p className="font-semibold text-sm text-slate-900">Service Rhythm</p>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {plan.sessionsPerWeek} sessions every week • {plan.sessionsPerMonth} expertly supervised visits each month.
+                  </p>
+                  <p className="text-sm text-slate-600 mt-1">Flexible rescheduling and two-day cancellation window included.</p>
                 </div>
               </CardContent>
             </Card>
@@ -460,7 +489,7 @@ export default function SubscriptionDetailsPage() {
                 <CardTitle className="flex items-center gap-2 text-2xl font-semibold"
                   style={{ color: PALETTE.primary }}
                 >
-                  <Star className="h-6 w-6" style={{ color: PALETTE.primary }} />
+                  <img src='/apple-touch-icon.png' className="h-6 w-6 l" />
                   Sweepro Care Promise
                 </CardTitle>
                 <p className="text-sm" style={{ color: 'rgba(32,30,69,0.65)' }}>
@@ -488,6 +517,11 @@ export default function SubscriptionDetailsPage() {
                     icon: Calendar,
                     label: 'Replacement',
                     copy: plan.replacement
+                  },
+                  {
+                    icon: RefreshCw,
+                    label: 'Buffer Period',
+                    copy: plan.serviceBreakdown.bufferDays
                   }
                 ].map(({ icon: Icon, label, copy }) => (
                   <div
@@ -521,7 +555,7 @@ export default function SubscriptionDetailsPage() {
           />
           <CardContent className="relative p-10">
             <h3 className="text-2xl font-bold" style={{ color: PALETTE.primary }}>
-              Ready to shape your Sweep Pro experience?
+              Ready to shape your Sweepro experience?
             </h3>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 md:text-base">
               Discover flexible payment plans, seasonal perks and concierge-level scheduling crafted around your home.

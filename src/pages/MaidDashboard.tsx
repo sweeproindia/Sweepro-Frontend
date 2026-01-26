@@ -317,7 +317,7 @@ export default function MaidDashboard() {
             <CheckCircle className="h-5 w-5 text-green-600" />
             <div className="flex items-center justify-between w-full">
               <div>
-                <h4 className="font-semibold text-lg mb-2 text-green-800">🎉 Welcome to Sweep Pro!</h4>
+                <h4 className="font-semibold text-lg mb-2 text-green-800">🎉 Welcome to Sweepro!</h4>
                 <AlertDescription className="text-green-700">
                   Congratulations! Your profile has been verified and approved. You can now receive cleaning assignments and start earning money. Your account is fully active!
                 </AlertDescription>

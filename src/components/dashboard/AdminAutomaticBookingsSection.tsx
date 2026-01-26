@@ -153,7 +153,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
 
   const handleReassignBooking = async () => {
     if (!reassignDialog.booking || !selectedMaidId) {
-      toast.error('Please select a maid');
+      toast.error('Please select a homecare partner');
       return;
     }
 
