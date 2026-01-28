@@ -539,12 +539,22 @@ export default function ReviewPaymentPage() {
             Back to options
           </Button>
 
-          <Badge
-            className="rounded-full px-4 py-1"
-            style={{ border: `1px solid ${BRAND.indigo}33`, background: BRAND.indigoTint, color: BRAND.indigo }}
-          >
-            {selectedPlan.name}
-          </Badge>
+           <div  className="rounded-full px-4 py-1 flex " 
+                    style={{
+                        border: `1px solid ${BRAND.indigo}33`,
+                      
+                        color: BRAND.indigo
+                      }}>
+                      <img src='/apple-touch-icon.png' alt='Sweepro Logo' className='h-6 w-6 inline-block mr-2' />
+                    <Badge
+                      className="rounded-full bg-transpernt text- px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]"
+                     style={{
+                      color:BRAND.indigo
+                     }}
+                    >
+                      {selectedPlan.name}
+                    </Badge>
+                    </div>
         </div>
 
         <section
@@ -562,7 +572,7 @@ export default function ReviewPaymentPage() {
               Review · Payment
             </div>
             <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
-              Finalise your SweePro subscription
+              Finalise your Sweepro subscription
             </h1>
             <p className="max-w-3xl text-base text-slate-600 md:text-lg">
               Confirm the property, schedule and billing details for your {selectedPlan.name} plan. When you are ready,
@@ -881,7 +891,7 @@ export default function ReviewPaymentPage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border border-slate-200 bg-white shadow-lg">
+              {/* <Card className="rounded-3xl border border-slate-200 bg-white shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-base text-slate-900">
                     <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
@@ -905,7 +915,7 @@ export default function ReviewPaymentPage() {
                     <span>Hospital-grade sanitation and eco-friendly essentials restocked proactively.</span>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </aside>
         </div>

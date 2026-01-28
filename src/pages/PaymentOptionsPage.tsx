@@ -1000,7 +1000,7 @@ const PaymentOptionsPage = () => {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/subscription')}
             className="group flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium shadow-sm transition"
             style={{
               border: `1px solid ${BRAND.indigo}33`,
