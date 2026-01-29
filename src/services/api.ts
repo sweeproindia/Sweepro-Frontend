@@ -247,17 +247,53 @@ export class ApiError extends Error {
 
 // Token management
 export type AuthTokenStorage = 'local' | 'session';
-
 export type AuthTokenType = 'jwt' | 'firebase';
 
 const AUTH_TOKEN_EXPIRES_AT_KEY = 'authTokenExpiresAt';
-const DEFAULT_AUTH_TTL_DAYS = 30;
+// IMPORTANT: Must match backend JWT expiration time! Backend uses '24h' in jwt.sign({ expiresIn: '24h' })
+const DEFAULT_AUTH_TTL_DAYS = 1; // Changed from 30 days to 1 day to match JWT server-side TTL
 
 const isExpired = (expiresAtRaw: string | null): boolean => {
   if (!expiresAtRaw) return false;
   const expiresAt = Number(expiresAtRaw);
   if (!Number.isFinite(expiresAt)) return false;
   return Date.now() > expiresAt;
+};
+
+// Decode JWT payload without verification (safe for non-sensitive claims like expiration)
+const decodeJWT = (token: string): any | null => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    // Add padding if needed
+    let payload = parts[1];
+    const padding = (4 - (payload.length % 4)) % 4;
+    payload += '='.repeat(padding);
+    
+    // Decode base64
+    const decoded = atob(payload);
+    return JSON.parse(decoded);
+  } catch (error) {
+    console.error('🔐 Frontend Auth: Failed to decode JWT:', error);
+    return null;
+  }
+};
+
+// Check if JWT itself is expired (by checking the 'exp' claim)
+const isJWTExpired = (token: string): boolean => {
+  const payload = decodeJWT(token);
+  if (!payload || typeof payload.exp !== 'number') return false;
+  
+  // exp is in seconds, Date.now() is in milliseconds
+  const expiresAt = payload.exp * 1000;
+  const isExpiredNow = Date.now() > expiresAt;
+  
+  if (isExpiredNow) {
+    console.log('🔐 Frontend Auth: JWT is expired according to exp claim');
+  }
+  
+  return isExpiredNow;
 };
 
 const removeAuthTokenFromStorage = (storage: Storage): void => {
@@ -270,7 +306,13 @@ export const getAuthToken = (): string | null => {
   const localToken = localStorage.getItem('authToken');
   if (localToken) {
     const expiresAt = localStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
-    if (isExpired(expiresAt)) {
+    const expired = isExpired(expiresAt);
+    const jwtExpired = isJWTExpired(localToken);
+    
+    console.log('🔐 Frontend Auth: Local token found, app-level expired?', expired, 'JWT expired?', jwtExpired);
+    
+    if (expired || jwtExpired) {
+      console.log('🔐 Frontend Auth: Token expired (app-level or JWT), removing');
       removeAuthTokenFromStorage(localStorage);
       return null;
     }
@@ -280,13 +322,20 @@ export const getAuthToken = (): string | null => {
   const sessionToken = sessionStorage.getItem('authToken');
   if (sessionToken) {
     const expiresAt = sessionStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
-    if (isExpired(expiresAt)) {
+    const expired = isExpired(expiresAt);
+    const jwtExpired = isJWTExpired(sessionToken);
+    
+    console.log('🔐 Frontend Auth: Session token found, app-level expired?', expired, 'JWT expired?', jwtExpired);
+    
+    if (expired || jwtExpired) {
+      console.log('🔐 Frontend Auth: Token expired (app-level or JWT), removing');
       removeAuthTokenFromStorage(sessionStorage);
       return null;
     }
     return sessionToken;
   }
 
+  console.log('🔐 Frontend Auth: No token found in localStorage or sessionStorage');
   return null;
 };
 
@@ -376,10 +425,12 @@ export const apiRequest = async <T = any>(
   if (requiresAuth) {
     const token = getAuthToken();
     if (!token) {
+      console.error('🔐 Frontend Auth Error: No token found in storage');
       throw new ApiError('Authentication token not found. Please log in again.', 401, {
         missingToken: true
       });
     }
+    console.log('🔐 Frontend Auth: Token found, length:', token.length);
     requestHeaders.Authorization = `Bearer ${token}`;
   }
 

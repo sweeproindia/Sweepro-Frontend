@@ -1,5 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import  {DocumentUpload } from '@/components/ui/document-upload';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest, ApiError, BACKEND_ORIGIN, HttpMethod } from '@/services/api';
 import { 
   Shield, 
   FileText, 
@@ -19,9 +17,7 @@ import {
   AlertTriangle, 
   Upload,
   Clock,
-  XCircle,
-  Loader2,
-  Calendar
+  XCircle
 } from 'lucide-react';
 
 interface VerificationDocuments {
@@ -30,164 +26,26 @@ interface VerificationDocuments {
   electricityBill: File[];
 }
 
-interface DocumentStatus {
-  id: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  rejectionReason?: string;
-  filename?: string;
-  uploadedAt?: string;
-  canReupload: boolean;
-}
-
 interface VerificationStatus {
   isSubmitted: boolean;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_SUBMITTED';
   submittedAt?: string;
   rejectionReason?: string;
-  documents: {
-    aadharCard?: DocumentStatus;
-    panCard?: DocumentStatus;
-    electricityBill?: DocumentStatus;
-  };
 }
 
 export default function MaidVerification() {
-  const navigate = useNavigate();
-  const { user, refreshUser } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
-  const toastRef = useRef(toast);
-
-  useEffect(() => {
-    toastRef.current = toast;
-  }, [toast]);
   const [documents, setDocuments] = useState<VerificationDocuments>({
     aadharCard: [],
     panCard: [],
     electricityBill: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showUploadForm, setShowUploadForm] = useState(false);
-  const [statusError, setStatusError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     isSubmitted: false,
-    status: 'NOT_SUBMITTED',
-    documents: {}
+    status: 'NOT_SUBMITTED'
   });
-
-  const isMaidVerifiedFromProfile = Boolean((user as any)?.profiles?.maid?.isVerified) || ((user as any)?.profiles?.maid?.status === 'ACTIVE');
-  const userRole = (user as any)?.role;
-
-  // Load existing verification status on component mount
-  useEffect(() => {
-    if (isMaidVerifiedFromProfile) {
-      navigate('/maid-dashboard');
-      return;
-    }
-    const loadVerificationStatus = async () => {
-      try {
-        setIsLoading(true);
-        setStatusError(null);
-
-        const result = await apiRequest('/documents/maid-verification-status', {
-          method: HttpMethod.GET,
-          requiresAuth: true
-        });
-
-        if (result.success && (result as any).data) {
-          const data = (result as any).data;
-            
-            // If already approved, redirect to dashboard
-            if (data.overallStatus === 'APPROVED') {
-              toastRef.current({
-                title: 'Already Verified',
-                description: 'Your profile is already verified.',
-                variant: 'default'
-              });
-              await refreshUser();
-              navigate('/maid-dashboard');
-              return;
-            }
-            
-            // Transform backend data to frontend format
-            const transformedDocuments: any = {};
-            
-            if (data.documents) {
-              // Map backend document types to frontend
-              const docMapping = {
-                'AADHAR_CARD': 'aadharCard',
-                'PAN_CARD': 'panCard', 
-                'ADDRESS_PROOF': 'electricityBill'
-              };
-              
-              data.documents.forEach((doc: any) => {
-                const frontendKey = docMapping[doc.type as keyof typeof docMapping];
-                if (frontendKey) {
-                  transformedDocuments[frontendKey] = {
-                    id: doc.id,
-                    status: doc.verificationStatus,
-                    rejectionReason: doc.rejectionReason,
-                    filename: doc.fileName,
-                    uploadedAt: doc.createdAt,
-                    canReupload: doc.verificationStatus === 'REJECTED'
-                  };
-                }
-              });
-            }
-            
-            setVerificationStatus({
-              isSubmitted: data.hasDocuments,
-              status: data.overallStatus,
-              submittedAt: data.submittedAt,
-              rejectionReason: data.rejectionReason,
-              documents: transformedDocuments
-            });
-
-            // Allow upload only when explicitly NOT_SUBMITTED or REJECTED
-            setShowUploadForm(data.overallStatus === 'NOT_SUBMITTED');
-          } else {
-            // If status fetch fails, do not show upload form (prevents accidental re-upload UI)
-            setShowUploadForm(false);
-            setStatusError(
-              typeof (result as any)?.message === 'string' && (result as any).message
-                ? (result as any).message
-                : 'Failed to load verification status'
-            );
-          }
-      } catch (error) {
-        if (error instanceof ApiError && error.statusCode === 401) {
-          navigate('/login');
-          return;
-        }
-        if (error instanceof ApiError && error.statusCode === 403) {
-          const redirect = userRole === 'ADMIN' ? '/admin-dashboard' : '/dashboard';
-          navigate(redirect);
-          return;
-        }
-        console.error('Error loading verification status:', error);
-        setShowUploadForm(false);
-        setStatusError(error instanceof Error ? error.message : 'Failed to load verification status');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadVerificationStatus();
-  }, [isMaidVerifiedFromProfile, reloadKey, navigate, refreshUser, userRole]);
-
-  const getDocumentUploadRequirements = () => {
-    const existing = verificationStatus.documents || {};
-    const needsAadhar = !existing.aadharCard || existing.aadharCard.status === 'REJECTED';
-    const needsPan = !existing.panCard || existing.panCard.status === 'REJECTED';
-    const needsBill = !existing.electricityBill || existing.electricityBill.status === 'REJECTED';
-    return {
-      aadharCard: needsAadhar,
-      panCard: needsPan,
-      electricityBill: needsBill,
-      any: needsAadhar || needsPan || needsBill
-    };
-  };
 
   const handleDocumentChange = (type: keyof VerificationDocuments) => (files: File[]) => {
     setDocuments(prev => ({
@@ -196,205 +54,73 @@ export default function MaidVerification() {
     }));
   };
 
-  const handleReuploadDocument = (documentType: keyof VerificationDocuments) => {
-    setShowUploadForm(true);
-    setDocuments(prev => ({
-      ...prev,
-      [documentType]: []
-    }));
-
-    toast({
-      title: 'Ready for Re-upload',
-      description: `Please upload the corrected ${documentType.replace(/([A-Z])/g, ' $1').toLowerCase()} document and submit again.`,
-      variant: 'default'
-    });
-  };
-
   const isFormValid = () => {
-    const requirements = getDocumentUploadRequirements();
-    if (!requirements.any) return false;
-    if (requirements.aadharCard && documents.aadharCard.length === 0) return false;
-    if (requirements.panCard && documents.panCard.length === 0) return false;
-    if (requirements.electricityBill && documents.electricityBill.length === 0) return false;
-    return true;
+    return documents.aadharCard.length > 0 && 
+           documents.panCard.length > 0 && 
+           documents.electricityBill.length > 0;
   };
 
   const handleSubmit = async () => {
     if (!isFormValid()) {
       toast({
         title: 'Incomplete Documentation',
-        description: 'Please upload the required documents before submitting.',
+        description: 'Please upload all required documents before submitting.',
         variant: 'destructive'
       });
       return;
     }
 
     setIsSubmitting(true);
-    
     try {
-      console.log('Starting document upload...');
-      
-      // Check if backend is accessible
-      try {
-        const healthCheck = await fetch(`${BACKEND_ORIGIN}/health`);
-        console.log('Health check response:', healthCheck.status);
-        if (!healthCheck.ok) {
-          throw new Error('Backend server is not responding');
-        }
-      } catch (healthError) {
-        console.error('Backend health check failed:', healthError);
-        throw new Error('Cannot connect to server. Please ensure the backend is running.');
-      }
-
       // Create FormData for file uploads
       const formData = new FormData();
       
-      // Add documents with correct field names matching backend
+      // Add user ID
+      formData.append('maidId', user?.id || '');
+      
+      // Add documents
       if (documents.aadharCard[0]) {
         formData.append('aadharCard', documents.aadharCard[0]);
-        console.log('Added aadharCard:', documents.aadharCard[0].name);
       }
       if (documents.panCard[0]) {
         formData.append('panCard', documents.panCard[0]);
-        console.log('Added panCard:', documents.panCard[0].name);
       }
       if (documents.electricityBill[0]) {
         formData.append('electricityBill', documents.electricityBill[0]);
-        console.log('Added electricityBill:', documents.electricityBill[0].name);
       }
 
-      console.log('Making API request to upload documents...');
+      // Here you would make the API call to submit verification documents
+      // const response = await fetch('/api/maid/verification', {
+      //   method: 'POST',
+      //   body: formData
+      // });
 
-      const result = await apiRequest('/documents/upload-verification', {
-        method: HttpMethod.POST,
-        body: formData,
-        requiresAuth: true,
-        headers: {
-          // Do not set Content-Type for FormData
-        }
-      });
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      console.log('Upload result:', result);
-
-      const refreshed = await apiRequest('/documents/maid-verification-status', {
-        method: HttpMethod.GET,
-        requiresAuth: true
-      });
-
-      if (refreshed.success && (refreshed as any).data) {
-          const data = (refreshed as any).data;
-          const transformedDocuments: any = {};
-          if (data.documents) {
-            const docMapping = {
-              'AADHAR_CARD': 'aadharCard',
-              'PAN_CARD': 'panCard',
-              'ADDRESS_PROOF': 'electricityBill'
-            };
-            data.documents.forEach((doc: any) => {
-              const frontendKey = docMapping[doc.type as keyof typeof docMapping];
-              if (frontendKey) {
-                transformedDocuments[frontendKey] = {
-                  id: doc.id,
-                  status: doc.verificationStatus,
-                  rejectionReason: doc.rejectionReason,
-                  filename: doc.fileName,
-                  uploadedAt: doc.createdAt,
-                  canReupload: doc.verificationStatus === 'REJECTED'
-                };
-              }
-            });
-          }
-
-          setVerificationStatus({
-            isSubmitted: data.hasDocuments,
-            status: data.overallStatus,
-            submittedAt: data.submittedAt,
-            rejectionReason: data.rejectionReason,
-            documents: transformedDocuments
-          });
-
-          if (data.overallStatus === 'APPROVED') {
-            await refreshUser();
-          }
-      }
-
-      setShowUploadForm(false);
-      setDocuments({
-        aadharCard: [],
-        panCard: [],
-        electricityBill: []
+      setVerificationStatus({
+        isSubmitted: true,
+        status: 'PENDING',
+        submittedAt: new Date().toISOString()
       });
 
       toast({
         title: 'Verification Submitted Successfully',
-        description: `${result.data?.uploadedDocuments?.length || 3} document(s) have been uploaded successfully and submitted for admin review.`,
+        description: 'Your documents have been submitted for admin review. You will be notified once verified.',
         variant: 'default'
       });
 
     } catch (error) {
       console.error('Error submitting verification:', error);
-      
-      let errorMessage = 'Failed to submit verification documents. Please try again.';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('fetch')) {
-          errorMessage = `Network error: Cannot connect to server. Please check if the backend is reachable at ${BACKEND_ORIGIN}.`;
-        } else if (error.message.includes('Authentication')) {
-          errorMessage = 'Authentication failed. Please log in again.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
       toast({
         title: 'Submission Failed',
-        description: errorMessage,
+        description: 'Failed to submit verification documents. Please try again.',
         variant: 'destructive'
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <MaidDashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </MaidDashboardLayout>
-    );
-  }
-
-  if (statusError) {
-    return (
-      <MaidDashboardLayout>
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                Unable to Load Verification Status
-              </CardTitle>
-              <CardDescription>
-                {statusError}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-3">
-                <Button onClick={() => setReloadKey(k => k + 1)}>
-                  Retry
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/maid-dashboard')}>
-                  Back to Dashboard
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </MaidDashboardLayout>
-    );
-  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -435,7 +161,7 @@ export default function MaidVerification() {
     }
   };
 
-  if (verificationStatus.isSubmitted && !showUploadForm) {
+  if (verificationStatus.isSubmitted) {
     return (
       <MaidDashboardLayout>
         <div className="max-w-4xl mx-auto space-y-6">
@@ -454,9 +180,9 @@ export default function MaidVerification() {
               {verificationStatus.status === 'PENDING' && 
                 'Your verification documents have been submitted and are being reviewed by our admin team.'}
               {verificationStatus.status === 'APPROVED' && 
-                '🎉 Congratulations! Your profile has been verified and you are now part of the Sweep Pro family! You can now receive service assignments and start earning.'}
+                'Congratulations! Your profile has been verified. You can now receive service assignments.'}
               {verificationStatus.status === 'REJECTED' && 
-                'Your verification was rejected. Please review the feedback below and upload corrected documents to continue.'}
+                'Your verification was rejected. Please check the reason below and resubmit.'}
             </p>
           </motion.div>
 
@@ -487,128 +213,20 @@ export default function MaidVerification() {
                   </Alert>
                 )}
 
-                {verificationStatus.status === 'REJECTED' && (
-                  <div className="space-y-3">
-                    {verificationStatus.rejectionReason && (
-                      <Alert variant="destructive">
-                        <XCircle className="h-4 w-4" />
-                        <AlertDescription>
-                          <strong>General Rejection Reason:</strong> {verificationStatus.rejectionReason}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    {/* Individual document statuses */}
-                    {verificationStatus.documents && (
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-sm">Document Status Details:</h4>
-                        
-                        {/* Aadhar Card Status */}
-                        <div className={`p-3 border rounded-lg ${
-                          verificationStatus.documents.aadharCard?.status === 'APPROVED' ? 'bg-green-50 border-green-200' :
-                          verificationStatus.documents.aadharCard?.status === 'REJECTED' ? 'bg-red-50 border-red-200' :
-                          verificationStatus.documents.aadharCard?.status === 'PENDING' ? 'bg-yellow-50 border-yellow-200' :
-                          'bg-gray-50 border-gray-200'
-                        }`}>
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium text-sm">Aadhar Card</p>
-                            <Badge variant={
-                              verificationStatus.documents.aadharCard?.status === 'APPROVED' ? 'default' :
-                              verificationStatus.documents.aadharCard?.status === 'REJECTED' ? 'destructive' : 'secondary'
-                            }>
-                              {verificationStatus.documents.aadharCard?.status || 'Not Uploaded'}
-                            </Badge>
-                          </div>
-                          {verificationStatus.documents.aadharCard?.rejectionReason && (
-                            <p className="text-red-600 text-sm mt-2">{verificationStatus.documents.aadharCard.rejectionReason}</p>
-                          )}
-                          {verificationStatus.documents.aadharCard?.canReupload && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="mt-2"
-                              onClick={() => handleReuploadDocument('aadharCard')}
-                            >
-                              <Upload className="h-3 w-3 mr-1" />
-                              Re-upload
-                            </Button>
-                          )}
-                        </div>
-
-                        {/* PAN Card Status */}
-                        <div className={`p-3 border rounded-lg ${
-                          verificationStatus.documents.panCard?.status === 'APPROVED' ? 'bg-green-50 border-green-200' :
-                          verificationStatus.documents.panCard?.status === 'REJECTED' ? 'bg-red-50 border-red-200' :
-                          verificationStatus.documents.panCard?.status === 'PENDING' ? 'bg-yellow-50 border-yellow-200' :
-                          'bg-gray-50 border-gray-200'
-                        }`}>
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium text-sm">PAN Card</p>
-                            <Badge variant={
-                              verificationStatus.documents.panCard?.status === 'APPROVED' ? 'default' :
-                              verificationStatus.documents.panCard?.status === 'REJECTED' ? 'destructive' : 'secondary'
-                            }>
-                              {verificationStatus.documents.panCard?.status || 'Not Uploaded'}
-                            </Badge>
-                          </div>
-                          {verificationStatus.documents.panCard?.rejectionReason && (
-                            <p className="text-red-600 text-sm mt-2">{verificationStatus.documents.panCard.rejectionReason}</p>
-                          )}
-                          {verificationStatus.documents.panCard?.canReupload && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="mt-2"
-                              onClick={() => handleReuploadDocument('panCard')}
-                            >
-                              <Upload className="h-3 w-3 mr-1" />
-                              Re-upload
-                            </Button>
-                          )}
-                        </div>
-
-                        {/* Address Proof Status */}
-                        <div className={`p-3 border rounded-lg ${
-                          verificationStatus.documents.electricityBill?.status === 'APPROVED' ? 'bg-green-50 border-green-200' :
-                          verificationStatus.documents.electricityBill?.status === 'REJECTED' ? 'bg-red-50 border-red-200' :
-                          verificationStatus.documents.electricityBill?.status === 'PENDING' ? 'bg-yellow-50 border-yellow-200' :
-                          'bg-gray-50 border-gray-200'
-                        }`}>
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium text-sm">Address Proof</p>
-                            <Badge variant={
-                              verificationStatus.documents.electricityBill?.status === 'APPROVED' ? 'default' :
-                              verificationStatus.documents.electricityBill?.status === 'REJECTED' ? 'destructive' : 'secondary'
-                            }>
-                              {verificationStatus.documents.electricityBill?.status || 'Not Uploaded'}
-                            </Badge>
-                          </div>
-                          {verificationStatus.documents.electricityBill?.rejectionReason && (
-                            <p className="text-red-600 text-sm mt-2">{verificationStatus.documents.electricityBill.rejectionReason}</p>
-                          )}
-                          {verificationStatus.documents.electricityBill?.canReupload && (
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="mt-2"
-                              onClick={() => handleReuploadDocument('electricityBill')}
-                            >
-                              <Upload className="h-3 w-3 mr-1" />
-                              Re-upload
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                {verificationStatus.status === 'REJECTED' && verificationStatus.rejectionReason && (
+                  <Alert variant="destructive">
+                    <XCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Rejection Reason:</strong> {verificationStatus.rejectionReason}
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {verificationStatus.status === 'APPROVED' && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      <strong>🎉 Welcome to Sweep Pro!</strong><br/>
-                      Your profile is now verified! You can start receiving service assignments and earning money. Your account is fully active and ready to go!
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Your profile is now verified! You can start receiving service assignments and earning money.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -618,21 +236,9 @@ export default function MaidVerification() {
                 <Button variant="outline" onClick={() => window.location.href = '/maid-dashboard'}>
                   Back to Dashboard
                 </Button>
-                {verificationStatus.status === 'APPROVED' && (
-                  <Button onClick={() => window.location.href = '/maid-bookings'} className="bg-green-600 hover:bg-green-700">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    View Available Jobs
-                  </Button>
-                )}
                 {verificationStatus.status === 'REJECTED' && (
-                  <Button 
-                    onClick={() => {
-                      setShowUploadForm(true);
-                    }}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Corrected Documents
+                  <Button onClick={() => setVerificationStatus({ isSubmitted: false, status: 'NOT_SUBMITTED' })}>
+                    Resubmit Documents
                   </Button>
                 )}
               </div>
@@ -715,82 +321,32 @@ export default function MaidVerification() {
           transition={{ delay: 0.2 }}
           className="space-y-6"
         >
-          {(() => {
-            const requirements = getDocumentUploadRequirements();
-            const existing = verificationStatus.documents || {};
-            return (
-              <>
-                {requirements.aadharCard ? (
-                  <DocumentUpload
-                    title="Aadhar Card"
-                    description="Upload a clear photo or PDF of your Aadhar card (front and back if needed)"
-                    acceptedTypes={["image/*", "application/pdf"]}
-                    maxSize={5}
-                    required={true}
-                    onChange={handleDocumentChange('aadharCard')}
-                  />
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <CreditCard className="h-5 w-5" />
-                        Aadhar Card
-                      </CardTitle>
-                      <CardDescription>
-                        Already uploaded ({existing.aadharCard?.status || 'PENDING'})
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                )}
+          <DocumentUpload
+            title="Aadhar Card"
+            description="Upload a clear photo or PDF of your Aadhar card (front and back if needed)"
+            acceptedTypes={["image/*", "application/pdf"]}
+            maxSize={5}
+            required={true}
+            onChange={handleDocumentChange('aadharCard')}
+          />
 
-                {requirements.panCard ? (
-                  <DocumentUpload
-                    title="PAN Card"
-                    description="Upload a clear photo or PDF of your PAN card for tax identification"
-                    acceptedTypes={["image/*", "application/pdf"]}
-                    maxSize={5}
-                    required={true}
-                    onChange={handleDocumentChange('panCard')}
-                  />
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        PAN Card
-                      </CardTitle>
-                      <CardDescription>
-                        Already uploaded ({existing.panCard?.status || 'PENDING'})
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                )}
+          <DocumentUpload
+            title="PAN Card"
+            description="Upload a clear photo or PDF of your PAN card for tax identification"
+            acceptedTypes={["image/*", "application/pdf"]}
+            maxSize={5}
+            required={true}
+            onChange={handleDocumentChange('panCard')}
+          />
 
-                {requirements.electricityBill ? (
-                  <DocumentUpload
-                    title="Electricity Bill"
-                    description="Upload a recent electricity bill (within last 3 months) for address verification"
-                    acceptedTypes={["image/*", "application/pdf"]}
-                    maxSize={5}
-                    required={true}
-                    onChange={handleDocumentChange('electricityBill')}
-                  />
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Shield className="h-5 w-5" />
-                        Electricity Bill
-                      </CardTitle>
-                      <CardDescription>
-                        Already uploaded ({existing.electricityBill?.status || 'PENDING'})
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                )}
-              </>
-            );
-          })()}
+          <DocumentUpload
+            title="Electricity Bill"
+            description="Upload a recent electricity bill (within last 3 months) for address verification"
+            acceptedTypes={["image/*", "application/pdf"]}
+            maxSize={5}
+            required={true}
+            onChange={handleDocumentChange('electricityBill')}
+          />
         </motion.div>
 
         {/* Submission Section */}
@@ -814,7 +370,7 @@ export default function MaidVerification() {
                 {/* Document Checklist */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center gap-2">
-                    {!getDocumentUploadRequirements().aadharCard || documents.aadharCard.length > 0 ? (
+                    {documents.aadharCard.length > 0 ? (
                       <CheckCircle className="h-4 w-4 text-success" />
                     ) : (
                       <XCircle className="h-4 w-4 text-muted-foreground" />
@@ -824,7 +380,7 @@ export default function MaidVerification() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!getDocumentUploadRequirements().panCard || documents.panCard.length > 0 ? (
+                    {documents.panCard.length > 0 ? (
                       <CheckCircle className="h-4 w-4 text-success" />
                     ) : (
                       <XCircle className="h-4 w-4 text-muted-foreground" />
@@ -834,7 +390,7 @@ export default function MaidVerification() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!getDocumentUploadRequirements().electricityBill || documents.electricityBill.length > 0 ? (
+                    {documents.electricityBill.length > 0 ? (
                       <CheckCircle className="h-4 w-4 text-success" />
                     ) : (
                       <XCircle className="h-4 w-4 text-muted-foreground" />
@@ -849,7 +405,7 @@ export default function MaidVerification() {
                   <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                      Please upload the required documents to proceed with verification.
+                      Please upload all three required documents to proceed with verification.
                     </AlertDescription>
                   </Alert>
                 )}

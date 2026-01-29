@@ -252,13 +252,41 @@ export default function ReviewPaymentPage() {
       return;
     }
 
+    // Validate amount before proceeding
+    if (!totalWithGst || totalWithGst <= 0) {
+      toast({
+        title: 'Invalid Amount',
+        description: 'Unable to calculate payment amount. Please try selecting your plan again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Razorpay minimum order amount is ₹1 (100 paise)
+    if (totalWithGst < 1) {
+      toast({
+        title: 'Amount Too Low',
+        description: 'Payment amount must be at least ₹1.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsProcessing(true);
+    
+    console.log('🔵 Starting payment process...');
+    console.log('User:', { id: (user as any).id, email: (user as any).email });
+    console.log('Selected Plan:', selectedPlan?.name);
+    console.log('Total with GST:', totalWithGst);
 
     try {
       // Step 1: Resolve the actual backend plan and create a subscription
       // Map the selected UI plan (Sweepro Touch / Sweepro Lux) to the real
       // ServicePlan in the backend so we pass a valid planId.
       const plansResponse = await SubscriptionService.getSubscriptionPlans();
+      
+      console.log('📋 Plans response:', plansResponse);
+      
       const rawPlans: any = plansResponse.data;
       const backendPlans: any[] = Array.isArray(rawPlans)
         ? rawPlans
@@ -267,7 +295,8 @@ export default function ReviewPaymentPage() {
       if (!backendPlans || backendPlans.length === 0) {
         throw new Error('No subscription plans are configured on the server.');
       }
-
+      
+      console.log('📋 Available backend plans:', backendPlans.map((p: any) => ({ id: p.id, name: p.name })));
       const normalizeName = (value: string | undefined | null) =>
         (value || '')
           .toLowerCase()
@@ -332,7 +361,12 @@ export default function ReviewPaymentPage() {
         }
       };
 
+      console.log('🔵 Step 1: Creating subscription with data:', subscriptionData);
+      
       const subscriptionResponse = await SubscriptionService.subscribeToPlan(subscriptionData);
+      
+      console.log('✅ Subscription response:', subscriptionResponse);
+      
       const subscriptionPayload: any =
         (subscriptionResponse.data as any)?.subscription ||
         (subscriptionResponse.data as any) ||
@@ -340,8 +374,12 @@ export default function ReviewPaymentPage() {
 
       const createdSubscriptionId = subscriptionPayload?.id;
       if (!createdSubscriptionId) {
-        throw new Error('Failed to create subscription');
+        console.error('❌ No subscription ID in response:', subscriptionResponse);
+        throw new Error('Failed to create subscription - no subscription ID returned');
       }
+
+      console.log('✅ Subscription created with ID:', createdSubscriptionId);
+      console.log('🔵 Step 2: Creating Razorpay order with amount:', totalWithGst, '(₹', totalWithGst.toFixed(2), ')');
 
       // Step 2: Create Razorpay order for this subscription
       // Step 2: Create Razorpay order for this subscription using the exact
@@ -351,7 +389,11 @@ export default function ReviewPaymentPage() {
         createdSubscriptionId,
         totalWithGst
       );
+      
+      console.log('✅ Razorpay order response:', orderResponse);
+      
       if (!orderResponse.success || !orderResponse.data) {
+        console.error('❌ Order response failed:', orderResponse);
         throw new Error('Failed to create payment order');
       }
 
@@ -403,8 +445,29 @@ export default function ReviewPaymentPage() {
 
     } catch (error: any) {
       console.error('Payment initialization error:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        statusCode: error?.statusCode,
+        response: error?.response,
+        stack: error?.stack
+      });
       setIsProcessing(false);
-      toast({ title: 'Payment Failed', description: error.message || 'Failed to initialize payment. Please try again.', variant: 'destructive' });
+      
+      // Provide more specific error messages based on error type
+      let errorMessage = 'Failed to initialize payment. Please try again.';
+      if (error?.statusCode === 500) {
+        errorMessage = 'Server error occurred. Please try again in a few minutes or contact support if the issue persists.';
+      } else if (error?.statusCode === 401) {
+        errorMessage = 'Your session has expired. Please log in again.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({ 
+        title: 'Payment Failed', 
+        description: errorMessage, 
+        variant: 'destructive' 
+      });
     }
   };
 

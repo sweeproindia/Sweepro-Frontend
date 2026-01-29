@@ -318,7 +318,7 @@ export default function MaidBookingsPage() {
         </Card>
 
         {/* Quick Actions */}
-        <Card className="dashboard-card slide-up">
+        {/* <Card className="dashboard-card slide-up">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Common booking management tasks</CardDescription>
@@ -339,7 +339,7 @@ export default function MaidBookingsPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
       <MaidQrDialog open={qrOpen} onOpenChange={setQrOpen} />
     </MaidDashboardLayout>

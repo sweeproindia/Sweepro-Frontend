@@ -243,6 +243,29 @@ export interface SubscribeData {
   paymentMethod?: string;
   autoRenewal?: boolean;
   startDate?: string;
+  planDuration?: '1month' | '3month' | '6month' | null;
+  finalAmount?: number;
+  serviceDetails?: {
+    timeSlot?: string;
+    frequency?: string;
+    propertyType?: 'apartment' | 'bungalow';
+    bhkType?: '2bhk' | '3bhk' | '4bhk' | null;
+    squareFeet?: number;
+    planDuration?: '1month' | '3month' | '6month' | null;
+    address?: {
+      full?: string;
+      pincode?: string;
+      locality?: string;
+      addressLine?: string;
+      city?: string;
+      state?: string;
+      landmark?: string;
+      coordinates?: {
+        latitude?: number;
+        longitude?: number;
+      };
+    };
+  };
 }
 
 export interface SubscriptionPaymentData {

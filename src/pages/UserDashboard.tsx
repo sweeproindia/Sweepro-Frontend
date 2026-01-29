@@ -240,6 +240,7 @@ export default function UserDashboard() {
     const totalSpent = payments
       .filter(p => p.status === 'COMPLETED')
       .reduce((sum, p) => sum + p.amount, 0);
+    // ✅ FIXED: Only consider subscription active if status is ACTIVE (not PENDING_PAYMENT)
     const activeSubscription = subscription?.status === 'ACTIVE';
 
     setStats({
@@ -258,19 +259,35 @@ export default function UserDashboard() {
   }, [bookings, payments, subscription]);
 
   const handleBookNowClick = () => {
-    console.log('🔍 HandleBookNowClick - Buffer Status:', {
+    console.log('🔍 HandleBookNowClick - Subscription Status:', {
+      subscriptionExists: !!subscription,
+      subscriptionStatus: subscription?.status,
       isInBufferPeriod,
       shouldDisableBooking: shouldDisableBooking(),
-      bufferLoading,
-      subscription: !!subscription
+      bufferLoading
     });
 
-    if (!subscription) {
-      toast({
-        title: 'Subscription Required',
-        description: 'You need an active subscription to book services.',
-        variant: 'destructive'
-      });
+    // ✅ FIXED: Check for ACTIVE subscription, not just existence
+    if (!subscription || subscription.status !== 'ACTIVE') {
+      if (!subscription) {
+        toast({
+          title: 'Subscription Required',
+          description: 'You need an active subscription to book services.',
+          variant: 'destructive'
+        });
+      } else if (subscription.status === 'PENDING_PAYMENT') {
+        toast({
+          title: 'Payment Pending',
+          description: `Your subscription payment is pending. Please complete your payment to book services.`,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Subscription Inactive',
+          description: `Your subscription is ${subscription.status}. Please renew to book services.`,
+          variant: 'destructive'
+        });
+      }
       return;
     }
 
@@ -386,17 +403,35 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="dashboard-card">
+          <Card className={`dashboard-card ${subscription?.status === 'PENDING_PAYMENT' ? 'border-orange-400 bg-orange-50' : ''}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Active Subscription Plan
+                {subscription?.status === 'PENDING_PAYMENT' ? 'Subscription Pending' : 'Active Subscription Plan'}
               </CardTitle>
-              <Package className="h-5 w-5 text-primary" />
+              <Package className={`h-5 w-5 ${subscription?.status === 'PENDING_PAYMENT' ? 'text-orange-500' : 'text-primary'}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
+              <div className={`text-2xl font-bold ${subscription?.status === 'PENDING_PAYMENT' ? 'text-orange-600' : 'text-foreground'}`}>
                 {subscription ? subscription.plan?.name : 'No Active Plan'}
               </div>
+              {subscription?.status === 'PENDING_PAYMENT' && (
+                <div className="mt-3 space-y-3">
+                  <div className="p-2 bg-orange-100 border border-orange-300 rounded text-sm text-orange-700">
+                    ⚠️ Payment pending - Complete your payment to activate this plan
+                  </div>
+                  <Link to="/payment-options" state={{ fromDashboard: true, subscriptionId: subscription.id }}>
+                    <Button className="w-full btn-hero">
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Complete Payment
+                    </Button>
+                  </Link>
+                </div>
+              )}
+              {subscription?.status === 'ACTIVE' && (
+                <div className="mt-3 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-700">
+                  ✓ Subscription Active
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -408,7 +443,7 @@ export default function UserDashboard() {
               <Calendar className="h-5 w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              {subscription ? (
+              {subscription && subscription.status === 'ACTIVE' ? (
                 subscription.nextBillDate ? (
                   <div className="text-2xl font-bold text-foreground">
                     {new Date(subscription.nextBillDate).toLocaleDateString()}
@@ -416,6 +451,12 @@ export default function UserDashboard() {
                 ) : (
                   <div className="text-2xl font-bold text-foreground">Not available</div>
                 )
+              ) : subscription && subscription.status === 'PENDING_PAYMENT' ? (
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground text-sm">
+                    Complete payment to see billing details
+                  </p>
+                </div>
               ) : (
                 <div className="text-center">
                   <p className="text-muted-foreground text-sm mb-4">

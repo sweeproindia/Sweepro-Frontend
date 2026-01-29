@@ -841,7 +841,7 @@ const PaymentOptionsPage = () => {
     setIsSavingAddress(true);
     try {
       const tokenType = getAuthTokenType();
-      const endpoint = tokenType === 'firebase' ? '/auth/firebase/update-profile' : API_ENDPOINTS.USER.UPDATE;
+      const endpoint = tokenType === 'firebase' ? '/auth/firebase/update-profile' : API_ENDPOINTS.PROFILE.UPDATE_USER;
 
       await apiRequest(endpoint, {
         method: HttpMethod.PUT,
@@ -1000,7 +1000,7 @@ const PaymentOptionsPage = () => {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <Button
             variant="ghost"
-            onClick={() => navigate('/subscription')}
+            onClick={() => navigate(-1)}
             className="group flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium shadow-sm transition"
             style={{
               border: `1px solid ${BRAND.indigo}33`,

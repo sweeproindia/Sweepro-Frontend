@@ -176,18 +176,20 @@ export class BookingService {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-      // Only use for already assigned bookings
+      // Backend returns { success, data: [...], pageInfo, filters }
+      // where data is already an array of bookings
       if (response.success && response.data) {
-        if ('bookings' in response.data) {
-          return {
-            ...response,
-            data: response.data.bookings
-          };
-        }
         if (Array.isArray(response.data)) {
           return {
             ...response,
             data: response.data as Booking[]
+          };
+        }
+        // Fallback for bookings property (legacy)
+        if ('bookings' in response.data) {
+          return {
+            ...response,
+            data: (response.data as any).bookings
           };
         }
       }

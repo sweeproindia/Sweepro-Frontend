@@ -196,29 +196,53 @@ export class PaymentService {
 
   /**
    * Create Razorpay order for subscription
+   * @param subscriptionId - The subscription ID
+   * @param amount - Amount to charge
+   * @param currency - Currency code (default: INR)
    */
   static async createRazorpaySubscriptionOrder(subscriptionId: string, amount: number, currency: string = 'INR'): Promise<ApiResponse<RazorpayOrderData>> {
     try {
+      // Note: Backend handles the paise conversion if needed
+      console.log('🔵 Creating Razorpay subscription order:', {
+        subscriptionId,
+        amount,
+        currency
+      });
+      
       const res = await apiRequest<any>(API_ENDPOINTS.PAYMENTS.RAZORPAY.SUBSCRIPTION_ORDER, {
         method: HttpMethod.POST,
         body: { subscriptionId, amount, currency },
         requiresAuth: true
       });
+      
+      console.log('✅ Razorpay order response:', res);
+      
       const response: any = res;
       const order = response.order || response.data?.order;
       const key = response.key || response.data?.key;
+      
+      if (!order || !order.id) {
+        console.error('❌ Invalid order response - missing order or order.id:', response);
+        throw new Error('Invalid order response from server - no order ID received');
+      }
+      
       return {
         success: true,
         message: 'Order created',
         data: {
-          orderId: order?.id,
-          amount: order?.amount,
-          currency: order?.currency,
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
           key
         }
       };
-    } catch (error) {
-      console.error('Create Razorpay subscription order error:', error);
+    } catch (error: any) {
+      console.error('❌ Create Razorpay subscription order error:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        statusCode: error?.statusCode,
+        response: error?.response
+      });
       throw error;
     }
   }
