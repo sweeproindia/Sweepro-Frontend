@@ -708,7 +708,7 @@ export default function UserDashboard() {
                 <p className="text-muted-foreground text-sm mb-4">
                   Book your first cleaning service to get started
                 </p>
-                <Button 
+                {/* <Button 
                   className={`btn-hero ${shouldDisableBooking() ? 'border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100' : ''}`}
                   onClick={handleBookNowClick}
                   disabled={shouldDisableBooking() || bufferLoading}
@@ -729,7 +729,7 @@ export default function UserDashboard() {
                       Book Now
                     </>
                   )}
-                </Button>
+                </Button> */}
               </div>
             )}
           </CardContent>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import { apiRequest, API_ENDPOINTS, HttpMethod, getAuthTokenType } from '@/services/api';
+import { SubscriptionService, TimeSlotCount } from '@/services/subscriptionService';
 
 import { AuthService, Apartment } from '@/services/authService';
 import {
@@ -18,7 +19,8 @@ import {
   Clock,
   Home,
   MapPin,
-  Sparkles
+  Sparkles,
+  Users
 } from 'lucide-react';
 
 const BRAND = {
@@ -560,9 +562,7 @@ const TIME_SLOTS = [
   '06:00 - 08:00',
   '08:00 - 10:00',
   '10:00 - 12:00',
-  '12:00 - 14:00',
-  '14:00 - 16:00',
-  '16:00 - 18:00'
+  '12:00 - 14:00'
 ];
 
 const PaymentOptionsPage = () => {
@@ -594,8 +594,37 @@ const PaymentOptionsPage = () => {
   const [selectedApartmentId, setSelectedApartmentId] = useState<string>('');
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [floorNumber, setFloorNumber] = useState('');
+  const [timeSlotCounts, setTimeSlotCounts] = useState<TimeSlotCount[]>([]);
+  const [isLoadingSlotCounts, setIsLoadingSlotCounts] = useState(false);
 
   const isLuxPlan = selectedPlan?.id === 'premium';
+
+  // Fetch global time slot counts (not date-specific)
+  const fetchTimeSlotCounts = useCallback(async () => {
+    setIsLoadingSlotCounts(true);
+    try {
+      const response = await SubscriptionService.getTimeSlotCounts();
+      if (response.success && response.data?.slots) {
+        setTimeSlotCounts(response.data.slots);
+      }
+    } catch (error) {
+      console.error('Failed to fetch time slot counts:', error);
+      // On error, show all slots as available
+      setTimeSlotCounts([]);
+    } finally {
+      setIsLoadingSlotCounts(false);
+    }
+  }, []);
+
+  // Fetch slot counts on component mount
+  useEffect(() => {
+    fetchTimeSlotCounts();
+  }, [fetchTimeSlotCounts]);
+
+  // Helper to get slot info
+  const getSlotInfo = (slot: string): TimeSlotCount | undefined => {
+    return timeSlotCounts.find(s => s.timeSlot === slot);
+  };
 
   const saveToStorage = (key: string, value: unknown) => {
     try {
@@ -808,10 +837,19 @@ const PaymentOptionsPage = () => {
   }, [apartments, options.address, selectedApartmentId, user]);
 
   const handleOptionChange = (field: keyof ServiceOptions, value: string) => {
-    setOptions((prev) => ({
-      ...prev,
-      [field]: value
-    }));
+    setOptions((prev) => {
+      const updated = {
+        ...prev,
+        [field]: value
+      };
+      
+      // If start date changes, clear the selected time slot (it might not be available for new date)
+      if (field === 'startDate' && value !== prev.startDate) {
+        updated.timeSlot = '';
+      }
+      
+      return updated;
+    });
   };
 
   const handleCancelAddressEdit = () => {
@@ -1342,36 +1380,124 @@ const PaymentOptionsPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Start date</label>
-                    <Input
-                      type="date"
-                      value={options.startDate}
-                      min={new Date().toISOString().split('T')[0]}
-                      onChange={(event) => handleOptionChange('startDate', event.target.value)}
-                      className="rounded-xl border border-slate-200 bg-white text-slate-800"
-                      style={{
-                        outline: 'none',
-                        boxShadow: 'none'
-                      }}
-                    />
+                {/* Start Date Selection */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">
+                    <Calendar className="inline h-3.5 w-3.5 mr-1.5" />
+                    Start date
+                  </label>
+                  <Input
+                    type="date"
+                    value={options.startDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(event) => handleOptionChange('startDate', event.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white text-slate-800 h-12"
+                    style={{
+                      outline: 'none',
+                      boxShadow: 'none'
+                    }}
+                  />
+                </div>
+
+                {/* Time Slot Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">
+                      <Clock className="inline h-3.5 w-3.5 mr-1.5" />
+                      Select time slot
+                    </label>
+                    {isLoadingSlotCounts && (
+                      <span className="text-xs text-slate-400 animate-pulse">Loading availability...</span>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Time slot</label>
-                    <Select value={options.timeSlot} onValueChange={(value) => handleOptionChange('timeSlot', value)}>
-                      <SelectTrigger className="rounded-xl border border-slate-200 bg-white text-left text-slate-800">
-                        <SelectValue placeholder="Pick a slot" />
-                      </SelectTrigger>
-                      <SelectContent className="border border-slate-200 bg-white text-slate-800">
-                        {TIME_SLOTS.map((slot) => (
-                          <SelectItem key={slot} value={slot}>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    {TIME_SLOTS.map((slot) => {
+                      const slotInfo = getSlotInfo(slot);
+                      const count = slotInfo?.count ?? 0;
+                      const maxLimit = slotInfo?.maxLimit ?? 20;
+                      const isDisabled = slotInfo?.isDisabled ?? false;
+                      const isFull = count >= maxLimit;
+                      const isSelected = options.timeSlot === slot;
+                      const availableSpots = maxLimit - count;
+                      
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => {
+                            if (isDisabled) {
+                              toast({
+                                title: 'Slot Full',
+                                description: `This time slot has reached the maximum of ${maxLimit} bookings. Please select another slot.`,
+                                variant: 'destructive'
+                              });
+                              return;
+                            }
+                            handleOptionChange('timeSlot', slot);
+                          }}
+                          className={`
+                            relative p-4 rounded-xl border-2 transition-all duration-200 text-left
+                            ${isSelected 
+                              ? 'border-[#1800ad] bg-[#1800ad]/5 shadow-md' 
+                              : isDisabled 
+                                ? 'border-red-200 bg-red-50 cursor-not-allowed opacity-60' 
+                                : 'border-slate-200 bg-white hover:border-[#1800ad]/50 hover:shadow-sm cursor-pointer'
+                            }
+                          `}
+                        >
+                          {/* Selected Indicator */}
+                          {isSelected && (
+                            <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-[#1800ad] flex items-center justify-center">
+                              <Check className="h-3.5 w-3.5 text-white" />
+                            </div>
+                          )}
+                          
+                          {/* Time Slot */}
+                          <div className={`text-base font-semibold ${isDisabled ? 'text-slate-400' : 'text-slate-800'}`}>
                             {slot}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </div>
+                          
+                          {/* Availability Badge */}
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              isFull 
+                                ? 'bg-red-100 text-red-600' 
+                                : availableSpots <= 5 
+                                  ? 'bg-amber-100 text-amber-600'
+                                  : 'bg-green-100 text-green-600'
+                            }`}>
+                              <Users className="h-3 w-3" />
+                              <span>{count}/{maxLimit}</span>
+                            </div>
+                            {isFull ? (
+                              <Badge variant="destructive" className="text-xs px-2 py-0 h-5">
+                                Full
+                              </Badge>
+                            ) : availableSpots <= 5 ? (
+                              <span className="text-xs text-amber-600">
+                                Only {availableSpots} left!
+                              </span>
+                            ) : (
+                              <span className="text-xs text-green-600">
+                                Available
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
+                  
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                    <span>Green = Available</span>
+                    <span className="ml-2 inline-block h-2 w-2 rounded-full bg-amber-500"></span>
+                    <span>Yellow = Filling up</span>
+                    <span className="ml-2 inline-block h-2 w-2 rounded-full bg-red-500"></span>
+                    <span>Red = Full</span>
+                  </p>
                 </div>
 
               </CardContent>

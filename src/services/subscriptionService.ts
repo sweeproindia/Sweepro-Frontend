@@ -613,4 +613,35 @@ export class SubscriptionService {
       throw error;
     }
   }
+
+  /**
+   * Get global time slot booking counts
+   * Returns the count of users who have selected each time slot (not date-specific)
+   */
+  static async getTimeSlotCounts(): Promise<ApiResponse<TimeSlotCountsResponse>> {
+    try {
+      return await apiRequest<TimeSlotCountsResponse>(`/subscriptions/time-slot-counts`, {
+        method: HttpMethod.GET,
+        requiresAuth: false // Public endpoint - no auth required
+      });
+    } catch (error) {
+      console.error('Get time slot counts error:', error);
+      throw error;
+    }
+  }
+}
+
+// Time slot count interfaces
+export interface TimeSlotCount {
+  timeSlot: string;
+  count: number;
+  maxLimit: number;
+  available: number;
+  isDisabled: boolean;
+}
+
+export interface TimeSlotCountsResponse {
+  slots: TimeSlotCount[];
+  totalSlots: number;
+  maxUsersPerSlot: number;
 }
