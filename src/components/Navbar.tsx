@@ -33,12 +33,18 @@ export const Navbar = ({
   };
 
   const handleDashboardClick = () => {
-    if (user?.role === 'CUSTOMER') {
+    const role = user?.role?.toUpperCase();
+    
+    if (role === 'CUSTOMER') {
       navigate('/dashboard');
-    } else if (user?.role === 'MAID') {
+    } else if (role === 'MAID') {
       navigate('/maid-dashboard');
-    } else if (user?.role === 'ADMIN') {
+    } else if (role === 'ADMIN') {
       navigate('/admin-dashboard');
+    } else {
+      // Fallback to customer dashboard if role is unknown
+      console.warn('Unknown user role:', user?.role);
+      navigate('/dashboard');
     }
   };
 

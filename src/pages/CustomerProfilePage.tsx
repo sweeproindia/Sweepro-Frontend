@@ -3,7 +3,7 @@ import { useUser } from '@/contexts/UserContext';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Camera, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { Edit, Camera, Mail, Phone, MapPin, Calendar, User } from 'lucide-react';
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
 import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
 import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
@@ -11,17 +11,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface CustomerProfileData {
   id: string;
-  fullName: string;
+  name: string;
   email: string;
   phone: string;
   profileImage?: string;
   coverImage?: string;
   bio?: string;
   address?: string;
+  addressLine?: string;
+  locality?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   role?: string;
   joinDate?: string;
+  createdAt?: string;
   totalBookings?: number;
-  totalSpent?: number;
+  remainingDays?: number;
   favoriteServices?: string[];
 }
 
@@ -93,17 +99,11 @@ export const CustomerProfilePage: React.FC = () => {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardContent className="pt-6 text-center space-y-2">
                     <Skeleton className="h-9 w-20 mx-auto" />
                     <Skeleton className="h-4 w-28 mx-auto" />
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6 text-center space-y-2">
-                    <Skeleton className="h-9 w-24 mx-auto" />
-                    <Skeleton className="h-4 w-24 mx-auto" />
                   </CardContent>
                 </Card>
                 <Card>
@@ -185,7 +185,7 @@ export const CustomerProfilePage: React.FC = () => {
           <div className="lg:col-span-1">
             <Card className="overflow-hidden">
               {/* Cover Image */}
-              <div className="relative h-32 bg-gradient-to-r from-cyan-200 via-blue-200 to-purple-200">
+              <div className="relative h-36 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
                 {profileData.coverImage ? (
                   <img
                     src={profileData.coverImage}
@@ -203,16 +203,16 @@ export const CustomerProfilePage: React.FC = () => {
 
               <CardContent className="p-6">
                 {/* Profile Image */}
-                <div className="relative -mt-12 mb-4">
+                <div className="relative -mt-16 mb-4">
                   <div className="relative inline-block">
                     <img
                       src={profileData.profileImage || '/default-avatar.png'}
-                      alt={profileData.fullName}
-                      className="w-24 h-24 rounded-full border-4 border-white object-cover shadow-lg"
+                      alt={profileData.name || 'User'}
+                      className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-xl ring-2 ring-primary/20"
                     />
                     <button
                       onClick={() => handleImageUpload('profile')}
-                      className="absolute bottom-0 right-0 p-2 bg-primary rounded-full text-white hover:bg-primary/90 transition-colors"
+                      className="absolute bottom-1 right-1 p-2 bg-primary rounded-full text-white hover:bg-primary/90 transition-colors shadow-lg"
                     >
                       <Camera className="h-3 w-3" />
                     </button>
@@ -221,9 +221,9 @@ export const CustomerProfilePage: React.FC = () => {
 
                 {/* Name */}
                 <div className="mb-4">
-                  <h2 className="text-2xl font-bold">{profileData.fullName}</h2>
+                  <h2 className="text-2xl font-bold text-foreground">{profileData.name || 'User'}</h2>
                   {profileData.bio && (
-                    <p className="text-sm text-muted-foreground mt-2">{profileData.bio}</p>
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{profileData.bio}</p>
                   )}
                 </div>
 
@@ -257,7 +257,7 @@ export const CustomerProfilePage: React.FC = () => {
           {/* Right Column - Stats */}
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardContent className="pt-6 text-center">
                   <div className="text-3xl font-bold text-primary mb-1">
@@ -268,20 +268,10 @@ export const CustomerProfilePage: React.FC = () => {
               </Card>
               <Card>
                 <CardContent className="pt-6 text-center">
-                  <div className="text-3xl font-bold text-green-600 mb-1">
-                    ₹{profileData.totalSpent?.toLocaleString() || '0'}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Total Spent</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6 text-center">
                   <div className="text-3xl font-bold text-blue-600 mb-1">
-                    {profileData.joinDate 
-                      ? Math.floor((Date.now() - new Date(profileData.joinDate).getTime()) / (1000 * 60 * 60 * 24))
-                      : 0} days
+                    {profileData.remainingDays || 0} days
                   </div>
-                  <p className="text-sm text-muted-foreground">Member Since</p>
+                  <p className="text-sm text-muted-foreground">Remaining Days</p>
                 </CardContent>
               </Card>
             </div>
@@ -289,28 +279,45 @@ export const CustomerProfilePage: React.FC = () => {
             {/* Account Details */}
             <Card>
               <CardHeader>
-                <CardTitle>Account Information</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  Account Information
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Full Name</p>
-                    <p className="font-semibold">{profileData.fullName}</p>
+                    <p className="font-semibold text-foreground">{profileData.name || 'Not provided'}</p>
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-semibold">{profileData.email}</p>
+                    <p className="font-semibold text-foreground">{profileData.email || 'Not provided'}</p>
                   </div>
-                  <div>
+                  <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-semibold">{profileData.phone}</p>
+                    <p className="font-semibold text-foreground">{profileData.phone || 'Not provided'}</p>
                   </div>
-                  {profileData.joinDate && (
-                    <div>
+                  {(profileData.joinDate || profileData.createdAt) && (
+                    <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Member Since</p>
-                      <p className="font-semibold flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(profileData.joinDate).toLocaleDateString()}
+                      <p className="font-semibold flex items-center gap-2 text-foreground">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        {new Date(profileData.joinDate || profileData.createdAt!).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  )}
+                  {(profileData.addressLine || profileData.address || profileData.city) && (
+                    <div className="col-span-full space-y-1">
+                      <p className="text-sm text-muted-foreground">Address</p>
+                      <p className="font-semibold text-foreground">
+                        {[profileData.addressLine, profileData.locality, profileData.city, profileData.state, profileData.pincode]
+                          .filter(Boolean)
+                          .join(', ') || profileData.address || 'Not provided'}
                       </p>
                     </div>
                   )}

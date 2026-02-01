@@ -62,12 +62,17 @@ export default function LandingPage() {
       return;
     }
 
-    if (contextUser?.role === 'CUSTOMER') {
+    const role = contextUser?.role?.toUpperCase();
+    if (role === 'CUSTOMER') {
       navigate('/dashboard');
-    } else if (contextUser?.role === 'MAID') {
+    } else if (role === 'MAID') {
       navigate('/maid-dashboard');
-    } else if (contextUser?.role === 'ADMIN') {
+    } else if (role === 'ADMIN') {
       navigate('/admin-dashboard');
+    } else {
+      // Fallback to customer dashboard if role is unknown
+      console.warn('Unknown user role:', contextUser?.role);
+      navigate('/dashboard');
     }
   };
 

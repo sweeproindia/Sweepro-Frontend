@@ -27,14 +27,13 @@ const subscriptionPlans: SubscriptionPlan[] = [
     name: 'Sweepro Touch',
     tagline: 'Sweepro Touch',
     description:
-      'A thoughtfully designed premium cleaning plan that offers reliable, efficient service for a smooth and hassle-free experience.',
+      'Perfect touch of  weekly home cleaning with scheduled visits , keeps your routine uninterrupted without the cost of daily service.',
     icon: Zap,
     gradient: 'from-[#bcdcff] to-[#a9cfff]',
     features: [
-      'AI-assisted cleaning',
-      'Weekly deep clean',
-      'Verified professionals',
-      'Priority support'
+      '3 Scheduled Professional Cleaning Visits Every Week',
+      ' Standardized Cleaning Process',
+      'Assured Backup & Same-Day Replacement',
     ]
   },
   {
@@ -42,14 +41,14 @@ const subscriptionPlans: SubscriptionPlan[] = [
     name: 'Sweepro Lux',
     tagline: 'Sweepro Lux',
     description:
-      'A premium upgrade that delivers superior care, greater attention to detail, and a more personalized cleaning experience.',
+      'A Complete premium daily home care designed for households that want zero cleaning stress and  values maximum convenience.',
     icon: Crown,
     gradient: 'from-[#1800ad] to-[#1800ad]',
     features: [
-      'Dedicated luxury team',
-      'Daily upkeep option',
-      'Premium eco products',
-      '24/7 concierge support'
+      '6 Scheduled Professional Cleaning Visits Every Week',
+      'Monthly Essential Kit Replenishment',
+      'Assured Service Continuity',
+      'Priority Backup & Same-Day Replacement'
     ]
   }
 ];

@@ -38,17 +38,10 @@ const faqItems = [
 ];
 
 const supportChannels = [
-  {
-    icon: MessageCircle,
-    title: 'Live Chat',
-    description: 'Get instant help from our support team',
-    availability: 'Available 24/7',
-    action: 'Start Chat',
-    color: 'text-primary'
-  },
+ 
   {
     icon: Phone,
-    title: 'Phone Support',
+    title: 'Whatsapp Support',
     description: 'Speak directly with our specialists',
     availability: 'Mon-Sun, 8 AM - 10 PM',
     action: 'Call Now: +91 98765 43210',
@@ -223,26 +216,26 @@ export default function SupportPage() {
         </Card>
 
         {/* Support Channels */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 slide-up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 slide-up max-w-2xl mx-auto">
           {supportChannels.map((channel, index) => (
             <Card 
               key={channel.title} 
               className="dashboard-card hover:shadow-feature cursor-pointer group"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <CardHeader className="text-center">
-                <div className={`w-12 h-12 mx-auto rounded-full bg-card border-2 border-border flex items-center justify-center group-hover:border-primary/30 transition-colors ${channel.color}`}>
-                  <channel.icon className="h-6 w-6" />
+              <CardHeader className="text-center p-4 sm:p-6">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 mx-auto rounded-full bg-card border-2 border-border flex items-center justify-center group-hover:border-primary/30 transition-colors ${channel.color}`}>
+                  <channel.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
-                <CardTitle className="text-lg">{channel.title}</CardTitle>
-                <CardDescription>{channel.description}</CardDescription>
+                <CardTitle className="text-base sm:text-lg">{channel.title}</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">{channel.description}</CardDescription>
               </CardHeader>
-              <CardContent className="text-center space-y-3">
-                <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
+              <CardContent className="text-center space-y-2 sm:space-y-3 p-4 pt-0 sm:p-6 sm:pt-0">
+                <div className="flex items-center justify-center space-x-2 text-xs sm:text-sm text-muted-foreground">
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{channel.availability}</span>
                 </div>
-                <Button className="w-full btn-hero">
+                <Button className="w-full btn-hero text-sm sm:text-base">
                   {channel.action}
                 </Button>
               </CardContent>

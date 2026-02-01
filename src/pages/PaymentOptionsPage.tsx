@@ -243,57 +243,48 @@ const DEFAULT_BHK_CONFIGS: BhkConfig[] = [
     label: '2 BHK',
     sqftOptions: [
       {
+        value: 1100,
+        range: '1000 - 1200 sq ft',
+        pricing: {
+          '1month': 5499,
+          '3month': 5299,
+          '6month': 4999
+        }
+      },
+      {
         value: 1300,
-        range: '1200 - 1400 sq ft',
+        range: '1201 - 1400 sq ft',
         pricing: {
-          '1month': 5898,
-          '3month': 5681,
-          '6month': 5463
+          '1month': 5699,
+          '3month': 5499,
+          '6month': 5199
         }
       },
       {
-        value: 1501,
-        range: '1401 - 1601 sq ft',
+        value: 1500,
+        range: '1401 - 1600 sq ft',
         pricing: {
-          '1month': 6072,
-          '3month': 5838,
-          '6month': 5603
+          '1month': 5899,
+          '3month': 5699,
+          '6month': 5399
         }
       },
       {
-        value: 1702,
-        range: '1602 - 1802 sq ft',
+        value: 1700,
+        range: '1601 - 1800 sq ft',
         pricing: {
-          '1month': 6247,
-          '3month': 5995,
-          '6month': 5742
+          '1month': 6099,
+          '3month': 5899,
+          '6month': 5599
         }
       },
       {
-        value: 1903,
-        range: '1803 - 2003 sq ft',
+        value: 1900,
+        range: '1801 - 2000 sq ft',
         pricing: {
-          '1month': 6421,
-          '3month': 6152,
-          '6month': 5882
-        }
-      },
-      {
-        value: 2104,
-        range: '2004 - 2204 sq ft',
-        pricing: {
-          '1month': 6596,
-          '3month': 6309,
-          '6month': 6021
-        }
-      },
-      {
-        value: 2305,
-        range: '2205 - 2405 sq ft',
-        pricing: {
-          '1month': 6770,
-          '3month': 6465,
-          '6month': 6161
+          '1month': 6299,
+          '3month': 6099,
+          '6month': 5799
         }
       }
     ]
@@ -303,48 +294,75 @@ const DEFAULT_BHK_CONFIGS: BhkConfig[] = [
     label: '3 BHK',
     sqftOptions: [
       {
-        value: 2506,
-        range: '2406 - 2606 sq ft',
+        value: 1300,
+        range: '1200 - 1400 sq ft',
         pricing: {
-          '1month': 6944,
-          '3month': 6622,
-          '6month': 6300
+          '1month': 6199,
+          '3month': 5899,
+          '6month': 5599
         }
       },
       {
-        value: 2707,
-        range: '2607 - 2807 sq ft',
+        value: 1500,
+        range: '1401 - 1600 sq ft',
         pricing: {
-          '1month': 7119,
-          '3month': 6779,
-          '6month': 6440
+          '1month': 6399,
+          '3month': 6099,
+          '6month': 5799
         }
       },
       {
-        value: 2908,
-        range: '2808 - 3008 sq ft',
+        value: 1700,
+        range: '1601 - 1800 sq ft',
         pricing: {
-          '1month': 7293,
-          '3month': 6936,
-          '6month': 6580
+          '1month': 6599,
+          '3month': 6299,
+          '6month': 5999
         }
       },
       {
-        value: 3109,
-        range: '3009 - 3209 sq ft',
+        value: 1900,
+        range: '1801 - 2000 sq ft',
         pricing: {
-          '1month': 7468,
-          '3month': 7093,
-          '6month': 6719
+          '1month': 6799,
+          '3month': 6499,
+          '6month': 6199
         }
       },
       {
-        value: 3310,
-        range: '3210 - 3410 sq ft',
+        value: 2100,
+        range: '2001 - 2200 sq ft',
         pricing: {
-          '1month': 7642,
-          '3month': 7250,
-          '6month': 6859
+          '1month': 6999,
+          '3month': 6699,
+          '6month': 6399
+        }
+      },
+      {
+        value: 2300,
+        range: '2201 - 2400 sq ft',
+        pricing: {
+          '1month': 7199,
+          '3month': 6899,
+          '6month': 6599
+        }
+      },
+      {
+        value: 2500,
+        range: '2401 - 2600 sq ft',
+        pricing: {
+          '1month': 7399,
+          '3month': 7099,
+          '6month': 6799
+        }
+      },
+      {
+        value: 2700,
+        range: '2601 - 2800 sq ft',
+        pricing: {
+          '1month': 7599,
+          '3month': 7299,
+          '6month': 6999
         }
       }
     ]
@@ -354,39 +372,75 @@ const DEFAULT_BHK_CONFIGS: BhkConfig[] = [
     label: '4 BHK',
     sqftOptions: [
       {
-        value: 3606,
-        range: '3506 - 3706 sq ft',
+        value: 2300,
+        range: '2201 - 2400 sq ft',
         pricing: {
-          '1month': 8240,
-          '3month': 7830,
-          '6month': 7420
+          '1month': 6499,
+          '3month': 6199,
+          '6month': 5999
         }
       },
       {
-        value: 3807,
-        range: '3707 - 3907 sq ft',
+        value: 2500,
+        range: '2401 - 2600 sq ft',
         pricing: {
-          '1month': 8440,
-          '3month': 8010,
-          '6month': 7580
+          '1month': 6699,
+          '3month': 6399,
+          '6month': 6199
         }
       },
       {
-        value: 4008,
-        range: '3908 - 4108 sq ft',
+        value: 2700,
+        range: '2601 - 2800 sq ft',
         pricing: {
-          '1month': 8640,
-          '3month': 8190,
-          '6month': 7740
+          '1month': 6899,
+          '3month': 6599,
+          '6month': 6399
         }
       },
       {
-        value: 4209,
-        range: '4109 - 4309 sq ft',
+        value: 2900,
+        range: '2801 - 3000 sq ft',
         pricing: {
-          '1month': 8840,
-          '3month': 8370,
-          '6month': 7900
+          '1month': 7099,
+          '3month': 6799,
+          '6month': 6599
+        }
+      },
+      {
+        value: 3100,
+        range: '3001 - 3200 sq ft',
+        pricing: {
+          '1month': 7299,
+          '3month': 6999,
+          '6month': 6799
+        }
+      },
+      {
+        value: 3300,
+        range: '3201 - 3400 sq ft',
+        pricing: {
+          '1month': 7499,
+          '3month': 7199,
+          '6month': 6999
+        }
+      },
+      {
+        value: 3500,
+        range: '3401 - 3600 sq ft',
+        pricing: {
+          '1month': 7699,
+          '3month': 7399,
+          '6month': 7199
+        }
+      },
+      {
+        value: 3700,
+        range: '3601 - 3800 sq ft',
+        pricing: {
+          '1month': 7899,
+          '3month': 7599,
+          '6month': 7399
         }
       }
     ]
@@ -399,57 +453,48 @@ const LUX_BHK_CONFIGS: BhkConfig[] = [
     label: '2 BHK',
     sqftOptions: [
       {
+        value: 1100,
+        range: '1000 - 1200 sq ft',
+        pricing: {
+          '1month': 6499,
+          '3month': 5999,
+          '6month': 5599
+        }
+      },
+      {
         value: 1300,
-        range: '1200 - 1400 sq ft',
+        range: '1201 - 1400 sq ft',
         pricing: {
-          '1month': 7350,
-          '3month': 6950,
-          '6month': 6550
+          '1month': 6799,
+          '3month': 6299,
+          '6month': 5899
         }
       },
       {
-        value: 1501,
-        range: '1401 - 1601 sq ft',
+        value: 1500,
+        range: '1401 - 1600 sq ft',
         pricing: {
-          '1month': 7550,
-          '3month': 7150,
-          '6month': 6750
+          '1month': 6999,
+          '3month': 6599,
+          '6month': 6199
         }
       },
       {
-        value: 1702,
-        range: '1602 - 1802 sq ft',
+        value: 1700,
+        range: '1601 - 1800 sq ft',
         pricing: {
-          '1month': 7750,
-          '3month': 7350,
-          '6month': 6950
+          '1month': 7299,
+          '3month': 6899,
+          '6month': 6499
         }
       },
       {
-        value: 1903,
-        range: '1803 - 2003 sq ft',
+        value: 1900,
+        range: '1801 - 2000 sq ft',
         pricing: {
-          '1month': 7950,
-          '3month': 7550,
-          '6month': 7150
-        }
-      },
-      {
-        value: 2104,
-        range: '2004 - 2204 sq ft',
-        pricing: {
-          '1month': 8150,
-          '3month': 7750,
-          '6month': 7350
-        }
-      },
-      {
-        value: 2305,
-        range: '2205 - 2405 sq ft',
-        pricing: {
-          '1month': 8350,
-          '3month': 7950,
-          '6month': 7550
+          '1month': 7599,
+          '3month': 7199,
+          '6month': 6799
         }
       }
     ]
@@ -459,57 +504,75 @@ const LUX_BHK_CONFIGS: BhkConfig[] = [
     label: '3 BHK',
     sqftOptions: [
       {
-        value: 2506,
-        range: '2406 - 2606 sq ft',
+        value: 1300,
+        range: '1200 - 1400 sq ft',
         pricing: {
-          '1month': 8550,
-          '3month': 8150,
-          '6month': 7750
+          '1month': 6899,
+          '3month': 6499,
+          '6month': 6199
         }
       },
       {
-        value: 2707,
-        range: '2607 - 2807 sq ft',
+        value: 1500,
+        range: '1401 - 1600 sq ft',
         pricing: {
-          '1month': 8750,
-          '3month': 8350,
-          '6month': 7950
+          '1month': 7199,
+          '3month': 6799,
+          '6month': 6499
         }
       },
       {
-        value: 2908,
-        range: '2808 - 3008 sq ft',
+        value: 1700,
+        range: '1601 - 1800 sq ft',
         pricing: {
-          '1month': 8950,
-          '3month': 8550,
-          '6month': 8150
+          '1month': 7499,
+          '3month': 7099,
+          '6month': 6799
         }
       },
       {
-        value: 3109,
-        range: '3009 - 3209 sq ft',
+        value: 1900,
+        range: '1801 - 2000 sq ft',
         pricing: {
-          '1month': 9150,
-          '3month': 8750,
-          '6month': 8350
+          '1month': 7799,
+          '3month': 7399,
+          '6month': 7099
         }
       },
       {
-        value: 3310,
-        range: '3210 - 3410 sq ft',
+        value: 2100,
+        range: '2001 - 2200 sq ft',
         pricing: {
-          '1month': 9350,
-          '3month': 8950,
-          '6month': 8550
+          '1month': 8099,
+          '3month': 7699,
+          '6month': 7399
         }
       },
       {
-        value: 3458,
-        range: '3411 - 3505 sq ft',
+        value: 2300,
+        range: '2201 - 2400 sq ft',
         pricing: {
-          '1month': 9550,
-          '3month': 9150,
-          '6month': 8750
+          '1month': 8399,
+          '3month': 7999,
+          '6month': 7699
+        }
+      },
+      {
+        value: 2500,
+        range: '2401 - 2600 sq ft',
+        pricing: {
+          '1month': 8699,
+          '3month': 8299,
+          '6month': 7999
+        }
+      },
+      {
+        value: 2700,
+        range: '2601 - 2800 sq ft',
+        pricing: {
+          '1month': 8999,
+          '3month': 8599,
+          '6month': 8299
         }
       }
     ]
@@ -519,39 +582,75 @@ const LUX_BHK_CONFIGS: BhkConfig[] = [
     label: '4 BHK',
     sqftOptions: [
       {
-        value: 3606,
-        range: '3506 - 3706 sq ft',
+        value: 2300,
+        range: '2201 - 2400 sq ft',
         pricing: {
-          '1month': 10550,
-          '3month': 10050,
-          '6month': 9550
+          '1month': 7999,
+          '3month': 7599,
+          '6month': 7199
         }
       },
       {
-        value: 3807,
-        range: '3707 - 3907 sq ft',
+        value: 2500,
+        range: '2401 - 2600 sq ft',
         pricing: {
-          '1month': 10850,
-          '3month': 10350,
-          '6month': 9850
+          '1month': 8299,
+          '3month': 7899,
+          '6month': 7499
         }
       },
       {
-        value: 4008,
-        range: '3908 - 4108 sq ft',
+        value: 2700,
+        range: '2601 - 2800 sq ft',
         pricing: {
-          '1month': 11150,
-          '3month': 10650,
-          '6month': 10150
+          '1month': 8599,
+          '3month': 8199,
+          '6month': 7799
         }
       },
       {
-        value: 4209,
-        range: '4109 - 4309 sq ft',
+        value: 2900,
+        range: '2801 - 3000 sq ft',
         pricing: {
-          '1month': 11450,
-          '3month': 10950,
-          '6month': 10450
+          '1month': 8899,
+          '3month': 8499,
+          '6month': 8099
+        }
+      },
+      {
+        value: 3100,
+        range: '3001 - 3200 sq ft',
+        pricing: {
+          '1month': 9199,
+          '3month': 8799,
+          '6month': 8399
+        }
+      },
+      {
+        value: 3300,
+        range: '3201 - 3400 sq ft',
+        pricing: {
+          '1month': 9499,
+          '3month': 9099,
+          '6month': 8699
+        }
+      },
+      {
+        value: 3500,
+        range: '3401 - 3600 sq ft',
+        pricing: {
+          '1month': 9799,
+          '3month': 9399,
+          '6month': 8999
+        }
+      },
+      {
+        value: 3700,
+        range: '3601 - 3800 sq ft',
+        pricing: {
+          '1month': 10499,
+          '3month': 9899,
+          '6month': 9399
         }
       }
     ]
@@ -873,6 +972,33 @@ const PaymentOptionsPage = () => {
   };
 
   const handleSaveAddress = async () => {
+    if (!selectedApartmentId) {
+      toast({
+        title: 'Apartment complex required',
+        description: 'Please select your apartment complex.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!apartmentNumber.trim()) {
+      toast({
+        title: 'Apartment/House number required',
+        description: 'Please enter your apartment or house number.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!floorNumber.trim()) {
+      toast({
+        title: 'Floor number required',
+        description: 'Please enter your floor number.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     const apt = apartments.find((a) => a.id === selectedApartmentId) || null;
     const nextAddress = buildAddressFromApartment(apt, apartmentNumber, floorNumber);
 
@@ -1038,7 +1164,7 @@ const PaymentOptionsPage = () => {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/subscription')}
             className="group flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium shadow-sm transition"
             style={{
               border: `1px solid ${BRAND.indigo}33`,
@@ -1246,9 +1372,6 @@ const PaymentOptionsPage = () => {
                             <p className="text-base font-semibold" style={{ color: BRAND.indigo }}>
                               {option.range}
                             </p>
-                            <p className="text-xs uppercase tracking-[0.35em]" style={{ color: 'rgba(32,30,69,0.45)' }}>
-                              Approx. {option.value} sq ft
-                            </p>
                           </div>
                           <div className="flex flex-col gap-1 text-sm">
                             {isActive ? (
@@ -1265,7 +1388,7 @@ const PaymentOptionsPage = () => {
                                     color: BRAND.indigo
                                   }}
                                 >
-                                  3 Months ₹{option.pricing['3month'].toLocaleString()}
+                                  6 Months ₹{option.pricing['6month'].toLocaleString()}
                                 </Badge>
                               </>
                             ) : (
@@ -1334,9 +1457,9 @@ const PaymentOptionsPage = () => {
                           <p className="text-xs text-slate-500">{duration.description}</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-2xl font-semibold" style={{ color: BRAND.indigo }}>₹{pricing.finalTotal.toLocaleString()}</p>
-                          <p className="text-xs font-medium uppercase tracking-[0.3em] text-slate-500">
-                            ₹{monthly.toLocaleString()} per month
+                          <p className="text-2xl font-semibold" style={{ color: BRAND.indigo }}>₹{monthly.toLocaleString()}<span className="text-sm font-medium" style={{ color: `${BRAND.indigo}99` }}>/month</span></p>
+                          <p className="text-xs font-medium text-slate-500">
+                            Total: ₹{pricing.finalTotal.toLocaleString()}
                           </p>
                         </div>
                         {pricing.discountPercent > 0 && (
@@ -1389,7 +1512,11 @@ const PaymentOptionsPage = () => {
                   <Input
                     type="date"
                     value={options.startDate}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={(() => {
+                      const dayAfterTomorrow = new Date();
+                      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+                      return dayAfterTomorrow.toISOString().split('T')[0];
+                    })()}
                     onChange={(event) => handleOptionChange('startDate', event.target.value)}
                     className="rounded-xl border border-slate-200 bg-white text-slate-800 h-12"
                     style={{
@@ -1397,6 +1524,9 @@ const PaymentOptionsPage = () => {
                       boxShadow: 'none'
                     }}
                   />
+                  <p className="text-xs text-slate-500">
+                    Services can be scheduled starting from the day after tomorrow
+                  </p>
                 </div>
 
                 {/* Time Slot Selection */}

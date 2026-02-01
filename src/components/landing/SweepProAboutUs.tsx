@@ -62,7 +62,7 @@ const  SweepProAboutUs: React.FC = () => {
             {/* Main image container */}
             <motion.div
               variants={itemVariants}
-              className="relative bg-gray-200 rounded-3xl shadow-2xl overflow-hidden"
+              className="relative bg-gray-200 rounded-3xl shadow-2xl shadow-[#1800ad]/50 overflow-hidden"
             >
               <img 
                 src="/assets/sweepro-washing.png" 
@@ -82,7 +82,7 @@ const  SweepProAboutUs: React.FC = () => {
               }}
               className="absolute top-12 -left-8"
             >
-              <div className="w-52 h-36 bg-white rounded-2xl shadow-2xl border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
+              <div className="w-52 h-36 bg-white rounded-2xl shadow-2xl shadow-[#1800ad]/100 border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
                 <img 
                   src="/assets/sweepro-kitchen.png" 
                   alt="Office cleaning team"
@@ -103,7 +103,7 @@ const  SweepProAboutUs: React.FC = () => {
               }}
               className="absolute -bottom-8 -right-8"
             >
-              <div className="w-56 h-40 bg-white rounded-2xl shadow-2xl border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
+              <div className="w-56 h-40 bg-white rounded-2xl shadow-2xl shadow-[#1800ad]/80 border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
                 <img 
                   src="/assets/sweepro-clothes.png" 
                   alt="Professional cleaning team"
