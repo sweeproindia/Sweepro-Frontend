@@ -1033,6 +1033,9 @@ export default function AdminDashboard() {
                       name: u.name,
                       email: u.email,
                       phone: u.phone,
+                      address: (u as any).address,
+                      timeSlot: (u as any).timeSlot,
+                      createdAt: u.createdAt,
                       joinDate: u.createdAt,
                       status: u.status === 'ACTIVE' ? 'active' : u.status === 'INACTIVE' ? 'suspended' : 'pending',
                       totalBookings: 0, // This would need to be calculated from bookings

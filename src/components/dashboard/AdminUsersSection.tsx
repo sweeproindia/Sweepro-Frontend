@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Users, ChevronLeft, ChevronRight, UserPlus, Pause, User, AlertTriangle, RefreshCw, Calendar, Search } from 'lucide-react';
 
 import { CustomerAssignmentService, CustomerAssignmentStatus } from '@/services/customerAssignmentService';
+import { UserDetailsModal } from '@/components/admin/UserDetailsModal';
 import { toast } from 'sonner';
 
 interface User {
@@ -18,7 +19,10 @@ interface User {
   name: string;
   email: string;
   phone: string;
+  address?: string;
+  timeSlot?: string;
   joinDate: string;
+  createdAt?: string;
   status: 'active' | 'pending' | 'suspended';
   totalBookings: number;
   totalSpent: number;
@@ -53,6 +57,10 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   const [customerStatuses, setCustomerStatuses] = useState<Record<string, CustomerAssignmentStatus>>({});
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Details modal state
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Assignment dialog state
   const [assignDialog, setAssignDialog] = useState<{
@@ -542,7 +550,15 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
-                          <Button size="sm" variant="outline" className="h-7 text-xs">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowDetailsModal(true);
+                            }}
+                          >
                             View Details
                           </Button>
                           {user.status === 'pending' && (
@@ -658,6 +674,15 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Details Modal */}
+      <UserDetailsModal
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        user={selectedUser}
+        subscription={selectedUser ? customerStatuses[selectedUser.id]?.subscription : undefined}
+        assignedMaid={selectedUser ? customerStatuses[selectedUser.id]?.assignment?.maid : undefined}
+      />
     </Card>
   );
 }; 

@@ -8,6 +8,7 @@ import {
   CreditCard,
   AlertCircle,
   Package,
+  CookingPot,
   Zap,
   Shield,
   Star,
@@ -473,12 +474,11 @@ function SubscriptionPage() {
                     {(() => {
                       const breakdown = (subscription.plan as any).serviceBreakdown;
                       const breakdownItems = [
-                        { label: 'Utensil Cleaning', value: breakdown.utensilCleaning, icon: Package },
+                        { label: 'Utensil Cleaning', value: breakdown.utensilCleaning, icon: CookingPot },
                         { label: 'Floor Cleaning', value: breakdown.floorCleaning, icon: Home },
                         { label: 'Bathroom Detailing', value: breakdown.bathroomCleaning, icon: Shield },
                         { label: 'Dusting Coverage', value: breakdown.homeDusting, icon: Sparkles },
                         { label: 'Kit & Supplies', value: breakdown.kitProvided, icon: Package },
-                        { label: 'Timing Flow', value: breakdown.timings, icon: Clock },
                         { label: 'Backup Promise', value: breakdown.backupGuarantee, icon: Shield },
                         { label: 'Customer Care', value: breakdown.customerCare, icon: Users },
                         { label: 'Buffer Days', value: breakdown.bufferDays, icon: Calendar, span: true }

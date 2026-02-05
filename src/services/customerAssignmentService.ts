@@ -212,4 +212,20 @@ export class CustomerAssignmentService {
       throw error;
     }
   }
+
+  /**
+   * Get customers assigned to a specific maid (Admin only)
+   */
+  static async getMaidAssignedCustomers(maidId: string): Promise<ApiResponse<any[]>> {
+    try {
+      const endpoint = `/customer-assignments/maid/${maidId}/customers`;
+      return await apiRequest<any[]>(endpoint, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Get maid assigned customers error:', error);
+      throw error;
+    }
+  }
 }

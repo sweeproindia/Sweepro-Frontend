@@ -238,8 +238,8 @@ export default function ReviewPaymentPage() {
 
   // Use the final total price from the configuration, not calculating here
   const finalTotal = selectedOptions.finalTotalPrice || 0;
-  const gst = finalTotal * 0.18; // 18% GST
-  const totalWithGst = finalTotal + gst;
+  // No GST calculation - final total is the payable amount
+  const totalWithGst = finalTotal;
 
   const handleMakePayment = async () => {
     if (!user) {
@@ -714,14 +714,13 @@ export default function ReviewPaymentPage() {
                   <div className="text-left md:text-right">
                     <p className="text-3xl font-bold" style={{ color: BRAND.indigo }}>₹{finalTotal.toLocaleString()}</p>
                     <p className="text-sm" style={{ color: `${BRAND.indigo}b3` }}>{getPlanDurationInfo()?.description}</p>
-                    <p className="text-xs" style={{ color: `${BRAND.indigo}8c` }}>Amount before GST</p>
                   </div>
                 </div>
 
                 <div className="rounded-2xl border px-5 py-4" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
                   <p className="text-sm font-semibold" style={{ color: BRAND.indigo }}>Inclusive concierge care</p>
                   <p className="text-sm" style={{ color: `${BRAND.indigo}cc` }}>
-                    Daily staffing for your {getBhkInfo()?.label} footprint with premium supplies, rotation backups and proactive quality checks.
+                    Staffing for your {getBhkInfo()?.label} footprint with premium supplies, rotation backups and proactive quality checks.
                   </p>
                 </div>
               </CardContent>
@@ -746,12 +745,11 @@ export default function ReviewPaymentPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   {(() => {
                     const breakdownItems = [
-                      { label: 'Utensil Cleaning', value: selectedPlan.serviceBreakdown.utensilCleaning, icon: Package },
-                      { label: 'Floor Cleaning', value: selectedPlan.serviceBreakdown.floorCleaning, icon: Home },
-                      { label: 'Bathroom Detailing', value: selectedPlan.serviceBreakdown.bathroomCleaning, icon: Shield },
-                      { label: 'Dusting Coverage', value: selectedPlan.serviceBreakdown.homeDusting, icon: Sparkles },
-                      { label: 'Kit & Supplies', value: selectedPlan.serviceBreakdown.kitProvided, icon: Package },
-                      { label: 'Timing Flow', value: selectedPlan.serviceBreakdown.timings, icon: Clock },
+                      { label: 'Dish Care', value: selectedPlan.serviceBreakdown.utensilCleaning, icon: Package },
+                      { label: 'Floor Care', value: selectedPlan.serviceBreakdown.floorCleaning, icon: Home },
+                      { label: 'Bathroom Care', value: selectedPlan.serviceBreakdown.bathroomCleaning, icon: Shield },
+                      { label: 'Home Dusting', value: selectedPlan.serviceBreakdown.homeDusting, icon: Sparkles },
+                      { label: 'Free Sweepro essential kit', value: selectedPlan.serviceBreakdown.kitProvided, icon: Package },
                       { label: 'Backup Promise', value: selectedPlan.serviceBreakdown.backupGuarantee, icon: Shield },
                       { label: 'Customer Care', value: selectedPlan.serviceBreakdown.customerCare, icon: Users },
                       { label: 'Buffer Days', value: selectedPlan.serviceBreakdown.bufferDays, icon: Calendar, span: true }
@@ -914,10 +912,6 @@ export default function ReviewPaymentPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-slate-600">Subtotal</span>
                       <span className="font-semibold text-slate-900">₹{finalTotal.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-600">GST 18%</span>
-                      <span className="font-semibold text-slate-900">₹{gst.toFixed(0)}</span>
                     </div>
                   </div>
 

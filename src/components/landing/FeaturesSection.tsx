@@ -30,7 +30,7 @@ const features = [
   },
   {
     icon: RefreshCw,
-    title: "Instant Replacement",
+    title: "Same day Replacement",
     description: "When a homecare partner is unavailable, another will be assigned immediately to maintain the proper flow of your service.",
     color: "primary",
   },

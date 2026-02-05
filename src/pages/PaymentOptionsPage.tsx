@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
@@ -170,6 +171,7 @@ interface ServiceOptions {
   apartmentId: string;
   apartmentNumber: string;
   floorNumber: string;
+  additionalInfo: string;
   propertyType: PropertyTypeId;
   bhkType: BhkId | null;
   squareFeet: number;
@@ -678,6 +680,7 @@ const PaymentOptionsPage = () => {
     apartmentId: '',
     apartmentNumber: '',
     floorNumber: '',
+    additionalInfo: '',
     propertyType: 'apartment',
     bhkType: null,
     squareFeet: 0,
@@ -693,6 +696,7 @@ const PaymentOptionsPage = () => {
   const [selectedApartmentId, setSelectedApartmentId] = useState<string>('');
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [floorNumber, setFloorNumber] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
   const [timeSlotCounts, setTimeSlotCounts] = useState<TimeSlotCount[]>([]);
   const [isLoadingSlotCounts, setIsLoadingSlotCounts] = useState(false);
 
@@ -898,11 +902,16 @@ const PaymentOptionsPage = () => {
     const parsed = addr ? parseUnitDetails(addr) : { apartmentNumber: '', floorNumber: '' };
     setApartmentNumber(parsed.apartmentNumber);
     setFloorNumber(parsed.floorNumber);
+    
+    // Load additional info from user data
+    const userAdditionalInfo = (user as any)?.additional_info || '';
+    setAdditionalInfo(userAdditionalInfo);
 
     if (!options.address && addr) {
       setOptions((prev) => ({
         ...prev,
-        address: addr
+        address: addr,
+        additionalInfo: userAdditionalInfo
       }));
     }
 
@@ -956,6 +965,10 @@ const PaymentOptionsPage = () => {
     const parsed = addr ? parseUnitDetails(addr) : { apartmentNumber: '', floorNumber: '' };
     setApartmentNumber(parsed.apartmentNumber);
     setFloorNumber(parsed.floorNumber);
+    
+    // Reset additional info from user data
+    const userAdditionalInfo = (user as any)?.additional_info || '';
+    setAdditionalInfo(userAdditionalInfo);
 
     const signupApartmentId = (user as any)?.apartment_id;
     if (signupApartmentId && apartments.some((a) => a.id === signupApartmentId)) {
@@ -966,7 +979,8 @@ const PaymentOptionsPage = () => {
 
     setOptions((prev) => ({
       ...prev,
-      address: addr
+      address: addr,
+      additionalInfo: userAdditionalInfo
     }));
     setAddressMode('confirm');
   };
@@ -1012,16 +1026,18 @@ const PaymentOptionsPage = () => {
         requiresAuth: true,
         body: {
           address: nextAddress,
-          apartment_id: selectedApartmentId
+          apartment_id: selectedApartmentId,
+          additional_info: additionalInfo
         }
       });
 
-      updateUser({ address: nextAddress, apartment_id: selectedApartmentId } as any);
+      updateUser({ address: nextAddress, apartment_id: selectedApartmentId, additional_info: additionalInfo } as any);
       setOptions((prev) => ({
         ...prev,
         apartmentId: selectedApartmentId,
         apartmentNumber,
         floorNumber,
+        additionalInfo,
         address: nextAddress
       }));
       setAddressMode('confirm');
@@ -1376,7 +1392,7 @@ const PaymentOptionsPage = () => {
                           <div className="flex flex-col gap-1 text-sm">
                             {isActive ? (
                               <>
-                                <span className="text-base font-semibold" style={{ color: BRAND.indigo }}>₹{option.pricing['1month'].toLocaleString()}{' '}
+                                <span className="text-base font-semibold" style={{ color: BRAND.indigo }}>Starting at ₹{option.pricing['6month'].toLocaleString()}{' '}
                                   <span className="text-xs font-medium" style={{ color: `${BRAND.indigo}c2` }}>/ month</span>
                                 </span>
                                 <Badge
@@ -1388,7 +1404,7 @@ const PaymentOptionsPage = () => {
                                     color: BRAND.indigo
                                   }}
                                 >
-                                  6 Months ₹{option.pricing['6month'].toLocaleString()}
+                                  Per visit ₹{Math.round(option.pricing['6month'] / 30).toLocaleString()}
                                 </Badge>
                               </>
                             ) : (
@@ -1458,9 +1474,9 @@ const PaymentOptionsPage = () => {
                         </div>
                         <div className="space-y-1">
                           <p className="text-2xl font-semibold" style={{ color: BRAND.indigo }}>₹{monthly.toLocaleString()}<span className="text-sm font-medium" style={{ color: `${BRAND.indigo}99` }}>/month</span></p>
-                          <p className="text-xs font-medium text-slate-500">
+                          {/* <p className="text-xs font-medium text-slate-500">
                             Total: ₹{pricing.finalTotal.toLocaleString()}
-                          </p>
+                          </p> */}
                         </div>
                         {pricing.discountPercent > 0 && (
                           <p className="text-xs font-medium" style={{ color: BRAND.indigo }}>
@@ -1473,7 +1489,7 @@ const PaymentOptionsPage = () => {
                   })}
                 </div>
 
-                {options.selectedPlanDuration && (
+                {/* {options.selectedPlanDuration && (
                   <div
                     className="rounded-2xl px-5 py-4 text-sm text-slate-700 shadow-inner"
                     style={{ border: `1px solid ${BRAND.indigo}26`, background: `${BRAND.indigo}0d` }}
@@ -1483,7 +1499,7 @@ const PaymentOptionsPage = () => {
                       <span className="font-semibold text-slate-900">₹{options.finalTotalPrice.toLocaleString()}</span>
                     </div>
                   </div>
-                )}
+                )} */}
               </CardContent>
             </Card>
 
@@ -1621,12 +1637,13 @@ const PaymentOptionsPage = () => {
                   </div>
                   
                   <p className="text-xs text-slate-500 flex items-center gap-1">
-                    <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
+                    {/* <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
                     <span>Green = Available</span>
                     <span className="ml-2 inline-block h-2 w-2 rounded-full bg-amber-500"></span>
                     <span>Yellow = Filling up</span>
                     <span className="ml-2 inline-block h-2 w-2 rounded-full bg-red-500"></span>
-                    <span>Red = Full</span>
+                    <span>Red = Full</span> */}
+                    <span>homecare partner arrives in between given time slot</span>
                   </p>
                 </div>
 
@@ -1655,6 +1672,12 @@ const PaymentOptionsPage = () => {
                       <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Saved address</p>
                       <p className="mt-2 text-sm font-semibold text-slate-900">{options.address || 'No address found'}</p>
                     </div>
+                    {options.additionalInfo && (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Additional Information</p>
+                        <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{options.additionalInfo}</p>
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-3">
                       <Button
                         variant="outline"
@@ -1742,6 +1765,22 @@ const PaymentOptionsPage = () => {
                           className="rounded-xl border border-slate-200 bg-white text-slate-800"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Additional Information</label>
+                      <Textarea
+                        value={additionalInfo}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setAdditionalInfo(value);
+                          setOptions((prev) => ({ ...prev, additionalInfo: value }));
+                        }}
+                        placeholder="Any special instructions, access codes, or important details for our homecare partner..."
+                        className="rounded-xl border border-slate-200 bg-white text-slate-800 min-h-[100px] resize-y"
+                      />
+                      <p className="text-xs text-slate-500">
+                        This information will be shared with the assigned homecare partner and admin for better service delivery
+                      </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
                       <Button

@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Shield, ChevronLeft, ChevronRight, User, Phone, MapPin, Star, Search } from 'lucide-react';
 
 import QrCodeRenderer from '@/components/qr/QrCodeRenderer';
+import { MaidDetailsModal } from '@/components/admin/MaidDetailsModal';
+import { CustomerAssignmentService } from '@/services/customerAssignmentService';
 import { apiRequest, HttpMethod } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -54,6 +56,12 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Details modal state
+  const [selectedMaid, setSelectedMaid] = useState<Maid | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [assignedCustomers, setAssignedCustomers] = useState<any[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+
   const [newMaid, setNewMaid] = useState({
     name: '',
     email: '',
@@ -65,6 +73,26 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
     rawStatus: 'INACTIVE' as const,
     availability: null as Record<string, any> | null,
   });
+
+  const fetchAssignedCustomers = async (maidId: string) => {
+    setLoadingCustomers(true);
+    try {
+      console.log('🔍 Fetching customers for maid:', maidId);
+      const response = await CustomerAssignmentService.getMaidAssignedCustomers(maidId);
+      console.log('✅ Customers fetched:', response.data);
+      setAssignedCustomers(response.data || []);
+    } catch (error) {
+      console.error('❌ Error fetching assigned customers:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load assigned customers',
+        variant: 'destructive'
+      });
+      setAssignedCustomers([]);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
 
   const getPaginatedData = (data: Maid[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage;
@@ -481,7 +509,15 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={async () => {
+                            setSelectedMaid(maid);
+                            setShowDetailsModal(true);
+                            await fetchAssignedCustomers(maid.id);
+                          }}
+                        >
                           View Details
                         </Button>
                         <Button
@@ -583,6 +619,14 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Maid Details Modal */}
+      <MaidDetailsModal
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        maid={selectedMaid}
+        assignedCustomers={assignedCustomers}
+      />
     </Card>
   );
 };

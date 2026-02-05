@@ -501,12 +501,12 @@ export default function BookingsPage() {
                   ? "You don't have any bookings yet. Schedule your first cleaning service!"
                   : `No ${filter} bookings found. Try adjusting your filter.`}
               </p>
-              {filter === 'all' && (
+              {/* {filter === 'all' && (
                 <Button className="btn-hero" onClick={handleQuickBooking}>
                   <Plus className="h-4 w-4 mr-2" />
                   Schedule Your First Cleaning
                 </Button>
-              )}
+              )} */}
             </CardContent>
           </Card>
         )}

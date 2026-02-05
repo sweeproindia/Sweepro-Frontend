@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PiBagSimple } from "react-icons/pi";
-import { ArrowLeft, Check, Crown, Zap, Star, Shield, Calendar, Clock, Users, MapPin, CheckCircle, ArrowRight, Package, Headphones, RefreshCw, Home, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Zap, Star, Shield, Calendar, Clock, Users, MapPin, CheckCircle, ArrowRight, Package, Headphones, RefreshCw, Home, Sparkles, CookingPot, Armchair, Toilet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -155,7 +155,7 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       'Floor sweeping & mopping 6 days/week',
       'Bathroom cleaning 4 times/month',
       'Home dusting 1 time/month',
-      'Professional kit provided monthly',
+      'Kit includes 1Liter floor clean and dish cleaning liquid',
       'Dish Care',
       'Priority backup homecare partner guarantee',
       'Priority customer care',
@@ -167,7 +167,7 @@ const subscriptionPlans: Record<string, SubscriptionPlan> = {
       floorCleaning: '6 days/week (Sweeping & Mopping)',
       bathroomCleaning: '4 times/month',
       homeDusting: '1 time/month',
-      kitProvided: 'Essential kit provided every month',
+      kitProvided: 'Kit includes 1Liter floor clean and dish cleaning liquid',
       timings: 'Fixed slots with priority flexibility',
       backupGuarantee: 'Priority backup homecare partner guarantee',
       customerCare: 'Priority customer care',
@@ -430,12 +430,11 @@ export default function SubscriptionDetailsPage() {
                 <div className="grid gap-3 md:grid-cols-2">
                   {(() => {
                     const breakdownItems = [
-                      { label: 'Utensil Cleaning', value: plan.serviceBreakdown.utensilCleaning, icon: Package },
-                      { label: 'Floor Cleaning', value: plan.serviceBreakdown.floorCleaning, icon: Home },
-                      { label: 'Bathroom Detailing', value: plan.serviceBreakdown.bathroomCleaning, icon: Shield },
-                      { label: 'Dusting Coverage', value: plan.serviceBreakdown.homeDusting, icon: Sparkles },
-                      { label: 'Kit & Supplies', value: plan.serviceBreakdown.kitProvided, icon: Package },
-                      { label: 'Timing Flow', value: plan.serviceBreakdown.timings, icon: Clock },
+                      { label: 'Dish Care', value: plan.serviceBreakdown.utensilCleaning, icon: CookingPot },
+                      { label: 'Floor Care', value: plan.serviceBreakdown.floorCleaning, icon: Armchair },
+                      { label: 'Bathroom Care', value: plan.serviceBreakdown.bathroomCleaning, icon: Toilet },
+                      { label: 'Home Dusting', value: plan.serviceBreakdown.homeDusting, icon: Home },
+                      { label: 'Free Sweepro essential kit', value: plan.serviceBreakdown.kitProvided, icon: Package },
                       { label: 'Backup Promise', value: plan.serviceBreakdown.backupGuarantee, icon: Shield },
                       { label: 'Customer Care', value: plan.serviceBreakdown.customerCare, icon: Users },
                       { label: 'Buffer Days', value: plan.serviceBreakdown.bufferDays, icon: Calendar, span: true }
@@ -500,28 +499,28 @@ export default function SubscriptionDetailsPage() {
                 {[
                   {
                     icon: PiBagSimple,
-                    label: 'Sweepro kit',
-                    copy: plan.serviceHours
+                    label: 'Sweepro Essential Kit',
+                    copy: 'Free Sweepro standard kit provided as per plan schedule'
                   },
                   {
                     icon: MapPin,
-                    label: 'Coverage area',
-                    copy: plan.coverage
+                    label: 'Coverage Area',
+                    copy: 'Kitchen, bathroom and assigned floor areas as per plan'
                   },
                   {
                     icon: Users,
-                    label: 'Team size',
-                    copy: plan.teamSize
+                    label: 'Team Size',
+                    copy: '1 trained Sweepro home care partner per visit'
                   },
                   {
                     icon: Calendar,
                     label: 'Replacement',
-                    copy: plan.replacement
+                    copy: 'Assured replacement within 2-4 hours in case of partner unavailability'
                   },
                   {
                     icon: RefreshCw,
                     label: 'Buffer Period',
-                    copy: plan.serviceBreakdown.bufferDays
+                    copy: 'Up to 4 buffer days per month to pause service with prior notice'
                   }
                 ].map(({ icon: Icon, label, copy }) => (
                   <div
