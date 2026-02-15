@@ -62,12 +62,12 @@ const  SweepProAboutUs: React.FC = () => {
             {/* Main image container */}
             <motion.div
               variants={itemVariants}
-              className="relative bg-gray-200 rounded-3xl shadow-2xl shadow-[#1800ad]/50 overflow-hidden"
+              className="relative z-10 bg-gray-200 rounded-3xl shadow-2xl shadow-[#1800ad]/50 overflow-hidden"
             >
               <img 
-                src="/assets/sweepro-washing.png" 
+                src="/assets/main-about.png" 
                 alt="Professional cleaner in uniform"
-                className="w-full h-[600px] object-fit"
+                className="w-full h-[440px] sm:h-[400px] object-cover"
               />
             </motion.div>
 
@@ -80,13 +80,13 @@ const  SweepProAboutUs: React.FC = () => {
                 repeat: Infinity, 
                 ease: "easeInOut" 
               }}
-              className="absolute top-12 -left-8"
+              className="absolute z-20 -top-10 left-2 sm:-top-10 sm:-left-8 md:-top-12"
             >
-              <div className="w-52 h-36 bg-white rounded-2xl shadow-2xl shadow-[#1800ad]/100 border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
+              <div className="w-44 h-32 sm:w-52 sm:h-36 bg-white rounded-2xl shadow-2xl shadow-[#1800ad]/100 border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
                 <img 
                   src="/assets/sweepro-kitchen.png" 
                   alt="Office cleaning team"
-                  className="w-full h-full object-fit"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </motion.div>
@@ -101,13 +101,13 @@ const  SweepProAboutUs: React.FC = () => {
                 ease: "easeInOut",
                 delay: 1.5
               }}
-              className="absolute -bottom-8 -right-8"
+              className="absolute z-20 -bottom-10 right-2 sm:-bottom-8 sm:-right-8"
             >
-              <div className="w-56 h-40 bg-white rounded-2xl shadow-2xl shadow-[#1800ad]/80 border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
+              <div className="w-48 h-36 sm:w-56 sm:h-40 bg-white rounded-2xl shadow-2xl shadow-[#1800ad]/80 border-4 border-white overflow-hidden transform hover:scale-105 transition-transform duration-300">
                 <img 
                   src="/assets/sweepro-clothes.png" 
                   alt="Professional cleaning team"
-                  className="w-full h-full object-fit"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </motion.div>

@@ -203,9 +203,9 @@ export const FAQSection: React.FC = () => {
               transition={{ duration: 0.7, ease: 'easeOut' }}
             >
               <img 
-                src="/assets/sweepro-faq.png" 
+                src="/assets/bottom-card.png" 
                 alt="Professional cleaning service" 
-                className="w-full h-[600px] object-fit hover:scale-105 transition-transform duration-700"
+                className="w-full h-[320px] sm:h-[450px] lg:h-[550px] object-cover hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </motion.div>

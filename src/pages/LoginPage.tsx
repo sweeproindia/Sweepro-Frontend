@@ -9,6 +9,7 @@ import { useUser } from '@/contexts/UserContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAuthTokenType } from '@/services/api';
+import { motion } from 'framer-motion';
 
 // Predefined addresses for displaying available communities
 const SERVICE_ADDRESSES = [
@@ -308,99 +309,111 @@ export default function LoginPage() {
       </div>
 
       {/* Right Column - Illustration/Info */}
-      <div className="hidden lg:flex flex-1 fixed right-0 top-0 h-screen w-1/2 bg-gradient-to-br from-[#1800ad] via-[#12006b] to-[#ca0013] text-white overflow-y-auto">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#eeebe3] rounded-full opacity-15 blur-3xl"></div>
+      <div className="hidden lg:flex flex-1 fixed right-0 top-0 h-screen w-1/2 bg-[#1800ad] text-white overflow-hidden">
+        {/* Modern Abstract Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#ca0013] rounded-full blur-[120px] opacity-20 animate-pulse"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#eeebe3] rounded-full blur-[100px] opacity-10"></div>
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
         </div>
         
-        <div className="relative z-10 flex w-full items-start justify-center px-12 py-16">
-          <div className="w-full max-w-xl">
-            <div className="mb-8">
-              <div className="inline-flex items-center justify-center p-3 bg-white/10 backdrop-blur-sm rounded-xl mb-6">
-                <MapPin className="h-8 w-8" />
-              </div>
-              <h2 className="text-4xl font-bold mb-4">{`Now serving ${liveArea}`}</h2>
-              <p className="text-lg text-[#eeebe3]/85 mb-8">
-                We are currently live only in Gachibowli. More Hyderabad areas are coming soon.
-              </p>
+        <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-16">
+          <div className="w-full max-w-lg">
+            {/* Value Proposition Header */}
+            <div className="mb-12">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6"
+              >
+                <Sparkles className="h-4 w-4 text-[#eeebe3]" />
+                <span className="text-sm font-semibold tracking-wide uppercase">Premium Home Care</span>
+              </motion.div>
+              
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="text-5xl font-extrabold mb-6 leading-tight"
+              >
+                Why choose <span className="text-[#eeebe3]">Sweepro?</span>
+              </motion.h2>
+              
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-xl text-[#eeebe3]/80 leading-relaxed"
+              >
+                Join the elite community of homeowners who trust us for impeccable hygiene and professional care.
+              </motion.p>
             </div>
 
-            <div className="space-y-6">
-              <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-white/15 flex items-center justify-center">
-                      <MapPin className="h-5 w-5" />
+            {/* Service Area Focus */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="relative mb-12 p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden group hover:border-white/20 transition-all duration-500"
+            >
+              <div className="absolute top-0 right-0 p-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ca0013] shadow-lg shadow-[#ca0013]/40 animate-bounce">
+                  <MapPin className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold mb-2">Exclusively Live In</h3>
+              <p className="text-[#eeebe3] text-4xl font-black mb-6 tracking-tight">{liveArea}</p>
+              
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-[#eeebe3]/60 uppercase tracking-widest">Available Communities</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {liveComplexesToShow.map((c, i) => (
+                    <motion.div 
+                      key={c.id} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + (i * 0.1) }}
+                      className="flex items-center gap-2 bg-white/5 py-2 px-3 rounded-lg border border-white/5 hover:bg-white/10 transition-colors"
+                    >
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#ca0013]" />
+                      <span className="text-sm font-medium truncate">{c.name}</span>
+                    </motion.div>
+                  ))}
+                  {liveComplexesExtraCount > 0 && (
+                    <div className="flex items-center gap-2 bg-white/5 py-2 px-3 rounded-lg border border-white/5 italic text-sm text-[#eeebe3]/60">
+                      + {liveComplexesExtraCount} others
                     </div>
-                    <div>
-                      <p className="text-sm text-[#eeebe3]/80">Currently live in</p>
-                      <p className="font-semibold text-lg">{liveArea}, Hyderabad</p>
-                    </div>
-                  </div>
-                  <span className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide">
-                    Limited rollout
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Expansion Roadmap */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="space-y-4"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Clock className="h-5 w-5 text-[#eeebe3]/60" />
+                <h4 className="text-sm font-bold uppercase tracking-widest text-[#eeebe3]/60">Expansion Roadmap</h4>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {comingSoonAreas.map((area, index) => (
+                  <span
+                    key={area}
+                    className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-[#eeebe3]/80 hover:bg-white/10 hover:text-white transition-all cursor-default"
+                  >
+                    {area}
                   </span>
-                </div>
-
-                <div className="mt-4">
-                  <p className="text-sm font-semibold mb-3">Available communities</p>
-                  <div className="space-y-2">
-                    {liveComplexesToShow.map((c) => (
-                      <div key={c.id} className="flex items-center gap-2 text-sm text-[#eeebe3]/90">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#eeebe3]" />
-                        <span>{c.name}</span>
-                      </div>
-                    ))}
-                    {liveComplexesExtraCount > 0 && (
-                      <div className="text-sm text-[#eeebe3]/80">+ {liveComplexesExtraCount} more</div>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
-
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                  <Shield className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Verified & Trusted</h3>
-                  <p className="text-[#eeebe3]/85">Background-verified professionals and quality-checked service.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 p-2 bg-white/20 rounded-lg">
-                  <Clock className="h-5 w-5" />
-                </div>
-                <div className="w-full">
-                  <h3 className="font-semibold text-lg">Coming soon</h3>
-                  <p className="text-[#eeebe3]/85">Expanding to these Hyderabad areas next.</p>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {comingSoonAreas.map((area, index) => (
-                      <span
-                        key={area}
-                        className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-semibold text-[#eeebe3]/90"
-                        style={{
-                          animation: `float 3s ease-in-out ${index * 0.1}s infinite`,
-                        }}
-                      >
-                        {area}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            </motion.div>
           </div>
         </div>
-        <style>{`
-          @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-          }
-        `}</style>
       </div>
     </div>
   );
