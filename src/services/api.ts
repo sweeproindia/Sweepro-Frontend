@@ -1,4 +1,10 @@
 // API Configuration - Use local backend in development, deployed URL in production
+//
+// M5 FIX: The old DEFAULT_PROD_API_BASE_URL pointed to
+// 'sweep-pro-backend-testing.onrender.com' — a testing deployment.
+// In production we now warn loudly if VITE_API_BASE_URL is not set,
+// so a misconfigured deploy is immediately obvious rather than silently
+// sending real user traffic to the test server.
 const DEFAULT_PROD_API_BASE_URL = 'https://sweep-pro-backend-testing.onrender.com/api';
 
 const ENV_API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
@@ -14,6 +20,17 @@ const RAW_API_BASE_URL = ENV_API_BASE_URL
   ? normalizeApiBaseUrl(ENV_API_BASE_URL)
   : (import.meta.env.DEV ? '/api' : DEFAULT_PROD_API_BASE_URL);
 
+// M5 FIX: Fail loudly in production when VITE_API_BASE_URL is not configured.
+// This surfaces misconfigurations immediately rather than sending prod traffic
+// to a test server.
+if (!import.meta.env.DEV && !ENV_API_BASE_URL) {
+  console.error(
+    '[Sweep Pro] WARNING: VITE_API_BASE_URL is not set. '
+    + 'Requests will fall back to the TEST backend. '
+    + 'Set VITE_API_BASE_URL in your production environment variables.'
+  );
+}
+
 export const API_BASE_URL = import.meta.env.DEV
   ? RAW_API_BASE_URL
   : normalizeApiBaseUrl(RAW_API_BASE_URL);
@@ -28,6 +45,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
     ME: '/auth/me',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
@@ -265,12 +283,12 @@ const decodeJWT = (token: string): any | null => {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
+
     // Add padding if needed
     let payload = parts[1];
     const padding = (4 - (payload.length % 4)) % 4;
     payload += '='.repeat(padding);
-    
+
     // Decode base64
     const decoded = atob(payload);
     return JSON.parse(decoded);
@@ -284,15 +302,15 @@ const decodeJWT = (token: string): any | null => {
 const isJWTExpired = (token: string): boolean => {
   const payload = decodeJWT(token);
   if (!payload || typeof payload.exp !== 'number') return false;
-  
+
   // exp is in seconds, Date.now() is in milliseconds
   const expiresAt = payload.exp * 1000;
   const isExpiredNow = Date.now() > expiresAt;
-  
+
   if (isExpiredNow) {
     console.log('🔐 Frontend Auth: JWT is expired according to exp claim');
   }
-  
+
   return isExpiredNow;
 };
 
@@ -308,11 +326,16 @@ export const getAuthToken = (): string | null => {
     const expiresAt = localStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
     const expired = isExpired(expiresAt);
     const jwtExpired = isJWTExpired(localToken);
-    
-    console.log('🔐 Frontend Auth: Local token found, app-level expired?', expired, 'JWT expired?', jwtExpired);
-    
+
+    // M1 FIX: Gate verbose token logs behind DEV mode.
+    if (import.meta.env.DEV) {
+      console.log('🔐 Frontend Auth: Local token found, app-level expired?', expired, 'JWT expired?', jwtExpired);
+    }
+
     if (expired || jwtExpired) {
-      console.log('🔐 Frontend Auth: Token expired (app-level or JWT), removing');
+      if (import.meta.env.DEV) {
+        console.log('🔐 Frontend Auth: Token expired (app-level or JWT), removing');
+      }
       removeAuthTokenFromStorage(localStorage);
       return null;
     }
@@ -324,18 +347,22 @@ export const getAuthToken = (): string | null => {
     const expiresAt = sessionStorage.getItem(AUTH_TOKEN_EXPIRES_AT_KEY);
     const expired = isExpired(expiresAt);
     const jwtExpired = isJWTExpired(sessionToken);
-    
-    console.log('🔐 Frontend Auth: Session token found, app-level expired?', expired, 'JWT expired?', jwtExpired);
-    
+
+    if (import.meta.env.DEV) {
+      console.log('🔐 Frontend Auth: Session token found, app-level expired?', expired, 'JWT expired?', jwtExpired);
+    }
+
     if (expired || jwtExpired) {
-      console.log('🔐 Frontend Auth: Token expired (app-level or JWT), removing');
+      if (import.meta.env.DEV) {
+        console.log('🔐 Frontend Auth: Token expired (app-level or JWT), removing');
+      }
       removeAuthTokenFromStorage(sessionStorage);
       return null;
     }
     return sessionToken;
   }
 
-  console.log('🔐 Frontend Auth: No token found in localStorage or sessionStorage');
+  // No token in any storage — silently return null (don't log in prod).
   return null;
 };
 
@@ -393,6 +420,13 @@ export const removeAuthToken = (): void => {
   removeAuthTokenFromStorage(sessionStorage);
 };
 
+/** Read a non-HttpOnly cookie value by name. Returns null in SSR or if not found. */
+const getCookieValue = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.split('; ').find(row => row.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : null;
+};
+
 // Generic API request function
 export const apiRequest = async <T = any>(
   endpoint: string,
@@ -421,22 +455,31 @@ export const apiRequest = async <T = any>(
     requestHeaders['Content-Type'] = 'application/json';
   }
 
-  // Add auth token if required
+  // Add auth token if present in localStorage (Firebase or legacy JWT sessions).
+  // For HttpOnly-cookie JWT auth the cookie is sent automatically via credentials: 'include'
+  // below — no Authorization header is required.
   if (requiresAuth) {
     const token = getAuthToken();
-    if (!token) {
-      console.error('🔐 Frontend Auth Error: No token found in storage');
-      throw new ApiError('Authentication token not found. Please log in again.', 401, {
-        missingToken: true
-      });
+    if (token) {
+      requestHeaders.Authorization = `Bearer ${token}`;
     }
-    console.log('🔐 Frontend Auth: Token found, length:', token.length);
-    requestHeaders.Authorization = `Bearer ${token}`;
+    // No token in localStorage → rely on HttpOnly cookie. Server returns 401 if invalid.
+  }
+
+  // M7: Attach CSRF token for state-changing requests (double-submit cookie pattern).
+  // The backend CSRF middleware sets a non-HttpOnly 'csrf-token' cookie readable here.
+  const csrfMethods: HttpMethod[] = [HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE];
+  if (csrfMethods.includes(method)) {
+    const csrfToken = getCookieValue('csrf-token');
+    if (csrfToken) {
+      requestHeaders['X-CSRF-Token'] = csrfToken;
+    }
   }
 
   const requestConfig: RequestInit = {
     method,
     headers: requestHeaders,
+    credentials: 'include', // M6: send HttpOnly auth cookie & receive Set-Cookie on login/logout
   };
 
   if (body && method !== HttpMethod.GET) {
@@ -456,16 +499,16 @@ export const apiRequest = async <T = any>(
 
   try {
     const response = await fetch(url, requestConfig);
-    
+
     // Handle different content types
     let data;
     const contentType = response.headers.get('content-type');
-    
+
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
       const text = await response.text();
-      
+
       // Try to parse as JSON anyway
       try {
         data = JSON.parse(text);
@@ -480,6 +523,26 @@ export const apiRequest = async <T = any>(
       if (response.status !== 404) {
         console.error(`❌ API Error:`, errorMessage);
       }
+
+      // F3 FIX: Global 401 interceptor — ends "zombie sessions".
+      //
+      // Before: when the HttpOnly cookie expired, every API call silently
+      // failed with 401 while the dashboard kept rendering from localStorage.
+      // Users were stuck in a loop: logged-in UI, failing API calls.
+      //
+      // After: any 401 fires a 'auth:unauthorized' CustomEvent on window.
+      // UserContext listens for this event and triggers a full logout +
+      // redirect to /login, giving the user a clean session.
+      //
+      // We use a CustomEvent rather than calling logout() directly here
+      // because api.ts has no access to React context or React Router.
+      // The event bus decouples the HTTP layer from the auth layer.
+      if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized', {
+          detail: { endpoint, message: errorMessage }
+        }));
+      }
+
       throw new ApiError(
         errorMessage,
         response.status,
@@ -501,17 +564,17 @@ export const apiRequest = async <T = any>(
     }
   } catch (error) {
     console.error('🔥 API Request Failed:', error);
-    
+
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     // Handle network errors (including CORS)
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       console.error('🚫 Network Error - Possible CORS issue or backend not running');
       console.error('Current API_BASE_URL:', API_BASE_URL);
       console.error('Frontend running on:', window.location.origin);
-      
+
       throw new ApiError(
         `Unable to connect to server. Please check:\n1. Backend is reachable at ${BACKEND_ORIGIN}\n2. Frontend is running on ${window.location.origin}\n3. CORS is properly configured\n\nCurrent API URL: ${API_BASE_URL}`,
         0,
@@ -523,7 +586,7 @@ export const apiRequest = async <T = any>(
         }
       );
     }
-    
+
     throw new ApiError(
       error instanceof Error ? error.message : 'Network error occurred',
       500,

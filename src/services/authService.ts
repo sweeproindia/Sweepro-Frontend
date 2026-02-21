@@ -167,8 +167,10 @@ export class AuthService {
   static async login(
     credentials: LoginCredentials,
     rememberMe: boolean = false
-  ): Promise<ApiResponse<AuthResponse & { token: string }>> {
-    const response = await apiRequest<AuthResponse & { token: string }>(
+  ): Promise<ApiResponse<AuthResponse>> {
+    // C10 FIX: Response no longer contains `token` in the body.
+    // The backend sets an HttpOnly cookie; this client just reads the user object.
+    const response = await apiRequest<AuthResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
       {
         method: HttpMethod.POST,
@@ -177,11 +179,9 @@ export class AuthService {
       }
     );
 
-    if (response.success && (response.data as any)?.token && response.data?.user) {
-      const token = (response.data as any).token as string;
-      // Production-ready session persistence: store in localStorage with 30-day TTL.
-      // (TTL is enforced by api.ts when reading the token.)
-      setAuthToken(token, 'local', 'jwt');
+    if (response.success && response.data?.user) {
+      // M6: JWT is stored in an HttpOnly cookie set by the backend.
+      // Store only the user profile for UI rendering.
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
 
@@ -191,8 +191,9 @@ export class AuthService {
   /**
    * Email/password registration
    */
-  static async register(registerData: RegisterData): Promise<ApiResponse<AuthResponse & { token: string }>> {
-    const response = await apiRequest<AuthResponse & { token: string }>(
+  static async register(registerData: RegisterData): Promise<ApiResponse<AuthResponse>> {
+    // C10 FIX: Response no longer contains `token` in the body.
+    const response = await apiRequest<AuthResponse>(
       API_ENDPOINTS.AUTH.REGISTER,
       {
         method: HttpMethod.POST,
@@ -201,9 +202,8 @@ export class AuthService {
       }
     );
 
-    if (response.success && (response.data as any)?.token && response.data?.user) {
-      const token = (response.data as any).token as string;
-      setAuthToken(token, 'local', 'jwt');
+    if (response.success && response.data?.user) {
+      // M6: JWT is stored in an HttpOnly cookie set by the backend.
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
 
@@ -214,17 +214,23 @@ export class AuthService {
    * Logout user
    */
   static async logout(): Promise<void> {
-    try {
-      await FirebaseAuth.logout();
+    const clearLocal = () => {
       removeAuthToken();
       localStorage.removeItem('user');
       sessionStorage.removeItem('user');
+    };
+    try {
+      // M6 / C6: requiresAuth: true so the HttpOnly cookie is sent with the request;
+      // the backend needs the token to blacklist it before clearing the cookie.
+      await apiRequest(API_ENDPOINTS.AUTH.LOGOUT, {
+        method: HttpMethod.POST,
+        requiresAuth: true
+      }).catch(() => { }); // best-effort — always clear local state regardless
+      await FirebaseAuth.logout();
+      clearLocal();
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local storage even if Firebase logout fails
-      removeAuthToken();
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('user');
+      clearLocal();
     }
   }
 
@@ -232,9 +238,11 @@ export class AuthService {
    * Check if user is authenticated
    */
   static isAuthenticated(): boolean {
-    const token = getAuthToken();
+    // M6: JWT users no longer store the raw token in localStorage — it lives in an
+    // HttpOnly cookie. Use the cached user profile as the client-side auth indicator;
+    // actual session validity is enforced server-side on every request.
     const user = localStorage.getItem('user');
-    return !!(token && user);
+    return !!user;
   }
 
   /**

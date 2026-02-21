@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  ReactNode,
+} from 'react';
 import { AuthService, User, LoginCredentials } from '@/services/authService';
 import { ApiError } from '@/services/api';
 
@@ -12,6 +20,8 @@ interface UserContextType {
   isAuthenticated: boolean;
   authInitialized: boolean;
   refreshUser: () => Promise<void>;
+  /** M2: true when the browser reports no network connection */
+  isOffline: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -22,7 +32,73 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(false);
 
-  // Check for stored user and refresh auth on mount
+  // M2 FIX: Track online/offline state so components can react to network loss.
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // ------------------------------------------------------------------
+  // M2: Online / Offline detection
+  // navigator.online/offline events fire when the browser gains or loses
+  // network connectivity. We surface this via context so any component
+  // can show a banner / pause API calls gracefully.
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // ------------------------------------------------------------------
+  // Core auth helpers (defined early so the 401 listener can use logout)
+  // ------------------------------------------------------------------
+  const setAuthenticatedUser = useCallback((userData: User) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  }, []);
+
+  const logout = useCallback(() => {
+    AuthService.logout();
+    setUser(null);
+    setIsAuthenticated(false);
+  }, []);
+
+  // ------------------------------------------------------------------
+  // F3 FIX: Global 401 handler — ends "zombie sessions".
+  //
+  // Before: When the HttpOnly cookie expired, every API call silently
+  // failed with 401 while the dashboard kept rendering from localStorage.
+  // Users saw stale data with no indication their session had ended.
+  //
+  // How it works:
+  //   1. api.ts dispatches a CustomEvent('auth:unauthorized') on every 401.
+  //   2. This effect picks it up and calls logout(), which clears localStorage
+  //      and React state.
+  //   3. React Router's RequireAuth then redirects to /login because
+  //      isAuthenticated is now false.
+  //
+  // The CustomEvent bus is used because api.ts has no access to React context.
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      if (isAuthenticated) {
+        console.warn('[UserContext] 401 received — ending session and redirecting to login.');
+        logout();
+      }
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, [isAuthenticated, logout]);
+
+  // ------------------------------------------------------------------
+  // Auth initialization on mount
+  // ------------------------------------------------------------------
   useEffect(() => {
     const initializeAuth = async () => {
       setIsLoading(true);
@@ -31,8 +107,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (storedUser && AuthService.isAuthenticated()) {
           setUser(storedUser);
           setIsAuthenticated(true);
-          
-          // Try to refresh user data from server
+
+          // Try to refresh user data from server to confirm session is valid.
+          // A 401 here means the cookie has already expired — the 401 handler
+          // above will catch it and log out cleanly.
           try {
             await AuthService.getCurrentUser();
             const refreshedUser = AuthService.getStoredUser();
@@ -40,8 +118,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               setUser(refreshedUser);
             }
           } catch (error) {
-            console.error('Failed to refresh user data:', error);
-            // Keep using stored user data if refresh fails
+            // Transient errors (network, 5xx) should NOT log out the user.
+            // The global 401 handler covers the auth-expired case.
+            if (!(error instanceof ApiError) || error.statusCode !== 401) {
+              console.error('Failed to refresh user data (transient):', error);
+            }
           }
         } else {
           // Clean up if not authenticated
@@ -63,50 +144,45 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeAuth();
   }, []);
 
-  const setAuthenticatedUser = useCallback((userData: User) => {
-    setUser(userData);
-    setIsAuthenticated(true);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string, rememberMe: boolean = false): Promise<User> => {
+      setIsLoading(true);
 
-  const login = useCallback(async (email: string, password: string, rememberMe: boolean = false): Promise<User> => {
-    setIsLoading(true);
-    
-    try {
-      const credentials: LoginCredentials = { email, password };
-      const response = await AuthService.login(credentials, rememberMe);
-      
-      if (response.success && response.data?.user) {
-        const loggedInUser = response.data.user;
-        setAuthenticatedUser(loggedInUser);
-        return loggedInUser;
-      } else {
-        throw new Error(response.message || 'Login failed');
+      try {
+        const credentials: LoginCredentials = { email, password };
+        const response = await AuthService.login(credentials, rememberMe);
+
+        if (response.success && response.data?.user) {
+          const loggedInUser = response.data.user;
+          setAuthenticatedUser(loggedInUser);
+          return loggedInUser;
+        } else {
+          throw new Error(response.message || 'Login failed');
+        }
+      } catch (error) {
+        setIsAuthenticated(false);
+        throw error;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      setIsAuthenticated(false);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [setAuthenticatedUser]
+  );
 
-  const logout = useCallback(() => {
-    AuthService.logout();
-    setUser(null);
-    setIsAuthenticated(false);
-  }, []);
-
-  const updateUser = useCallback((userData: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      AuthService.updateStoredUser(userData);
-      setUser(updatedUser);
-    }
-  }, [user]);
+  const updateUser = useCallback(
+    (userData: Partial<User>) => {
+      if (user) {
+        const updatedUser = { ...user, ...userData };
+        AuthService.updateStoredUser(userData);
+        setUser(updatedUser);
+      }
+    },
+    [user]
+  );
 
   const refreshUser = useCallback(async () => {
     if (!isAuthenticated) return;
-    
+
     setIsLoading(true);
     try {
       await AuthService.getCurrentUser();
@@ -116,7 +192,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (error) {
       console.error('Failed to refresh user:', error);
-      // Only logout on real auth failures. Transient network/server errors should not wipe the session.
+      // Only logout on real auth failures. Transient network/server errors
+      // should NOT wipe the session (the global 401 handler covers that).
       if (error instanceof ApiError && error.statusCode === 401) {
         logout();
       }
@@ -126,12 +203,57 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [isAuthenticated, logout]);
 
   const contextValue = useMemo(
-    () => ({ user, login, logout, updateUser, setAuthenticatedUser, isLoading, isAuthenticated, authInitialized, refreshUser }),
-    [user, login, logout, updateUser, setAuthenticatedUser, isLoading, isAuthenticated, authInitialized, refreshUser]
+    () => ({
+      user,
+      login,
+      logout,
+      updateUser,
+      setAuthenticatedUser,
+      isLoading,
+      isAuthenticated,
+      authInitialized,
+      refreshUser,
+      isOffline,
+    }),
+    [
+      user,
+      login,
+      logout,
+      updateUser,
+      setAuthenticatedUser,
+      isLoading,
+      isAuthenticated,
+      authInitialized,
+      refreshUser,
+      isOffline,
+    ]
   );
 
   return (
     <UserContext.Provider value={contextValue}>
+      {/* M2: Global offline banner — shown at the top of every page */}
+      {isOffline && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            background: '#b45309',
+            color: '#fff',
+            textAlign: 'center',
+            padding: '0.5rem 1rem',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            letterSpacing: '0.01em',
+          }}
+        >
+          📶 No internet connection — some features may not work until you reconnect.
+        </div>
+      )}
       {children}
     </UserContext.Provider>
   );
@@ -143,4 +265,4 @@ export const useUser = () => {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
-}; 
+};

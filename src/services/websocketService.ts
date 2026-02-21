@@ -40,10 +40,14 @@ class WebSocketService {
 
   /**
    * Connect to WebSocket server
+   * M4 FIX: Token is NO LONGER sent in the URL query string.
+   * URL params are logged by web servers, CDNs, proxies, and appear in browser
+   * history — all of which are token leakage vectors.
+   * Instead, the token is sent as the very first message after the socket opens
+   * (see handleOpen). The server must require auth before processing other msgs.
    */
   connect(token: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('WebSocket already connected');
       return;
     }
 
@@ -51,10 +55,10 @@ class WebSocketService {
     this.isIntentionalClose = false;
 
     try {
-      // Create WebSocket connection with token as query parameter
       const wsBaseUrl = this.getWebSocketBaseUrl();
-      const wsUrl = `${wsBaseUrl}?token=${encodeURIComponent(token)}`;
-      this.ws = new WebSocket(wsUrl);
+      // M4: No token in the URL. Server accepts the connection and waits for
+      // the auth message (sent in handleOpen) before trusting any messages.
+      this.ws = new WebSocket(wsBaseUrl);
 
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);
@@ -67,16 +71,19 @@ class WebSocketService {
   }
 
   /**
-   * Handle WebSocket open event
+   * Handle WebSocket open event.
+   * M4 FIX: Send the auth token as the first message so it never appears in
+   * URLs, server access logs, CDN logs, or browser history.
    */
   private handleOpen(): void {
-    console.log('✅ WebSocket connected');
-    this.reconnectAttempts = 0;
-    
-    // Start heartbeat
-    this.startHeartbeat();
+    // Send auth token as first message — server must validate before trusting
+    // any subsequent messages from this connection.
+    if (this.token) {
+      this.ws?.send(JSON.stringify({ type: 'auth', token: this.token }));
+    }
 
-    // Notify connection handlers
+    this.reconnectAttempts = 0;
+    this.startHeartbeat();
     this.connectionHandlers.forEach(handler => handler());
   }
 
@@ -86,22 +93,22 @@ class WebSocketService {
   private handleMessage(event: MessageEvent): void {
     try {
       const data = JSON.parse(event.data);
-      
+
       // Handle different message types
       switch (data.type) {
         case 'notification':
           console.log('📬 New notification received:', data.notification);
           this.messageHandlers.forEach(handler => handler(data.notification));
           break;
-        
+
         case 'pong':
           // Heartbeat response
           break;
-        
+
         case 'connected':
           console.log('Connected to notification service:', data.message);
           break;
-        
+
         default:
           console.log('Unknown message type:', data);
       }
@@ -122,9 +129,9 @@ class WebSocketService {
    */
   private handleClose(event: CloseEvent): void {
     console.log('WebSocket disconnected:', event.code, event.reason);
-    
+
     this.stopHeartbeat();
-    
+
     // Notify disconnection handlers
     this.disconnectionHandlers.forEach(handler => handler());
 
@@ -144,7 +151,7 @@ class WebSocketService {
 
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-    
+
     console.log(`🔄 Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
     this.reconnectTimeout = setTimeout(() => {
@@ -181,7 +188,7 @@ class WebSocketService {
   disconnect(): void {
     this.isIntentionalClose = true;
     this.stopHeartbeat();
-    
+
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -209,7 +216,7 @@ class WebSocketService {
    */
   onMessage(handler: MessageHandler): () => void {
     this.messageHandlers.add(handler);
-    
+
     // Return unsubscribe function
     return () => {
       this.messageHandlers.delete(handler);
@@ -221,7 +228,7 @@ class WebSocketService {
    */
   onConnect(handler: ConnectionHandler): () => void {
     this.connectionHandlers.add(handler);
-    
+
     return () => {
       this.connectionHandlers.delete(handler);
     };
@@ -232,7 +239,7 @@ class WebSocketService {
    */
   onDisconnect(handler: ConnectionHandler): () => void {
     this.disconnectionHandlers.add(handler);
-    
+
     return () => {
       this.disconnectionHandlers.delete(handler);
     };

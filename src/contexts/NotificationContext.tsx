@@ -33,6 +33,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     return typeof token === 'string' && token.length > 0;
   }, []);
 
+  // True when the user has an active session — either via a localStorage token
+  // (Firebase) or via an HttpOnly cookie (email/password). The presence of
+  // the 'user' key in localStorage is the shared indicator for both.
+  const isLoggedIn = useCallback(() => {
+    return !!localStorage.getItem('user');
+  }, []);
+
   const upsertToQueryCache = useCallback(
     (incoming: Notification) => {
       const matches = queryClient.getQueriesData({ queryKey: notificationsQueryKeys.all });
@@ -67,7 +74,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       description: notification.message,
       duration: 5000,
     });
-    
+
     // Play notification sound (optional)
     playNotificationSound();
   }, [upsertToQueryCache]);
@@ -89,16 +96,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
    * Initialize WebSocket connection
    */
   useEffect(() => {
-    if (!hasAuthToken()) {
-      console.log('No token found, skipping WebSocket connection');
+    if (!isLoggedIn()) {
+      console.log('No active session found, skipping WebSocket connection');
       return;
     }
 
-    // Connect to WebSocket
-    const token = getAuthToken();
-    if (token) {
-      websocketService.connect(token);
-    }
+    // Connect to WebSocket.
+    // For Firebase/localStorage-token users: token is passed as the first
+    //   auth message (M4 pattern, handled in websocketService.ts:handleOpen).
+    // For email/password (HttpOnly-cookie) users: token is null/empty — the
+    //   HttpOnly cookie is sent automatically on the upgrade request and the
+    //   backend authenticates via cookie (M4 backend fix in index.js).
+    const token = getAuthToken() ?? '';
+    websocketService.connect(token);
 
     // Subscribe to connection events
     const unsubscribeConnect = websocketService.onConnect(() => {
@@ -123,7 +133,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       unsubscribeMessage();
       websocketService.disconnect();
     };
-  }, [handleNewNotification, hasAuthToken, queryClient]);
+  }, [handleNewNotification, isLoggedIn, queryClient]);
+
 
   const value: NotificationContextType = {
     isConnected,

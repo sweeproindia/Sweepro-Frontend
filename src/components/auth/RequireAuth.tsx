@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
-import { getAuthToken, getAuthTokenType } from '@/services/api';
 
 interface RequireAuthProps {
   children: JSX.Element;
@@ -8,34 +7,72 @@ interface RequireAuthProps {
 }
 
 /**
- * Route guard that requires authentication
- * Redirects to login if not authenticated
- * Redirects to complete-profile if profile not completed (when requireProfileCompletion is true)
+ * Auth loading spinner — shown while the auth state is being initialized.
+ * Matches the app's dark-gradient design language.
+ */
+function AuthLoadingSpinner() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          border: '4px solid rgba(99,102,241,0.3)',
+          borderTop: '4px solid #6366f1',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }}
+      />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+/**
+ * Route guard that requires authentication.
+ * Redirects to /login if not authenticated.
+ * Redirects to /complete-profile if profile not completed (when requireProfileCompletion is true).
+ *
+ * SECURITY FIX (audit finding "Rendering Children Before Auth Finishes"):
+ * Previously, if a localStorage token existed but auth had not yet initialized,
+ * the protected page was rendered immediately. This caused:
+ *   - API calls to fire before session validity was confirmed
+ *   - Brief flash of protected UI before redirect on expired tokens
+ *
+ * Now: always show a spinner until authInitialized is true, regardless of
+ * whether a localStorage token exists. The spinner is shown for ~200-300ms
+ * (one network round-trip to /auth/me) — an acceptable UX tradeoff for correct
+ * security semantics.
+ *
+ * NOTE: Role-based access is enforced server-side. The frontend guards are a
+ * UX layer only and should never be the sole security mechanism.
  */
 export function RequireAuth({ children, requireProfileCompletion = true }: RequireAuthProps) {
-  const token = getAuthToken();
-  const tokenType = getAuthTokenType();
   const { user, isLoading, authInitialized } = useUser();
 
-  // Wait for auth to initialize
-  if (!authInitialized) {
-    return token ? children : null;
-  }
-
-  // Let page-level skeletons handle loading when a session token exists.
-  if (isLoading && token) {
-    return children;
+  // Wait for auth to complete initial verification before rendering anything.
+  // Previously this returned `token ? children : null` which rendered protected
+  // content before confirming the token was still valid.
+  if (!authInitialized || isLoading) {
+    return <AuthLoadingSpinner />;
   }
 
   // Not authenticated
-  if (!token || !user) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Profile completion required
-  const shouldEnforceProfileCompletion = tokenType === 'firebase' || Boolean((user as any).firebase_uid);
-
-  if (requireProfileCompletion && shouldEnforceProfileCompletion && !user.profile_completed) {
+  // Profile completion required for Firebase OAuth users
+  const isFirebaseUser = Boolean((user as any).firebase_uid);
+  if (requireProfileCompletion && isFirebaseUser && !user.profile_completed) {
     return <Navigate to="/complete-profile" replace />;
   }
 
@@ -43,47 +80,35 @@ export function RequireAuth({ children, requireProfileCompletion = true }: Requi
 }
 
 /**
- * Guest-only route guard
- * - If authenticated: redirects to complete-profile (if required) or the correct dashboard
- * - If not authenticated: allows rendering the public page
+ * Guest-only route guard.
+ * If authenticated: redirects to the correct dashboard.
+ * If not authenticated: renders the public page.
  */
 export function RequireGuest({ children }: { children: JSX.Element }) {
-  const token = getAuthToken();
-  const tokenType = getAuthTokenType();
   const { user, isLoading, authInitialized } = useUser();
 
-  // While auth is initializing, avoid rendering guest pages if we already have a token.
-  if (!authInitialized) {
-    return token ? null : children;
-  }
-
-  if (isLoading && token) {
+  // While auth is initializing, show nothing to avoid flash of guest pages
+  // for authenticated users (e.g. visiting /login with a valid cookie).
+  if (!authInitialized || isLoading) {
     return null;
   }
 
-  if (!token || !user) {
+  if (!user) {
     return children;
   }
 
-  const shouldEnforceProfileCompletion = tokenType === 'firebase' || Boolean((user as any).firebase_uid);
-
-  if (shouldEnforceProfileCompletion && !user.profile_completed) {
+  const isFirebaseUser = Boolean((user as any).firebase_uid);
+  if (isFirebaseUser && !user.profile_completed) {
     return <Navigate to="/complete-profile" replace />;
   }
 
-  if (user.role === 'ADMIN') {
-    return <Navigate to="/admin-dashboard" replace />;
-  }
-
-  if (user.role === 'MAID') {
-    return <Navigate to="/maid-dashboard" replace />;
-  }
-
+  if (user.role === 'ADMIN') return <Navigate to="/admin-dashboard" replace />;
+  if (user.role === 'MAID') return <Navigate to="/maid-dashboard" replace />;
   return <Navigate to="/dashboard" replace />;
 }
 
 /**
- * Route guard that requires specific role
+ * Route guard that requires a specific role.
  */
 interface RequireRoleProps {
   children: JSX.Element;
@@ -92,45 +117,27 @@ interface RequireRoleProps {
 }
 
 export function RequireRole({ children, roles, requireProfileCompletion = true }: RequireRoleProps) {
-  const token = getAuthToken();
-  const tokenType = getAuthTokenType();
   const { user, isLoading, authInitialized } = useUser();
 
-  // Wait for auth to initialize
-  if (!authInitialized) {
-    return token ? children : null;
+  if (!authInitialized || isLoading) {
+    return <AuthLoadingSpinner />;
   }
 
-  // Let page-level skeletons handle loading when a session token exists.
-  if (isLoading && token) {
-    return children;
-  }
-
-  // Not authenticated
-  if (!token || !user) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Profile completion required
-  const shouldEnforceProfileCompletion = tokenType === 'firebase' || Boolean((user as any).firebase_uid);
-
-  if (requireProfileCompletion && shouldEnforceProfileCompletion && !user.profile_completed) {
+  const isFirebaseUser = Boolean((user as any).firebase_uid);
+  if (requireProfileCompletion && isFirebaseUser && !user.profile_completed) {
     return <Navigate to="/complete-profile" replace />;
   }
 
-  // Check role
+  // Check role — redirect to the user's actual dashboard if wrong role.
   if (!user.role || !roles.includes(user.role)) {
-    // Redirect based on user's actual role
-    if (user.role === 'ADMIN') {
-      return <Navigate to="/admin-dashboard" replace />;
-    } else if (user.role === 'MAID') {
-      return <Navigate to="/maid-dashboard" replace />;
-    } else {
-      return <Navigate to="/dashboard" replace />;
-    }
+    if (user.role === 'ADMIN') return <Navigate to="/admin-dashboard" replace />;
+    if (user.role === 'MAID') return <Navigate to="/maid-dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
 }
-
-

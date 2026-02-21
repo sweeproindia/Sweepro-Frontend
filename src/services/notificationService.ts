@@ -3,8 +3,7 @@
  * Handles REST API calls for notifications
  */
 
-import axios from 'axios';
-import { API_BASE_URL, getAuthToken } from './api';
+import { apiRequest, HttpMethod } from './api';
 
 export interface Notification {
   id: string;
@@ -40,19 +39,6 @@ export interface UnreadCountResponse {
 }
 
 class NotificationAPIService {
-  private getAuthHeader() {
-    const token = getAuthToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    return { headers };
-  }
-
   /**
    * Get all notifications with pagination and filters
    */
@@ -65,14 +51,20 @@ class NotificationAPIService {
     endDate?: string;
   }): Promise<NotificationResponse> {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/notifications`,
-        {
-          ...this.getAuthHeader(),
-          params,
-        }
+      // Build query string from params
+      const qs = params
+        ? '?' + new URLSearchParams(
+          Object.entries(params)
+            .filter(([, v]) => v !== undefined)
+            .map(([k, v]) => [k, String(v)])
+        ).toString()
+        : '';
+
+      const response = await apiRequest<NotificationResponse>(
+        `/notifications${qs}`,
+        { method: HttpMethod.GET, requiresAuth: true }
       );
-      return response.data;
+      return response.data as NotificationResponse;
     } catch (error: any) {
       console.error('Failed to fetch notifications:', error);
       throw error;
@@ -84,11 +76,11 @@ class NotificationAPIService {
    */
   async getUnreadNotifications(): Promise<NotificationResponse> {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/notifications/unread`,
-        this.getAuthHeader()
+      const response = await apiRequest<NotificationResponse>(
+        '/notifications/unread',
+        { method: HttpMethod.GET, requiresAuth: true }
       );
-      return response.data;
+      return response.data as NotificationResponse;
     } catch (error: any) {
       console.error('Failed to fetch unread notifications:', error);
       throw error;
@@ -100,11 +92,11 @@ class NotificationAPIService {
    */
   async getUnreadCount(): Promise<number> {
     try {
-      const response = await axios.get<UnreadCountResponse>(
-        `${API_BASE_URL}/notifications/unread/count`,
-        this.getAuthHeader()
+      const response = await apiRequest<UnreadCountResponse>(
+        '/notifications/unread/count',
+        { method: HttpMethod.GET, requiresAuth: true }
       );
-      return response.data.unreadCount;
+      return (response.data as UnreadCountResponse)?.unreadCount || 0;
     } catch (error: any) {
       console.error('Failed to fetch unread count:', error);
       return 0;
@@ -116,10 +108,9 @@ class NotificationAPIService {
    */
   async markAsRead(notificationId: string): Promise<void> {
     try {
-      await axios.patch(
-        `${API_BASE_URL}/notifications/${notificationId}/read`,
-        {},
-        this.getAuthHeader()
+      await apiRequest(
+        `/notifications/${notificationId}/read`,
+        { method: HttpMethod.PATCH, requiresAuth: true }
       );
     } catch (error: any) {
       console.error('Failed to mark notification as read:', error);
@@ -132,10 +123,9 @@ class NotificationAPIService {
    */
   async markMultipleAsRead(notificationIds: string[]): Promise<void> {
     try {
-      await axios.patch(
-        `${API_BASE_URL}/notifications/read-multiple`,
-        { notificationIds },
-        this.getAuthHeader()
+      await apiRequest(
+        '/notifications/read-multiple',
+        { method: HttpMethod.PATCH, body: { notificationIds }, requiresAuth: true }
       );
     } catch (error: any) {
       console.error('Failed to mark notifications as read:', error);
@@ -148,10 +138,9 @@ class NotificationAPIService {
    */
   async markAllAsRead(): Promise<void> {
     try {
-      await axios.patch(
-        `${API_BASE_URL}/notifications/read-all`,
-        {},
-        this.getAuthHeader()
+      await apiRequest(
+        '/notifications/read-all',
+        { method: HttpMethod.PATCH, requiresAuth: true }
       );
     } catch (error: any) {
       console.error('Failed to mark all notifications as read:', error);
@@ -164,9 +153,9 @@ class NotificationAPIService {
    */
   async deleteNotification(notificationId: string): Promise<void> {
     try {
-      await axios.delete(
-        `${API_BASE_URL}/notifications/${notificationId}`,
-        this.getAuthHeader()
+      await apiRequest(
+        `/notifications/${notificationId}`,
+        { method: HttpMethod.DELETE, requiresAuth: true }
       );
     } catch (error: any) {
       console.error('Failed to delete notification:', error);
@@ -179,12 +168,9 @@ class NotificationAPIService {
    */
   async deleteMultipleNotifications(notificationIds: string[]): Promise<void> {
     try {
-      await axios.delete(
-        `${API_BASE_URL}/notifications/bulk/delete`,
-        {
-          ...this.getAuthHeader(),
-          data: { notificationIds },
-        }
+      await apiRequest(
+        '/notifications/bulk/delete',
+        { method: HttpMethod.DELETE, body: { notificationIds }, requiresAuth: true }
       );
     } catch (error: any) {
       console.error('Failed to delete notifications:', error);
@@ -197,9 +183,9 @@ class NotificationAPIService {
    */
   async clearReadNotifications(): Promise<void> {
     try {
-      await axios.delete(
-        `${API_BASE_URL}/notifications/bulk/clear-read`,
-        this.getAuthHeader()
+      await apiRequest(
+        '/notifications/bulk/clear-read',
+        { method: HttpMethod.DELETE, requiresAuth: true }
       );
     } catch (error: any) {
       console.error('Failed to clear read notifications:', error);
@@ -212,11 +198,11 @@ class NotificationAPIService {
    */
   async getNotificationTypes(): Promise<any[]> {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/notifications/types`,
-        this.getAuthHeader()
+      const response = await apiRequest<{ data: any[] }>(
+        '/notifications/types',
+        { method: HttpMethod.GET, requiresAuth: true }
       );
-      return response.data.data;
+      return (response.data as any)?.data || [];
     } catch (error: any) {
       console.error('Failed to fetch notification types:', error);
       return [];
