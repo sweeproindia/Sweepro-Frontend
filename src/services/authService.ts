@@ -81,7 +81,15 @@ export class AuthService {
 
       // Store token and user data on successful login
       if (response.success && response.data?.user) {
-        setAuthToken(idToken, 'local', 'firebase');
+        const appToken = (response.data as any).token;
+        if (appToken) {
+          // CROSS-ORIGIN FIX: Store the app JWT (not Firebase idToken) in localStorage.
+          // This ensures Authorization: Bearer header is sent on all cross-origin API calls.
+          setAuthToken(appToken, 'local', 'jwt');
+        } else {
+          // Fallback: store Firebase token for same-origin use
+          setAuthToken(idToken, 'local', 'firebase');
+        }
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
 
@@ -100,14 +108,11 @@ export class AuthService {
       const tokenType = getAuthTokenType();
       const meEndpoint = tokenType === 'firebase' ? '/auth/firebase/me' : API_ENDPOINTS.AUTH.ME;
 
-      // CROSS-ORIGIN FIX: For JWT/cookie sessions, 'requiresAuth: false' is correct because:
-      // the authToken HttpOnly cookie is sent automatically by the browser via
-      // credentials:'include'. We must NOT throw a client-side error when no
-      // localStorage token exists — that is the expected state for cookie auth.
-      // Only Firebase sessions need the explicit Authorization header.
+      // CROSS-ORIGIN FIX: requiresAuth:true sends the JWT from localStorage as
+      // Authorization: Bearer header — works cross-origin regardless of cookie SameSite policy.
       const response = await apiRequest<{ user: User }>(meEndpoint, {
         method: HttpMethod.GET,
-        requiresAuth: tokenType === 'firebase'
+        requiresAuth: true
       });
 
       // Update stored user data
@@ -191,6 +196,11 @@ export class AuthService {
       // CROSS-ORIGIN FIX: Mark this as a JWT session so getCurrentUser()
       // knows to call /auth/me (not /auth/firebase/me) on future refreshes.
       localStorage.setItem('authTokenType', 'jwt');
+      // Store JWT for Authorization header auth (cross-origin deployments)
+      const token = (response.data as any).token;
+      if (token) {
+        setAuthToken(token, 'local', 'jwt');
+      }
     }
 
     return response;
