@@ -100,9 +100,14 @@ export class AuthService {
       const tokenType = getAuthTokenType();
       const meEndpoint = tokenType === 'firebase' ? '/auth/firebase/me' : API_ENDPOINTS.AUTH.ME;
 
+      // CROSS-ORIGIN FIX: For JWT/cookie sessions, 'requiresAuth: false' is correct because:
+      // the authToken HttpOnly cookie is sent automatically by the browser via
+      // credentials:'include'. We must NOT throw a client-side error when no
+      // localStorage token exists — that is the expected state for cookie auth.
+      // Only Firebase sessions need the explicit Authorization header.
       const response = await apiRequest<{ user: User }>(meEndpoint, {
         method: HttpMethod.GET,
-        requiresAuth: true
+        requiresAuth: tokenType === 'firebase'
       });
 
       // Update stored user data
@@ -183,6 +188,9 @@ export class AuthService {
       // M6: JWT is stored in an HttpOnly cookie set by the backend.
       // Store only the user profile for UI rendering.
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      // CROSS-ORIGIN FIX: Mark this as a JWT session so getCurrentUser()
+      // knows to call /auth/me (not /auth/firebase/me) on future refreshes.
+      localStorage.setItem('authTokenType', 'jwt');
     }
 
     return response;
