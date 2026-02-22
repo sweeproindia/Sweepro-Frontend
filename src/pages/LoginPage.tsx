@@ -79,9 +79,18 @@ export default function LoginPage() {
     isLoading: isAuthLoading
   } = useUser();
 
-  const navigateAfterAuth = async (user: any) => {
-    await refreshUser();
+  // F4 FIX: Prevents re-entrant navigation that caused the infinite /auth/me loop.
+  // The old code had navigate After Auth (which calls refreshUser) fired from a useEffect
+  // that depends on currentUser. refreshUser updates currentUser → useEffect re-fires
+  // → navigateAfterAuth again → infinite loop. This flag breaks the cycle.
+  const [hasNavigated, setHasNavigated] = useState(false);
 
+  /**
+   * Pure navigation helper — picks the correct dashboard route based on user role.
+   * Does NOT call refreshUser() so it is safe to use inside useEffect without
+   * triggering state changes that would re-fire the effect.
+   */
+  const navigateByRole = (user: any) => {
     const tokenType = getAuthTokenType();
     const shouldEnforceProfileCompletion = tokenType === 'firebase' || Boolean(user?.firebase_uid);
 
@@ -103,20 +112,43 @@ export default function LoginPage() {
     }
   };
 
+  /**
+   * Used by explicit login/signup handlers. Refreshes user data from
+   * the server then navigates. The hasNavigated guard ensures this
+   * only runs once even if state changes re-trigger the useEffect.
+   */
+  const navigateAfterAuth = async (user: any) => {
+    if (hasNavigated) return;
+    setHasNavigated(true);
+
+    try {
+      await refreshUser();
+    } catch {
+      // refreshUser failure is non-fatal; we still have the user from the login response
+    }
+
+    navigateByRole(user);
+  };
+
+  // If already authenticated on mount (e.g. page refresh while logged in),
+  // navigate away immediately. Uses navigateByRole (not navigateAfterAuth)
+  // to avoid the refreshUser → state update → useEffect infinite loop.
   useEffect(() => {
     if (!authInitialized || isAuthLoading) return;
     if (!isAuthenticated || !currentUser) return;
+    if (hasNavigated) return;
 
-    navigateAfterAuth(currentUser);
+    setHasNavigated(true);
+    navigateByRole(currentUser);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authInitialized, isAuthLoading, isAuthenticated, currentUser]);
+  }, [authInitialized, isAuthLoading, isAuthenticated, currentUser, hasNavigated]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
 
     try {
       const response = await AuthService.signInWithGoogle();
-      
+
       if (response.success && response.data?.user) {
         const user = response.data.user;
 
@@ -132,7 +164,7 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error('Google sign-in error:', error);
-      
+
       let errorMessage = 'Google sign-in failed. Please try again.';
       if (error.message) {
         errorMessage = error.message;
@@ -316,12 +348,12 @@ export default function LoginPage() {
           <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#eeebe3] rounded-full blur-[100px] opacity-10"></div>
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
         </div>
-        
+
         <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-16">
           <div className="w-full max-w-lg">
             {/* Value Proposition Header */}
             <div className="mb-12">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
@@ -330,8 +362,8 @@ export default function LoginPage() {
                 <Sparkles className="h-4 w-4 text-[#eeebe3]" />
                 <span className="text-sm font-semibold tracking-wide uppercase">Premium Home Care</span>
               </motion.div>
-              
-              <motion.h2 
+
+              <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
@@ -339,8 +371,8 @@ export default function LoginPage() {
               >
                 Why choose <span className="text-[#eeebe3]">Sweepro?</span>
               </motion.h2>
-              
-              <motion.p 
+
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
@@ -351,7 +383,7 @@ export default function LoginPage() {
             </div>
 
             {/* Service Area Focus */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3 }}
@@ -362,16 +394,16 @@ export default function LoginPage() {
                   <MapPin className="h-6 w-6 text-white" />
                 </div>
               </div>
-              
+
               <h3 className="text-2xl font-bold mb-2">Exclusively Live In</h3>
               <p className="text-[#eeebe3] text-4xl font-black mb-6 tracking-tight">{liveArea}</p>
-              
+
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#eeebe3]/60 uppercase tracking-widest">Available Communities</p>
                 <div className="grid grid-cols-2 gap-3">
                   {liveComplexesToShow.map((c, i) => (
-                    <motion.div 
-                      key={c.id} 
+                    <motion.div
+                      key={c.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.5 + (i * 0.1) }}
@@ -391,7 +423,7 @@ export default function LoginPage() {
             </motion.div>
 
             {/* Expansion Roadmap */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.7 }}

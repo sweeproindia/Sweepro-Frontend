@@ -58,7 +58,7 @@ export default function MaidDashboardEnhanced() {
     totalReviews: 0,
     completionRate: 0
   });
-  
+
   // Real verification status - fetched from backend
   const [isVerified, setIsVerified] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'UNKNOWN' | 'NOT_SUBMITTED' | 'PENDING' | 'APPROVED' | 'REJECTED'>('UNKNOWN');
@@ -70,8 +70,11 @@ export default function MaidDashboardEnhanced() {
 
   const isMaidVerifiedFromProfile = Boolean((user as any)?.profiles?.maid?.isVerified) || ((user as any)?.profiles?.maid?.status === 'ACTIVE');
 
+  const hasFetchedDashboardDataRef = useRef(false);
+
   useEffect(() => {
-    if (user && isAuthenticated && user.role === 'MAID') {
+    if (user && isAuthenticated && user.role === 'MAID' && !hasFetchedDashboardDataRef.current) {
+      hasFetchedDashboardDataRef.current = true;
       fetchMaidDashboardData();
       fetchVerificationStatus();
     }
@@ -87,76 +90,76 @@ export default function MaidDashboardEnhanced() {
 
       if (result.success && (result as any).data) {
         const data = (result as any).data;
-          
-          // Transform backend data to frontend format
-          const transformedDocuments: any = {};
-          
-          if (data.documents) {
-            // Map backend document types to frontend
-            const docMapping = {
-              'AADHAR_CARD': 'aadharCard',
-              'PAN_CARD': 'panCard', 
-              'ADDRESS_PROOF': 'electricityBill'
-            };
-            
-            data.documents.forEach((doc: any) => {
-              const frontendKey = docMapping[doc.type as keyof typeof docMapping];
-              if (frontendKey) {
-                transformedDocuments[frontendKey] = {
-                  id: doc.id,
-                  status: doc.verificationStatus,
-                  rejectionReason: doc.rejectionReason,
-                  filename: doc.fileName,
-                  uploadedAt: doc.createdAt,
-                  canReupload: doc.verificationStatus === 'REJECTED'
-                };
-              }
-            });
-          }
-          
-          const effectiveStatus = isMaidVerifiedFromProfile ? 'APPROVED' : (data.overallStatus || 'NOT_SUBMITTED');
-          setVerificationStatus(effectiveStatus);
-          setIsVerified(effectiveStatus === 'APPROVED');
 
-          // Avoid infinite loops: refresh user only once, and only if profile doesn't already indicate verified
-          if (!isMaidVerifiedFromProfile && effectiveStatus === 'APPROVED' && !hasRefreshedUserAfterApprovalRef.current) {
-            hasRefreshedUserAfterApprovalRef.current = true;
-            await refreshUser();
-          }
-          
-          // Handle 24-hour alert logic for APPROVED status
-          if (effectiveStatus === 'APPROVED') {
-            // Check if verification was approved and store the time
-            const storedApprovedTime = localStorage.getItem(`maid_verification_approved_${user?.id}`);
-            if (!storedApprovedTime) {
-              // First time approval - store the time
-              const currentTime = Date.now();
-              localStorage.setItem(`maid_verification_approved_${user?.id}`, currentTime.toString());
-              setVerificationApprovedTime(currentTime);
+        // Transform backend data to frontend format
+        const transformedDocuments: any = {};
+
+        if (data.documents) {
+          // Map backend document types to frontend
+          const docMapping = {
+            'AADHAR_CARD': 'aadharCard',
+            'PAN_CARD': 'panCard',
+            'ADDRESS_PROOF': 'electricityBill'
+          };
+
+          data.documents.forEach((doc: any) => {
+            const frontendKey = docMapping[doc.type as keyof typeof docMapping];
+            if (frontendKey) {
+              transformedDocuments[frontendKey] = {
+                id: doc.id,
+                status: doc.verificationStatus,
+                rejectionReason: doc.rejectionReason,
+                filename: doc.fileName,
+                uploadedAt: doc.createdAt,
+                canReupload: doc.verificationStatus === 'REJECTED'
+              };
+            }
+          });
+        }
+
+        const effectiveStatus = isMaidVerifiedFromProfile ? 'APPROVED' : (data.overallStatus || 'NOT_SUBMITTED');
+        setVerificationStatus(effectiveStatus);
+        setIsVerified(effectiveStatus === 'APPROVED');
+
+        // Avoid infinite loops: refresh user only once, and only if profile doesn't already indicate verified
+        if (!isMaidVerifiedFromProfile && effectiveStatus === 'APPROVED' && !hasRefreshedUserAfterApprovalRef.current) {
+          hasRefreshedUserAfterApprovalRef.current = true;
+          await refreshUser();
+        }
+
+        // Handle 24-hour alert logic for APPROVED status
+        if (effectiveStatus === 'APPROVED') {
+          // Check if verification was approved and store the time
+          const storedApprovedTime = localStorage.getItem(`maid_verification_approved_${user?.id}`);
+          if (!storedApprovedTime) {
+            // First time approval - store the time
+            const currentTime = Date.now();
+            localStorage.setItem(`maid_verification_approved_${user?.id}`, currentTime.toString());
+            setVerificationApprovedTime(currentTime);
+            setShowVerificationAlert(true);
+          } else {
+            // Check if 24 hours have passed
+            const approvedTime = parseInt(storedApprovedTime);
+            const currentTime = Date.now();
+            const hoursPassed = (currentTime - approvedTime) / (1000 * 60 * 60);
+
+            if (hoursPassed < 24) {
               setShowVerificationAlert(true);
             } else {
-              // Check if 24 hours have passed
-              const approvedTime = parseInt(storedApprovedTime);
-              const currentTime = Date.now();
-              const hoursPassed = (currentTime - approvedTime) / (1000 * 60 * 60);
-              
-              if (hoursPassed < 24) {
-                setShowVerificationAlert(true);
-              } else {
-                // Hide alert if 24 hours have passed
-                setShowVerificationAlert(false);
-              }
-              setVerificationApprovedTime(approvedTime);
+              // Hide alert if 24 hours have passed
+              setShowVerificationAlert(false);
             }
-          } else {
-            // For other statuses, always show the alert
-            setShowVerificationAlert(true);
+            setVerificationApprovedTime(approvedTime);
           }
-          
-          setVerificationData({
-            ...data,
-            documents: transformedDocuments
-          });
+        } else {
+          // For other statuses, always show the alert
+          setShowVerificationAlert(true);
+        }
+
+        setVerificationData({
+          ...data,
+          documents: transformedDocuments
+        });
       }
     } catch (error) {
       console.error('Error fetching verification status:', error);
@@ -176,14 +179,14 @@ export default function MaidDashboardEnhanced() {
 
       // Handle maid bookings/assignments
       if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
-        const bookingsData = Array.isArray(bookingsResponse.value.data) ? 
+        const bookingsData = Array.isArray(bookingsResponse.value.data) ?
           bookingsResponse.value.data : [];
         setBookings(bookingsData);
       }
 
       // Handle payments (earnings)
       if (paymentsResponse.status === 'fulfilled' && paymentsResponse.value.success) {
-        const paymentsData = Array.isArray(paymentsResponse.value.data) ? 
+        const paymentsData = Array.isArray(paymentsResponse.value.data) ?
           paymentsResponse.value.data : [];
         setPayments(paymentsData);
       }
@@ -206,26 +209,26 @@ export default function MaidDashboardEnhanced() {
   const calculateMaidStats = () => {
     const totalBookings = bookings.length;
     const completedBookings = bookings.filter(b => b.status === 'COMPLETED').length;
-    const upcomingBookings = bookings.filter(b => 
+    const upcomingBookings = bookings.filter(b =>
       b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
     ).length;
-    
+
     const totalEarnings = payments
       .filter(p => p.status === 'COMPLETED')
       .reduce((sum, p) => sum + p.amount, 0);
-    
+
     // Calculate monthly earnings (current month)
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     const monthlyEarnings = payments
       .filter(p => {
         const paymentDate = new Date(p.createdAt);
-        return p.status === 'COMPLETED' && 
-               paymentDate.getMonth() === currentMonth &&
-               paymentDate.getFullYear() === currentYear;
+        return p.status === 'COMPLETED' &&
+          paymentDate.getMonth() === currentMonth &&
+          paymentDate.getFullYear() === currentYear;
       })
       .reduce((sum, p) => sum + p.amount, 0);
-    
+
     const completionRate = totalBookings > 0 ? Math.round((completedBookings / totalBookings) * 100) : 0;
 
     setStats({
@@ -276,7 +279,7 @@ export default function MaidDashboardEnhanced() {
             Here's your comprehensive cleaning schedule, earnings overview, and performance metrics.
           </p>
         </div>
-     
+
         {/* Verification Status Banners */}
         {verificationStatus === 'NOT_SUBMITTED' && (
           <Alert className="border-2 border-warning bg-gradient-to-r from-warning/5 to-orange/5">
@@ -343,7 +346,7 @@ export default function MaidDashboardEnhanced() {
                 <AlertDescription className="text-red-700">
                   Some of your verification documents have been rejected. Please review the feedback below and upload the corrected documents.
                 </AlertDescription>
-                
+
                 {/* Individual Document Status */}
                 {verificationData?.documents && (
                   <div className="mt-3 space-y-2">
@@ -544,11 +547,10 @@ export default function MaidDashboardEnhanced() {
                     <div key={booking.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-4 flex-1">
-                          <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
-                            booking.status === 'COMPLETED' ? 'bg-success' : 
-                            booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
-                            booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
-                          }`} />
+                          <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${booking.status === 'COMPLETED' ? 'bg-success' :
+                              booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
+                                booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
+                            }`} />
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-3">
                               <p className="font-semibold text-foreground text-lg">
@@ -556,13 +558,13 @@ export default function MaidDashboardEnhanced() {
                               </p>
                               <Badge variant={
                                 booking.status === 'COMPLETED' ? 'default' :
-                                booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
-                                booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
+                                  booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
+                                    booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
                               }>
                                 {booking.status}
                               </Badge>
                             </div>
-                            
+
                             {/* Enhanced Assignment Details */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
                               <div className="space-y-2">
@@ -572,7 +574,7 @@ export default function MaidDashboardEnhanced() {
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
                                   <Clock className="h-4 w-4 text-primary" />
-                                  <span>{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                  <span>{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                   {booking.estimatedDuration && (
                                     <span className="text-muted-foreground">({booking.estimatedDuration} mins)</span>
                                   )}
@@ -584,7 +586,7 @@ export default function MaidDashboardEnhanced() {
                                   </div>
                                 )}
                               </div>
-                              
+
                               <div className="space-y-2">
                                 {booking.customer?.phone && (
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -598,7 +600,7 @@ export default function MaidDashboardEnhanced() {
                                 </div>
                               </div>
                             </div>
-                            
+
                             {booking.serviceAddress && (
                               <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
                                 <div className="flex items-start gap-2 text-sm">
