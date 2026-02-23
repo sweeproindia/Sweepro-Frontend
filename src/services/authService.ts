@@ -141,9 +141,16 @@ export class AuthService {
         }
       );
 
-      // Update stored user data
+      // Update stored user data and store the new role-bearing JWT
       if (response.success && response.data?.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // Backend re-issues a JWT with the correct role after profile completion.
+        // Store it so subsequent API calls send the updated token.
+        const newToken = (response.data as any).token;
+        if (newToken) {
+          setAuthToken(newToken, 'local', 'jwt');
+        }
       }
 
       return response;

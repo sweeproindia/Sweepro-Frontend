@@ -1,4 +1,4 @@
-import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse } from './api';
+import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse, API_BASE_URL } from './api';
 
 // Types for payment
 export interface PaymentData {
@@ -25,6 +25,7 @@ export interface Payment {
   transactionId?: string;
   gatewayResponse?: any;
   paymentType: 'BOOKING' | 'SUBSCRIPTION' | 'RENEWAL';
+  invoiceNumber?: string; // e.g. INV-202602-00034
   refundAmount?: number;
   refundReason?: string;
   refundedAt?: string;
@@ -208,24 +209,24 @@ export class PaymentService {
         amount,
         currency
       });
-      
+
       const res = await apiRequest<any>(API_ENDPOINTS.PAYMENTS.RAZORPAY.SUBSCRIPTION_ORDER, {
         method: HttpMethod.POST,
         body: { subscriptionId, amount, currency },
         requiresAuth: true
       });
-      
+
       console.log('✅ Razorpay order response:', res);
-      
+
       const response: any = res;
       const order = response.order || response.data?.order;
       const key = response.key || response.data?.key;
-      
+
       if (!order || !order.id) {
         console.error('❌ Invalid order response - missing order or order.id:', response);
         throw new Error('Invalid order response from server - no order ID received');
       }
-      
+
       return {
         success: true,
         message: 'Order created',
@@ -342,18 +343,57 @@ export class PaymentService {
   }
 
   /**
-   * Download payment receipt
+   * Download payment invoice as PDF (triggers browser download)
    */
-  static async downloadReceipt(paymentId: string): Promise<ApiResponse<{ receiptUrl: string }>> {
-    try {
-      return await apiRequest<{ receiptUrl: string }>(`/payments/${paymentId}/receipt`, {
-        method: HttpMethod.GET,
-        requiresAuth: true
-      });
-    } catch (error) {
-      console.error('Download receipt error:', error);
-      throw error;
+  static async downloadInvoice(paymentId: string): Promise<void> {
+    const url = `${API_BASE_URL}/payments/${paymentId}/invoice`;
+
+    // Use fetch to send auth cookies
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Failed to download invoice' }));
+      throw new Error(err.error || 'Failed to download invoice');
     }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Extract filename from Content-Disposition header
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : `Invoice-${paymentId.slice(0, 8)}.pdf`;
+
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  }
+
+  /**
+   * Get invoice blob URL for in-browser preview (opens in iframe / new tab)
+   */
+  static async getInvoiceBlobUrl(paymentId: string): Promise<string> {
+    const url = `${API_BASE_URL}/payments/${paymentId}/invoice/view`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Failed to load invoice' }));
+      throw new Error(err.error || 'Failed to load invoice');
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
   }
 
   /**
