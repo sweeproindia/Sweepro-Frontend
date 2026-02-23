@@ -180,10 +180,21 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     [user]
   );
 
+  // F5 FIX: refreshUser must NOT toggle isLoading.
+  //
+  // isLoading is consumed by RequireAuth to decide whether to render children
+  // or a full-screen spinner. If refreshUser sets isLoading=true, RequireAuth
+  // unmounts the entire protected page tree. When isLoading goes back to false,
+  // the page remounts from scratch, all useEffect hooks re-fire, and any effect
+  // that calls refreshUser (e.g. MaidDashboardEnhanced → fetchVerificationStatus)
+  // creates an infinite unmount → remount → refreshUser → unmount loop.
+  //
+  // Instead, we silently update the user data without touching isLoading.
+  // The initial auth check (useEffect on mount) is the only code path that
+  // should set isLoading — that's the "auth initializing" state.
   const refreshUser = useCallback(async () => {
     if (!isAuthenticated) return;
 
-    setIsLoading(true);
     try {
       await AuthService.getCurrentUser();
       const refreshedUser = AuthService.getStoredUser();
@@ -197,8 +208,6 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error instanceof ApiError && error.statusCode === 401) {
         logout();
       }
-    } finally {
-      setIsLoading(false);
     }
   }, [isAuthenticated, logout]);
 
