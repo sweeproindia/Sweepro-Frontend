@@ -155,18 +155,35 @@ export default function CompleteProfilePage() {
       const response = await AuthService.completeProfile(formData);
 
       if (response.success && response.data?.user) {
+        const updatedUser = response.data.user;
+
         toast({
           title: 'Profile completed!',
-          description: `Welcome to Sweep-Pro, ${response.data.user.name}!`,
+          description: `Welcome to Sweep-Pro, ${updatedUser.name}!`,
         });
 
         sessionStorage.removeItem('selectedRole');
 
-        // Refresh user context
-        await refreshUser();
+        // CRITICAL FIX: Use the fresh user data from the response directly.
+        // Do NOT call refreshUser() after profile completion because:
+        //
+        // THE BUG: In production (cross-origin), refreshUser() → getCurrentUser()
+        // uses getAuthTokenType() which might still think we're a Firebase user.
+        // So it calls /auth/firebase/me with an old/stale token, gets back
+        // profile_completed: false from stale DB read, and overwrites the
+        // fresh profile_completed: true data we just received from the API.
+        //
+        // THE FIX: The backend already returned the updated user+token in the
+        // response. We stored the new JWT via setAuthToken() in completeProfile().
+        // Just use the response data directly to update the user context, then
+        // navigate. On next page load, getAuthTokenType() will correctly identify
+        // this as a JWT session and call /auth/me (not /auth/firebase/me).
 
-        // Navigate based on role
-        switch (response.data.user.role) {
+        // Update user context with the fresh response data
+        setAuthenticatedUser(updatedUser);
+
+        // Navigate based on role (use response data)
+        switch (updatedUser.role) {
           case 'ADMIN':
             navigate('/admin-dashboard');
             break;
