@@ -244,18 +244,22 @@ export class AuthService {
       localStorage.removeItem('user');
       sessionStorage.removeItem('user');
     };
+
+    // Synchronously burn the local session immediately so the user doesn't get stuck.
+    clearLocal();
+
     try {
-      // M6 / C6: requiresAuth: true so the HttpOnly cookie is sent with the request;
-      // the backend needs the token to blacklist it before clearing the cookie.
-      await apiRequest(API_ENDPOINTS.AUTH.LOGOUT, {
-        method: HttpMethod.POST,
-        requiresAuth: true
-      }).catch(() => { }); // best-effort — always clear local state regardless
-      await FirebaseAuth.logout();
-      clearLocal();
+      // The API call and Firebase call happen purely in the background.
+      // Even if they hang or fail, the frontend is already logged out.
+      await Promise.allSettled([
+        apiRequest(API_ENDPOINTS.AUTH.LOGOUT, {
+          method: HttpMethod.POST,
+          requiresAuth: true
+        }),
+        FirebaseAuth.logout()
+      ]);
     } catch (error) {
-      console.error('Logout error:', error);
-      clearLocal();
+      console.error('Logout error (background):', error);
     }
   }
 

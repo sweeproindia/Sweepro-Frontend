@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useMemo,
   useState,
+  useRef,
   ReactNode,
 } from 'react';
 import { AuthService, User, LoginCredentials } from '@/services/authService';
@@ -54,6 +55,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  const isLoggingOutRef = useRef(false);
+
   // ------------------------------------------------------------------
   // Core auth helpers (defined early so the 401 listener can use logout)
   // ------------------------------------------------------------------
@@ -63,9 +66,18 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const logout = useCallback(async () => {
-    await AuthService.logout();
-    setUser(null);
-    setIsAuthenticated(false);
+    if (isLoggingOutRef.current) return;
+    isLoggingOutRef.current = true;
+
+    try {
+      // Clear React state immediately for snappy UI
+      setUser(null);
+      setIsAuthenticated(false);
+      // Fire AuthService logout (which manages localStorage automatically)
+      await AuthService.logout();
+    } finally {
+      isLoggingOutRef.current = false;
+    }
   }, []);
 
   // ------------------------------------------------------------------
