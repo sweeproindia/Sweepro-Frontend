@@ -315,9 +315,20 @@ export const CustomerProfilePage: React.FC = () => {
                     <div className="col-span-full space-y-1">
                       <p className="text-sm text-muted-foreground">Address</p>
                       <p className="font-semibold text-foreground">
-                        {[profileData.addressLine, profileData.locality, profileData.city, profileData.state, profileData.pincode]
+                        {/* BUG FIX: For Google OAuth CUSTOMER accounts the address is stored
+                            as apartment name + area in `address`, with locality and pincode
+                            as separate fields.  Prefer the full `address` string as the
+                            primary display value, then append city/state/pincode when present,
+                            so the UI shows e.g. "My Home Krishe - Gachibowli, 500032"
+                            instead of the raw UUID or just "Gachibowli, 500032". */}
+                        {[
+                          profileData.addressLine || profileData.address,
+                          profileData.city,
+                          profileData.state,
+                          profileData.pincode
+                        ]
                           .filter(Boolean)
-                          .join(', ') || profileData.address || 'Not provided'}
+                          .join(', ') || 'Not provided'}
                       </p>
                     </div>
                   )}
