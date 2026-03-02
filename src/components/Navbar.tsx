@@ -3,6 +3,7 @@ import { Bell, ChevronDown, LogOut, Menu, MessageCircle, Shield, User, X } from 
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from '@/services/authService';
+import { useUser } from '@/contexts/UserContext';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -22,17 +23,30 @@ export const Navbar = ({
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { logout } = useUser();
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
   const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
 
   const handleLogout = async () => {
-    await AuthService.logout();
+    try {
+      await logout();
+    } catch (e) {
+      console.error('Logout error fallback:', e);
+      await AuthService.logout();
+    }
     setIsUserMenuOpen(false);
-    window.location.href = '/';
+    setIsMenuOpen(false);
+    navigate('/');
   };
 
   const handleDashboardClick = () => {
+    if (user && !user.profile_completed) {
+      navigate('/complete-profile');
+      return;
+    }
+
     const role = user?.role?.toUpperCase();
 
     if (role === 'CUSTOMER') {
@@ -194,8 +208,8 @@ export const Navbar = ({
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
-          ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100'
-          : 'bg-gradient-to-b from-black/20 to-transparent backdrop-blur-md'
+        ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100'
+        : 'bg-gradient-to-b from-black/20 to-transparent backdrop-blur-md'
         }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -243,7 +257,7 @@ export const Navbar = ({
                   onClick={handleDashboardClick}
                   className="hidden md:inline-flex h-11 rounded-full border-2 border-transparent bg-[#1800ad] px-6 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#ca0013] hover:shadow-lg"
                 >
-                  Dashboard
+                  {!user.profile_completed ? 'Complete Profile' : 'Dashboard'}
                 </Button>
 
                 <div className="relative" ref={userMenuRef}>
@@ -251,8 +265,8 @@ export const Navbar = ({
                     variant="outline"
                     onClick={toggleUserMenu}
                     className={`flex h-11 items-center gap-2 rounded-full border-2 px-4 text-sm font-semibold transition-all duration-300 ${scrolled
-                        ? 'bg-white border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
-                        : 'bg-transparent border-white text-white hover:bg-white/20'
+                      ? 'bg-white border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
+                      : 'bg-transparent border-white text-white hover:bg-white/20'
                       }`}
                   >
                     <User className="h-4 w-4" />
@@ -267,7 +281,7 @@ export const Navbar = ({
                         <p className="text-xs text-gray-500">{user.email}</p>
                         <div className="mt-2">
                           <span className="inline-block px-2 py-1 text-xs font-medium bg-[#eeebe3] text-[#1800ad] rounded-full">
-                            {user.role}
+                            {user.role || (user.profile_completed ? 'User' : 'Profile Pending')}
                           </span>
                         </div>
                       </div>
@@ -288,8 +302,8 @@ export const Navbar = ({
                   <Button
                     variant="outline"
                     className={`h-11 rounded-full border-2 px-6 text-sm font-semibold transition-all duration-300 ${scrolled
-                        ? 'border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
-                        : 'border-white bg-transparent text-white hover:border-white/90 hover:bg-white/20'
+                      ? 'border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
+                      : 'border-white bg-transparent text-white hover:border-white/90 hover:bg-white/20'
                       }`}
                   >
                     Login
@@ -299,8 +313,8 @@ export const Navbar = ({
                 <Link to="/signup" className="hidden md:block">
                   <Button
                     className={`h-11 rounded-full border-2 border-transparent px-6 text-sm font-bold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl ${scrolled
-                        ? 'bg-[#1800ad] text-white hover:bg-[#ca0013]'
-                        : 'bg-[#eeebe3] text-[#1800ad] hover:bg-white'
+                      ? 'bg-[#1800ad] text-white hover:bg-[#ca0013]'
+                      : 'bg-[#eeebe3] text-[#1800ad] hover:bg-white'
                       }`}
                   >
                     Sign Up
@@ -374,7 +388,7 @@ export const Navbar = ({
                           handleDashboardClick();
                         }}
                       >
-                        Go to Dashboard
+                        {!user.profile_completed ? 'Complete Profile' : 'Go to Dashboard'}
                       </Button>
                       <Button
                         variant="outline"
