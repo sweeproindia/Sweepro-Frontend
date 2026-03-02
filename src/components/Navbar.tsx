@@ -30,6 +30,15 @@ export const Navbar = ({
   const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
 
   const handleLogout = async () => {
+    // As requested: If the user's profile is incomplete, clicking logout pushes them
+    // back to the complete-profile page instead of logging them out.
+    if (user && !user.profile_completed) {
+      navigate('/complete-profile');
+      setIsUserMenuOpen(false);
+      setIsMenuOpen(false);
+      return;
+    }
+
     try {
       await logout();
     } catch (e) {

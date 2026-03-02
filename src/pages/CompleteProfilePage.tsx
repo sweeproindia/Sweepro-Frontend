@@ -11,18 +11,29 @@ import { AuthService, CompleteProfileData, Apartment } from '@/services/authServ
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import { TermsContent } from '@/components/legal/TermsContent';
+import { LogOut } from 'lucide-react';
 
 export default function CompleteProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, logout } = useUser();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (e) {
+      console.error('Logout error:', e);
+      await AuthService.logout();
+    }
+    navigate('/');
+  };
 
   const stateRole = (location.state as any)?.role as 'CUSTOMER' | 'MAID' | undefined;
   const storedRole = (sessionStorage.getItem('selectedRole') as 'CUSTOMER' | 'MAID' | null) ?? undefined;
   const resolvedRole = stateRole ?? storedRole;
   const roleLocked = Boolean(resolvedRole);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingApartments, setIsLoadingApartments] = useState(true);
   const [apartments, setApartments] = useState<Apartment[]>([]);
@@ -169,7 +180,7 @@ export default function CompleteProfilePage() {
       }
     } catch (error: any) {
       console.error('Complete profile error:', error);
-      
+
       // Handle validation errors
       if (error.response?.errors) {
         const errors: Record<string, string> = {};
@@ -222,8 +233,20 @@ export default function CompleteProfilePage() {
   }, {} as Record<string, Apartment[]>);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen relative flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+      {/* Universal Logout Button */}
+      <div className="absolute top-4 right-4">
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 bg-white hover:bg-red-50 hover:text-red-700 text-gray-700 font-medium shadow-sm transition-colors border border-gray-200"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden sm:inline">Logout</span>
+        </Button>
+      </div>
+
+      <div className="w-full max-w-2xl mt-8">
         <Card className="border-none shadow-lg">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-4 p-3 bg-blue-100 rounded-full w-fit">
