@@ -64,7 +64,7 @@ export class AuthService {
   /**
    * Sign in with Google OAuth
    */
-  static async signInWithGoogle(): Promise<ApiResponse<AuthResponse>> {
+  static async signInWithGoogle(intent: 'login' | 'signup' = 'login'): Promise<ApiResponse<AuthResponse>> {
     try {
       // Sign in with Firebase Google OAuth
       const { idToken } = await FirebaseAuth.signInWithGoogle();
@@ -74,7 +74,7 @@ export class AuthService {
         '/auth/firebase/login',
         {
           method: HttpMethod.POST,
-          body: { idToken },
+          body: { idToken, intent },
           requiresAuth: false
         }
       );

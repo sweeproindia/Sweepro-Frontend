@@ -123,7 +123,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useUser();
-  
+
   // State for mobile sidebar and notifications
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
   const [isEditPlanDialogOpen, setIsEditPlanDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
-  
+
   // Dummy maid verification data for testing - formatted to match component structure
   const [maidVerifications] = useState([
     {
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
       }
     }
   ]);
-  
+
   // Admin notifications
   const notifications: Notification[] = [
     { id: 1, type: 'user', title: 'New Booking Pending', message: 'A new booking requires homecare partner assignment', time: '5 minutes ago', unread: true },
@@ -396,7 +396,7 @@ export default function AdminDashboard() {
         const rawUsers = usersResponse.value.data as any;
         const usersData: User[] = Array.isArray(rawUsers) ? rawUsers : (rawUsers?.users || rawUsers?.data || []);
         setUsers(usersData);
-        
+
         // Separate maids from users
         const maidsData: Maid[] = usersData
           .filter((u: User) => u.role === 'MAID')
@@ -586,11 +586,11 @@ export default function AdminDashboard() {
         body: { status },
         requiresAuth: true
       });
-      
-      setUsers(prev => prev.map(user => 
+
+      setUsers(prev => prev.map(user =>
         user.id === userId ? { ...user, status: status as any } : user
       ));
-      
+
       toast({
         title: 'Success',
         description: 'User status updated successfully'
@@ -616,15 +616,15 @@ export default function AdminDashboard() {
       if (response.success) {
         // Remove from pending bookings
         setPendingBookings(prev => prev.filter(b => b.id !== bookingId));
-        
+
         // Refresh bookings data
-        const bookingsResponse = await apiRequest('/bookings', { 
-          method: HttpMethod.GET, 
-          requiresAuth: true 
+        const bookingsResponse = await apiRequest('/bookings', {
+          method: HttpMethod.GET,
+          requiresAuth: true
         });
         if (bookingsResponse.success) {
-          const bookingsData = Array.isArray(bookingsResponse.data) ? 
-            bookingsResponse.data : 
+          const bookingsData = Array.isArray(bookingsResponse.data) ?
+            bookingsResponse.data :
             bookingsResponse.data?.bookings || [];
           setBookings(bookingsData);
         }
@@ -648,7 +648,7 @@ export default function AdminDashboard() {
   const filteredSubscriptions = subscriptions.filter(sub => {
     if (!subscriptionFilter) return true;
     return sub.plan?.name.toLowerCase().includes(subscriptionFilter.toLowerCase()) ||
-           sub.customer?.user?.name.toLowerCase().includes(subscriptionFilter.toLowerCase());
+      sub.customer?.user?.name.toLowerCase().includes(subscriptionFilter.toLowerCase());
   });
 
   const handleEditPlan = (plan: SubscriptionPlan) => {
@@ -669,8 +669,8 @@ export default function AdminDashboard() {
     fetchAdminData(); // Refresh data
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Logged out successfully",
       description: "You have been logged out of your account.",
@@ -809,365 +809,365 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <div className="space-y-6">
-                {/* Overview Section */}
-                {activeSection === 'overview' && (
-                  <>
-                  {/* Analytics Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="dashboard-card">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {analyticsData.pendingBookings} pending approval
-                        </p>
-                      </CardContent>
-                    </Card>
+        {/* Overview Section */}
+        {activeSection === 'overview' && (
+          <>
+            {/* Analytics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {analyticsData.pendingBookings} pending approval
+                  </p>
+                </CardContent>
+              </Card>
 
-                    <Card className="dashboard-card">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {analyticsData.totalMaids} service providers
-                        </p>
-                      </CardContent>
-                    </Card>
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {analyticsData.totalMaids} service providers
+                  </p>
+                </CardContent>
+              </Card>
 
-                    <Card className="dashboard-card">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {analyticsData.completedPayments} completed payments
-                        </p>
-                      </CardContent>
-                    </Card>
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {analyticsData.completedPayments} completed payments
+                  </p>
+                </CardContent>
+              </Card>
 
-                    <Card className="dashboard-card">
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
-                        <Package className="h-4 w-4 text-muted-foreground" />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{analyticsData.activeSubscriptions}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {subscriptions.length} total subscriptions
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
+              <Card className="dashboard-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analyticsData.activeSubscriptions}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {subscriptions.length} total subscriptions
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
 
-                  {/* Recent Activities */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-5 w-5" />
-                            Latest Pending Bookings
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleSectionChange('pending-bookings')}
-                          >
-                            View All
-                          </Button>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {pendingBookings.slice(0, 2).map((booking) => (
-                            <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
-                              <div>
-                                <p className="font-medium">{booking.service?.name || 'Service'}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {booking.customer?.name || 'Customer'}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium">
-                                  {new Date(booking.scheduledAt).toLocaleDateString()}
-                                </p>
-                                <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                                  Pending
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                          {pendingBookings.length === 0 && (
-                            <p className="text-center text-muted-foreground py-4">No pending bookings</p>
-                          )}
+            {/* Recent Activities */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Latest Pending Bookings
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSectionChange('pending-bookings')}
+                    >
+                      View All
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {pendingBookings.slice(0, 2).map((booking) => (
+                      <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{booking.service?.name || 'Service'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {booking.customer?.name || 'Customer'}
+                          </p>
                         </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <TrendingUp className="h-5 w-5" />
-                          Recent Payments
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {payments.slice(0, 5).map((payment) => (
-                            <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
-                              <div>
-                                <p className="font-medium">₹{payment.finalAmount.toLocaleString()}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {payment.paymentMethod} • {new Date(payment.createdAt).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
-                                {payment.status}
-                              </Badge>
-                            </div>
-                          ))}
-                          {payments.length === 0 && (
-                            <p className="text-center text-muted-foreground py-4">No recent payments</p>
-                          )}
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {new Date(booking.scheduledAt).toLocaleDateString()}
+                          </p>
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                            Pending
+                          </Badge>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    ))}
+                    {pendingBookings.length === 0 && (
+                      <p className="text-center text-muted-foreground py-4">No pending bookings</p>
+                    )}
                   </div>
-                  </>
-                )}
-                
-                {/* Maids Section */}
-                {activeSection === 'maids' && (
-                  <AdminMaidsSection
-                    allMaids={maids.map(m => ({
-                      id: m.id,
-                      name: m.user.name,
-                      email: m.user.email,
-                      phone: m.user.phone,
-                      address: m.user.address || '',
-                      experience: `${m.completedBookings} bookings completed`,
-                      specializations: m.skills,
-                      rating: m.rating,
-                      status: computeMaidDisplayStatus(m),
-                      rawStatus: (m.status || 'INACTIVE') as any,
-                      availability: (m.availability && typeof m.availability === 'object') ? m.availability : null,
-                      totalBookings: m.completedBookings,
-                      joinDate: m.user.createdAt,
-                      weeklyOffDay: m.weeklyOffDay || null
-                    }))}
-                    onAddMaid={(maidData) => {
-                      toast({
-                        title: 'Homecare Partner Added',
-                        description: 'New homecare partner has been added successfully'
-                      });
-                    }}
-                    onVerifyMaid={(maidId) => updateUserStatus(maidId, 'ACTIVE')}
-                  />
-                )}
+                </CardContent>
+              </Card>
 
-                {/* Automatic Bookings Section */}
-                {activeSection === 'pending-bookings' && (
-                  <AdminAutomaticBookingsSection
-                    availableMaids={availableMaids.map(m => ({
-                      id: m.userId,
-                      name: m.user.name,
-                      email: m.user.email,
-                      phone: m.user.phone,
-                      rating: m.rating,
-                      skills: m.skills,
-                      completedBookings: m.completedBookings
-                    }))}
-                    onRefreshData={fetchAdminData}
-                  />
-                )}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Recent Payments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {payments.slice(0, 5).map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">₹{payment.finalAmount.toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {payment.paymentMethod} • {new Date(payment.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
+                          {payment.status}
+                        </Badge>
+                      </div>
+                    ))}
+                    {payments.length === 0 && (
+                      <p className="text-center text-muted-foreground py-4">No recent payments</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
 
-                {/* Bookings Section */}
-                {activeSection === 'bookings' && (
-                  <EnhancedAdminBookingsSection
-                    bookings={bookings.map((b: any) => ({
-                      ...b,
-                      serviceAddress: b.serviceAddress || b.customer?.address || '',
-                      totalAmount: b.totalAmount ?? 0,
-                      finalAmount: b.finalAmount ?? b.totalAmount ?? 0,
-                      service: b.service || {
-                        id: b.serviceId,
-                        name: b.service?.name || 'Service',
-                        description: b.service?.description || '',
-                        basePrice: b.service?.basePrice || 0,
-                      },
-                      customer: b.customer || {
-                        id: b.customerId,
-                        name: b.customer?.name || 'Customer',
-                        email: b.customer?.email || '',
-                        phone: b.customer?.phone || '',
-                      },
-                    })) as any}
-                    availableMaids={availableMaids.map((m: any) => ({
-                      id: m.userId || m.id,
-                      name: m.user?.name || m.name,
-                      email: m.user?.email || m.email,
-                      phone: m.user?.phone || m.phone,
-                      rating: m.rating,
-                      status: m.status,
-                      completedBookings: m.completedBookings,
-                      skills: m.skills,
-                    })) as any}
-                    onAssignMaid={assignMaidToBooking}
-                    onRefreshBookings={fetchAdminData}
-                  />
-                )}
+        {/* Maids Section */}
+        {activeSection === 'maids' && (
+          <AdminMaidsSection
+            allMaids={maids.map(m => ({
+              id: m.id,
+              name: m.user.name,
+              email: m.user.email,
+              phone: m.user.phone,
+              address: m.user.address || '',
+              experience: `${m.completedBookings} bookings completed`,
+              specializations: m.skills,
+              rating: m.rating,
+              status: computeMaidDisplayStatus(m),
+              rawStatus: (m.status || 'INACTIVE') as any,
+              availability: (m.availability && typeof m.availability === 'object') ? m.availability : null,
+              totalBookings: m.completedBookings,
+              joinDate: m.user.createdAt,
+              weeklyOffDay: m.weeklyOffDay || null
+            }))}
+            onAddMaid={(maidData) => {
+              toast({
+                title: 'Homecare Partner Added',
+                description: 'New homecare partner has been added successfully'
+              });
+            }}
+            onVerifyMaid={(maidId) => updateUserStatus(maidId, 'ACTIVE')}
+          />
+        )}
 
-                {/* Users Section */}
-                {activeSection === 'users' && (
-                  <AdminUsersSection 
-                    users={users.filter(u => u.role === 'CUSTOMER').map(u => ({
-                      id: u.id,
-                      name: u.name,
-                      email: u.email,
-                      phone: u.phone,
-                      address: (u as any).address,
-                      timeSlot: (u as any).timeSlot,
-                      createdAt: u.createdAt,
-                      joinDate: u.createdAt,
-                      status: u.status === 'ACTIVE' ? 'active' : u.status === 'INACTIVE' ? 'suspended' : 'pending',
-                      totalBookings: 0, // This would need to be calculated from bookings
-                      totalSpent: 0, // This would need to be calculated from payments
-                      lastActive: u.createdAt
-                    }))}
-                    availableMaids={availableMaids.map(m => ({
-                      id: m.userId,
-                      name: m.user.name,
-                      email: m.user.email,
-                      phone: m.user.phone,
-                      rating: m.rating,
-                      skills: m.skills,
-                      completedBookings: m.completedBookings
-                    }))}
-                    onVerifyUser={(userId) => updateUserStatus(userId, 'ACTIVE')}
-                    onRefreshData={fetchAdminData}
-                  />
-                )}
+        {/* Automatic Bookings Section */}
+        {activeSection === 'pending-bookings' && (
+          <AdminAutomaticBookingsSection
+            availableMaids={availableMaids.map(m => ({
+              id: m.userId,
+              name: m.user.name,
+              email: m.user.email,
+              phone: m.user.phone,
+              rating: m.rating,
+              skills: m.skills,
+              completedBookings: m.completedBookings
+            }))}
+            onRefreshData={fetchAdminData}
+          />
+        )}
 
-                {/* Subscriptions Section */}
-                {activeSection === 'subscriptions' && (
-                  <AdminSubscriptionsSection
-                    subscriptions={subscriptions.map(s => ({
-                      id: s.id,
-                      customerName: s.customer?.user?.name || 'N/A',
-                      customerEmail: s.customer?.user?.email || 'N/A',
-                      plan: s.plan?.name || 'N/A',
-                      status: s.status === 'ACTIVE' ? 'active' : s.status === 'EXPIRED' ? 'expired' : 'cancelled',
-                      startDate: s.startDate,
-                      endDate: s.endDate,
-                      price: s.amount,
-                      usage: 0, // This would need to be calculated
-                      limit: s.plan?.sessionsPerMonth || 0,
-                      nextBilling: s.endDate
-                    }))}
-                  />
-                )}
+        {/* Bookings Section */}
+        {activeSection === 'bookings' && (
+          <EnhancedAdminBookingsSection
+            bookings={bookings.map((b: any) => ({
+              ...b,
+              serviceAddress: b.serviceAddress || b.customer?.address || '',
+              totalAmount: b.totalAmount ?? 0,
+              finalAmount: b.finalAmount ?? b.totalAmount ?? 0,
+              service: b.service || {
+                id: b.serviceId,
+                name: b.service?.name || 'Service',
+                description: b.service?.description || '',
+                basePrice: b.service?.basePrice || 0,
+              },
+              customer: b.customer || {
+                id: b.customerId,
+                name: b.customer?.name || 'Customer',
+                email: b.customer?.email || '',
+                phone: b.customer?.phone || '',
+              },
+            })) as any}
+            availableMaids={availableMaids.map((m: any) => ({
+              id: m.userId || m.id,
+              name: m.user?.name || m.name,
+              email: m.user?.email || m.email,
+              phone: m.user?.phone || m.phone,
+              rating: m.rating,
+              status: m.status,
+              completedBookings: m.completedBookings,
+              skills: m.skills,
+            })) as any}
+            onAssignMaid={assignMaidToBooking}
+            onRefreshBookings={fetchAdminData}
+          />
+        )}
 
-                {/* Payments Section */}
-                {activeSection === 'payments' && (
-                  <AdminPaymentsSection
-                    payments={payments.map(p => ({
-                      id: p.id,
-                      customerName: p.customer?.name || 'N/A',
-                      customerEmail: p.customer?.email || 'N/A',
-                      amount: p.finalAmount,
-                      method: p.paymentMethod,
-                      status: p.status === 'COMPLETED' ? 'completed' : p.status === 'PENDING' ? 'pending' : p.status === 'FAILED' ? 'failed' : 'refunded',
-                      date: p.createdAt,
-                      transactionId: p.transactionId || 'N/A',
-                      description: p.paymentType || 'Payment'
-                    }))}
-                  />
-                )}
+        {/* Users Section */}
+        {activeSection === 'users' && (
+          <AdminUsersSection
+            users={users.filter(u => u.role === 'CUSTOMER').map(u => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              phone: u.phone,
+              address: (u as any).address,
+              timeSlot: (u as any).timeSlot,
+              createdAt: u.createdAt,
+              joinDate: u.createdAt,
+              status: u.status === 'ACTIVE' ? 'active' : u.status === 'INACTIVE' ? 'suspended' : 'pending',
+              totalBookings: 0, // This would need to be calculated from bookings
+              totalSpent: 0, // This would need to be calculated from payments
+              lastActive: u.createdAt
+            }))}
+            availableMaids={availableMaids.map(m => ({
+              id: m.userId,
+              name: m.user.name,
+              email: m.user.email,
+              phone: m.user.phone,
+              rating: m.rating,
+              skills: m.skills,
+              completedBookings: m.completedBookings
+            }))}
+            onVerifyUser={(userId) => updateUserStatus(userId, 'ACTIVE')}
+            onRefreshData={fetchAdminData}
+          />
+        )}
 
-                {/* Maid Verification Section */}
-                {activeSection === 'maid-verification' && (
-                  <AdminMaidVerificationSection />
-                )}
+        {/* Subscriptions Section */}
+        {activeSection === 'subscriptions' && (
+          <AdminSubscriptionsSection
+            subscriptions={subscriptions.map(s => ({
+              id: s.id,
+              customerName: s.customer?.user?.name || 'N/A',
+              customerEmail: s.customer?.user?.email || 'N/A',
+              plan: s.plan?.name || 'N/A',
+              status: s.status === 'ACTIVE' ? 'active' : s.status === 'EXPIRED' ? 'expired' : 'cancelled',
+              startDate: s.startDate,
+              endDate: s.endDate,
+              price: s.amount,
+              usage: 0, // This would need to be calculated
+              limit: s.plan?.sessionsPerMonth || 0,
+              nextBilling: s.endDate
+            }))}
+          />
+        )}
 
-                {/* Buffer Management Section */}
-                {activeSection === 'buffer-management' && (
-                  <AdminBufferManagementSection />
-                )}
+        {/* Payments Section */}
+        {activeSection === 'payments' && (
+          <AdminPaymentsSection
+            payments={payments.map(p => ({
+              id: p.id,
+              customerName: p.customer?.name || 'N/A',
+              customerEmail: p.customer?.email || 'N/A',
+              amount: p.finalAmount,
+              method: p.paymentMethod,
+              status: p.status === 'COMPLETED' ? 'completed' : p.status === 'PENDING' ? 'pending' : p.status === 'FAILED' ? 'failed' : 'refunded',
+              date: p.createdAt,
+              transactionId: p.transactionId || 'N/A',
+              description: p.paymentType || 'Payment'
+            }))}
+          />
+        )}
 
-                {/* Automatic Assignments Section */}
-                {activeSection === 'automatic-assignments' && (
-                  <AdminAutomaticAssignmentsSection />
-                )}
+        {/* Maid Verification Section */}
+        {activeSection === 'maid-verification' && (
+          <AdminMaidVerificationSection />
+        )}
 
-                {/* Plans Section */}
-                {activeSection === 'plans' && (
-                  <Card>
+        {/* Buffer Management Section */}
+        {activeSection === 'buffer-management' && (
+          <AdminBufferManagementSection />
+        )}
+
+        {/* Automatic Assignments Section */}
+        {activeSection === 'automatic-assignments' && (
+          <AdminAutomaticAssignmentsSection />
+        )}
+
+        {/* Plans Section */}
+        {activeSection === 'plans' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Plans</CardTitle>
+              <CardDescription>Manage available service plans and pricing</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {subscriptionPlans.map((plan) => (
+                  <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
                     <CardHeader>
-                      <CardTitle>Subscription Plans</CardTitle>
-                      <CardDescription>Manage available service plans and pricing</CardDescription>
+                      <CardTitle className="flex items-center justify-between">
+                        {plan.name}
+                        {plan.isPopular && <Badge>Popular</Badge>}
+                      </CardTitle>
+                      <CardDescription>{plan.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {subscriptionPlans.map((plan) => (
-                          <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
-                            <CardHeader>
-                              <CardTitle className="flex items-center justify-between">
-                                {plan.name}
-                                {plan.isPopular && <Badge>Popular</Badge>}
-                              </CardTitle>
-                              <CardDescription>{plan.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-3">
-                                <div className="text-center">
-                                  <div className="text-3xl font-bold">₹{plan.finalPrice.toLocaleString()}</div>
-                                  <div className="text-sm text-muted-foreground">/{plan.duration} month(s)</div>
-                                  {plan.discountPercent > 0 && (
-                                    <div className="text-xs text-success">
-                                      {plan.discountPercent}% off (₹{plan.basePrice.toLocaleString()} original)
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="space-y-2 text-sm">
-                                  <div>• {plan.sessionsPerWeek} sessions per week</div>
-                                  <div>• {plan.sessionsPerMonth} sessions per month</div>
-                                  <div>• {plan.service?.name || 'Service'} included</div>
-                                  <div>• Professional cleaning staff</div>
-                                </div>
-                                <div className="flex items-center justify-between pt-2">
-                                  <Badge variant={plan.isActive ? 'default' : 'outline'}>
-                                    {plan.isActive ? 'Active' : 'Inactive'}
-                                  </Badge>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleEditPlan(plan)}
-                                  >
-                                    Edit Plan
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                      {subscriptionPlans.length === 0 && (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">No subscription plans found</p>
+                      <div className="space-y-3">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold">₹{plan.finalPrice.toLocaleString()}</div>
+                          <div className="text-sm text-muted-foreground">/{plan.duration} month(s)</div>
+                          {plan.discountPercent > 0 && (
+                            <div className="text-xs text-success">
+                              {plan.discountPercent}% off (₹{plan.basePrice.toLocaleString()} original)
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <div className="space-y-2 text-sm">
+                          <div>• {plan.sessionsPerWeek} sessions per week</div>
+                          <div>• {plan.sessionsPerMonth} sessions per month</div>
+                          <div>• {plan.service?.name || 'Service'} included</div>
+                          <div>• Professional cleaning staff</div>
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                          <Badge variant={plan.isActive ? 'default' : 'outline'}>
+                            {plan.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditPlan(plan)}
+                          >
+                            Edit Plan
+                          </Button>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                )}
+                ))}
               </div>
+              {subscriptionPlans.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No subscription plans found</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* All Notifications Modal */}
       {showAllNotifications && (
@@ -1185,9 +1185,8 @@ export default function AdminDashboard() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-6 hover:bg-gray-50 transition-colors border-l-4 ${getNotificationColor(notification.type)} ${
-                      notification.unread ? 'bg-blue-50' : ''
-                    }`}
+                    className={`p-6 hover:bg-gray-50 transition-colors border-l-4 ${getNotificationColor(notification.type)} ${notification.unread ? 'bg-blue-50' : ''
+                      }`}
                   >
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
@@ -1233,7 +1232,7 @@ export default function AdminDashboard() {
         }}
         onSuccess={handleEditPlanSuccess}
       />
-      
+
       {/* Edit User Dialog */}
       <EditUserDialog
         user={editingUser}

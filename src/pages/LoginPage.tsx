@@ -147,7 +147,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await AuthService.signInWithGoogle();
+      const response = await AuthService.signInWithGoogle('login');
 
       if (response.success && response.data?.user) {
         const user = response.data.user;
@@ -164,6 +164,7 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error('Google sign-in error:', error);
+      await AuthService.logout();
 
       let errorMessage = 'Google sign-in failed. Please try again.';
       if (error.message) {

@@ -9,8 +9,8 @@ interface NavbarProps {
   user?: any;
 }
 
-export const Navbar = ({ 
-  isAuthenticated = false, 
+export const Navbar = ({
+  isAuthenticated = false,
   user
 }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,15 +26,15 @@ export const Navbar = ({
   const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
   const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
 
-  const handleLogout = () => {
-    AuthService.logout();
+  const handleLogout = async () => {
+    await AuthService.logout();
     setIsUserMenuOpen(false);
     window.location.href = '/';
   };
 
   const handleDashboardClick = () => {
     const role = user?.role?.toUpperCase();
-    
+
     if (role === 'CUSTOMER') {
       navigate('/dashboard');
     } else if (role === 'MAID') {
@@ -193,17 +193,16 @@ export const Navbar = ({
 
   return (
     <nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        scrolled
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled
           ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100'
           : 'bg-gradient-to-b from-black/20 to-transparent backdrop-blur-md'
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Left side - Logo */}
           <div className="flex items-center">
-            <button 
+            <button
               onClick={() => handleNavLinkClick('')}
               className="flex items-center group"
             >
@@ -211,7 +210,7 @@ export const Navbar = ({
                 src={scrolled ? "/assets/logo.png" : "/assets/logo-black.png"}
                 alt="Sweepro Logo"
                 className="h-12 w-auto md:h-16 lg:h-20 object-contain transition-all duration-300 group-hover:scale-105"
-                style={{ 
+                style={{
                   maxWidth: '240px',
                   minWidth: '120px'
                 }}
@@ -226,9 +225,8 @@ export const Navbar = ({
                 <button
                   key={link.href}
                   onClick={() => handleNavLinkClick(link.href)}
-                  className={`font-medium text-[15px] transition-all duration-200 relative group ${
-                    scrolled ? 'text-gray-800 hover:text-[#1800ad]' : 'text-white hover:text-[#eeebe3]'
-                  }`}
+                  className={`font-medium text-[15px] transition-all duration-200 relative group ${scrolled ? 'text-gray-800 hover:text-[#1800ad]' : 'text-white hover:text-[#eeebe3]'
+                    }`}
                 >
                   {link.label}
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#ca0013] transition-all duration-300 group-hover:w-full"></span>
@@ -247,22 +245,21 @@ export const Navbar = ({
                 >
                   Dashboard
                 </Button>
-                
+
                 <div className="relative" ref={userMenuRef}>
                   <Button
                     variant="outline"
                     onClick={toggleUserMenu}
-                    className={`flex h-11 items-center gap-2 rounded-full border-2 px-4 text-sm font-semibold transition-all duration-300 ${
-                      scrolled
+                    className={`flex h-11 items-center gap-2 rounded-full border-2 px-4 text-sm font-semibold transition-all duration-300 ${scrolled
                         ? 'bg-white border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
                         : 'bg-transparent border-white text-white hover:bg-white/20'
-                    }`}
+                      }`}
                   >
                     <User className="h-4 w-4" />
                     <span className="hidden md:inline">{user.name}</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
-                  
+
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50">
                       <div className="px-4 py-3 border-b border-gray-100">
@@ -290,23 +287,21 @@ export const Navbar = ({
                 <Link to="/login" className="hidden md:block">
                   <Button
                     variant="outline"
-                    className={`h-11 rounded-full border-2 px-6 text-sm font-semibold transition-all duration-300 ${
-                      scrolled
+                    className={`h-11 rounded-full border-2 px-6 text-sm font-semibold transition-all duration-300 ${scrolled
                         ? 'border-[#1800ad] text-[#1800ad] hover:bg-[#eeebe3]'
                         : 'border-white bg-transparent text-white hover:border-white/90 hover:bg-white/20'
-                    }`}
+                      }`}
                   >
                     Login
                   </Button>
                 </Link>
                 {/* Hide Sign Up button on mobile - only show on desktop */}
                 <Link to="/signup" className="hidden md:block">
-                  <Button 
-                    className={`h-11 rounded-full border-2 border-transparent px-6 text-sm font-bold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl ${
-                      scrolled
+                  <Button
+                    className={`h-11 rounded-full border-2 border-transparent px-6 text-sm font-bold shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl ${scrolled
                         ? 'bg-[#1800ad] text-white hover:bg-[#ca0013]'
                         : 'bg-[#eeebe3] text-[#1800ad] hover:bg-white'
-                    }`}
+                      }`}
                   >
                     Sign Up
                   </Button>
@@ -369,7 +364,7 @@ export const Navbar = ({
                         </span>
                       </div>
                     </div>
-                    
+
                     {/* Mobile Buttons */}
                     <div className="space-y-3">
                       <Button

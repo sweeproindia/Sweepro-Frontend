@@ -12,9 +12,9 @@ interface DashboardNavbarProps {
   onMobileMenuToggle?: () => void;
 }
 
-export const DashboardNavbar = ({ 
-  userType = 'user', 
-  onMobileMenuToggle 
+export const DashboardNavbar = ({
+  userType = 'user',
+  onMobileMenuToggle
 }: DashboardNavbarProps) => {
   const { user, logout } = useUser();
   const { toast } = useToast();
@@ -32,8 +32,8 @@ export const DashboardNavbar = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Logged out successfully",
       description: "You have been logged out of your account.",
@@ -53,23 +53,22 @@ export const DashboardNavbar = ({
   };
 
   return (
-    <nav className={`relative z-10 flex-shrink-0 flex h-16 transition-all duration-300 ${
-      userType === 'admin' 
-        ? isScrolled 
+    <nav className={`relative z-10 flex-shrink-0 flex h-16 transition-all duration-300 ${userType === 'admin'
+        ? isScrolled
           ? 'bg-[#1800ad]/30 backdrop-blur-xl border-b border-[#ca0013]/30 shadow-xl'
           : 'bg-gradient-to-r from-[#1800ad] to-[#1a1a2e] border-b-2 border-[#ca0013] shadow-sm'
         : isScrolled
           ? 'bg-white/70 backdrop-blur-xl border-b border-gray-200/30 shadow-xl'
           : 'bg-white border-b border-gray-200 shadow-sm'
-    }`}>
+      }`}>
       <div className="flex-1 px-4 flex justify-between items-center">
         {/* Logo and Mobile menu */}
         <div className="flex items-center space-x-4">
           {/* Hamburger Menu - Mobile Only */}
           {onMobileMenuToggle && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className={`md:hidden ${userType === 'admin' ? 'text-white hover:bg-[#1800ad]/50' : ''}`}
               onClick={onMobileMenuToggle}
             >
@@ -104,9 +103,9 @@ export const DashboardNavbar = ({
           {/* Profile - Desktop Only */}
           <div className={`hidden md:flex items-center space-x-2`}>
             <Link to="/profile">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className={`flex items-center space-x-2 ${userType === 'admin' ? 'text-white hover:bg-[#1800ad]/50' : ''}`}
               >
                 <User className="h-5 w-5" />
@@ -115,9 +114,9 @@ export const DashboardNavbar = ({
                 </span>
               </Button>
             </Link>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleLogout}
               className={`flex items-center space-x-2 ${userType === 'admin' ? 'text-[#ca0013] hover:text-[#ca0013]/80 hover:bg-[#ca0013]/10' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
             >

@@ -13,7 +13,7 @@ import { ApiError } from '@/services/api';
 interface UserContextType {
   user: User | null;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   setAuthenticatedUser: (userData: User) => void;
   isLoading: boolean;
@@ -62,8 +62,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsAuthenticated(true);
   }, []);
 
-  const logout = useCallback(() => {
-    AuthService.logout();
+  const logout = useCallback(async () => {
+    await AuthService.logout();
     setUser(null);
     setIsAuthenticated(false);
   }, []);

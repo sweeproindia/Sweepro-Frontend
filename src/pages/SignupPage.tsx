@@ -112,14 +112,14 @@ export default function SignupPage() {
     setIsGoogleLoading(true);
 
     try {
-      const response = await AuthService.signInWithGoogle();
+      const response = await AuthService.signInWithGoogle('signup');
 
       if (response.success && response.data?.user) {
         const loggedInUser = response.data.user;
         setAuthenticatedUser(loggedInUser);
 
         toast({
-          title: 'Signed in with Google',
+          title: 'Signed up with Google',
           description: 'Please complete your profile to continue.',
         });
 
@@ -141,6 +141,7 @@ export default function SignupPage() {
       }
     } catch (error: any) {
       console.error('Google sign-up error:', error);
+      await AuthService.logout();
       toast({
         title: 'Google sign-up failed',
         description: error?.message || 'Please try again.',
@@ -851,12 +852,12 @@ export default function SignupPage() {
           <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#eeebe3] rounded-full blur-[100px] opacity-10"></div>
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
         </div>
-        
+
         <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-16">
           <div className="w-full max-w-lg">
             {/* Value Proposition Header */}
             <div className="mb-12">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
@@ -867,8 +868,8 @@ export default function SignupPage() {
                   {isMaid ? 'Professional Partnership' : 'Premium Home Care'}
                 </span>
               </motion.div>
-              
-              <motion.h2 
+
+              <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
@@ -880,14 +881,14 @@ export default function SignupPage() {
                   <>Why choose <span className="text-[#eeebe3]">Sweepro?</span></>
                 )}
               </motion.h2>
-              
-              <motion.p 
+
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-xl text-[#eeebe3]/80 leading-relaxed"
               >
-                {isMaid 
+                {isMaid
                   ? 'Join our elite network of cleaning professionals and take control of your earnings.'
                   : 'Join the elite community of homeowners who trust us for impeccable hygiene and professional care.'}
               </motion.p>
@@ -895,7 +896,7 @@ export default function SignupPage() {
 
             {/* Service Area Focus */}
             {!isMaid ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
@@ -906,16 +907,16 @@ export default function SignupPage() {
                     <MapPin className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                
+
                 <h3 className="text-2xl font-bold mb-2">Exclusively Live In</h3>
                 <p className="text-[#eeebe3] text-4xl font-black mb-6 tracking-tight">{liveArea}</p>
-                
+
                 <div className="space-y-3">
                   <p className="text-sm font-medium text-[#eeebe3]/60 uppercase tracking-widest">Available Communities</p>
                   <div className="grid grid-cols-2 gap-3">
                     {liveComplexesToShow.map((c, i) => (
-                      <motion.div 
-                        key={c.id} 
+                      <motion.div
+                        key={c.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + (i * 0.1) }}
@@ -940,7 +941,7 @@ export default function SignupPage() {
                   { icon: Clock, title: 'Flexible Schedule', desc: 'Choose your hours and maintain perfect work-life balance.' },
                   { icon: Sparkles, title: 'Instant Payments', desc: 'Secure, on-time digital payments for every service completed.' }
                 ].map((feature, i) => (
-                  <motion.div 
+                  <motion.div
                     key={i}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -961,7 +962,7 @@ export default function SignupPage() {
 
             {/* Expansion Roadmap */}
             {!isMaid && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.7 }}

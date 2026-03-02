@@ -17,37 +17,37 @@ interface MaidDashboardSidebarProps {
 }
 
 const maidNavigationItems = [
-  { 
-    name: 'Dashboard', 
-    href: '/maid-dashboard', 
-    icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Dashboard',
+    href: '/maid-dashboard',
+    icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'My Assignments', 
-    href: '/maid-bookings', 
+  {
+    name: 'My Assignments',
+    href: '/maid-bookings',
     icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     showBadge: true
   },
-  { 
-    name: 'Availability', 
-    href: '/maid-availability', 
-    icon: <Clock className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Availability',
+    href: '/maid-availability',
+    icon: <Clock className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Support', 
-    href: '/maid-support', 
-    icon: <MessageCircle className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Support',
+    href: '/maid-support',
+    icon: <MessageCircle className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Verification', 
-    href: '/maid-verification', 
+  {
+    name: 'Verification',
+    href: '/maid-verification',
     icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     conditionalShow: true // Will be shown based on verification status
   },
-  { 
-    name: 'Profile', 
-    href: '/profile', 
-    icon: <User className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Profile',
+    href: '/profile',
+    icon: <User className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
 ];
 
@@ -122,8 +122,8 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
     };
   }, [navigate, refreshUser, user?.role]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Logged out successfully",
       description: "You have been logged out of your account.",
@@ -162,8 +162,8 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
               <div key={idx} className="relative">
                 <SidebarLink link={link} />
                 {link.badge && sidebarOpen && (
-                  <Badge 
-                    variant="default" 
+                  <Badge
+                    variant="default"
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 bg-green-500"
                   >
                     {link.badge}

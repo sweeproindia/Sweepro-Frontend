@@ -15,61 +15,61 @@ interface AdminDashboardSidebarProps {
 }
 
 const adminNavigationItems = [
-  { 
-    name: 'Overview', 
-    href: '/admin#overview', 
-    icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Overview',
+    href: '/admin#overview',
+    icon: <Home className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Bookings', 
-    href: '/admin#bookings', 
-    icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Bookings',
+    href: '/admin#bookings',
+    icon: <Calendar className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Pending', 
-    href: '/admin#pending-bookings', 
+  {
+    name: 'Pending',
+    href: '/admin#pending-bookings',
     icon: <Clock className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
     showBadge: true
   },
-  { 
-    name: 'Users', 
-    href: '/admin#users', 
-    icon: <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Users',
+    href: '/admin#users',
+    icon: <Users className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Maids', 
-    href: '/admin#maids', 
-    icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Maids',
+    href: '/admin#maids',
+    icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Maid Verification', 
-    href: '/admin#maid-verification', 
-    icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Maid Verification',
+    href: '/admin#maid-verification',
+    icon: <Shield className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Subscriptions', 
-    href: '/admin#subscriptions', 
-    icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Subscriptions',
+    href: '/admin#subscriptions',
+    icon: <Package className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Buffer Management', 
-    href: '/admin#buffer-management', 
-    icon: <Pause className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Buffer Management',
+    href: '/admin#buffer-management',
+    icon: <Pause className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Feedback Management', 
-    href: '/admin/feedback', 
-    icon: <MessageSquare className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Feedback Management',
+    href: '/admin/feedback',
+    icon: <MessageSquare className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Payments', 
-    href: '/admin#payments', 
-    icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Payments',
+    href: '/admin#payments',
+    icon: <CreditCard className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
-  { 
-    name: 'Plans', 
-    href: '/admin#plans', 
-    icon: <Settings className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" /> 
+  {
+    name: 'Plans',
+    href: '/admin#plans',
+    icon: <Settings className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
   },
 ];
 
@@ -78,9 +78,9 @@ export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBooking
   const navigate = useNavigate();
   const { user, logout } = useUser();
   const { toast } = useToast();
-  
-  const handleLogout = () => {
-    logout();
+
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Logged out successfully",
       description: "You have been logged out of your account.",
@@ -124,8 +124,8 @@ export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBooking
               <div key={idx} className="relative">
                 <SidebarLink link={link} />
                 {link.badge && sidebarOpen && (
-                  <Badge 
-                    variant="destructive" 
+                  <Badge
+                    variant="destructive"
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5"
                   >
                     {link.badge}

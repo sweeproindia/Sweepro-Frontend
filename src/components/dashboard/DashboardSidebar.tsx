@@ -42,8 +42,8 @@ export const DashboardSidebar = ({ open, setOpen, forceOpen }: DashboardSidebarP
   const isAdmin = location.pathname.startsWith('/admin');
   const navigationItems = isAdmin ? adminNavigationItems : customerNavigationItems;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast({
       title: "Logged out successfully",
       description: "You have been logged out of your account.",
