@@ -38,7 +38,7 @@ const faqItems = [
 ];
 
 const supportChannels = [
- 
+
   {
     icon: Phone,
     title: 'Whatsapp Support',
@@ -80,7 +80,7 @@ export default function SupportPage() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
@@ -189,8 +189,8 @@ export default function SupportPage() {
                         <div className="bg-muted rounded-lg p-3">
                           <div className="flex space-x-1">
                             <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                           </div>
                         </div>
                       </div>
@@ -198,7 +198,7 @@ export default function SupportPage() {
                   )}
                 </div>
               </ScrollArea>
-              
+
               <form onSubmit={handleChatSubmit} className="flex space-x-2">
                 <Input
                   value={chatInput}
@@ -218,8 +218,8 @@ export default function SupportPage() {
         {/* Support Channels */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 slide-up max-w-2xl mx-auto">
           {supportChannels.map((channel, index) => (
-            <Card 
-              key={channel.title} 
+            <Card
+              key={channel.title}
               className="dashboard-card hover:shadow-feature cursor-pointer group"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
@@ -264,7 +264,7 @@ export default function SupportPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
@@ -281,7 +281,7 @@ export default function SupportPage() {
                   </Select>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="message">Message</Label>
                 <Textarea
@@ -293,7 +293,7 @@ export default function SupportPage() {
                   required
                 />
               </div>
-              
+
               <Button type="submit" className="btn-hero" disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Submit Request'}
               </Button>
@@ -308,7 +308,7 @@ export default function SupportPage() {
             <CardDescription>
               Find quick answers to common questions
             </CardDescription>
-            
+
             {/* FAQ Search */}
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -323,7 +323,7 @@ export default function SupportPage() {
           <CardContent>
             <div className="space-y-4">
               {filteredFAQ.map((item, index) => (
-                <details 
+                <details
                   key={index}
                   className="group border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
                 >
@@ -339,7 +339,7 @@ export default function SupportPage() {
                   </div>
                 </details>
               ))}
-              
+
               {filteredFAQ.length === 0 && (
                 <div className="text-center py-8">
                   <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -353,33 +353,6 @@ export default function SupportPage() {
           </CardContent>
         </Card>
 
-        {/* Emergency Contact */}
-        <Card className="dashboard-card slide-up bg-gradient-feature border border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Phone className="h-5 w-5 text-primary" />
-              <span>Emergency Support</span>
-            </CardTitle>
-            <CardDescription>
-              For urgent issues during cleaning appointments
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="btn-hero">
-                <Phone className="h-4 w-4 mr-2" />
-                Call Emergency Line
-              </Button>
-              <Button variant="outline">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Live Chat Support
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground mt-3">
-              Available 24/7 for cleaning-related emergencies and urgent support needs.
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

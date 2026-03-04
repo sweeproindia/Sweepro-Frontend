@@ -4,16 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
-    AlertCircle,
-    Calendar,
-    Clock,
-    DollarSign,
-    HelpCircle,
-    Mail,
-    Phone,
-    Send,
-    Settings,
-    Shield
+  AlertCircle,
+  Calendar,
+  Clock,
+  DollarSign,
+  HelpCircle,
+  Mail,
+  Phone,
+  Send,
+  Settings,
+  Shield
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -247,7 +247,7 @@ export default function MaidSupportPage() {
                   </div>
                 </div>
               </CardHeader>
-              
+
               <CardContent className="flex-1 flex flex-col">
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto space-y-4 mb-4">
@@ -257,18 +257,17 @@ export default function MaidSupportPage() {
                       className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.sender === 'user'
+                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-foreground'
-                        }`}
+                          }`}
                       >
                         <p className="text-sm">{message.text}</p>
                         <p className="text-xs opacity-70 mt-1">{message.timestamp}</p>
                       </div>
                     </div>
                   ))}
-                  
+
                   {isTyping && (
                     <div className="flex justify-start">
                       <div className="bg-muted text-foreground px-4 py-2 rounded-lg">
@@ -382,36 +381,6 @@ export default function MaidSupportPage() {
           </CardContent>
         </Card>
 
-        {/* Emergency Contact */}
-        <Card className="dashboard-card slide-up border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Emergency Contact</CardTitle>
-            <CardDescription>For urgent safety concerns or emergencies</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  If you're in an emergency situation or feel unsafe, contact us immediately:
-                </p>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Phone className="h-4 w-4 text-destructive" />
-                    <span className="font-medium">+91 98765 43210</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                    <span className="font-medium">Emergency Support</span>
-                  </div>
-                </div>
-              </div>
-              <Button variant="destructive">
-                <Phone className="h-4 w-4 mr-2" />
-                Call Emergency
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </MaidDashboardLayout>
   );
