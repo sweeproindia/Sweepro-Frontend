@@ -8,12 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { 
-  AlertCircle, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  RefreshCw, 
+import {
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
   Calendar,
   User,
   MapPin,
@@ -47,12 +47,12 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('pending-assignment');
-  
+
   // Data states
   const [pendingAssignmentBookings, setPendingAssignmentBookings] = useState<AutomaticBooking[]>([]);
   const [reassignmentBookings, setReassignmentBookings] = useState<AutomaticBooking[]>([]);
   const [allBookings, setAllBookings] = useState<AutomaticBooking[]>([]);
-  
+
   // Action states
   const [sendingToMaid, setSendingToMaid] = useState<string | null>(null);
   const [reassignDialog, setReassignDialog] = useState<{
@@ -112,7 +112,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
       console.log('🔄 Loading reassignment bookings...');
       const response = await AutomaticBookingService.getReassignmentBookings();
       console.log('📋 Reassignment bookings response:', response);
-      
+
       if (response.success && response.data) {
         console.log(`✅ Found ${response.data.length} reassignment bookings`);
         setReassignmentBookings(response.data);
@@ -236,19 +236,17 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        {/* <div>
           <h2 className="text-2xl font-bold">Automatic Booking Management</h2>
           <p className="text-muted-foreground">
             Manage daily automatic bookings and maid assignments
           </p>
-        </div>
-        <Button onClick={refreshData} disabled={refreshing} variant="outline">
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        </div> */}
+
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 ">
+
         <TabsList>
           <TabsTrigger value="pending-assignment" className="relative">
             Pending Assignment
@@ -268,6 +266,10 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
           </TabsTrigger>
           <TabsTrigger value="all-bookings">All Automatic Bookings</TabsTrigger>
         </TabsList>
+        <Button onClick={refreshData} disabled={refreshing} variant="outline">
+          <RefreshCw className={`h-4 w-4 mr-2 flex  ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
 
         {/* Pending Assignment Tab */}
         <TabsContent value="pending-assignment" className="space-y-4">
@@ -304,7 +306,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                                 {booking.assignmentStatus.replace('_', ' ')}
                               </Badge>
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4 mb-4">
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Customer</h4>
@@ -348,7 +350,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                               </div>
                             )}
                           </div>
-                          
+
                           {/* Actions */}
                           <div className="border-l lg:border-l-2 lg:pl-6">
                             <h4 className="font-medium mb-3">Send to Homecare Partner</h4>
@@ -370,7 +372,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                                   </>
                                 )}
                               </Button>
-                              
+
                               <Button
                                 variant="outline"
                                 className="w-full"
@@ -471,7 +473,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                               </p>
                             </div>
                           </div>
-                          
+
                           {/* Reassignment Actions */}
                           <div className="border-l lg:border-l-2 lg:pl-6">
                             <h4 className="font-medium mb-3">Reassign to New Homecare Partner</h4>
@@ -578,7 +580,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                   ))}
                 </TableBody>
               </Table>
-              
+
               {allBookings.length === 0 && (
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -591,8 +593,8 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
       </Tabs>
 
       {/* Reassignment Dialog */}
-      <Dialog 
-        open={reassignDialog.open} 
+      <Dialog
+        open={reassignDialog.open}
         onOpenChange={(open) => setReassignDialog({ open, booking: reassignDialog.booking })}
       >
         <DialogContent className="max-w-md">
@@ -658,8 +660,8 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleReassignBooking} 
+            <Button
+              onClick={handleReassignBooking}
               disabled={reassigning || !selectedMaidId}
             >
               {reassigning ? 'Reassigning...' : 'Reassign Booking'}

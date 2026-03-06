@@ -84,12 +84,12 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
   const itemsPerPage = 5;
 
   // Filter bookings by status
-  const pendingBookings = bookings.filter(b => 
-    b.status === 'PENDING' || 
+  const pendingBookings = bookings.filter(b =>
+    b.status === 'PENDING' ||
     (b.status === 'ASSIGNED' && b.assignmentStatus === 'REJECTED')
   );
-  
-  const assignedBookings = bookings.filter(b => 
+
+  const assignedBookings = bookings.filter(b =>
     (b.status === 'ASSIGNED' && b.assignmentStatus === 'ASSIGNED_PENDING_RESPONSE') ||
     (b.status === 'CONFIRMED' && b.assignmentStatus === 'ACCEPTED') ||
     b.status === 'IN_PROGRESS'
@@ -128,17 +128,17 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
     setAssigning(true);
     try {
       await onAssignMaid(selectedBooking.id, selectedMaidId);
-      
+
       toast({
         title: 'Assignment Successful',
         description: 'Homecare Partner has been assigned successfully. They will be notified to accept or reject.',
         variant: 'default'
       });
-      
+
       setAssignDialogOpen(false);
       setSelectedBooking(null);
       setSelectedMaidId('');
-      
+
       // Refresh bookings to show updated status
       await onRefreshBookings();
     } catch (error) {
@@ -164,7 +164,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
         </div>
       );
     }
-    
+
     if (booking.status === 'PENDING') {
       return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Pending Assignment</Badge>;
     }
@@ -256,11 +256,11 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-start gap-2">
                           <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                           <span className="text-sm text-muted-foreground">{booking.serviceAddress}</span>
@@ -313,7 +313,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="ml-4">
                       <Button
                         onClick={() => handleAssignClick(booking)}
@@ -327,7 +327,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                   </div>
                 </div>
               ))}
-              
+
               {pendingBookings.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -335,7 +335,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                   <p>All bookings have been assigned to homecare partners.</p>
                 </div>
               )}
-              
+
               {pendingBookings.length > 0 && getTotalPages(pendingBookings) > 1 && (
                 <Pagination
                   currentPage={pendingPage}
@@ -385,7 +385,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                           </div>
                         </div>
@@ -426,7 +426,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                   </div>
                 </div>
               ))}
-              
+
               {assignedBookings.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <UserCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -434,7 +434,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                   <p>No bookings have been assigned to homecare partners yet.</p>
                 </div>
               )}
-              
+
               {assignedBookings.length > 0 && getTotalPages(assignedBookings) > 1 && (
                 <Pagination
                   currentPage={assignedPage}
@@ -469,7 +469,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                     <span className="font-medium">Date:</span> {new Date(selectedBooking.scheduledAt).toLocaleDateString()}
                   </div>
                   <div>
-                    <span className="font-medium">Time:</span> {selectedBooking.timeSlot || new Date(selectedBooking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    <span className="font-medium">Time:</span> {selectedBooking.timeSlot || new Date(selectedBooking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                   <div>
                     <span className="font-medium">Amount:</span> ₹{selectedBooking.finalAmount.toLocaleString()}

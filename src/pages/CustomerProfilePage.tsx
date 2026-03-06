@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, Camera, Mail, Phone, MapPin, Calendar, User } from 'lucide-react';
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
 import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
-import { useCustomerProfile, useInvalidateProfile } from '@/hooks/queries/useProfileQueries';
+import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface CustomerProfileData {
@@ -33,22 +33,37 @@ interface CustomerProfileData {
 
 export const CustomerProfilePage: React.FC = () => {
   const { user } = useUser();
-
-  // ── React Query hooks ─────────────────────────────────────────────────────
-  const { data: profileData = null, isLoading } = useCustomerProfile();
-  const invalidateProfile = useInvalidateProfile();
-
+  const [profileData, setProfileData] = useState<CustomerProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageType, setImageType] = useState<'profile' | 'cover'>('profile');
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      const response = await apiRequest(API_ENDPOINTS.PROFILE.ME, {
+        method: HttpMethod.GET,
+        requiresAuth: true
+      });
+      if (response.success) {
+        setProfileData(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageUpload = (type: 'profile' | 'cover') => {
     setImageType(type);
     setImageDialogOpen(true);
   };
-
-  // Show skeleton only on initial load
-  const loading = isLoading && !profileData;
 
   if (loading) {
     return (
@@ -137,7 +152,7 @@ export const CustomerProfilePage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">Failed to load profile data</p>
-            <Button onClick={invalidateProfile} className="w-full mt-4">
+            <Button onClick={fetchProfileData} className="w-full mt-4">
               Retry
             </Button>
           </CardContent>
@@ -300,20 +315,9 @@ export const CustomerProfilePage: React.FC = () => {
                     <div className="col-span-full space-y-1">
                       <p className="text-sm text-muted-foreground">Address</p>
                       <p className="font-semibold text-foreground">
-                        {/* BUG FIX: For Google OAuth CUSTOMER accounts the address is stored
-                            as apartment name + area in `address`, with locality and pincode
-                            as separate fields.  Prefer the full `address` string as the
-                            primary display value, then append city/state/pincode when present,
-                            so the UI shows e.g. "My Home Krishe - Gachibowli, 500032"
-                            instead of the raw UUID or just "Gachibowli, 500032". */}
-                        {[
-                          profileData.addressLine || profileData.address,
-                          profileData.city,
-                          profileData.state,
-                          profileData.pincode
-                        ]
+                        {[profileData.addressLine, profileData.locality, profileData.city, profileData.state, profileData.pincode]
                           .filter(Boolean)
-                          .join(', ') || 'Not provided'}
+                          .join(', ') || profileData.address || 'Not provided'}
                       </p>
                     </div>
                   )}
@@ -346,7 +350,7 @@ export const CustomerProfilePage: React.FC = () => {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           userData={profileData}
-          onProfileUpdated={invalidateProfile}
+          onProfileUpdated={fetchProfileData}
         />
 
         <ImageUploadDialog
@@ -354,7 +358,7 @@ export const CustomerProfilePage: React.FC = () => {
           onOpenChange={setImageDialogOpen}
           imageType={imageType}
           currentImage={imageType === 'profile' ? profileData.profileImage : profileData.coverImage}
-          onImageUpdated={invalidateProfile}
+          onImageUpdated={fetchProfileData}
         />
       </div>
     </DashboardLayout>

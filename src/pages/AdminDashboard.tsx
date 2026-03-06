@@ -1,44 +1,26 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Input } from '../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
 import {
-  BarChart3,
   Calendar,
   Clock,
   CreditCard,
   DollarSign,
   Package,
   Shield,
-  Star,
   TrendingUp,
   Users,
-  UserPlus,
   AlertCircle,
-  UserCheck,
-  MapPin,
-  Filter,
-  Home,
-  BookOpen,
-  UserCog,
   Settings,
-  Bell,
-  User,
-  LogOut,
-  MessageCircle,
   Pause,
-  Menu,
-  Sparkles,
-  X
+  ArrowRight
 } from 'lucide-react';
-import { BookingService, Booking } from '../services/bookingService';
+import { Booking } from '../services/bookingService';
 import { SubscriptionService, Subscription, SubscriptionPlan } from '../services/subscriptionService';
-import { PaymentService, Payment } from '../services/paymentService';
+import { Payment } from '../services/paymentService';
 import { apiRequest, HttpMethod } from '../services/api';
 import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
@@ -54,8 +36,6 @@ import { AdminSubscriptionsSection } from '../components/dashboard/AdminSubscrip
 import { AdminPaymentsSection } from '../components/dashboard/AdminPaymentsSection';
 import { AdminAutomaticBookingsSection } from '../components/dashboard/AdminAutomaticBookingsSection';
 import { AdminDashboardLayout } from '../components/dashboard/AdminDashboardLayout';
-import { AdminDashboardSidebar } from './AdminDashboardSidebar';
-import { NotificationBell } from '../components/notifications/NotificationBell';
 
 // User interface from backend
 interface User {
@@ -83,15 +63,6 @@ interface Maid {
   weeklyOffDay?: string | null;
   availability?: Record<string, any> | null;
   user: User;
-}
-
-interface Notification {
-  id: number;
-  type: 'admin' | 'user' | 'maid';
-  title: string;
-  message: string;
-  time: string;
-  unread: boolean;
 }
 
 const WEEKDAY_ENUM = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -124,11 +95,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const { user, logout } = useUser();
 
-  // State for mobile sidebar and notifications
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [showAllNotifications, setShowAllNotifications] = useState(false);
-  const notificationRef = useRef<HTMLDivElement>(null);
+
 
   const [activeSection, setActiveSection] = useState(() => {
     const hash = location.hash.replace('#', '');
@@ -165,192 +132,7 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
 
-  // Dummy maid verification data for testing - formatted to match component structure
-  const [maidVerifications] = useState([
-    {
-      id: 'mv001',
-      maidId: 'm001',
-      maidName: 'Priya Sharma',
-      maidEmail: 'priya.sharma@email.com',
-      maidPhone: '+91 98765 43210',
-      status: 'pending',
-      submittedAt: '2024-01-15T10:30:00Z',
-      documents: {
-        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
-        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: true },
-        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
-      },
-      personalInfo: {
-        fullName: 'Priya Sharma',
-        address: '123 MG Road, Bangalore, Karnataka 560001',
-        experience: '5 years',
-        skills: ['Regular Cleaning', 'Deep Cleaning', 'Kitchen Cleaning']
-      }
-    },
-    {
-      id: 'mv002',
-      maidId: 'm002',
-      maidName: 'Sunita Devi',
-      maidEmail: 'sunita.devi@email.com',
-      maidPhone: '+91 87654 32109',
-      status: 'pending',
-      submittedAt: '2024-01-14T14:45:00Z',
-      documents: {
-        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
-        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: false },
-        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
-      },
-      personalInfo: {
-        fullName: 'Sunita Devi',
-        address: '456 HSR Layout, Bangalore, Karnataka 560102',
-        experience: '3 years',
-        skills: ['Regular Cleaning', 'Laundry', 'Cooking']
-      }
-    },
-    {
-      id: 'mv003',
-      maidId: 'm003',
-      maidName: 'Lakshmi Reddy',
-      maidEmail: 'lakshmi.reddy@email.com',
-      maidPhone: '+91 76543 21098',
-      status: 'approved',
-      submittedAt: '2024-01-10T09:15:00Z',
-      reviewedAt: '2024-01-12T16:30:00Z',
-      reviewedBy: 'Admin User',
-      notes: 'All documents verified. Approved for regular and deep cleaning services.',
-      documents: {
-        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
-        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: true },
-        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
-      },
-      personalInfo: {
-        fullName: 'Lakshmi Reddy',
-        address: '789 Whitefield, Bangalore, Karnataka 560066',
-        experience: '4 years',
-        skills: ['Regular Cleaning', 'Deep Cleaning', 'Full House Cleaning']
-      },
-      assignedServices: ['Regular Cleaning', 'Deep Cleaning', 'Kitchen Cleaning']
-    },
-    {
-      id: 'mv004',
-      maidId: 'm004',
-      maidName: 'Meera Khan',
-      maidEmail: 'meera.khan@email.com',
-      maidPhone: '+91 98765 43213',
-      status: 'rejected',
-      submittedAt: '2024-01-08T11:20:00Z',
-      reviewedAt: '2024-01-09T13:45:00Z',
-      reviewedBy: 'Admin User',
-      rejectionReason: 'Incomplete documents',
-      notes: 'Missing PAN Card and Police Verification Certificate. Please resubmit with all required documents.',
-      documents: {
-        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
-        panCard: { url: '', uploaded: false },
-        electricityBill: { url: '', uploaded: false }
-      },
-      personalInfo: {
-        fullName: 'Meera Khan',
-        address: '321 Koramangala, Bangalore, Karnataka 560034',
-        experience: '1 year',
-        skills: ['Regular Cleaning']
-      }
-    },
-    {
-      id: 'mv005',
-      maidId: 'm005',
-      maidName: 'Kavitha Nair',
-      maidEmail: 'kavitha.nair@email.com',
-      maidPhone: '+91 87654 32109',
-      status: 'pending',
-      submittedAt: '2024-01-16T08:45:00Z',
-      documents: {
-        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
-        panCard: { url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&h=300&fit=crop', uploaded: true },
-        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
-      },
-      personalInfo: {
-        fullName: 'Kavitha Nair',
-        address: '654 Electronic City, Bangalore, Karnataka 560100',
-        experience: '10+ years',
-        skills: ['Regular Cleaning', 'Elder Care', 'Cooking', 'Full House Cleaning']
-      }
-    },
-    {
-      id: 'mv006',
-      maidId: 'm006',
-      maidName: 'Rashida Begum',
-      maidEmail: 'rashida.begum@email.com',
-      maidPhone: '+91 76543 21098',
-      status: 'pending',
-      submittedAt: '2024-01-17T12:30:00Z',
-      documents: {
-        aadharCard: { url: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=300&fit=crop', uploaded: true },
-        panCard: { url: '', uploaded: false },
-        electricityBill: { url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop', uploaded: true }
-      },
-      personalInfo: {
-        fullName: 'Rashida Begum',
-        address: '987 Indiranagar, Bangalore, Karnataka 560038',
-        experience: '6 years',
-        skills: ['Deep Cleaning', 'Move-in/Move-out Cleaning', 'Commercial Cleaning']
-      }
-    }
-  ]);
 
-  // Admin notifications
-  const notifications: Notification[] = [
-    { id: 1, type: 'user', title: 'New Booking Pending', message: 'A new booking requires homecare partner assignment', time: '5 minutes ago', unread: true },
-    { id: 2, type: 'admin', title: 'Payment Received', message: '₹1,200 payment received from customer', time: '1 hour ago', unread: true },
-    { id: 3, type: 'maid', title: 'Homecare Partner Registration', message: 'New homecare partner registration awaiting approval', time: '2 hours ago', unread: false },
-    { id: 4, type: 'user', title: 'Service Reminder', message: "Don't forget your scheduled cleaning service tomorrow", time: '1 day ago', unread: false },
-    { id: 5, type: 'admin', title: 'System Update', message: 'System maintenance scheduled for tonight', time: '2 days ago', unread: false },
-  ];
-
-  const toggleNotification = () => setIsNotificationOpen(!isNotificationOpen);
-
-  const openAllNotifications = () => {
-    setShowAllNotifications(true);
-    setIsNotificationOpen(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setIsNotificationOpen(false);
-      }
-    };
-
-    if (isNotificationOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isNotificationOpen]);
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'admin':
-        return <Shield className="h-4 w-4 text-blue-600" />;
-      case 'user':
-        return <User className="h-4 w-4 text-green-600" />;
-      case 'maid':
-        return <MessageCircle className="h-4 w-4 text-orange-600" />;
-      default:
-        return <Bell className="h-4 w-4 text-gray-600" />;
-    }
-  };
-
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case 'admin':
-        return 'border-l-blue-500 bg-blue-50';
-      case 'user':
-        return 'border-l-green-500 bg-green-50';
-      case 'maid':
-        return 'border-l-orange-500 bg-orange-50';
-      default:
-        return 'border-l-gray-500 bg-gray-50';
-    }
-  };
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
@@ -782,7 +564,7 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-bold text-foreground">
           {activeSection === 'overview' && 'Dashboard Overview'}
           {activeSection === 'bookings' && 'All Bookings'}
-          {activeSection === 'pending-bookings' && 'Pending Bookings'}
+          {activeSection === 'pending-bookings' && 'Automatic Booking Management'}
           {activeSection === 'users' && 'Customer Management'}
           {activeSection === 'maids' && 'Homecare Partner Management'}
           {activeSection === 'maid-verification' && 'Homecare Partner Verification'}
@@ -795,7 +577,7 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground mt-1">
           {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
           {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
-          {activeSection === 'pending-bookings' && 'Assign homecare partners to pending bookings'}
+          {activeSection === 'pending-bookings' && 'Assign homecare parers to pending bookings'}
           {activeSection === 'users' && 'Manage customer accounts and profiles'}
           {activeSection === 'maids' && 'Manage service providers and performance'}
           {activeSection === 'maid-verification' && 'Review and manage homecare partner verification requests'}
@@ -867,80 +649,184 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
-            {/* Recent Activities */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Quick Access Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button onClick={() => handleSectionChange('users')} className="group p-4 rounded-xl border bg-card hover:bg-blue-50 hover:border-blue-200 transition-all text-left">
+                <Users className="h-6 w-6 text-blue-600 mb-2" />
+                <p className="font-semibold text-sm">Customers</p>
+                <p className="text-xs text-muted-foreground">{users.filter(u => u.role === 'CUSTOMER').length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button onClick={() => handleSectionChange('maids')} className="group p-4 rounded-xl border bg-card hover:bg-green-50 hover:border-green-200 transition-all text-left">
+                <Shield className="h-6 w-6 text-green-600 mb-2" />
+                <p className="font-semibold text-sm">Homecare Partners</p>
+                <p className="text-xs text-muted-foreground">{maids.length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button onClick={() => handleSectionChange('bookings')} className="group p-4 rounded-xl border bg-card hover:bg-purple-50 hover:border-purple-200 transition-all text-left">
+                <Calendar className="h-6 w-6 text-purple-600 mb-2" />
+                <p className="font-semibold text-sm">All Bookings</p>
+                <p className="text-xs text-muted-foreground">{bookings.length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button onClick={() => handleSectionChange('payments')} className="group p-4 rounded-xl border bg-card hover:bg-amber-50 hover:border-amber-200 transition-all text-left">
+                <CreditCard className="h-6 w-6 text-amber-600 mb-2" />
+                <p className="font-semibold text-sm">Payments</p>
+                <p className="text-xs text-muted-foreground">{payments.length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+
+            {/* Maid Status Summary + Recent Activities */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Maid Status Summary */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Shield className="h-5 w-5" />
+                    Partner Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                      <span className="text-sm font-medium text-green-800">Active</span>
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                        {maids.filter(m => computeMaidDisplayStatus(m) === 'active').length}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                      <span className="text-sm font-medium text-yellow-800">On Leave</span>
+                      <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+                        {maids.filter(m => computeMaidDisplayStatus(m) === 'on_leave').length}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-800">Inactive</span>
+                      <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
+                        {maids.filter(m => computeMaidDisplayStatus(m) === 'inactive').length}
+                      </Badge>
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => handleSectionChange('maids')}>
+                      Manage Partners
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Latest Pending Bookings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
                     <div className="flex items-center gap-2">
                       <Clock className="h-5 w-5" />
-                      Latest Pending Bookings
+                      Pending Bookings
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSectionChange('pending-bookings')}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleSectionChange('pending-bookings')}>
                       View All
                     </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {pendingBookings.slice(0, 2).map((booking) => (
+                    {pendingBookings.slice(0, 3).map((booking) => (
                       <div key={booking.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{booking.service?.name || 'Service'}</p>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{booking.service?.name || 'Service'}</p>
+                          <p className="text-xs text-muted-foreground truncate">
                             {booking.customer?.name || 'Customer'}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <p className="text-xs font-medium">
                             {new Date(booking.scheduledAt).toLocaleDateString()}
                           </p>
-                          <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 text-xs">
                             Pending
                           </Badge>
                         </div>
                       </div>
                     ))}
                     {pendingBookings.length === 0 && (
-                      <p className="text-center text-muted-foreground py-4">No pending bookings</p>
+                      <p className="text-center text-muted-foreground py-4 text-sm">No pending bookings</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Recent Payments */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <TrendingUp className="h-5 w-5" />
                     Recent Payments
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {payments.slice(0, 5).map((payment) => (
+                    {payments.slice(0, 4).map((payment) => (
                       <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
-                          <p className="font-medium">₹{payment.finalAmount.toLocaleString()}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="font-medium text-sm">₹{payment.finalAmount.toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">
                             {payment.paymentMethod} • {new Date(payment.createdAt).toLocaleDateString()}
                           </p>
                         </div>
-                        <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'}>
+                        <Badge variant={payment.status === 'COMPLETED' ? 'default' : 'outline'} className="text-xs">
                           {payment.status}
                         </Badge>
                       </div>
                     ))}
                     {payments.length === 0 && (
-                      <p className="text-center text-muted-foreground py-4">No recent payments</p>
+                      <p className="text-center text-muted-foreground py-4 text-sm">No recent payments</p>
                     )}
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Recent Users */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Recently Joined Customers
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => handleSectionChange('users')}>
+                    View All
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {users
+                    .filter(u => u.role === 'CUSTOMER')
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .slice(0, 3)
+                    .map(customer => (
+                      <div key={customer.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {customer.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{customer.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{customer.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Joined {new Date(customer.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant={customer.status === 'ACTIVE' ? 'default' : 'outline'} className="text-xs flex-shrink-0">
+                          {customer.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  {users.filter(u => u.role === 'CUSTOMER').length === 0 && (
+                    <p className="text-center text-muted-foreground py-4 col-span-3 text-sm">No customers yet</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </>
         )}
 
@@ -1169,58 +1055,6 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* All Notifications Modal */}
-      {showAllNotifications && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">All Notifications</h2>
-              <button onClick={() => setShowAllNotifications(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
-              <div className="divide-y divide-gray-100">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-6 hover:bg-gray-50 transition-colors border-l-4 ${getNotificationColor(notification.type)} ${notification.unread ? 'bg-blue-50' : ''
-                      }`}
-                  >
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className={`text-lg font-medium ${notification.unread ? 'text-gray-900' : 'text-gray-700'}`}>
-                            {notification.title}
-                          </p>
-                          {notification.unread && (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                              New
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-gray-600 mt-2">{notification.message}</p>
-                        <p className="text-sm text-gray-400 mt-3">{notification.time}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-gray-600">Showing {notifications.length} notifications</p>
-                <button onClick={() => setShowAllNotifications(false)} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit Plan Dialog */}
       <EditPlanDialog
