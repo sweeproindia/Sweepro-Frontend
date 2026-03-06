@@ -17,7 +17,7 @@ export default function CompleteProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user, refreshUser, logout } = useUser();
+  const { user, refreshUser, logout, setAuthenticatedUser } = useUser();
 
   const handleLogout = async () => {
     try {

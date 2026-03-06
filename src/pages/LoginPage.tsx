@@ -166,8 +166,21 @@ export default function LoginPage() {
       console.error('Google sign-in error:', error);
       await AuthService.logout();
 
+      // If user doesn't have an account, redirect to signup page
+      if (error?.response?.isNewUser || error?.statusCode === 404) {
+        toast({
+          title: 'Account not found',
+          description: 'No account exists with this Google email. Redirecting you to sign up.',
+          variant: 'destructive',
+        });
+        navigate('/signup');
+        return;
+      }
+
       let errorMessage = 'Google sign-in failed. Please try again.';
-      if (error.message) {
+      if (error?.response?.error) {
+        errorMessage = error.response.error;
+      } else if (error.message) {
         errorMessage = error.message;
       }
 

@@ -142,9 +142,21 @@ export default function SignupPage() {
     } catch (error: any) {
       console.error('Google sign-up error:', error);
       await AuthService.logout();
+
+      // If user already has an account, redirect to login page
+      if (error?.response?.isNewUser === false || error?.statusCode === 400) {
+        toast({
+          title: 'Account already exists',
+          description: 'You already have an account with this Google email. Redirecting you to sign in.',
+          variant: 'destructive',
+        });
+        navigate('/login');
+        return;
+      }
+
       toast({
         title: 'Google sign-up failed',
-        description: error?.message || 'Please try again.',
+        description: error?.response?.error || error?.message || 'Please try again.',
         variant: 'destructive',
       });
     } finally {

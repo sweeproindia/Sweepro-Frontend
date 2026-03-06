@@ -518,7 +518,7 @@ export const apiRequest = async <T = any>(
     }
 
     if (!response.ok) {
-      const errorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
+      const errorMessage = data.error || data.message || `HTTP ${response.status}: ${response.statusText}`;
       // Only log non-404 errors to reduce console spam
       if (response.status !== 404) {
         console.error(`❌ API Error:`, errorMessage);
