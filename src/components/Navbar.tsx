@@ -30,9 +30,10 @@ export const Navbar = ({
   const toggleUserMenu = () => setIsUserMenuOpen(!isUserMenuOpen);
 
   const handleLogout = async () => {
-    // As requested: If the user's profile is incomplete, clicking logout pushes them
-    // back to the complete-profile page instead of logging them out.
-    if (user && !user.profile_completed) {
+    // Only enforce profile completion for Firebase/OAuth users.
+    // Email/password users (no firebase_uid) should always be able to log out.
+    const isFirebaseUser = Boolean((user as any)?.firebase_uid);
+    if (isFirebaseUser && user && !user.profile_completed) {
       navigate('/complete-profile');
       setIsUserMenuOpen(false);
       setIsMenuOpen(false);
@@ -51,7 +52,8 @@ export const Navbar = ({
   };
 
   const handleDashboardClick = () => {
-    if (user && !user.profile_completed) {
+    const isFirebaseUser = Boolean((user as any)?.firebase_uid);
+    if (isFirebaseUser && user && !user.profile_completed) {
       navigate('/complete-profile');
       return;
     }
@@ -266,7 +268,7 @@ export const Navbar = ({
                   onClick={handleDashboardClick}
                   className="hidden md:inline-flex h-11 rounded-full border-2 border-transparent bg-[#1800ad] px-6 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#ca0013] hover:shadow-lg"
                 >
-                  {!user.profile_completed ? 'Complete Profile' : 'Dashboard'}
+                  {(Boolean((user as any).firebase_uid) && !user.profile_completed) ? 'Complete Profile' : 'Dashboard'}
                 </Button>
 
                 <div className="relative" ref={userMenuRef}>
@@ -397,7 +399,7 @@ export const Navbar = ({
                           handleDashboardClick();
                         }}
                       >
-                        {!user.profile_completed ? 'Complete Profile' : 'Go to Dashboard'}
+                        {(Boolean((user as any).firebase_uid) && !user.profile_completed) ? 'Complete Profile' : 'Go to Dashboard'}
                       </Button>
                       <Button
                         variant="outline"
