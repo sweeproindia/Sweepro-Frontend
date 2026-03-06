@@ -61,10 +61,9 @@ export const DashboardNavbar = ({
           ? 'bg-white/70 backdrop-blur-xl border-b border-gray-200/30 shadow-xl'
           : 'bg-white border-b border-gray-200 shadow-sm'
       }`}>
-      <div className="flex-1 px-4 flex justify-between items-center">
-        {/* Logo and Mobile menu */}
-        <div className="flex items-center space-x-4">
-          {/* Hamburger Menu - Mobile Only */}
+      <div className="flex-1 px-4 flex items-center relative">
+        {/* Left: Hamburger (mobile) + Logo (desktop) */}
+        <div className="flex items-center gap-2">
           {onMobileMenuToggle && (
             <Button
               variant="ghost"
@@ -75,8 +74,18 @@ export const DashboardNavbar = ({
               <Menu className="h-5 w-5" />
             </Button>
           )}
+          {/* Logo - desktop left aligned */}
+          <Link to="/" className="hidden md:flex items-center group">
+            <img
+              src={userType === 'admin' ? '/assets/logo-black.png' : '/assets/logo.png'}
+              alt="Sweepro Logo"
+              className="h-32 w-32 object-contain transition-all duration-300 group-hover:scale-110"
+            />
+          </Link>
+        </div>
 
-          {/* Logo */}
+        {/* Logo - mobile centered (absolute) */}
+        <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
           <Link to="/" className="flex items-center group">
             <img
               src={userType === 'admin' ? '/assets/logo-black.png' : '/assets/logo.png'}
@@ -86,22 +95,39 @@ export const DashboardNavbar = ({
           </Link>
         </div>
 
-        {/* Center Admin Panel - Only for Admin */}
+        {/* Center Admin Panel - Only for Admin on desktop */}
         {userType === 'admin' && (
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 hidden md:flex justify-center">
             <div className="bg-[#1800ad]/80 px-6 py-2 rounded-full backdrop-blur-sm">
               <span className="text-lg font-bold text-white">Admin Panel</span>
             </div>
           </div>
         )}
 
-        {/* Right side: Notifications and Profile */}
-        <div className={`flex items-center space-x-4 ${userType === 'admin' ? 'text-white' : ''}`}>
-          {/* Notifications */}
+        {/* Right side */}
+        <div className={`ml-auto flex items-center space-x-2 ${userType === 'admin' ? 'text-white' : ''}`}>
           <NotificationBell />
 
-          {/* Profile - Desktop Only */}
-          <div className={`hidden md:flex items-center space-x-2`}>
+          {/* Profile avatar - mobile only */}
+          <Link to="/profile" className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`flex items-center gap-1.5 ${userType === 'admin' ? 'text-white hover:bg-[#1800ad]/50' : ''}`}
+            >
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-xs font-semibold text-primary">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                </span>
+              </div>
+              <span className="text-sm font-medium max-w-[80px] truncate">
+                {user?.name?.split(' ')[0] || 'Profile'}
+              </span>
+            </Button>
+          </Link>
+
+          {/* Profile + Logout - desktop only */}
+          <div className="hidden md:flex items-center space-x-2">
             <Link to="/profile">
               <Button
                 variant="ghost"
@@ -109,9 +135,7 @@ export const DashboardNavbar = ({
                 className={`flex items-center space-x-2 ${userType === 'admin' ? 'text-white hover:bg-[#1800ad]/50' : ''}`}
               >
                 <User className="h-5 w-5" />
-                <span className="text-sm font-medium">
-                  Profile
-                </span>
+                <span className="text-sm font-medium">Profile</span>
               </Button>
             </Link>
             <Button

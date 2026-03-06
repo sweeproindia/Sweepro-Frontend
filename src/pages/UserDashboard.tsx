@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
-import { useBufferPeriod } from '@/hooks/useBufferPeriod';
-import { BookingService, Booking } from '@/services/bookingService';
-import { SubscriptionService, Subscription, SubscriptionPlan, MonthlySubscriptionStatus } from '@/services/subscriptionService';
-import { BufferService } from '@/services/bufferService';
-import { PaymentService, Payment } from '@/services/paymentService';
-import { MaidService, MaidAssignment } from '@/services/maidService';
+import { useUserSubscription, useSubscriptionPlans, useMonthlySubscriptionStatus } from '@/hooks/queries/useSubscriptionQueries';
+import { useUserBookings } from '@/hooks/queries/useBookingQueries';
+import { useAllUserPayments } from '@/hooks/queries/usePaymentQueries';
+import { useCurrentMaidAssignment } from '@/hooks/queries/useMaidAssignmentQuery';
+import { useBufferStatus, useBufferInfo, useBufferHistory } from '@/hooks/queries/useBufferQueries';
+import { bookingKeys } from '@/lib/queryKeys';
+import { maidAssignmentKeys } from '@/lib/queryKeys';
 import { MaidAssignmentCard } from '@/components/dashboard/MaidAssignmentCard';
 import UserDashboardSkeleton from '@/components/dashboard/UserDashboardSkeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -18,256 +20,56 @@ import { Link } from 'react-router-dom';
 import { QuickBookingForm } from '@/components/forms/QuickBookingForm';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
 import { FeedbackCard } from '@/components/feedback/FeedbackCard';
-import FeedbackService from '@/services/feedbackService';
 
 export default function UserDashboard() {
-  const { user, refreshUser, isAuthenticated } = useUser();
+  const { user, isAuthenticated } = useUser();
   const { toast } = useToast();
-  
-  // Use the buffer period hook for centralized buffer period management
+  const queryClient = useQueryClient();
+  const isCustomer = user?.role === 'CUSTOMER';
+
+  // ── React Query hooks ─────────────────────────────────────────────────────
+  const { data: subscription, isLoading: subLoading } = useUserSubscription(isCustomer);
+  const { data: _plans } = useSubscriptionPlans();
+  const { data: monthlySubscriptionStatus } = useMonthlySubscriptionStatus(isCustomer);
+  const { data: bookings = [], isLoading: bookingsLoading } = useUserBookings('CUSTOMER', 'all');
+  const { data: payments = [] } = useAllUserPayments();
+  const { data: maidAssignment } = useCurrentMaidAssignment(isCustomer);
+  const { data: bufferInfo } = useBufferInfo(subscription?.id);
+  const { data: bufferHistory = [] } = useBufferHistory(subscription?.id);
+
+  // Buffer status derived from cached subscription — no extra API call
   const {
     isInBufferPeriod,
+    hasBufferAccess,
     shouldDisableBooking,
     getBufferPeriodMessage,
     getFormattedEndDate,
-    isLoading: bufferLoading
-  } = useBufferPeriod();
+    isLoading: bufferLoading,
+  } = useBufferStatus();
 
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [monthlySubscriptionStatus, setMonthlySubscriptionStatus] = useState<MonthlySubscriptionStatus | null>(null);
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [maidAssignment, setMaidAssignment] = useState<MaidAssignment | null>(null);
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    completedBookings: 0,
-    totalSpent: 0,
-    activeSubscription: false,
-    upcomingBookings: 0
-  });
-  const [bufferInfo, setBufferInfo] = useState<any>(null);
-  const [bufferHistory, setBufferHistory] = useState<any[]>([]);
-  const [hasBufferAccess, setHasBufferAccess] = useState(false);
-  const [bufferAccessLoading, setBufferAccessLoading] = useState(true);
 
-  useEffect(() => {
-    if (user && isAuthenticated) {
-      console.log('UserDashboard - Current User Data:', user);
-      console.log('UserDashboard - User Role:', user.role);
-      
-      // Only customers should access this dashboard
-      if (user.role !== 'CUSTOMER') {
-        console.warn('⚠️ Non-customer user attempted to access UserDashboard:', user.role);
-        setLoading(false);
-        return;
-      }
-      
-      fetchUserDashboardData();
-    }
-  }, [user, isAuthenticated, subscription?.id]);
-
-  const fetchUserDashboardData = async () => {
-    // Double-check user role to prevent data leaks
-    if (user?.role !== 'CUSTOMER') {
-      console.warn('⚠️ Unauthorized access attempt to fetchUserDashboardData - User role:', user?.role);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      console.log('🔍 Starting dashboard data fetch for CUSTOMER user...');
-      
-      // For CUSTOMER users, fetch all relevant data
-      // Verify user is CUSTOMER before fetching role-specific endpoints
-      if (user?.role !== 'CUSTOMER') {
-        console.error('🚨 CRITICAL: Non-customer user attempting to fetch customer data. Role:', user?.role);
-        setLoading(false);
-        return;
-      }
-
-      // Only fetch maidAssignment for CUSTOMER users - other endpoints may return 403 for non-customers
-      const promises = [
-        BookingService.getUserBookings(),
-        SubscriptionService.getUserSubscription(),
-        SubscriptionService.getMonthlySubscriptionStatus(),
-        PaymentService.getUserPayments(),
-        SubscriptionService.getSubscriptionPlans(),
-        MaidService.getCurrentMaidAssignment() // CUSTOMER-ONLY endpoint
-      ] as const;
-
-      const [
-        bookingsResponse,
-        subscriptionResponse,
-        monthlyStatusResponse,
-        paymentsResponse,
-        plansResponse,
-        maidAssignmentResponse
-      ] = await Promise.allSettled(promises);
-
-      // Handle bookings
-      console.log('📚 Bookings Response:', bookingsResponse);
-      if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
-        // Backend returns bookings directly in data field (wrapped by api.ts)
-        const bookingsData = Array.isArray(bookingsResponse.value.data)
-          ? bookingsResponse.value.data
-          : (bookingsResponse.value.data && typeof bookingsResponse.value.data === 'object' && 'bookings' in bookingsResponse.value.data)
-            ? (bookingsResponse.value.data as { bookings: Booking[] }).bookings
-            : [];
-        setBookings(bookingsData);
-        console.log('✅ Bookings loaded:', bookingsData.length);
-      } else if (bookingsResponse.status === 'rejected') {
-        console.error('❌ Bookings fetch failed:', bookingsResponse.reason);
-      }
-
-      // Handle subscription
-      console.log('💳 Subscription Response:', subscriptionResponse);
-      if (subscriptionResponse.status === 'fulfilled') {
-        console.log('Subscription response:', subscriptionResponse.value);
-        console.log('Subscription response success:', subscriptionResponse.value.success);
-        // Backend returns subscription directly in the response (not wrapped in data)
-        const subscriptionData = (subscriptionResponse.value as any).subscription || (subscriptionResponse.value as any).data?.subscription || null;
-        setSubscription(subscriptionData);
-        console.log('✅ Subscription loaded:', subscriptionData);
-      } else if (subscriptionResponse.status === 'rejected') {
-        console.error('❌ Subscription fetch failed:', subscriptionResponse.reason);
-      }
-
-      // Handle monthly subscription status
-      if (monthlyStatusResponse.status === 'fulfilled' && monthlyStatusResponse.value.success) {
-        console.log('Monthly subscription status response data:', monthlyStatusResponse.value.data);
-        // Backend may return status either in data (wrapped) or at top-level (already has success)
-        const statusData =
-          (monthlyStatusResponse.value as any).data ||
-          (monthlyStatusResponse.value as any) ||
-          null;
-        setMonthlySubscriptionStatus(statusData as MonthlySubscriptionStatus | null);
-      } else if (monthlyStatusResponse.status === 'rejected') {
-        console.error('Error fetching monthly subscription status:', monthlyStatusResponse.reason);
-      }
-
-      // Handle payments
-      if (paymentsResponse.status === 'fulfilled' && paymentsResponse.value.success) {
-        // Backend returns payments directly in data field (wrapped by api.ts)
-        const paymentsDataRaw = (paymentsResponse.value as any).data;
-        const paymentsData = Array.isArray(paymentsDataRaw) ? paymentsDataRaw : paymentsDataRaw?.payments || [];
-        setPayments(paymentsData);
-      }
-
-      // Handle subscription plans
-      if (plansResponse.status === 'fulfilled' && plansResponse.value.success) {
-        // Backend returns plans directly in data field (wrapped by api.ts)
-        const plansDataRaw = (plansResponse.value as any).data;
-        const plansData = Array.isArray(plansDataRaw) ? plansDataRaw : plansDataRaw?.plans || [];
-        setSubscriptionPlans(plansData as SubscriptionPlan[]);
-      }
-
-      // Handle maid assignment
-      if (maidAssignmentResponse.status === 'fulfilled' && maidAssignmentResponse.value.success) {
-        console.log('✅ Maid assignment loaded:', maidAssignmentResponse.value.data);
-        setMaidAssignment(maidAssignmentResponse.value.data || null);
-      } else if (maidAssignmentResponse.status === 'rejected') {
-        console.warn('⚠️ Maid assignment fetch failed:', maidAssignmentResponse.reason);
-        setMaidAssignment(null);
-      }
-
-
-      // Check buffer access after subscription is loaded
-      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const finalSubscription = (subscriptionResponse.value as any).subscription || subscriptionResponse.value.data?.subscription || null;
-        if (finalSubscription && finalSubscription.plan) {
-          setHasBufferAccess(finalSubscription.plan.hasBufferSystem || false);
-          setBufferAccessLoading(false);
-        } else {
-          setHasBufferAccess(false);
-          setBufferAccessLoading(false);
-        }
-      } else {
-        setHasBufferAccess(false);
-        setBufferAccessLoading(false);
-      }
-
-      // Fetch buffer data if subscription exists and has buffer access
-      let currentSubscription: Subscription | null = subscription;
-      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const finalSubscription = (subscriptionResponse.value as any).subscription || subscriptionResponse.value.data?.subscription || null;
-        currentSubscription = finalSubscription as Subscription | null;
-      }
-
-      if (currentSubscription && currentSubscription.plan?.hasBufferSystem) {
-        try {
-          const [bufferInfoResponse, bufferHistoryResponse] = await Promise.allSettled([
-            BufferService.getRemainingBufferDays(currentSubscription.id),
-            BufferService.getBufferHistory(currentSubscription.id, 1, 5)
-          ]);
-
-          if (bufferInfoResponse.status === 'fulfilled' && bufferInfoResponse.value.success) {
-            setBufferInfo(bufferInfoResponse.value.data);
-          }
-
-          if (bufferHistoryResponse.status === 'fulfilled' && bufferHistoryResponse.value.success) {
-            setBufferHistory(bufferHistoryResponse.value.data.history || []);
-          }
-        } catch (bufferError) {
-          console.error('Error fetching buffer data:', bufferError);
-        }
-      }
-
-      // Calculate stats after data is loaded
-      calculateStats();
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load dashboard data. Please try refreshing.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateStats = () => {
+  // ── Derived stats (replaces calculateStats + useEffect) ───────────────────
+  const stats = useMemo(() => {
     const totalBookings = bookings.length;
     const completedBookings = bookings.filter(b => b.status === 'COMPLETED').length;
-    const upcomingBookings = bookings.filter(b => 
+    const upcomingBookings = bookings.filter(b =>
       b.status === 'PENDING' || b.status === 'CONFIRMED' || b.status === 'IN_PROGRESS'
     ).length;
     const totalSpent = payments
       .filter(p => p.status === 'COMPLETED')
       .reduce((sum, p) => sum + p.amount, 0);
-    // ✅ FIXED: Only consider subscription active if status is ACTIVE (not PENDING_PAYMENT)
     const activeSubscription = subscription?.status === 'ACTIVE';
-
-    setStats({
-      totalBookings,
-      completedBookings,
-      totalSpent,
-      activeSubscription,
-      upcomingBookings
-    });
-  };
-
-  useEffect(() => {
-    if (bookings.length > 0 || payments.length > 0 || subscription) {
-      calculateStats();
-    }
+    return { totalBookings, completedBookings, totalSpent, activeSubscription, upcomingBookings };
   }, [bookings, payments, subscription]);
 
-  const handleBookNowClick = () => {
-    console.log('🔍 HandleBookNowClick - Subscription Status:', {
-      subscriptionExists: !!subscription,
-      subscriptionStatus: subscription?.status,
-      isInBufferPeriod,
-      shouldDisableBooking: shouldDisableBooking(),
-      bufferLoading
-    });
+  // ── Refresh helper (used by QuickBookingForm.onSuccess, FeedbackCard, MaidAssignmentCard) ─
+  const refreshDashboard = () => {
+    queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+    queryClient.invalidateQueries({ queryKey: maidAssignmentKeys.all });
+  };
 
-    // ✅ FIXED: Check for ACTIVE subscription, not just existence
+  const handleBookNowClick = () => {
     if (!subscription || subscription.status !== 'ACTIVE') {
       if (!subscription) {
         toast({
@@ -291,24 +93,26 @@ export default function UserDashboard() {
       return;
     }
 
-    // Check if customer is currently in buffer period using the hook
     if (shouldDisableBooking()) {
-      console.log('🚫 Booking blocked due to buffer period');
       toast({
-        title: '🚫 Booking Services Paused',
+        title: 'Booking Services Paused',
         description: getBufferPeriodMessage(),
         variant: 'destructive',
-        duration: 10000, // Show for 10 seconds for better visibility
+        duration: 10000,
       });
       return;
     }
 
-    console.log('✅ Opening booking modal - no buffer period detected');
-    // Open booking modal if no buffer period conflict
     setIsBookingModalOpen(true);
   };
 
-  if (loading) {
+  // ── Loading / Auth guards ─────────────────────────────────────────────────
+  // Show skeleton while ANY critical data is still doing its initial load
+  // (isLoading in React Query v5 = isPending && isFetching, so it's only true
+  // when there is NO cached data and a fetch is in progress — return visits
+  // with valid cache will have isLoading=false and skip this guard entirely.)
+  const isInitialLoad = subLoading || bookingsLoading;
+  if (isInitialLoad) {
     return (
       <DashboardLayout>
         <UserDashboardSkeleton />
@@ -326,7 +130,6 @@ export default function UserDashboard() {
     );
   }
 
-  // Restrict access to CUSTOMER users only
   if (user.role !== 'CUSTOMER') {
     return (
       <DashboardLayout>
@@ -359,12 +162,12 @@ export default function UserDashboard() {
   return (
     <DashboardLayout>
       {/* Buffer Period Alert - Show prominently at top */}
-      <BufferPeriodAlert 
+      <BufferPeriodAlert
         isVisible={isInBufferPeriod}
         endDate={getFormattedEndDate()}
         className="mb-6"
       />
-      
+
       {/* Personalized Welcome Message */}
       <div className="mb-6 text-center">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -374,16 +177,16 @@ export default function UserDashboard() {
           Here's your comprehensive dashboard with all your activity and details.
         </p>
       </div>
-      
-      <QuickBookingForm 
+
+      <QuickBookingForm
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
         onSuccess={() => {
           setIsBookingModalOpen(false);
-          fetchUserDashboardData();
+          refreshDashboard();
         }}
       />
-      
+
       <div className="space-y-6">
 
         {/* Stats Overview */}
@@ -417,7 +220,7 @@ export default function UserDashboard() {
               {subscription?.status === 'PENDING_PAYMENT' && (
                 <div className="mt-3 space-y-3">
                   <div className="p-2 bg-orange-100 border border-orange-300 rounded text-sm text-orange-700">
-                    ⚠️ Payment pending - Complete your payment to activate this plan
+                    Payment pending - Complete your payment to activate this plan
                   </div>
                   <Link to="/payment-options" state={{ fromDashboard: true, subscriptionId: subscription.id }}>
                     <Button className="w-full btn-hero">
@@ -429,7 +232,7 @@ export default function UserDashboard() {
               )}
               {subscription?.status === 'ACTIVE' && (
                 <div className="mt-3 p-2 bg-green-100 border border-green-300 rounded text-sm text-green-700">
-                  ✓ Subscription Active
+                  Subscription Active
                 </div>
               )}
             </CardContent>
@@ -478,8 +281,8 @@ export default function UserDashboard() {
           {/* Maid Assignment Card */}
           <div className="slide-up">
             <MaidAssignmentCard
-              assignment={maidAssignment}
-              onRefresh={fetchUserDashboardData}
+              assignment={maidAssignment ?? null}
+              onRefresh={refreshDashboard}
               hasSubscription={!!subscription && subscription.status === 'ACTIVE'}
             />
           </div>
@@ -579,9 +382,9 @@ export default function UserDashboard() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="font-medium">Amount:</span>
-                      <p className="text-lg font-bold text-primary">₹{subscription.amount.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-primary">{subscription.amount.toLocaleString()}</p>
                       {subscription.discount > 0 && (
-                        <p className="text-xs text-success">-₹{subscription.discount.toLocaleString()} discount</p>
+                        <p className="text-xs text-success">-{subscription.discount.toLocaleString()} discount</p>
                       )}
                     </div>
                     <div>
@@ -623,9 +426,11 @@ export default function UserDashboard() {
                       Manage Plan
                     </Button>
                   </Link>
-                  <Button className="w-full" variant="outline">
-                    View History
-                  </Button>
+                  <Link to="/payments">
+                    <Button className="w-full" variant="outline">
+                      View History
+                    </Button>
+                  </Link>
                 </div>
               </div>
             ) : (
@@ -670,7 +475,7 @@ export default function UserDashboard() {
                   <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className={`w-3 h-3 rounded-full ${
-                        booking.status === 'COMPLETED' ? 'bg-success' : 
+                        booking.status === 'COMPLETED' ? 'bg-success' :
                         booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
                         booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
                       }`} />
@@ -694,7 +499,7 @@ export default function UserDashboard() {
                       </Badge>
                       {booking.finalAmount && (
                         <p className="text-sm font-medium mt-1">
-                          ₹{booking.finalAmount.toLocaleString()}
+                          {booking.finalAmount.toLocaleString()}
                         </p>
                       )}
                     </div>
@@ -708,60 +513,29 @@ export default function UserDashboard() {
                 <p className="text-muted-foreground text-sm mb-4">
                   Book your first cleaning service to get started
                 </p>
-                {/* <Button 
-                  className={`btn-hero ${shouldDisableBooking() ? 'border-orange-300 text-orange-600 bg-orange-50 hover:bg-orange-100' : ''}`}
-                  onClick={handleBookNowClick}
-                  disabled={shouldDisableBooking() || bufferLoading}
-                >
-                  {bufferLoading ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      Checking...
-                    </>
-                  ) : shouldDisableBooking() ? (
-                    <>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Services Paused (Until {getFormattedEndDate()})
-                    </>
-                  ) : (
-                    <>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Book Now
-                    </>
-                  )}
-                </Button> */}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Feedback Section - Show single feedback card for most recent completed service */}
+        {/* Feedback Section */}
         {user && isAuthenticated && (
           <div className="slide-up">
-            <FeedbackCard onFeedbackSubmitted={fetchUserDashboardData} />
-          </div>
-        )}
-        
-        {/* Debug: Check if there are completed bookings */}
-        {user && isAuthenticated && bookings.length > 0 && (
-          <div className="mt-4 p-4 bg-gray-100 rounded text-sm">
-            <p>Debug: Total bookings: {bookings.length}</p>
-            <p>Completed bookings: {bookings.filter(b => b.status === 'COMPLETED').length}</p>
-            <p>Check browser console (F12) for FeedbackCard logs</p>
+            <FeedbackCard onFeedbackSubmitted={refreshDashboard} />
           </div>
         )}
       </div>
 
       {/* Floating Buffer Button for SweePro Lux Users */}
-      {hasBufferAccess && !bufferAccessLoading && (
+      {hasBufferAccess && !bufferLoading && (
         <Link to="/buffer">
           <Button
             className={`
-              fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg 
+              fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg
               flex items-center justify-center z-50 transition-all duration-200
               hover:shadow-xl hover:scale-105
-              ${isInBufferPeriod 
-                ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white' 
+              ${isInBufferPeriod
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white'
                 : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white'
               }
             `}
@@ -773,12 +547,12 @@ export default function UserDashboard() {
             ) : (
               <Pause className="h-6 w-6" />
             )}
-            
+
             {/* Status indicator */}
             <span className={`
               absolute -top-1 -right-1 h-3 w-3 rounded-full
-              ${isInBufferPeriod 
-                ? 'bg-orange-300 animate-pulse' 
+              ${isInBufferPeriod
+                ? 'bg-orange-300 animate-pulse'
                 : 'bg-green-400 animate-pulse'
               }
             `}></span>

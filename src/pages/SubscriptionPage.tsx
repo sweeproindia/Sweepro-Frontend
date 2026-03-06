@@ -1,3 +1,4 @@
+import { useMemo, useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,10 +20,10 @@ import {
   Users,
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
-import { SubscriptionService, Subscription, SubscriptionPlan } from '@/services/subscriptionService';
-import { BookingService } from '@/services/bookingService';
+import { Subscription, SubscriptionPlan } from '@/services/subscriptionService';
+import { useUserSubscription, useSubscriptionPlans } from '@/hooks/queries/useSubscriptionQueries';
+import { useUserBookings } from '@/hooks/queries/useBookingQueries';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { useBookingForm, withBookingForm } from '@/contexts/BookingFormContext';
@@ -107,15 +108,26 @@ function SubscriptionPage() {
   const { toast } = useToast();
   const { openBookingForm } = useBookingForm();
   const navigate = useNavigate();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    completedVisits: 0,
-    totalHours: 0,
-    averageRating: 0,
-    costPerVisit: 0,
-  });
+
+  // ── React Query hooks ─────────────────────────────────────────────────────
+  const { data: subscription = null, isLoading: subLoading } = useUserSubscription();
+  const { data: _availablePlans = [] } = useSubscriptionPlans();
+  const { data: bookings = [] } = useUserBookings('CUSTOMER', 'all');
+
+  // ── Derived stats (replaces useEffect + fetchSubscriptionData) ────────────
+  const stats = useMemo(() => {
+    const completedBookings = bookings.filter((b) => b.status === 'COMPLETED');
+    const completedVisits = completedBookings.length;
+    const totalHours = Math.round(
+      completedBookings.reduce((sum, b) => sum + (b.estimatedDuration || 180), 0) / 60
+    );
+    const totalCost = completedBookings.reduce(
+      (sum, b) => sum + (b.finalAmount || b.totalAmount || 0),
+      0
+    );
+    const costPerVisit = completedVisits > 0 ? totalCost / completedVisits : 0;
+    return { completedVisits, totalHours, averageRating: 4.9, costPerVisit };
+  }, [bookings]);
 
   const lastPaymentFromNav = (location.state?.payment as any) || null;
   const propertyConfigFromNav = (location.state?.propertyConfig as any) || null;
@@ -127,76 +139,14 @@ function SubscriptionPage() {
     setIsVisible(true);
   }, []);
 
-  useEffect(() => {
-    if (user && isAuthenticated) {
-      fetchSubscriptionData();
-    }
-  }, [user, isAuthenticated]);
-
-  const fetchSubscriptionData = async () => {
-    setLoading(true);
-    try {
-      const [subscriptionResponse, plansResponse, bookingsResponse] = await Promise.allSettled([
-        SubscriptionService.getUserSubscription(),
-        SubscriptionService.getSubscriptionPlans(),
-        BookingService.getUserBookings(),
-      ]);
-
-      if (subscriptionResponse.status === 'fulfilled' && subscriptionResponse.value.success) {
-        const subscriptionData =
-          (subscriptionResponse.value as any).subscription ||
-          (subscriptionResponse.value as any).data?.subscription ||
-          null;
-        setSubscription(subscriptionData as Subscription | null);
-      } else {
-        setSubscription(null);
-      }
-
-      if (plansResponse.status === 'fulfilled' && plansResponse.value.success) {
-        const plansData = (plansResponse.value as any).data;
-        const plans = Array.isArray(plansData) ? plansData : plansData?.plans || [];
-        setAvailablePlans(plans as SubscriptionPlan[]);
-      }
-
-      if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.success) {
-        const bookingsData = (bookingsResponse.value as any).data;
-        const bookings = Array.isArray(bookingsData) ? bookingsData : bookingsData?.bookings || [];
-
-        const completedBookings = bookings.filter((b) => b.status === 'COMPLETED');
-        const completedVisits = completedBookings.length;
-        const totalHours = Math.round(
-          completedBookings.reduce((sum, b) => sum + (b.estimatedDuration || 180), 0) / 60
-        );
-        const totalCost = completedBookings.reduce(
-          (sum, b) => sum + (b.finalAmount || b.totalAmount || 0),
-          0
-        );
-        const costPerVisit = completedVisits > 0 ? totalCost / completedVisits : 0;
-
-        setStats({
-          completedVisits,
-          totalHours,
-          averageRating: 4.9,
-          costPerVisit,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching subscription data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load subscription data. Please try refreshing.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePlanSelect = (planId: string) => {
     // Navigate using canonical ids so details page resolves correctly
     const slug = planId === 'standard' ? 'standard' : planId === 'premium' ? 'premium' : planId;
     navigate(`/subscription/${slug}`);
   };
+
+  // Show skeleton only on initial load (no cached data yet)
+  const loading = subLoading && !subscription;
 
   if (loading) {
     return (
@@ -311,12 +261,9 @@ function SubscriptionPage() {
                       </div>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button className="w-full" variant="outline">
-                      Manage Plan
-                    </Button>
-                    <Button className="w-full" variant="outline">
-                      View History
+                  <div className="flex">
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/payments')}>
+                      Payment History
                     </Button>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   CreditCard, Download, Calendar, CheckCircle, X, Clock,
-  FileText, Eye, RefreshCw, TrendingUp, AlertCircle, Receipt
+  FileText, Eye, RefreshCw, TrendingUp, AlertCircle, Receipt,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { PaymentService, Payment } from '@/services/paymentService';
-import { SubscriptionService, Subscription } from '@/services/subscriptionService';
+import { useUserPayments, useAllUserPayments } from '@/hooks/queries/usePaymentQueries';
+import { useUserSubscription } from '@/hooks/queries/useSubscriptionQueries';
 import { useToast } from '@/hooks/use-toast';
 import PaymentsPageSkeleton from '@/components/payments/PaymentsPageSkeleton';
 
@@ -274,87 +277,46 @@ export default function PaymentsPage() {
   const { user, isAuthenticated } = useUser();
   const { toast } = useToast();
 
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const isCustomer = user?.role === 'CUSTOMER';
+
+  // ── React Query hooks ─────────────────────────────────────────────────────
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
+  const { data: paginatedData, isLoading: paymentsLoading } = useUserPayments(page, PAGE_SIZE);
+  const { data: allPayments = [] } = useAllUserPayments();
+  const { data: subscription } = useUserSubscription(isCustomer);
+
+  const payments = paginatedData?.payments ?? [];
+  const totalPayments = paginatedData?.total ?? 0;
+  const hasMore = paginatedData?.hasMore ?? false;
+  const totalPages = Math.ceil(totalPayments / PAGE_SIZE);
 
   // Invoice modal state
   const [invoicePayment, setInvoicePayment] = useState<Payment | null>(null);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const [stats, setStats] = useState({
-    totalPaid: 0,
-    thisMonthPaid: 0,
-    nextPaymentAmount: 0,
-    nextPaymentDate: null as string | null,
-    pendingCount: 0,
-    completedCount: 0,
-    failedCount: 0,
-  });
-
-  const fetchPaymentData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [paymentsRes, subRes] = await Promise.allSettled([
-        PaymentService.getUserPayments(),
-        SubscriptionService.getUserSubscription(),
-      ]);
-
-      if (paymentsRes.status === 'fulfilled' && paymentsRes.value.success) {
-        const v: any = paymentsRes.value;
-        // Backend sends { data: payments[] } → apiRequest wraps →
-        // { success, data: { data: payments[], pagination } }
-        const inner = v?.data;
-        const arr: Payment[] = Array.isArray(inner)
-          ? inner
-          : Array.isArray(inner?.data)
-            ? inner.data
-            : (inner?.payments || v?.payments || []);
-        setPayments(arr);
-      }
-
-      if (subRes.status === 'fulfilled' && subRes.value.success) {
-        const v: any = subRes.value;
-        setSubscription(v?.subscription ?? v?.data?.subscription ?? v?.data ?? null);
-      } else {
-        setSubscription(null);
-      }
-    } catch (err) {
-      console.error('Error fetching payment data:', err);
-      toast({ title: 'Error', description: 'Failed to load payment data.', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    if (user && isAuthenticated && user.role === 'CUSTOMER') {
-      fetchPaymentData();
-    } else if (user && isAuthenticated) {
-      setLoading(false);
-    }
-  }, [user, isAuthenticated, fetchPaymentData]);
-
-  // Recalculate stats whenever data changes
-  useEffect(() => {
-    const completed = payments.filter(p => p.status === 'COMPLETED');
+  // ── Derived stats (replaces useEffect) ──────────────────────────────────
+  const stats = useMemo(() => {
+    const completed = allPayments.filter(p => p.status === 'COMPLETED');
     const now = new Date();
     const thisMonth = completed.filter(p => {
       const d = new Date(p.createdAt);
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     });
 
-    setStats({
+    return {
       totalPaid: completed.reduce((s, p) => s + p.finalAmount, 0),
       thisMonthPaid: thisMonth.reduce((s, p) => s + p.finalAmount, 0),
       nextPaymentAmount: subscription?.amount || 0,
       nextPaymentDate: subscription?.nextBillDate || null,
       completedCount: completed.length,
-      pendingCount: payments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING').length,
-      failedCount: payments.filter(p => p.status === 'FAILED' || p.status === 'CANCELLED').length,
-    });
-  }, [payments, subscription]);
+      pendingCount: allPayments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING').length,
+      failedCount: allPayments.filter(p => p.status === 'FAILED' || p.status === 'CANCELLED').length,
+    };
+  }, [allPayments, subscription]);
+
+  const loading = paymentsLoading && allPayments.length === 0;
 
   // ── Invoice actions ────────────────────────────────────────────────────────
   const handleViewInvoice = (payment: Payment) => {
@@ -389,8 +351,8 @@ export default function PaymentsPage() {
     );
   }
 
-  const completedPayments = payments.filter(p => p.status === 'COMPLETED');
-  const pendingPayments = payments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING');
+  const completedPayments = allPayments.filter(p => p.status === 'COMPLETED');
+  const pendingPayments = allPayments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING');
   const upcomingPayments = subscription?.nextBillDate
     ? [{
       id: subscription.id, date: subscription.nextBillDate, amount: subscription.amount,
@@ -518,9 +480,9 @@ export default function PaymentsPage() {
               </CardTitle>
               <CardDescription>Click "View" to preview or "Invoice" to download</CardDescription>
             </div>
-            {payments.length > 0 && (
+            {totalPayments > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {payments.length} transaction{payments.length !== 1 ? 's' : ''}
+                {totalPayments} transaction{totalPayments !== 1 ? 's' : ''}
               </Badge>
             )}
           </CardHeader>
@@ -536,6 +498,35 @@ export default function PaymentsPage() {
                     downloadingId={downloadingId}
                   />
                 ))}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page <= 1}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => p + 1)}
+                        disabled={!hasMore}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-16">
@@ -584,8 +575,8 @@ export default function PaymentsPage() {
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <span className="text-muted-foreground">Success Rate</span>
                     <span className="font-semibold text-emerald-600">
-                      {payments.length > 0
-                        ? `${Math.round((stats.completedCount / payments.length) * 100)}%`
+                      {allPayments.length > 0
+                        ? `${Math.round((stats.completedCount / allPayments.length) * 100)}%`
                         : '—'}
                     </span>
                   </div>
@@ -601,19 +592,22 @@ export default function PaymentsPage() {
 
         {/* ── Help card ── */}
         <Card className="dashboard-card slide-up bg-gradient-to-br from-primary/5 to-violet-500/5 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-primary" />
-              Need Help with Payments?
-            </CardTitle>
-            <CardDescription>
-              For billing queries, missing invoices, or refund requests, reach out to our support team.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button className="btn-hero">Contact Billing Support</Button>
-              <Button variant="outline">View FAQ</Button>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Need Help with Payments?</p>
+                  <p className="text-sm text-muted-foreground">
+                    For billing queries, missing invoices, or refund requests — we're here to help.
+                  </p>
+                </div>
+              </div>
+              <Link to="/support" className="flex-shrink-0">
+                <Button className="btn-hero w-full sm:w-auto">Contact Billing Support</Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause, ScanLine } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
-import { useBookings } from '@/hooks/useBookings';
+import { useQueryClient } from '@tanstack/react-query';
+import { useUserBookings, useBookingStats, useCancelBookingMutation } from '@/hooks/queries/useBookingQueries';
+import { useBufferStatus } from '@/hooks/queries/useBufferQueries';
+import { bookingKeys } from '@/lib/queryKeys';
 import { useBookingForm } from '@/contexts/BookingFormContext';
-import { useBufferPeriod } from '@/hooks/useBufferPeriod';
 import { BookingButton } from '@/components/buttons/BookingButton';
 import { BufferPeriodAlert } from '@/components/ui/BufferPeriodAlert';
 import BookingsSkeleton from '@/components/bookings/BookingsSkeleton';
 import { useToast } from '@/hooks/use-toast';
 import { FeedbackCard } from '@/components/feedback/FeedbackCard';
-import FeedbackService from '@/services/feedbackService';
 import QrScannerDialog from '@/components/qr/QrScannerDialog';
 import { completeBookingWithQRForCustomer } from '@/services/qrService';
+
+import type { BookingFilter } from '@/hooks/queries/useBookingQueries';
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -72,31 +75,30 @@ export default function BookingsPage() {
   const { toast } = useToast();
   const { openBookingForm } = useBookingForm();
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const [scanOpen, setScanOpen] = useState(false);
   const [scanBookingId, setScanBookingId] = useState<string | null>(null);
   const [completingWithQr, setCompletingWithQr] = useState(false);
+  const [filter, setFilter] = useState<BookingFilter>('all');
 
-  // Use the buffer period hook
+  // ── React Query hooks ─────────────────────────────────────────────────────
   const {
     isInBufferPeriod,
-    bufferEndDate,
     shouldDisableBooking,
     getBufferPeriodMessage,
     getFormattedEndDate,
-    isLoading: checkingBuffer
-  } = useBufferPeriod();
-  
-  // Use the custom hook for managing bookings state
-  const {
-    bookings,
-    stats,
-    loading,
-    error,
-    filter,
-    setFilter,
-    refreshBookings,
-    cancelBooking: handleCancelBooking,
-  } = useBookings('CUSTOMER');
+    isLoading: checkingBuffer,
+  } = useBufferStatus();
+
+  const { data: bookings = [], isLoading: bookingsLoading } = useUserBookings('CUSTOMER', filter);
+  const { data: stats } = useBookingStats();
+  const cancelMutation = useCancelBookingMutation();
+
+  const loading = bookingsLoading && bookings.length === 0;
+
+  const refreshBookings = () => {
+    queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+  };
 
   // User's preferred time slot from user profile
   const preferredTimeSlot = user?.timeSlot || 'Not set';
@@ -108,12 +110,7 @@ export default function BookingsPage() {
     if (!confirm('Are you sure you want to cancel this booking?')) {
       return;
     }
-
-    try {
-      await handleCancelBooking(bookingId, 'Cancelled by customer');
-    } catch (err) {
-      // Error handling is done in the hook
-    }
+    cancelMutation.mutate({ bookingId, reason: 'Cancelled by customer' });
   };
 
   // Handle quick booking for tomorrow
@@ -133,9 +130,9 @@ export default function BookingsPage() {
     openBookingForm(tomorrow);
   };
   
-  const handleBookingSuccess = async () => {
+  const handleBookingSuccess = () => {
     // Refresh bookings after successful booking
-    await refreshBookings();
+    refreshBookings();
   };
 
   const openQrScannerForBooking = (bookingId: string) => {
@@ -156,7 +153,7 @@ export default function BookingsPage() {
           title: 'Success',
           description: 'Booking completed successfully',
         });
-        await refreshBookings();
+        refreshBookings();
       } else {
         toast({
           title: 'Error',
@@ -215,9 +212,9 @@ export default function BookingsPage() {
               variant="outline"
               size="sm"
               onClick={refreshBookings}
-              disabled={loading}
+              disabled={bookingsLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 ${bookingsLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
@@ -305,26 +302,6 @@ export default function BookingsPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Error State */}
-        {error && (
-          <Card className="dashboard-card border-red-200 bg-red-50">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 text-red-600">
-                <span className="font-medium">Error:</span>
-                <span>{error}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refreshBookings()}
-                  className="ml-auto"
-                >
-                  Retry
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Bookings List */}
         <div className="space-y-4 slide-up">
@@ -514,8 +491,8 @@ export default function BookingsPage() {
         {/* Feedback Section - Single card for most recent completed service */}
         <div className="slide-up mt-6">
           <FeedbackCard
-            onFeedbackSubmitted={async () => {
-              await refreshBookings();
+            onFeedbackSubmitted={() => {
+              refreshBookings();
             }}
           />
         </div>
