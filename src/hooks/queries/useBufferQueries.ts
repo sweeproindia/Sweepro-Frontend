@@ -13,8 +13,9 @@ export function useBufferStatus() {
   const { data: subscription, isLoading } = useUserSubscription();
 
   return useMemo(() => {
-    const isInBufferPeriod = subscription?.isInBufferPeriod ?? false;
     const hasBufferAccess = subscription?.plan?.hasBufferSystem ?? false;
+    // Only show buffer period for plans that support it (Lux), not Touch
+    const isInBufferPeriod = hasBufferAccess && (subscription?.isInBufferPeriod ?? false);
     const bufferEndDate = subscription?.bufferEndDate ?? null;
     const bufferStartDate = subscription?.bufferStartDate ?? null;
 

@@ -27,17 +27,14 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
           <CardDescription>Your dedicated homecare partner for the month</CardDescription>
         </CardHeader>
         <CardContent className="text-center py-8">
-          <div className="relative">
-            <Users className="h-16 w-16 text-orange-300 mx-auto mb-4" />
-            <div className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full p-2">
-              <Zap className="h-4 w-4" />
-            </div>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Users className="h-16 w-16 text-orange-300" />
           </div>
           <h4 className="font-semibold mb-2 text-lg">
             {hasSubscription ? 'Homecare Partner Coming Soon!' : 'Unlock Your Dedicated Homecare Partner'}
           </h4>
           <p className="text-muted-foreground text-sm mb-6">
-            {hasSubscription 
+            {hasSubscription
               ? 'A dedicated homecare partner will be assigned to you within 24 hours of subscription activation'
               : 'Subscribe to a plan to get a dedicated homecare partner assigned to your home. Enjoy personalized, consistent cleaning service!'}
           </p>
@@ -94,19 +91,19 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
   };
 
   return (
-    <Card className="dashboard-card">
+    <Card className="dashboard-card overflow-hidden">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              Your Dedicated Homecare Partner
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Users className="h-5 w-5 text-primary flex-shrink-0" />
+              <span className="truncate">Your Dedicated Homecare Partner</span>
             </CardTitle>
             <CardDescription>
               Assigned for {assignedMonthLabel}
             </CardDescription>
           </div>
-          <Badge variant={assignment.status === 'ACTIVE' ? 'default' : 'secondary'}>
+          <Badge variant={assignment.status === 'ACTIVE' ? 'default' : 'secondary'} className="flex-shrink-0">
             {assignment.status}
           </Badge>
         </div>
@@ -128,21 +125,21 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
                 )}
               </div>
             </div>
-            
+
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-bold">{maid.name}</h3>
-                <div className="flex items-center gap-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+                <h3 className="text-xl font-bold truncate">{maid.name}</h3>
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                   <span className="font-bold">{maid.rating.toFixed(1)}</span>
                   <span className="text-sm text-muted-foreground ml-1">({maid.totalServices} services)</span>
                 </div>
               </div>
-              
+
               <p className="text-muted-foreground mb-4">
                 {maid.bio || 'Professional cleaning specialist with excellent customer feedback'}
               </p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
                   <Award className="h-4 w-4 text-primary" />
@@ -221,11 +218,10 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`h-3 w-3 ${
-                          i < Math.floor(maid.rating)
-                            ? 'text-yellow-500 fill-yellow-500'
-                            : 'text-muted-foreground'
-                        }`}
+                        className={`h-3 w-3 ${i < Math.floor(maid.rating)
+                          ? 'text-yellow-500 fill-yellow-500'
+                          : 'text-muted-foreground'
+                          }`}
                       />
                     ))}
                   </div>
@@ -235,16 +231,16 @@ export const MaidAssignmentCard: React.FC<MaidAssignmentCardProps> = ({ assignme
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={handleContactMaid} className="flex-1">
-              <Phone className="h-4 w-4 mr-2" />
-              Contact Homecare Partner
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={handleContactMaid} className="flex-1 min-w-[140px]">
+              <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Contact Partner</span>
             </Button>
-            <Button variant="outline" onClick={handleRequestChange} className="flex-1">
-              <Users className="h-4 w-4 mr-2" />
-              Request Change
+            <Button variant="outline" onClick={handleRequestChange} className="flex-1 min-w-[140px]">
+              <Users className="h-4 w-4 mr-2 flex-shrink-0" />
+              <span className="truncate">Request Change</span>
             </Button>
-            <Button variant="outline" onClick={onRefresh} className="flex-1">
+            <Button variant="outline" onClick={onRefresh} className="flex-1 min-w-[140px]">
               Refresh Details
             </Button>
           </div>
