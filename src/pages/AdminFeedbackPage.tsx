@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DashboardNavbar } from '@/components/dashboard/DashboardNavbar';
-import { AdminDashboardSidebar } from './AdminDashboardSidebar';
+import { AdminDashboardSidebar } from '@/components/dashboard/AdminDashboardSidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
