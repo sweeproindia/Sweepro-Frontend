@@ -9,16 +9,16 @@ import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout'
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import { verificationService } from '@/services/verificationService';
-import { 
-  Shield, 
-  FileText, 
-  CreditCard, 
-  User, 
-  CheckCircle, 
-  AlertTriangle, 
+import {
+  Shield,
+  FileText,
+  CreditCard,
+  CheckCircle,
+  AlertTriangle,
   Upload,
   Clock,
-  XCircle
+  XCircle,
+  Loader2
 } from 'lucide-react';
 
 interface VerificationDocuments {
@@ -43,6 +43,7 @@ export default function MaidVerification() {
     electricityBill: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     isSubmitted: false,
     status: 'NOT_SUBMITTED'
@@ -50,26 +51,39 @@ export default function MaidVerification() {
 
   // Fetch existing verification status on mount
   useEffect(() => {
-    const fetchVerificationStatus = async () => {
+    const fetchStatus = async () => {
       try {
-        const response = await verificationService.getMyVerificationStatus();
-        if (response.success && response.data) {
-          const data = response.data;
-          if (data.isSubmitted || data.overallStatus !== 'NOT_SUBMITTED') {
+        setIsLoadingStatus(true);
+        const result = await verificationService.getMyVerificationStatus();
+        if (result.success && (result as any).data) {
+          const data = (result as any).data;
+          const status = data.overallStatus || 'NOT_SUBMITTED';
+
+          if (status === 'PENDING' || status === 'APPROVED' || status === 'REJECTED') {
             setVerificationStatus({
-              isSubmitted: data.isSubmitted,
-              status: data.overallStatus,
-              rejectionReason: data.message
+              isSubmitted: true,
+              status,
+              submittedAt: data.submittedAt,
+              rejectionReason: data.rejectionReason
+            });
+          } else {
+            setVerificationStatus({
+              isSubmitted: false,
+              status: 'NOT_SUBMITTED'
             });
           }
         }
       } catch (error) {
         console.error('Error fetching verification status:', error);
+      } finally {
+        setIsLoadingStatus(false);
       }
     };
 
-    fetchVerificationStatus();
-  }, []);
+    if (user?.id) {
+      fetchStatus();
+    }
+  }, [user?.id]);
 
   const handleDocumentChange = (type: keyof VerificationDocuments) => (files: File[]) => {
     setDocuments(prev => ({
@@ -79,8 +93,8 @@ export default function MaidVerification() {
   };
 
   const isFormValid = () => {
-    return documents.aadharCard.length > 0 && 
-           documents.panCard.length > 0 && 
+    return documents.aadharCard.length > 0 &&
+           documents.panCard.length > 0 &&
            documents.electricityBill.length > 0;
   };
 
@@ -181,6 +195,20 @@ export default function MaidVerification() {
     }
   };
 
+  // Show loading spinner while fetching existing status
+  if (isLoadingStatus) {
+    return (
+      <MaidDashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground text-sm">Loading verification status...</p>
+          </div>
+        </div>
+      </MaidDashboardLayout>
+    );
+  }
+
   if (verificationStatus.isSubmitted) {
     return (
       <MaidDashboardLayout>
@@ -197,11 +225,11 @@ export default function MaidVerification() {
               {getStatusText(verificationStatus.status)}
             </h1>
             <p className="text-muted-foreground">
-              {verificationStatus.status === 'PENDING' && 
+              {verificationStatus.status === 'PENDING' &&
                 'Your verification documents have been submitted and are being reviewed by our admin team.'}
-              {verificationStatus.status === 'APPROVED' && 
+              {verificationStatus.status === 'APPROVED' &&
                 'Congratulations! Your profile has been verified. You can now receive service assignments.'}
-              {verificationStatus.status === 'REJECTED' && 
+              {verificationStatus.status === 'REJECTED' &&
                 'Your verification was rejected. Please check the reason below and resubmit.'}
             </p>
           </motion.div>
@@ -213,7 +241,7 @@ export default function MaidVerification() {
                 Verification Status
               </CardTitle>
               <CardDescription>
-                {verificationStatus.submittedAt && 
+                {verificationStatus.submittedAt &&
                   `Submitted on ${new Date(verificationStatus.submittedAt).toLocaleDateString()}`}
               </CardDescription>
             </CardHeader>
@@ -222,12 +250,12 @@ export default function MaidVerification() {
                 <Badge className={getStatusColor(verificationStatus.status)}>
                   {getStatusText(verificationStatus.status)}
                 </Badge>
-                
+
                 {verificationStatus.status === 'PENDING' && (
                   <Alert>
                     <Clock className="h-4 w-4" />
                     <AlertDescription>
-                      Our admin team is reviewing your documents. This process typically takes 24-48 hours. 
+                      Our admin team is reviewing your documents. This process typically takes 24-48 hours.
                       You will receive a notification once the review is complete.
                     </AlertDescription>
                   </Alert>
@@ -251,7 +279,7 @@ export default function MaidVerification() {
                   </Alert>
                 )}
               </div>
-              
+
               <div className="flex gap-4 mt-6">
                 <Button variant="outline" onClick={() => window.location.href = '/maid-dashboard'}>
                   Back to Dashboard
@@ -285,7 +313,7 @@ export default function MaidVerification() {
           </div>
           <h1 className="text-3xl font-bold text-foreground">Profile Verification</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Complete your profile verification by uploading the required documents. 
+            Complete your profile verification by uploading the required documents.
             This helps us ensure the safety and security of our platform for all users.
           </p>
         </motion.div>
