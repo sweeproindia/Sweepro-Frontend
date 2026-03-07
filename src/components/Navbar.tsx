@@ -40,7 +40,7 @@ export const Navbar = ({
     } else if (role === 'MAID') {
       navigate('/maid-dashboard');
     } else if (role === 'ADMIN') {
-      navigate('/admin-dashboard');
+      navigate('/admin');
     } else {
       // Fallback to customer dashboard if role is unknown
       console.warn('Unknown user role:', user?.role);

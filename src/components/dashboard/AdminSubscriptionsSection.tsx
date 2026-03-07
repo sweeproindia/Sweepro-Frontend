@@ -4,33 +4,55 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CreditCard, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Mail, Package, TrendingUp, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import {
+  CreditCard, ChevronLeft, ChevronRight, Calendar as CalendarIcon,
+  User, Mail, Package, TrendingUp, Search, Eye, Phone,
+  Home, MapPin, Clock, Info, Loader2,
+  AlertCircle, Pause, Star
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { apiRequest, HttpMethod } from '@/services/api';
+import { toast } from 'sonner';
 
 interface Subscription {
   id: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   plan: string;
-  status: 'active' | 'expired' | 'cancelled';
+  status: 'active' | 'expired' | 'cancelled' | 'pending_payment';
   startDate: string;
   endDate: string;
   price: number;
   usage: number;
   limit: number;
   nextBilling: string;
+  billingCycle?: string;
+  isInBufferPeriod?: boolean;
+  bufferDaysUsed?: number;
+  bufferDaysCount?: number;
+  autoRenew?: boolean;
 }
 
 interface AdminSubscriptionsSectionProps {
   subscriptions: Subscription[];
+  onRefreshData?: () => void;
 }
 
 export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps> = ({
   subscriptions,
+  onRefreshData,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Detail dialog
+  const [detailDialog, setDetailDialog] = useState<{ open: boolean; subscriptionId: string | null }>({ open: false, subscriptionId: null });
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [subscriptionDetail, setSubscriptionDetail] = useState<any>(null);
 
   const getPaginatedData = (data: Subscription[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage;
@@ -47,19 +69,66 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
   };
 
   const getUsagePercentage = (usage: number, limit: number) => {
-    return Math.round((usage / limit) * 100);
+    if (!limit) return 0;
+    return Math.min(100, Math.round((usage / limit) * 100));
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-success/20 text-success';
+      case 'ACTIVE':
+        return 'bg-green-100 text-green-800';
       case 'expired':
-        return 'bg-destructive/20 text-destructive';
+      case 'EXPIRED':
+        return 'bg-red-100 text-red-800';
       case 'cancelled':
-        return 'bg-muted text-muted-foreground';
+      case 'CANCELLED':
+        return 'bg-gray-100 text-gray-800';
+      case 'pending_payment':
+      case 'PENDING_PAYMENT':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      year: 'numeric', month: 'short', day: 'numeric'
+    });
+  };
+
+  const formatAddress = (user: any) => {
+    if (!user) return null;
+    const parts = [
+      user.addressLine,
+      user.locality,
+      user.landmark && `Near ${user.landmark}`,
+      user.city,
+      user.state,
+      user.pincode,
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : user.address || null;
+  };
+
+  // Fetch subscription detail
+  const handleViewDetails = async (subscriptionId: string) => {
+    setDetailDialog({ open: true, subscriptionId });
+    setDetailLoading(true);
+    setSubscriptionDetail(null);
+    try {
+      const response = await apiRequest(`/subscriptions/admin/${subscriptionId}`, {
+        method: HttpMethod.GET,
+        requiresAuth: true,
+      });
+      const data = (response as any).data ?? response;
+      setSubscriptionDetail(data);
+    } catch (error) {
+      console.error('Failed to load subscription details:', error);
+      toast.error('Failed to load subscription details');
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -127,6 +196,7 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
   }, [filteredSubscriptions, currentPage]);
 
   return (
+    <>
     <Card className="dashboard-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -139,8 +209,7 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-muted-foreground">
-              Showing {paginatedSubscriptions.length > 0 ? `${getSerialNumber(0, currentPage)}-
-              ${getSerialNumber(paginatedSubscriptions.length - 1, currentPage)}` : 0} of {filteredSubscriptions.length} subscriptions
+              Showing {paginatedSubscriptions.length > 0 ? `${getSerialNumber(0, currentPage)}-${getSerialNumber(paginatedSubscriptions.length - 1, currentPage)}` : 0} of {filteredSubscriptions.length} subscriptions
             </p>
           </div>
           <div className="relative w-full sm:w-80">
@@ -154,7 +223,7 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-background">
+        <div className="rounded-lg border border-border bg-background overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -162,17 +231,31 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
                 <TableHead>Customer</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Usage</TableHead>
+                <TableHead className="hidden md:table-cell">Usage</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead>Next Billing</TableHead>
+                <TableHead className="hidden lg:table-cell">Next Billing</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedSubscriptions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                    {filteredSubscriptions.length === 0 ? 'No subscriptions match your search.' : 'No subscriptions on this page.'}
+                  <TableCell colSpan={8} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {searchTerm ? 'No results found' : 'No subscriptions yet'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {searchTerm
+                            ? 'No subscriptions match your search. Try a different term.'
+                            : 'Active subscriptions will appear here.'}
+                        </p>
+                      </div>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -203,7 +286,7 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
                         {subscription.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>{subscription.usage} / {subscription.limit}</span>
@@ -221,22 +304,22 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
                         <span>₹{subscription.price.toLocaleString('en-IN')}/month</span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarIcon className="h-4 w-4" />
-                        <span>{subscription.nextBilling}</span>
+                        <span>{formatDate(subscription.nextBilling)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline">
-                          View Details
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewDetails(subscription.id)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          <span className="hidden sm:inline">Details</span>
                         </Button>
-                        {subscription.status === 'active' && (
-                          <Button size="sm" variant="outline">
-                            Manage Plan
-                          </Button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -255,5 +338,307 @@ export const AdminSubscriptionsSection: React.FC<AdminSubscriptionsSectionProps>
         )}
       </CardContent>
     </Card>
+
+    {/* ============ VIEW DETAILS DIALOG ============ */}
+    <Dialog
+      open={detailDialog.open}
+      onOpenChange={(open) => {
+        if (!open) {
+          setDetailDialog({ open: false, subscriptionId: null });
+          setSubscriptionDetail(null);
+        }
+      }}
+    >
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            Subscription Details
+          </DialogTitle>
+          <DialogDescription>
+            {subscriptionDetail ? `ID: ${subscriptionDetail.id?.slice(-8)}` : 'Loading...'}
+          </DialogDescription>
+        </DialogHeader>
+
+        {detailLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : subscriptionDetail ? (
+          <div className="space-y-5">
+            {/* Status Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={getStatusColor(subscriptionDetail.status)}>
+                {subscriptionDetail.status}
+              </Badge>
+              {subscriptionDetail.autoRenew && (
+                <Badge variant="outline" className="border-blue-300 text-blue-700">Auto Renew</Badge>
+              )}
+              {subscriptionDetail.isInBufferPeriod && (
+                <Badge variant="outline" className="border-orange-300 text-orange-700">
+                  <Pause className="h-3 w-3 mr-1" />
+                  In Buffer Period
+                </Badge>
+              )}
+              {subscriptionDetail.isPaused && (
+                <Badge variant="outline" className="border-yellow-300 text-yellow-700">Paused</Badge>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Customer Info */}
+            <div>
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Customer Information</h4>
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="font-medium">{subscriptionDetail.customer?.user?.name || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm">{subscriptionDetail.customer?.user?.email || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm font-medium">{subscriptionDetail.customer?.user?.phone || 'Not provided'}</span>
+                </div>
+                {formatAddress(subscriptionDetail.customer?.user) && (
+                  <div className="flex items-start gap-2">
+                    <Home className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <span className="text-sm">{formatAddress(subscriptionDetail.customer?.user)}</span>
+                  </div>
+                )}
+                {subscriptionDetail.customer?.user?.apartment_id && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm">Apartment: {subscriptionDetail.customer.user.apartment_id}</span>
+                  </div>
+                )}
+                {subscriptionDetail.customer?.user?.timeSlot && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm">Preferred Slot: {subscriptionDetail.customer.user.timeSlot}</span>
+                  </div>
+                )}
+                {subscriptionDetail.customer?.user?.createdAt && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Customer since: {formatDate(subscriptionDetail.customer.user.createdAt)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Plan Details */}
+            <div>
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Plan Details</h4>
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-lg">{subscriptionDetail.plan?.name || '-'}</span>
+                  {subscriptionDetail.plan?.isPopular && (
+                    <Badge className="bg-yellow-100 text-yellow-800">
+                      <Star className="h-3 w-3 mr-1" />
+                      Popular
+                    </Badge>
+                  )}
+                </div>
+                {subscriptionDetail.plan?.service?.name && (
+                  <p className="text-sm text-muted-foreground">Service: {subscriptionDetail.plan.service.name}</p>
+                )}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sessions/Week</span>
+                    <span>{subscriptionDetail.plan?.sessionsPerWeek || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sessions/Month</span>
+                    <span>{subscriptionDetail.plan?.sessionsPerMonth || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Duration</span>
+                    <span>{subscriptionDetail.plan?.duration || '-'} months</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Plan Price</span>
+                    <span>₹{subscriptionDetail.plan?.finalPrice?.toFixed(2) || '-'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Subscription Period & Billing */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Subscription Period</h4>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Start: <span className="font-medium">{formatDate(subscriptionDetail.startDate)}</span></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">End: <span className="font-medium">{formatDate(subscriptionDetail.endDate)}</span></span>
+                  </div>
+                  {subscriptionDetail.nextBillDate && (
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Next Bill: <span className="font-medium">{formatDate(subscriptionDetail.nextBillDate)}</span></span>
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground">Billing: {subscriptionDetail.billingCycle || '-'}</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Billing Amount</h4>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Amount</span>
+                    <span className="font-bold text-lg">₹{subscriptionDetail.amount?.toFixed(2) ?? '0.00'}</span>
+                  </div>
+                  {subscriptionDetail.discount > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Discount</span>
+                      <span className="text-green-600">₹{subscriptionDetail.discount?.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Cycles</span>
+                    <span>{subscriptionDetail.completedCycles ?? 0} / {subscriptionDetail.totalCycles ?? 0}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Buffer Info */}
+            {(subscriptionDetail.bufferDaysCount > 0 || subscriptionDetail.isInBufferPeriod) && (
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Buffer Period</h4>
+                <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Buffer Days Used</span>
+                    <span className="font-medium">{subscriptionDetail.bufferDaysUsed ?? 0} / {subscriptionDetail.bufferDaysCount ?? 0}</span>
+                  </div>
+                  <Progress
+                    value={subscriptionDetail.bufferDaysCount ? (subscriptionDetail.bufferDaysUsed / subscriptionDetail.bufferDaysCount) * 100 : 0}
+                    className="h-2"
+                  />
+                  {subscriptionDetail.isInBufferPeriod && (
+                    <>
+                      {subscriptionDetail.bufferStartDate && (
+                        <p className="text-xs text-muted-foreground">
+                          Buffer started: {formatDate(subscriptionDetail.bufferStartDate)}
+                        </p>
+                      )}
+                      {subscriptionDetail.bufferEndDate && (
+                        <p className="text-xs text-muted-foreground">
+                          Buffer ends: {formatDate(subscriptionDetail.bufferEndDate)}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Buffer Periods History */}
+            {subscriptionDetail.bufferPeriods?.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Buffer History</h4>
+                <div className="space-y-2">
+                  {subscriptionDetail.bufferPeriods.map((bp: any) => (
+                    <div key={bp.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2 text-sm">
+                      <div>
+                        <span>{formatDate(bp.startDate)} — {formatDate(bp.endDate)}</span>
+                        <span className="text-muted-foreground ml-2">({bp.daysCount} days)</span>
+                      </div>
+                      <Badge variant={bp.status === 'ACTIVE' ? 'default' : 'secondary'}>{bp.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Payments */}
+            {subscriptionDetail.payments?.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Recent Payments</h4>
+                <div className="space-y-2">
+                  {subscriptionDetail.payments.map((p: any) => (
+                    <div key={p.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2 text-sm">
+                      <div>
+                        <span className="font-medium">₹{p.finalAmount?.toFixed(2) ?? p.amount?.toFixed(2)}</span>
+                        <span className="text-muted-foreground ml-2">{formatDate(p.createdAt)}</span>
+                        {p.paymentMethod && <span className="text-muted-foreground ml-2">via {p.paymentMethod}</span>}
+                      </div>
+                      <Badge variant={p.status === 'COMPLETED' ? 'default' : p.status === 'FAILED' ? 'destructive' : 'secondary'}>
+                        {p.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Bookings */}
+            {subscriptionDetail.recentBookings?.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Recent Bookings</h4>
+                <div className="space-y-2">
+                  {subscriptionDetail.recentBookings.map((b: any) => (
+                    <div key={b.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2 text-sm">
+                      <div>
+                        <span className="font-medium">{b.service?.name || 'Service'}</span>
+                        <span className="text-muted-foreground ml-2">{formatDate(b.scheduledAt)}</span>
+                        {b.maid?.name && <span className="text-muted-foreground ml-1">({b.maid.name})</span>}
+                      </div>
+                      <Badge variant={b.status === 'COMPLETED' ? 'default' : b.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
+                        {b.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Subscription Cycles */}
+            {subscriptionDetail.cycles?.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Cycle History</h4>
+                <div className="space-y-2">
+                  {subscriptionDetail.cycles.map((c: any) => (
+                    <div key={c.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2 text-sm">
+                      <div>
+                        <span className="font-medium">Cycle #{c.cycleNumber}</span>
+                        <span className="text-muted-foreground ml-2">{formatDate(c.startDate)} — {formatDate(c.endDate)}</span>
+                      </div>
+                      <Badge variant={c.status === 'ACTIVE' ? 'default' : 'secondary'}>{c.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+            <p>Failed to load subscription details</p>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDetailDialog({ open: false, subscriptionId: null });
+              setSubscriptionDetail(null);
+            }}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    </>
   );
 };

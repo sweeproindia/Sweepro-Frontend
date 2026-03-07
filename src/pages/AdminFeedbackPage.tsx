@@ -381,10 +381,11 @@ export default function AdminFeedbackPage() {
 
                 {/* Tabs Navigation */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              Overview
+              <span className="hidden sm:inline">Overview</span>
+              <span className="sm:hidden">Stats</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -396,7 +397,8 @@ export default function AdminFeedbackPage() {
             </TabsTrigger>
             <TabsTrigger value="feedback" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
-              All Feedback
+              <span className="hidden sm:inline">All Feedback</span>
+              <span className="sm:hidden">Feedback</span>
             </TabsTrigger>
           </TabsList>
 

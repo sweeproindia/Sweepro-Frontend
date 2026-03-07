@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Users, ChevronLeft, ChevronRight, UserPlus, Pause, User, AlertTriangle, RefreshCw, Calendar, Search } from 'lucide-react';
+import { Users, ChevronLeft, ChevronRight, UserPlus, Pause, User, AlertTriangle, RefreshCw, Calendar, Search, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 import { CustomerAssignmentService, CustomerAssignmentStatus } from '@/services/customerAssignmentService';
 import { UserDetailsModal } from '@/components/admin/UserDetailsModal';
@@ -37,6 +37,12 @@ interface Maid {
   rating: number;
   skills: string[];
   completedBookings: number;
+  activeCustomerCount?: number;
+  todayBookingCount?: number;
+  maxDailyBookings?: number;
+  isFree?: boolean;
+  isAvailableToday?: boolean;
+  isWeeklyOff?: boolean;
 }
 
 interface AdminUsersSectionProps {
@@ -207,7 +213,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
         }));
       }
 
-      toast.success('Assignment request sent to homecare partner successfully');
+      toast.success('Homecare partner assigned successfully');
       setAssignDialog({ open: false, customer: null });
       setSelectedMaidId('');
       setAssignmentNotes('');
@@ -221,10 +227,13 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
     } catch (error: any) {
       console.error('Assignment error:', error);
 
-      // Handle specific conflict errors
-      if (error.response?.status === 409) {
-        const conflictType = error.response.data?.conflictType;
-        const errorMessage = error.response.data?.error || 'Assignment conflict detected';
+      // Handle specific conflict errors (ApiError has statusCode and response properties)
+      const status = error.statusCode || error.response?.status;
+      const errorData = error.response || error.response?.data;
+
+      if (status === 409) {
+        const conflictType = errorData?.conflictType;
+        const errorMessage = errorData?.error || errorData?.message || 'Assignment conflict detected';
 
         if (conflictType === 'TIMESLOT_CONFLICT') {
           toast.error(`Timeslot Conflict: ${errorMessage}`, {
@@ -237,12 +246,13 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
             description: 'This homecare partner has reached their maximum daily booking capacity.',
           });
         } else {
-          toast.error(`Assignment Conflict: ${errorMessage}`, {
+          toast.error(errorMessage, {
             duration: 5000,
           });
         }
       } else {
-        toast.error('Failed to assign maid');
+        const msg = error.response?.message || error.response?.error || error.message || 'Failed to assign maid';
+        toast.error(msg);
       }
     } finally {
       setAssigning(false);
@@ -364,7 +374,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   return (
     <Card className="dashboard-card">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
@@ -377,7 +387,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
             size="sm"
             onClick={loadCustomerStatuses}
             disabled={loading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 self-start sm:self-auto"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -403,17 +413,17 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-background">
+        <div className="rounded-lg border border-border bg-background overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">S.No</TableHead>
                 <TableHead>Customer</TableHead>
-                <TableHead>Contact</TableHead>
+                <TableHead className="hidden md:table-cell">Contact</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Assigned Maid</TableHead>
-                <TableHead>Buffer Status</TableHead>
-                <TableHead>Next Booking</TableHead>
+                <TableHead className="hidden lg:table-cell">Buffer Status</TableHead>
+                <TableHead className="hidden lg:table-cell">Next Booking</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -429,10 +439,27 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                 </TableRow>
               ) : paginatedUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                    {filteredUsers.length === 0
-                      ? 'No customers match your search.'
-                      : 'No customers on this page.'}
+                  <TableCell colSpan={8} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <Users className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {searchTerm ? 'No results found' : 'No customers yet'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {searchTerm
+                            ? `No customers match "${searchTerm}". Try a different search term.`
+                            : 'Customer accounts will appear here once users sign up.'}
+                        </p>
+                      </div>
+                      {searchTerm && (
+                        <Button variant="outline" size="sm" onClick={() => setSearchTerm('')}>
+                          Clear search
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -449,7 +476,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                           <p className="text-sm text-muted-foreground">{user.email}</p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <p className="text-sm">{user.phone}</p>
                       </TableCell>
                       <TableCell>
@@ -503,7 +530,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                           </div>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {!customerStatus?.hasSubscription ? (
                           <Badge variant="outline" className="text-xs">
                             No Subscription
@@ -529,7 +556,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {customerStatus?.nextBookingDate ? (
                           <div className="text-sm">
                             <p className="font-medium">
@@ -610,8 +637,8 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           <div className="space-y-4">
             <div>
               <Label htmlFor="maid-select">Select Homecare Partner</Label>
-              <Select 
-                value={selectedMaidId} 
+              <Select
+                value={selectedMaidId}
                 onValueChange={(value) => {
                   setSelectedMaidId(value);
                   if (assignDialog.customer) {
@@ -623,21 +650,118 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                   <SelectValue placeholder="Choose a homecare partner..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableMaids.map((maid) => (
-                    <SelectItem key={maid.id} value={maid.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <div>
-                          <p className="font-medium">{maid.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {maid.rating.toFixed(1)}★ • {maid.completedBookings} bookings
-                          </p>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {/* Free maids first, then busy ones */}
+                  {[...availableMaids]
+                    .sort((a, b) => {
+                      // Sort: available+free first, available+busy next, unavailable last
+                      const aScore = (a.isAvailableToday === false || a.isWeeklyOff ? 100 : 0) + (a.activeCustomerCount || 0);
+                      const bScore = (b.isAvailableToday === false || b.isWeeklyOff ? 100 : 0) + (b.activeCustomerCount || 0);
+                      return aScore - bScore;
+                    })
+                    .map((maid) => {
+                      const customerCount = maid.activeCustomerCount || 0;
+                      const todayBookings = maid.todayBookingCount || 0;
+                      const isFree = maid.isFree ?? (customerCount === 0);
+                      const isUnavailable = maid.isAvailableToday === false || maid.isWeeklyOff;
+
+                      return (
+                        <SelectItem
+                          key={maid.id}
+                          value={maid.id}
+                          disabled={isUnavailable}
+                        >
+                          <div className="flex items-center gap-3 w-full py-1">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{maid.name}</p>
+                                {isFree && !isUnavailable && (
+                                  <Badge className="bg-green-100 text-green-800 text-[10px] px-1.5 py-0">
+                                    <CheckCircle className="h-3 w-3 mr-0.5" />
+                                    Free
+                                  </Badge>
+                                )}
+                                {!isFree && !isUnavailable && (
+                                  <Badge className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0">
+                                    <Clock className="h-3 w-3 mr-0.5" />
+                                    {customerCount} assigned
+                                  </Badge>
+                                )}
+                                {isUnavailable && (
+                                  <Badge className="bg-red-100 text-red-800 text-[10px] px-1.5 py-0">
+                                    <XCircle className="h-3 w-3 mr-0.5" />
+                                    {maid.isWeeklyOff ? 'Weekly Off' : 'Unavailable'}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {maid.rating.toFixed(1)}★ • {maid.completedBookings} bookings
+                                {todayBookings > 0 && ` • ${todayBookings} today`}
+                              </p>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                 </SelectContent>
               </Select>
-              
+
+              {/* Show selected maid details */}
+              {selectedMaidId && (() => {
+                const selected = availableMaids.find(m => m.id === selectedMaidId);
+                if (!selected) return null;
+                const customerCount = selected.activeCustomerCount || 0;
+                const todayBookings = selected.todayBookingCount || 0;
+                const maxDaily = selected.maxDailyBookings || 3;
+
+                return (
+                  <div className="mt-3 p-3 border rounded-lg bg-muted/30 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{selected.name}</span>
+                      <span className="text-sm text-muted-foreground">{selected.rating.toFixed(1)}★</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Assigned Customers: <strong>{customerCount}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Today's Bookings: <strong>{todayBookings}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Total Completed: <strong>{selected.completedBookings}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>Max Daily: <strong>{maxDaily}</strong></span>
+                      </div>
+                    </div>
+                    {selected.skills && selected.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {selected.skills.slice(0, 4).map((skill, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {selected.skills.length > 4 && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            +{selected.skills.length - 4} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    {customerCount >= maxDaily && (
+                      <div className="mt-1 p-2 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-xs text-red-800">
+                          This homecare partner has reached their max daily capacity ({maxDaily}).
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Show conflict warning if exists */}
               {selectedMaidId && conflictWarnings[selectedMaidId] && (
                 <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">

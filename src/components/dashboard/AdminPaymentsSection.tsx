@@ -164,25 +164,39 @@ export const AdminPaymentsSection: React.FC<AdminPaymentsSectionProps> = ({
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-background">
+        <div className="rounded-lg border border-border bg-background overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">S.No</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Method</TableHead>
+                <TableHead className="hidden md:table-cell">Method</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Transaction ID</TableHead>
+                <TableHead className="hidden md:table-cell">Date</TableHead>
+                <TableHead className="hidden lg:table-cell">Transaction ID</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedPayments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                    {filteredPayments.length === 0 ? 'No payments match your search.' : 'No payments on this page.'}
+                  <TableCell colSpan={8} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <CreditCardIcon className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {searchTerm ? 'No results found' : 'No payments yet'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {searchTerm
+                            ? 'No payments match your search. Try a different term.'
+                            : 'Payment records will appear here once transactions occur.'}
+                        </p>
+                      </div>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -206,7 +220,7 @@ export const AdminPaymentsSection: React.FC<AdminPaymentsSectionProps> = ({
                         <span className="font-medium">₹{payment.amount.toLocaleString('en-IN')}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="flex items-center gap-2 text-sm">
                         <span>{getMethodIcon(payment.method)}</span>
                         <span>{payment.method}</span>
@@ -217,13 +231,13 @@ export const AdminPaymentsSection: React.FC<AdminPaymentsSectionProps> = ({
                         {payment.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarIcon className="h-4 w-4" />
                         <span>{payment.date}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <code className="text-xs bg-muted px-2 py-1 rounded block w-max">
                         {payment.transactionId}
                       </code>

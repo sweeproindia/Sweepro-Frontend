@@ -27,7 +27,7 @@ import {
   ChevronLeft, 
   ChevronRight
 } from 'lucide-react';
-import { BufferService, BufferStatistics, BufferPeriod, AffectedService } from '@/services/bufferService';
+import { BufferService, BufferStatistics, BufferPeriod } from '@/services/bufferService';
 import { toast } from 'sonner';
 import { format, isAfter, isValid, parseISO } from 'date-fns';
 
@@ -81,7 +81,6 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
   const [statistics, setStatistics] = useState<BufferStatistics | null>(null);
   const [pendingRequests, setPendingRequests] = useState<PendingBufferRequest[]>([]);
   const [allBufferPeriods, setAllBufferPeriods] = useState<any[]>([]);
-  const [affectedServices, setAffectedServices] = useState<AffectedService[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
   const [processingAction, setProcessingAction] = useState<'approve' | 'reject' | null>(null);
@@ -95,7 +94,6 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
   // Filter states
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [customerFilter, setCustomerFilter] = useState<string>('');
-  const [affectedDate, setAffectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   
   // Dialog states
   const [reviewDialog, setReviewDialog] = useState<{ open: boolean; request: PendingBufferRequest | null }>({
@@ -122,18 +120,13 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
     loadAllBufferPeriods();
   }, [buffersPage, statusFilter, customerFilter]);
 
-  useEffect(() => {
-    loadAffectedServices();
-  }, [affectedDate]);
-
   const loadAllData = async () => {
     setLoading(true);
     try {
       await Promise.all([
         loadStatistics(),
         loadPendingRequests(),
-        loadAllBufferPeriods(),
-        loadAffectedServices()
+        loadAllBufferPeriods()
       ]);
     } catch (error) {
       console.error('Failed to load buffer management data:', error);
@@ -192,17 +185,6 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
       }
     } catch (error) {
       console.error('Failed to load buffer periods:', error);
-    }
-  };
-
-  const loadAffectedServices = async () => {
-    try {
-      const response = await BufferService.getAffectedServices(affectedDate);
-      if (response.success && response.data) {
-        setAffectedServices(response.data.affectedServices || []);
-      }
-    } catch (error) {
-      console.error('Failed to load affected services:', error);
     }
   };
 
@@ -362,7 +344,6 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
             )}
           </TabsTrigger>
           <TabsTrigger value="all-buffers">All Buffer Periods</TabsTrigger>
-          <TabsTrigger value="affected-services">Affected Services</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -490,15 +471,16 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Plan</TableHead>
+                    <TableHead className="hidden md:table-cell">Plan</TableHead>
                     <TableHead>Period</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Requested</TableHead>
+                    <TableHead className="hidden md:table-cell">Days</TableHead>
+                    <TableHead className="hidden lg:table-cell">Reason</TableHead>
+                    <TableHead className="hidden lg:table-cell">Requested</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -511,7 +493,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                           <p className="text-sm text-muted-foreground">{request.customerEmail}</p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant="outline">{request.planName}</Badge>
                       </TableCell>
                       <TableCell>
@@ -522,15 +504,15 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant="secondary">{request.daysCount} days</Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <p className="text-sm max-w-32 truncate" title={request.reason}>
                           {request.reason}
                         </p>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <p className="text-sm">
                           {safeFormatDate((request as any).requestedAt || (request as any).createdAt, 'MMM dd, yyyy')}
                         </p>
@@ -549,6 +531,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {pendingRequests.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
@@ -572,7 +555,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
         <TabsContent value="all-buffers" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Pause className="h-5 w-5" />
@@ -580,13 +563,13 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                   </CardTitle>
                   <CardDescription>View and manage all buffer periods</CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select value={statusFilter || "all"} onValueChange={(val) => setStatusFilter(val === "all" ? "" : val)}>
                     <SelectTrigger className="w-40">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Status</SelectItem>
+                      <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="PENDING">Pending</SelectItem>
                       <SelectItem value="ACTIVE">Active</SelectItem>
                       <SelectItem value="COMPLETED">Completed</SelectItem>
@@ -603,15 +586,16 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
               </div>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Customer</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Period</TableHead>
-                    <TableHead>Days</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Services Skipped</TableHead>
+                    <TableHead className="hidden md:table-cell">Days</TableHead>
+                    <TableHead className="hidden lg:table-cell">Reason</TableHead>
+                    <TableHead className="hidden lg:table-cell">Services Skipped</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -640,15 +624,15 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant="secondary">{period.daysCount} days</Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <p className="text-sm max-w-32 truncate" title={period.reason}>
                           {period.reason}
                         </p>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <div className="text-sm">
                           <p>{period.servicesSkipped || 0} services</p>
                           {period.servicesSkipped > 0 && (
@@ -670,6 +654,7 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {allBufferPeriods.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
@@ -684,87 +669,6 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                   totalPages={buffersTotalPages}
                   onPageChange={setBuffersPage}
                 />
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Affected Services Tab */}
-        <TabsContent value="affected-services" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-600" />
-                    Affected Services
-                  </CardTitle>
-                  <CardDescription>Services impacted by buffer periods</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="affected-date">Date:</Label>
-                  <Input
-                    id="affected-date"
-                    type="date"
-                    value={affectedDate}
-                    onChange={(e) => setAffectedDate(e.target.value)}
-                    className="w-40"
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Scheduled Time</TableHead>
-                    <TableHead>Homecare Partner</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {affectedServices.map((service: any) => (
-                    <TableRow key={service.id || service.bookingId}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{service.customer?.name || 'N/A'}</p>
-                          <p className="text-sm text-muted-foreground">{service.customer?.email || ''}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-sm">{service.service?.name || 'N/A'}</p>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-sm">{safeFormatDate(service.scheduledAt, 'MMM dd, yyyy')}</p>
-                        <p className="text-sm text-muted-foreground">{safeFormatDate(service.scheduledAt, 'h:mm a')}</p>
-                      </TableCell>
-                      <TableCell>
-                        {service.maid ? (
-                          <div>
-                            <p className="text-sm">{service.maid?.name || service.maid?.user?.name || 'Assigned'}</p>
-                            <p className="text-xs text-muted-foreground">{service.maid?.phone || service.maid?.user?.phone || ''}</p>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Unassigned</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={service.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
-                          {service.isBufferSkipped ? 'BUFFER' : service.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {affectedServices.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-                  <p>No services affected by buffer periods on this date</p>
-                </div>
               )}
             </CardContent>
           </Card>

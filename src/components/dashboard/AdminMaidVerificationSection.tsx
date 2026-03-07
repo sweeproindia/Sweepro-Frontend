@@ -989,7 +989,7 @@ export const AdminMaidVerificationSection: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
@@ -999,7 +999,7 @@ export const AdminMaidVerificationSection: React.FC = () => {
               Review and manage maid verification requests and document submissions
             </CardDescription>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <Button 
               variant="outline" 
               size="sm" 
@@ -1025,7 +1025,7 @@ export const AdminMaidVerificationSection: React.FC = () => {
       </CardHeader>
       <CardContent>
         {/* Filters and Search */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-6">
           <div className="flex items-center gap-2 flex-1">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
@@ -1052,15 +1052,15 @@ export const AdminMaidVerificationSection: React.FC = () => {
         </div>
 
         {/* Verification Table */}
-        <div className="border rounded-lg">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Maid Details</TableHead>
-                <TableHead>Contact</TableHead>
+                <TableHead className="hidden md:table-cell">Contact</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead>Documents</TableHead>
+                <TableHead className="hidden lg:table-cell">Submitted</TableHead>
+                <TableHead className="hidden md:table-cell">Documents</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -1078,7 +1078,7 @@ export const AdminMaidVerificationSection: React.FC = () => {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="space-y-1">
                       <p className="text-sm">{verification.maidEmail}</p>
                       <p className="text-sm text-muted-foreground">{verification.maidPhone}</p>
@@ -1090,13 +1090,13 @@ export const AdminMaidVerificationSection: React.FC = () => {
                       {verification.status.charAt(0).toUpperCase() + verification.status.slice(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     <p className="text-sm">{new Date(verification.submittedAt).toLocaleDateString()}</p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(verification.submittedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="flex items-center gap-1">
                       {verification.documents.aadharCard.uploaded ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />

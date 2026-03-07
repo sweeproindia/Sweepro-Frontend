@@ -140,10 +140,10 @@ export const MobileSidebar = ({
               )}
             >
               <div
-                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200"
+                className="absolute right-4 top-4 z-50 p-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
                 onClick={() => setOpen(!open)}
               >
-                <IconX />
+                <IconX className="h-5 w-5 text-neutral-800 dark:text-neutral-200" />
               </div>
               {children}
             </motion.div>

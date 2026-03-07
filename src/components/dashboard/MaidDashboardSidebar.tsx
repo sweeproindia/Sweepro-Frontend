@@ -97,7 +97,7 @@ export const MaidDashboardSidebar = ({ open, setOpen, forceOpen, upcomingBooking
         }
         if (error instanceof ApiError && error.statusCode === 403) {
           // Token is valid but not allowed for maid endpoint (likely logged in as non-maid)
-          const redirect = user?.role === 'ADMIN' ? '/admin-dashboard' : '/dashboard';
+          const redirect = user?.role === 'ADMIN' ? '/admin' : '/dashboard';
           navigate(redirect);
           return;
         }

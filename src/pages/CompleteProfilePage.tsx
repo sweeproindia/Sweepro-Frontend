@@ -86,7 +86,7 @@ export default function CompleteProfilePage() {
       // Redirect based on role
       switch (user.role) {
         case 'ADMIN':
-          navigate('/admin-dashboard');
+          navigate('/admin');
           break;
         case 'MAID':
           navigate('/maid-dashboard');
@@ -185,7 +185,7 @@ export default function CompleteProfilePage() {
         // Navigate based on role (use response data)
         switch (updatedUser.role) {
           case 'ADMIN':
-            navigate('/admin-dashboard');
+            navigate('/admin');
             break;
           case 'MAID':
             navigate('/maid-dashboard');

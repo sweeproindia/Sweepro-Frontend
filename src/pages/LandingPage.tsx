@@ -68,7 +68,7 @@ export default function LandingPage() {
     } else if (role === 'MAID') {
       navigate('/maid-dashboard');
     } else if (role === 'ADMIN') {
-      navigate('/admin-dashboard');
+      navigate('/admin');
     } else {
       // Fallback to customer dashboard if role is unknown
       console.warn('Unknown user role:', contextUser?.role);

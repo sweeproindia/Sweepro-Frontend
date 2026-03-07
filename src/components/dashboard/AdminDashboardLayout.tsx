@@ -1,8 +1,6 @@
 import { DashboardNavbar } from './DashboardNavbar';
 import { AdminDashboardSidebar } from './AdminDashboardSidebar';
-import { useState } from 'react';
-import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState, useEffect, useCallback } from 'react';
 
 interface AdminDashboardLayoutProps {
   children: React.ReactNode;
@@ -10,6 +8,24 @@ interface AdminDashboardLayoutProps {
 
 export const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Close mobile sidebar on route change or escape key
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setIsMobileSidebarOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (isMobileSidebarOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [isMobileSidebarOpen, handleEscape]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
@@ -26,25 +42,22 @@ export const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) =>
           <AdminDashboardSidebar />
         </div>
         
-        {/* Mobile Sidebar (controlled by navbar hamburger) */}
+        {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (
           <>
-            {/* Backdrop */}
             <div 
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity"
               onClick={() => setIsMobileSidebarOpen(false)}
             />
-            
-            {/* Sidebar */}
-            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
-              <AdminDashboardSidebar open={true} setOpen={setIsMobileSidebarOpen} />
+            <div className="fixed inset-y-0 left-0 z-50 md:hidden animate-in slide-in-from-left duration-200">
+              <AdminDashboardSidebar forceOpen setOpen={setIsMobileSidebarOpen} />
             </div>
           </>
         )}
 
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none bg-slate-50">
-          <div className="py-6">
+          <div className="py-6 lg:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               {children}
             </div>
