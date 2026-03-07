@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import  {DocumentUpload } from '@/components/ui/document-upload';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
+import { verificationService } from '@/services/verificationService';
 import { 
   Shield, 
   FileText, 
@@ -47,6 +48,29 @@ export default function MaidVerification() {
     status: 'NOT_SUBMITTED'
   });
 
+  // Fetch existing verification status on mount
+  useEffect(() => {
+    const fetchVerificationStatus = async () => {
+      try {
+        const response = await verificationService.getMyVerificationStatus();
+        if (response.success && response.data) {
+          const data = response.data;
+          if (data.isSubmitted || data.overallStatus !== 'NOT_SUBMITTED') {
+            setVerificationStatus({
+              isSubmitted: data.isSubmitted,
+              status: data.overallStatus,
+              rejectionReason: data.message
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching verification status:', error);
+      }
+    };
+
+    fetchVerificationStatus();
+  }, []);
+
   const handleDocumentChange = (type: keyof VerificationDocuments) => (files: File[]) => {
     setDocuments(prev => ({
       ...prev,
@@ -74,11 +98,8 @@ export default function MaidVerification() {
     try {
       // Create FormData for file uploads
       const formData = new FormData();
-      
-      // Add user ID
-      formData.append('maidId', user?.id || '');
-      
-      // Add documents
+
+      // Add documents with correct field names expected by backend
       if (documents.aadharCard[0]) {
         formData.append('aadharCard', documents.aadharCard[0]);
       }
@@ -89,32 +110,31 @@ export default function MaidVerification() {
         formData.append('electricityBill', documents.electricityBill[0]);
       }
 
-      // Here you would make the API call to submit verification documents
-      // const response = await fetch('/api/maid/verification', {
-      //   method: 'POST',
-      //   body: formData
-      // });
+      // Make actual API call to upload verification documents
+      const response = await verificationService.submitVerification(formData);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (response.success) {
+        setVerificationStatus({
+          isSubmitted: true,
+          status: 'PENDING',
+          submittedAt: new Date().toISOString()
+        });
 
-      setVerificationStatus({
-        isSubmitted: true,
-        status: 'PENDING',
-        submittedAt: new Date().toISOString()
-      });
-
-      toast({
-        title: 'Verification Submitted Successfully',
-        description: 'Your documents have been submitted for admin review. You will be notified once verified.',
-        variant: 'default'
-      });
+        toast({
+          title: 'Verification Submitted Successfully',
+          description: 'Your documents have been submitted for admin review. You will be notified once verified.',
+          variant: 'default'
+        });
+      } else {
+        throw new Error(response.message || 'Failed to submit documents');
+      }
 
     } catch (error) {
       console.error('Error submitting verification:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit verification documents. Please try again.';
       toast({
         title: 'Submission Failed',
-        description: 'Failed to submit verification documents. Please try again.',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {

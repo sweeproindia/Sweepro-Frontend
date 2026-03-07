@@ -25,7 +25,9 @@ import {
   Info,
   Mail,
   Eye,
-  Loader2
+  Loader2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { AutomaticBookingService, AutomaticBooking } from '@/services/automaticBookingService';
@@ -64,6 +66,12 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
   const [pendingAssignmentBookings, setPendingAssignmentBookings] = useState<AutomaticBooking[]>([]);
   const [reassignmentBookings, setReassignmentBookings] = useState<AutomaticBooking[]>([]);
   const [allBookings, setAllBookings] = useState<AutomaticBooking[]>([]);
+
+  // Pagination states for all bookings tab
+  const [allBookingsPage, setAllBookingsPage] = useState(1);
+  const [allBookingsTotalPages, setAllBookingsTotalPages] = useState(1);
+  const [allBookingsTotalCount, setAllBookingsTotalCount] = useState(0);
+  const ITEMS_PER_PAGE = 10;
 
   // Action states
   const [sendingToMaid, setSendingToMaid] = useState<string | null>(null);
@@ -146,15 +154,25 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
     }
   };
 
-  const loadAllBookings = async () => {
+  const loadAllBookings = async (page: number = 1) => {
     try {
-      const response = await AutomaticBookingService.getAutomaticBookings(1, 50);
+      const response = await AutomaticBookingService.getAutomaticBookings(page, ITEMS_PER_PAGE);
       if (response.success && response.data) {
         setAllBookings(response.data.bookings || []);
+        if (response.data.pagination) {
+          setAllBookingsTotalPages(response.data.pagination.totalPages || 1);
+          setAllBookingsTotalCount(response.data.pagination.total || response.data.bookings?.length || 0);
+        }
       }
     } catch (error) {
       console.error('Failed to load all bookings:', error);
     }
+  };
+
+  // Handle pagination change for all bookings
+  const handleAllBookingsPageChange = (newPage: number) => {
+    setAllBookingsPage(newPage);
+    loadAllBookings(newPage);
   };
 
   const handleSendToMaid = async (bookingId: string, maidId?: string) => {
@@ -687,7 +705,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                All Automatic Bookings ({allBookings.length})
+                All Automatic Bookings ({allBookingsTotalCount})
               </CardTitle>
               <CardDescription>
                 Complete overview of all automatic bookings in the system
@@ -708,7 +726,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allBookings.slice(0, 20).map((booking) => (
+                  {allBookings.map((booking) => (
                     <TableRow key={booking.id}>
                       <TableCell>
                         <div>
@@ -770,6 +788,35 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No automatic bookings found</p>
+                </div>
+              )}
+
+              {/* Pagination Controls */}
+              {allBookingsTotalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Page {allBookingsPage} of {allBookingsTotalPages} ({allBookingsTotalCount} total)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAllBookingsPageChange(allBookingsPage - 1)}
+                      disabled={allBookingsPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAllBookingsPageChange(allBookingsPage + 1)}
+                      disabled={allBookingsPage === allBookingsTotalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>

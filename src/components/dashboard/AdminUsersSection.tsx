@@ -569,10 +569,24 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                               })}
                             </p>
                           </div>
+                        ) : customerStatus?.isInBufferPeriod ? (
+                          <span className="text-sm text-muted-foreground">Paused</span>
+                        ) : customerStatus?.hasAssignment && customerStatus?.hasSubscription ? (
+                          <div className="text-sm">
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Pending
+                            </Badge>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Next cron run
+                            </p>
+                          </div>
+                        ) : !customerStatus?.hasSubscription ? (
+                          <span className="text-sm text-muted-foreground">No subscription</span>
+                        ) : !customerStatus?.hasAssignment ? (
+                          <span className="text-sm text-muted-foreground">No maid assigned</span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">
-                            {customerStatus?.isInBufferPeriod ? 'Paused' : 'Not scheduled'}
-                          </span>
+                          <span className="text-sm text-muted-foreground">Not scheduled</span>
                         )}
                       </TableCell>
                       <TableCell>
