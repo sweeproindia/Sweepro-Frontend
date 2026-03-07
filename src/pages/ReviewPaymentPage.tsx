@@ -463,10 +463,21 @@ export default function ReviewPaymentPage() {
         errorMessage = error.message;
       }
       
-      toast({ 
-        title: 'Payment Failed', 
-        description: errorMessage, 
-        variant: 'destructive' 
+      toast({
+        title: 'Payment Failed',
+        description: errorMessage + ' Razorpay SDK may not have loaded. Please check your internet connection and try again.',
+        variant: 'destructive',
+        action: {
+          label: 'Retry',
+          onClick: () => {
+            // Retry will be triggered by clicking the "Proceed to Payment" button again
+            toast({
+              title: 'Retry',
+              description: 'Click "Proceed to Payment" again to retry the payment.',
+              variant: 'default'
+            });
+          }
+        }
       });
     }
   };

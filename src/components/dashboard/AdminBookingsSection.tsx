@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,8 +74,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
   onAssignMaid,
   onRefreshBookings,
 }) => {
-  const [pendingPage, setPendingPage] = useState(1);
-  const [assignedPage, setAssignedPage] = useState(1);
+  const [allBooksPage, setAllBooksPage] = useState(1);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [selectedMaidId, setSelectedMaidId] = useState<string>('');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -83,17 +82,8 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
   const { toast } = useToast();
   const itemsPerPage = 5;
 
-  // Filter bookings by status
-  const pendingBookings = bookings.filter(b => 
-    b.status === 'PENDING' || 
-    (b.status === 'ASSIGNED' && b.assignmentStatus === 'REJECTED')
-  );
-  
-  const assignedBookings = bookings.filter(b => 
-    (b.status === 'ASSIGNED' && b.assignmentStatus === 'ASSIGNED_PENDING_RESPONSE') ||
-    (b.status === 'CONFIRMED' && b.assignmentStatus === 'ACCEPTED') ||
-    b.status === 'IN_PROGRESS'
-  );
+  // Display ALL bookings created till now
+  const allBookings = bookings;
 
   const getPaginatedData = (data: Booking[], page: number) => {
     const startIndex = (page - 1) * itemsPerPage;
@@ -128,17 +118,17 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
     setAssigning(true);
     try {
       await onAssignMaid(selectedBooking.id, selectedMaidId);
-      
+
       toast({
         title: 'Assignment Successful',
         description: 'Homecare Partner has been assigned successfully. They will be notified to accept or reject.',
         variant: 'default'
       });
-      
+
       setAssignDialogOpen(false);
       setSelectedBooking(null);
       setSelectedMaidId('');
-      
+
       // Refresh bookings to show updated status
       await onRefreshBookings();
     } catch (error) {
@@ -164,7 +154,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
         </div>
       );
     }
-    
+
     if (booking.status === 'PENDING') {
       return <Badge variant="outline" className="text-yellow-600 border-yellow-600">Pending Assignment</Badge>;
     }
@@ -218,207 +208,89 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
   return (
     <>
       <div className="space-y-6">
-        {/* Pending Bookings */}
+        {/* ALL BOOKINGS SECTION */}
         <Card className="dashboard-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-warning" />
-              Pending Bookings ({pendingBookings.length})
+              <Calendar className="h-5 w-5 text-primary" />
+              All Bookings ({allBookings.length})
             </CardTitle>
-            <CardDescription>Assign homecare partners to pending bookings</CardDescription>
+            <CardDescription>Complete history of all bookings created in the system</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {getPaginatedData(pendingBookings, pendingPage).map((booking, index) => (
-                <div key={booking.id} className="border rounded-lg p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20">
-                  <div className="flex items-start justify-between">
+              {getPaginatedData(allBookings, allBooksPage).map((booking, index) => (
+                <div key={booking.id} className="border-2 border-slate-200 dark:border-slate-700 rounded-xl p-5 bg-white dark:bg-slate-900 hover:shadow-lg hover:border-primary/50 transition-all duration-200">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-sm font-medium">
-                        {getSerialNumber(index, pendingPage)}
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-semibold text-primary">
+                        {getSerialNumber(index, allBooksPage)}
                       </div>
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex-1 space-y-4">
+                        {/* Service and Customer Info */}
+                        <div className="space-y-2">
                           <div>
-                            <p className="font-semibold text-foreground">{booking.service.name}</p>
-                            <p className="text-sm text-muted-foreground">₹{booking.finalAmount.toLocaleString()}</p>
+                            <p className="font-bold text-lg text-foreground">{booking.service.name}</p>
                           </div>
-                          <div>
+                          <div className="flex items-center gap-3 text-sm">
                             <div className="flex items-center gap-1">
-                              <User className="h-4 w-4 text-muted-foreground" />
+                              <User className="h-4 w-4 text-slate-500" />
                               <span className="font-medium">{booking.customer.name}</span>
                             </div>
-                            <p className="text-sm text-muted-foreground">{booking.customer.phone}</p>
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-muted-foreground">{booking.serviceAddress}</span>
-                        </div>
-
-                        {booking.specialInstructions && (
-                          <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                              <strong>Instructions:</strong> {booking.specialInstructions}
-                            </p>
-                          </div>
-                        )}
-
-                        {booking.isBufferSkipped && (
-                          <div className="bg-purple-50 dark:bg-purple-950/20 p-2 rounded border border-purple-200 dark:border-purple-800">
-                            <p className="text-sm text-purple-700 dark:text-purple-300">
-                              <strong>Buffer Period:</strong> This booking was automatically cancelled due to customer's approved buffer period.
-                            </p>
-                          </div>
-                        )}
-
-                        {booking.notes && booking.notes.includes('buffer period') && (
-                          <div className="bg-orange-50 dark:bg-orange-950/20 p-2 rounded border border-orange-200 dark:border-orange-800">
-                            <p className="text-sm text-orange-700 dark:text-orange-300">
-                              <strong>Notes:</strong> {booking.notes}
-                            </p>
-                          </div>
-                        )}
-
-                        {booking.rejectionReason && (
-                          <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-800">
-                            <div className="flex items-start gap-2">
-                              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p className="text-sm text-red-700 dark:text-red-300">
-                                  <strong>Previous Rejection:</strong> {booking.rejectionReason}
-                                </p>
-                                {booking.reassignmentCount && booking.reassignmentCount > 0 && (
-                                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                    Reassignment attempt #{booking.reassignmentCount + 1}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(booking)}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="ml-4">
-                      <Button
-                        onClick={() => handleAssignClick(booking)}
-                        className="bg-primary hover:bg-primary/90"
-                        size="sm"
-                      >
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        {booking.rejectionReason ? 'Reassign Homecare Partner' : 'Assign Homecare Partner'}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {pendingBookings.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <h3 className="text-lg font-medium mb-2">No Pending Bookings</h3>
-                  <p>All bookings have been assigned to homecare partners.</p>
-                </div>
-              )}
-              
-              {pendingBookings.length > 0 && getTotalPages(pendingBookings) > 1 && (
-                <Pagination
-                  currentPage={pendingPage}
-                  totalPages={getTotalPages(pendingBookings)}
-                  onPageChange={setPendingPage}
-                />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Assigned Bookings */}
-        <Card className="dashboard-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5 text-success" />
-              Assigned Bookings ({assignedBookings.length})
-            </CardTitle>
-            <CardDescription>Bookings with assigned homecare partners</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {getPaginatedData(assignedBookings, assignedPage).map((booking, index) => (
-                <div key={booking.id} className="border rounded-lg p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1">
-                      <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-sm font-medium">
-                        {getSerialNumber(index, assignedPage)}
-                      </div>
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <div>
-                            <p className="font-semibold text-foreground">{booking.service.name}</p>
-                            <p className="text-sm text-muted-foreground">₹{booking.finalAmount.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{booking.customer.name}</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{booking.customer.phone}</p>
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            </div>
+                            <span className="text-slate-400">•</span>
+                            <span className="text-slate-600">{booking.customer.phone}</span>
                           </div>
                         </div>
 
+                        {/* Date & Time Info */}
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg">
+                            <Calendar className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">{new Date(booking.scheduledAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg">
+                            <Clock className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+
+                        {/* Assigned Maid */}
                         {booking.maid && (
-                          <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded border border-blue-200 dark:border-blue-800">
+                          <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                             <div className="flex items-center gap-2">
-                              <UserCheck className="h-4 w-4 text-blue-600" />
-                              <span className="font-medium text-blue-700 dark:text-blue-300">Assigned to:</span>
-                              <span className="font-semibold text-blue-800 dark:text-blue-200">{booking.maid.name}</span>
+                              <UserCheck className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase">Assigned to</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="font-bold text-blue-900 dark:text-blue-100">{booking.maid.name}</span>
                               {booking.maid.rating && (
                                 <div className="flex items-center gap-1">
                                   <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                                  <span className="text-sm text-blue-600">{booking.maid.rating.toFixed(1)}</span>
+                                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">{booking.maid.rating.toFixed(1)}</span>
                                 </div>
                               )}
                             </div>
-                            <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">{booking.maid.phone}</p>
-                            {booking.assignedAt && (
-                              <p className="text-xs text-blue-500 dark:text-blue-500 mt-1">
-                                Assigned: {new Date(booking.assignedAt).toLocaleString()}
-                              </p>
-                            )}
                           </div>
                         )}
 
-                        <div className="flex items-center gap-2">
+                        {/* Status and Actions */}
+                        <div className="flex items-center gap-2 flex-wrap pt-2">
                           {getStatusBadge(booking)}
                           {booking.assignmentStatus === 'ASSIGNED_PENDING_RESPONSE' && (
                             <Badge variant="outline" className="text-orange-600 border-orange-600 animate-pulse">
                               <Bell className="h-3 w-3 mr-1" />
-                              Awaiting Response
+                              Awaiting
                             </Badge>
+                          )}
+                          {booking.status === 'PENDING' && (
+                            <Button size="sm" className="ml-auto" onClick={() => handleAssignClick(booking)}>
+                              Assign Homecare Partner
+                            </Button>
+                          )}
+                          {booking.status === 'ASSIGNED' && booking.assignmentStatus === 'REJECTED' && (
+                            <Button size="sm" className="ml-auto" onClick={() => handleAssignClick(booking)}>
+                              Reassign
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -426,20 +298,20 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                   </div>
                 </div>
               ))}
-              
-              {assignedBookings.length === 0 && (
+
+              {allBookings.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  <UserCheck className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <h3 className="text-lg font-medium mb-2">No Assigned Bookings</h3>
-                  <p>No bookings have been assigned to homecare partners yet.</p>
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <h3 className="text-lg font-medium mb-2">No Bookings</h3>
+                  <p>No bookings have been created yet.</p>
                 </div>
               )}
-              
-              {assignedBookings.length > 0 && getTotalPages(assignedBookings) > 1 && (
+
+              {allBookings.length > 0 && getTotalPages(allBookings) > 1 && (
                 <Pagination
-                  currentPage={assignedPage}
-                  totalPages={getTotalPages(assignedBookings)}
-                  onPageChange={setAssignedPage}
+                  currentPage={allBooksPage}
+                  totalPages={getTotalPages(allBookings)}
+                  onPageChange={setAllBooksPage}
                 />
               )}
             </div>
@@ -469,7 +341,7 @@ export const EnhancedAdminBookingsSection: React.FC<EnhancedAdminBookingsSection
                     <span className="font-medium">Date:</span> {new Date(selectedBooking.scheduledAt).toLocaleDateString()}
                   </div>
                   <div>
-                    <span className="font-medium">Time:</span> {selectedBooking.timeSlot || new Date(selectedBooking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    <span className="font-medium">Time:</span> {selectedBooking.timeSlot || new Date(selectedBooking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                   <div>
                     <span className="font-medium">Amount:</span> ₹{selectedBooking.finalAmount.toLocaleString()}

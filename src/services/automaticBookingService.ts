@@ -96,7 +96,7 @@ export class AutomaticBookingService {
   ): Promise<ApiResponse<{ bookings: AutomaticBooking[], pagination: any }>> {
     try {
       let url = `/automatic-bookings?page=${page}&limit=${limit}`;
-      
+
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value) url += `&${key}=${value}`;
@@ -200,6 +200,22 @@ export class AutomaticBookingService {
 
   // NOTE: Admin send-to-maid / reassign / settings / pause / resume endpoints are not implemented in the backend.
   // Admin assignment/reassignment is handled via /assignments/admin/* endpoints.
+
+  /**
+   * Send an automatic booking to a maid
+   */
+  static async sendBookingToMaid(bookingId: string, maidId?: string): Promise<ApiResponse<any>> {
+    try {
+      return await apiRequest<any>(API_ENDPOINTS.ASSIGNMENTS.SEND_ASSIGNMENT_REQUEST, {
+        method: HttpMethod.POST,
+        body: { bookingId, maidId, expiresIn: 24 }, // assuming 24 hours expiry from the comment context and usage in AdminAutomaticBookingsSection
+        requiresAuth: true
+      });
+    } catch (error) {
+      console.error('Send booking to maid error:', error);
+      throw error;
+    }
+  }
 
   /**
    * Get maid's automatic booking assignments

@@ -103,7 +103,7 @@ export class CustomerAssignmentService {
    * Update customer's maid assignment (Admin only)
    */
   static async updateCustomerAssignment(
-    customerId: string, 
+    customerId: string,
     data: UpdateAssignmentData
   ): Promise<ApiResponse<CustomerMaidAssignment>> {
     try {
@@ -133,7 +133,7 @@ export class CustomerAssignmentService {
   ): Promise<ApiResponse<{ assignments: CustomerMaidAssignment[], pagination: any }>> {
     try {
       let url = `${API_ENDPOINTS.CUSTOMER_ASSIGNMENTS.GET_ALL}?page=${page}&limit=${limit}`;
-      
+
       if (filters) {
         if (filters.customerId) url += `&customerId=${filters.customerId}`;
         if (filters.maidId) url += `&maidId=${filters.maidId}`;
@@ -213,13 +213,11 @@ export class CustomerAssignmentService {
     }
   }
 
-  /**
-   * Get customers assigned to a specific maid (Admin only)
-   */
-  static async getMaidAssignedCustomers(maidId: string): Promise<ApiResponse<any[]>> {
+  static async getMaidAssignedCustomers(maidId: string, page = 1, limit = 10): Promise<ApiResponse<any>> {
     try {
-      const endpoint = `/customer-assignments/maid/${maidId}/customers`;
-      return await apiRequest<any[]>(endpoint, {
+      // Use the actual API endpoint structure mounted under /api/admin/customer-assignments
+      const endpoint = `/admin/customer-assignments/maid/${maidId}/customers?page=${page}&limit=${limit}`;
+      return await apiRequest<any>(endpoint, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
