@@ -213,11 +213,11 @@ export class CustomerAssignmentService {
     }
   }
 
-  static async getMaidAssignedCustomers(maidId: string): Promise<ApiResponse<any[]>> {
+  static async getMaidAssignedCustomers(maidId: string, page = 1, limit = 10): Promise<ApiResponse<any>> {
     try {
       // Use the actual API endpoint structure mounted under /api/admin/customer-assignments
-      const endpoint = `/admin/customer-assignments/maid/${maidId}/customers`;
-      return await apiRequest<any[]>(endpoint, {
+      const endpoint = `/admin/customer-assignments/maid/${maidId}/customers?page=${page}&limit=${limit}`;
+      return await apiRequest<any>(endpoint, {
         method: HttpMethod.GET,
         requiresAuth: true
       });

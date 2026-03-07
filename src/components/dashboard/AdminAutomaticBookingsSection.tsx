@@ -37,11 +37,15 @@ interface Maid {
 
 interface AdminAutomaticBookingsSectionProps {
   availableMaids: Maid[];
+  pendingManualBookings?: any[];
+  onAssignManualMaid?: (bookingId: string, maidId: string) => Promise<void>;
   onRefreshData?: () => void;
 }
 
 export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSectionProps> = ({
   availableMaids,
+  pendingManualBookings = [],
+  onAssignManualMaid,
   onRefreshData,
 }) => {
   const [loading, setLoading] = useState(true);
@@ -151,6 +155,26 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
     }
   };
 
+  const handleAssignManualBooking = async (bookingId: string) => {
+    if (!selectedMaidId || !onAssignManualMaid) {
+      toast.error('Please select a homecare partner');
+      return;
+    }
+
+    setSendingToMaid(bookingId);
+    try {
+      await onAssignManualMaid(bookingId, selectedMaidId);
+      toast.success('Manual Booking assigned successfully');
+      setSelectedMaidId('');
+      await loadAllData();
+      onRefreshData?.();
+    } catch (error) {
+      toast.error('Failed to assign manual booking');
+    } finally {
+      setSendingToMaid(null);
+    }
+  };
+
   const handleReassignBooking = async () => {
     if (!reassignDialog.booking || !selectedMaidId) {
       toast.error('Please select a homecare partner');
@@ -246,30 +270,32 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 ">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <TabsList>
+            <TabsTrigger value="pending-assignment" className="relative">
+              Pending Assignment
+              {(pendingAssignmentBookings.length + pendingManualBookings.length) > 0 && (
+                <Badge className="ml-2 px-1 py-0 text-xs" variant="destructive">
+                  {pendingAssignmentBookings.length + pendingManualBookings.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="reassignment" className="relative">
+              Reassignment Needed
+              {reassignmentBookings.length > 0 && (
+                <Badge className="ml-2 px-1 py-0 text-xs" variant="destructive">
+                  {reassignmentBookings.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="all-bookings">All Automatic Bookings</TabsTrigger>
+          </TabsList>
 
-        <TabsList>
-          <TabsTrigger value="pending-assignment" className="relative">
-            Pending Assignment
-            {pendingAssignmentBookings.length > 0 && (
-              <Badge className="ml-2 px-1 py-0 text-xs" variant="destructive">
-                {pendingAssignmentBookings.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="reassignment" className="relative">
-            Reassignment Needed
-            {reassignmentBookings.length > 0 && (
-              <Badge className="ml-2 px-1 py-0 text-xs" variant="destructive">
-                {reassignmentBookings.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="all-bookings">All Automatic Bookings</TabsTrigger>
-        </TabsList>
-        <Button onClick={refreshData} disabled={refreshing} variant="outline">
-          <RefreshCw className={`h-4 w-4 mr-2 flex  ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+          <Button onClick={refreshData} disabled={refreshing} variant="outline" className="self-end sm:self-auto">
+            <RefreshCw className={`h-4 w-4 mr-2 flex  ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh Data
+          </Button>
+        </div>
 
         {/* Pending Assignment Tab */}
         <TabsContent value="pending-assignment" className="space-y-4">
@@ -277,10 +303,10 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-orange-500" />
-                Bookings Awaiting Assignment ({pendingAssignmentBookings.length})
+                Bookings Awaiting Assignment ({pendingAssignmentBookings.length + pendingManualBookings.length})
               </CardTitle>
               <CardDescription>
-                These automatic bookings need to be sent to their assigned maids
+                These bookings need to be sent to their assigned maids
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -388,13 +414,124 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                       </CardContent>
                     </Card>
                   ))}
+
+                  {/* Render Manual Bookings right below the automatic ones */}
+                  {pendingManualBookings.map((booking) => (
+                    <Card key={booking.id} className="border-l-4 border-l-yellow-400">
+                      <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                          {/* Booking Details */}
+                          <div className="lg:col-span-2">
+                            <div className="flex items-start justify-between mb-4">
+                              <div>
+                                <h3 className="font-semibold text-lg">{booking.service?.name ?? '(no service)'}</h3>
+                                <p className="text-muted-foreground">
+                                  Booking ID: {booking.id.slice(-8)}
+                                </p>
+                                <Badge variant="outline" className="mt-1 border-yellow-400 text-yellow-600">
+                                  Manual Booking
+                                </Badge>
+                              </div>
+                              <Badge className={getAssignmentStatusColor("PENDING_ASSIGNMENT")}>
+                                PENDING ASSIGNMENT
+                              </Badge>
+                            </div>
+
+                            <div className="mb-4">
+                              <h4 className="font-medium text-sm text-muted-foreground mb-1">Customer</h4>
+                              <p className="font-medium">{booking.customer?.name ?? '(no customer)'}</p>
+                              <p className="text-sm text-muted-foreground">{booking.customer?.email ?? '-'}</p>
+                              <p className="text-sm text-muted-foreground">{booking.customer?.phone ?? '-'}</p>
+                            </div>
+
+                            <div className="mb-4">
+                              <h4 className="font-medium text-sm text-muted-foreground mb-1">Schedule</h4>
+                              <p className="font-medium">
+                                {new Date(booking.scheduledAt).toLocaleDateString()}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(booking.scheduledAt).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+
+                            {booking.serviceAddress && (
+                              <div className="mb-4">
+                                <h4 className="font-medium text-sm text-muted-foreground mb-1 flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  Service Address
+                                </h4>
+                                <p className="text-sm">{booking.serviceAddress ?? '-'}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="border-l lg:border-l-2 lg:pl-6 flex flex-col justify-center">
+                            <h4 className="font-medium mb-3">Assign to Homecare Partner</h4>
+                            <div className="space-y-3">
+                              <Select
+                                value={sendingToMaid === booking.id ? selectedMaidId : ''}
+                                onValueChange={(val) => {
+                                  // When modifying the draft select, we need to bind the maid to this specific booking interaction
+                                  if (sendingToMaid !== booking.id) {
+                                    // Set focus to this booking
+                                    setSelectedMaidId(val);
+                                  } else {
+                                    setSelectedMaidId(val);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="w-full h-12">
+                                  <SelectValue placeholder="Select partner..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableMaids.map((maid) => (
+                                    <SelectItem key={maid.id} value={maid.id}>
+                                      <div className="flex items-center justify-between w-full pr-4">
+                                        <span>{maid.name}</span>
+                                        <div className="flex items-center text-muted-foreground text-xs ml-2">
+                                          <Star className="h-3 w-3 mr-1 fill-current text-yellow-500" />
+                                          {maid.rating.toFixed(1)}
+                                        </div>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              <Button
+                                className="w-full h-12"
+                                onClick={() => handleAssignManualBooking(booking.id)}
+                                disabled={sendingToMaid === booking.id || !selectedMaidId}
+                              >
+                                {sendingToMaid === booking.id ? (
+                                  <>
+                                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                    Assigning...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Confirm Assignment
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                   <h3 className="text-lg font-medium mb-2">All bookings assigned!</h3>
                   <p className="text-muted-foreground">
-                    No automatic bookings are waiting for assignment.
+                    No bookings are waiting for assignment.
                   </p>
                 </div>
               )}

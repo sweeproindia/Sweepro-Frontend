@@ -859,7 +859,7 @@ export default function AdminDashboard() {
           />
         )}
 
-        {/* Automatic Bookings Section */}
+        {/* Automatic Bookings Section (Pending) */}
         {activeSection === 'pending-bookings' && (
           <AdminAutomaticBookingsSection
             availableMaids={availableMaids.map(m => ({
@@ -871,6 +871,25 @@ export default function AdminDashboard() {
               skills: m.skills,
               completedBookings: m.completedBookings
             }))}
+            pendingManualBookings={bookings.filter((b: any) => b.status === 'PENDING').map((b: any) => ({
+              ...b,
+              serviceAddress: b.serviceAddress || b.customer?.address || '',
+              totalAmount: b.totalAmount ?? 0,
+              finalAmount: b.finalAmount ?? b.totalAmount ?? 0,
+              service: b.service || {
+                id: b.serviceId,
+                name: b.service?.name || 'Service',
+                description: b.service?.description || '',
+                basePrice: b.service?.basePrice || 0,
+              },
+              customer: b.customer || {
+                id: b.customerId,
+                name: b.customer?.name || 'Customer',
+                email: b.customer?.email || '',
+                phone: b.customer?.phone || '',
+              },
+            })) as any}
+            onAssignManualMaid={assignMaidToBooking}
             onRefreshData={fetchAdminData}
           />
         )}

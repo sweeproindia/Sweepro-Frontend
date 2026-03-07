@@ -61,6 +61,9 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [assignedCustomers, setAssignedCustomers] = useState<any[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [customersCurrentPage, setCustomersCurrentPage] = useState(1);
+  const [customersTotalPages, setCustomersTotalPages] = useState(1);
+  const [customersTotal, setCustomersTotal] = useState(0);
 
   const [newMaid, setNewMaid] = useState({
     name: '',
@@ -74,13 +77,19 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
     availability: null as Record<string, any> | null,
   });
 
-  const fetchAssignedCustomers = async (maidId: string) => {
+  const fetchAssignedCustomers = async (maidId: string, page = 1) => {
     setLoadingCustomers(true);
     try {
-      console.log('🔍 Fetching customers for maid:', maidId);
-      const response = await CustomerAssignmentService.getMaidAssignedCustomers(maidId);
+      console.log(`🔍 Fetching customers for maid: ${maidId}, page: ${page}`);
+      const response = await CustomerAssignmentService.getMaidAssignedCustomers(maidId, page, 10);
       console.log('✅ Customers fetched:', response.data);
       setAssignedCustomers(response.data || []);
+
+      if (response.pagination) {
+        setCustomersCurrentPage(response.pagination.page);
+        setCustomersTotalPages(response.pagination.totalPages);
+        setCustomersTotal(response.pagination.total);
+      }
     } catch (error) {
       console.error('❌ Error fetching assigned customers:', error);
       toast({
@@ -89,6 +98,8 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
         variant: 'destructive'
       });
       setAssignedCustomers([]);
+      setCustomersTotalPages(1);
+      setCustomersTotal(0);
     } finally {
       setLoadingCustomers(false);
     }
@@ -167,20 +178,20 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
 
   const qrPayload = qrMaid
     ? JSON.stringify({
-        maidId: qrMaid.id,
-        userId: qrMaid.id,
-        name: qrMaid.name,
-        email: qrMaid.email,
-        type: 'maid_verification',
-        timestamp: new Date().toISOString(),
-      })
+      maidId: qrMaid.id,
+      userId: qrMaid.id,
+      name: qrMaid.name,
+      email: qrMaid.email,
+      type: 'maid_verification',
+      timestamp: new Date().toISOString(),
+    })
     : '';
 
   const copyQrPayload = async () => {
     if (!qrPayload) return;
     try {
       await navigator.clipboard.writeText(qrPayload);
-    } catch {}
+    } catch { }
   };
 
   const getStatusColor = (status: Maid['status']) => {
@@ -309,7 +320,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                       <Input
                         id="name"
                         value={newMaid.name}
-                        onChange={(e) => setNewMaid({...newMaid, name: e.target.value})}
+                        onChange={(e) => setNewMaid({ ...newMaid, name: e.target.value })}
                         placeholder="Enter full name"
                       />
                     </div>
@@ -319,7 +330,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                         id="email"
                         type="email"
                         value={newMaid.email}
-                        onChange={(e) => setNewMaid({...newMaid, email: e.target.value})}
+                        onChange={(e) => setNewMaid({ ...newMaid, email: e.target.value })}
                         placeholder="Enter email address"
                       />
                     </div>
@@ -330,13 +341,13 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                       <Input
                         id="phone"
                         value={newMaid.phone}
-                        onChange={(e) => setNewMaid({...newMaid, phone: e.target.value})}
+                        onChange={(e) => setNewMaid({ ...newMaid, phone: e.target.value })}
                         placeholder="Enter phone number"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="experience">Experience</Label>
-                      <Select onValueChange={(value) => setNewMaid({...newMaid, experience: value})}>
+                      <Select onValueChange={(value) => setNewMaid({ ...newMaid, experience: value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select experience" />
                         </SelectTrigger>
@@ -356,7 +367,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                     <Textarea
                       id="address"
                       value={newMaid.address}
-                      onChange={(e) => setNewMaid({...newMaid, address: e.target.value})}
+                      onChange={(e) => setNewMaid({ ...newMaid, address: e.target.value })}
                       placeholder="Enter full address"
                     />
                   </div>
@@ -509,8 +520,8 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={async () => {
                             setSelectedMaid(maid);
@@ -626,6 +637,11 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
         onOpenChange={setShowDetailsModal}
         maid={selectedMaid}
         assignedCustomers={assignedCustomers}
+        loadingCustomers={loadingCustomers}
+        currentPage={customersCurrentPage}
+        totalPages={customersTotalPages}
+        totalCustomers={customersTotal}
+        onPageChange={(page) => fetchAssignedCustomers(selectedMaid!.id, page)}
       />
     </Card>
   );

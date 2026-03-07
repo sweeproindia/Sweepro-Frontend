@@ -1,13 +1,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { X, MapPin, Calendar, Phone, Mail, Star, Users } from 'lucide-react';
+import { X, MapPin, Calendar, Phone, Mail, Star, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface MaidDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   maid: any; // Maid details
   assignedCustomers?: any[]; // List of assigned customers
+  loadingCustomers?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalCustomers?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export const MaidDetailsModal: React.FC<MaidDetailsModalProps> = ({
@@ -15,6 +20,11 @@ export const MaidDetailsModal: React.FC<MaidDetailsModalProps> = ({
   onOpenChange,
   maid,
   assignedCustomers,
+  loadingCustomers,
+  currentPage,
+  totalPages,
+  totalCustomers,
+  onPageChange
 }) => {
   if (!maid || !open) return null;
 
@@ -199,6 +209,30 @@ export const MaidDetailsModal: React.FC<MaidDetailsModalProps> = ({
                   </div>
                 ))}
               </div>
+
+              {totalPages && totalPages > 1 && onPageChange && currentPage && (
+                <div className="mt-6 flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground mr-4">
+                    Showing page {currentPage} of {totalPages}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      className="px-3 py-1 flex items-center gap-1 border rounded-md disabled:opacity-50 hover:bg-slate-50 text-sm active:bg-slate-100"
+                      onClick={() => onPageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Previous
+                    </button>
+                    <button
+                      className="px-3 py-1 flex items-center gap-1 border rounded-md disabled:opacity-50 hover:bg-slate-50 text-sm active:bg-slate-100"
+                      onClick={() => onPageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
