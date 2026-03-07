@@ -48,7 +48,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { apiRequest, API_BASE_URL, HttpMethod } from '@/services/api';
+import { apiRequest, API_BASE_URL, HttpMethod, getAuthToken } from '@/services/api';
 
 interface MaidVerification {
   id: string;
@@ -70,19 +70,19 @@ interface MaidVerification {
       url: string;
       uploadedAt: string;
       fileSize: number;
-    };
+    } | null;
     panCard: {
       filename: string;
       url: string;
       uploadedAt: string;
       fileSize: number;
-    };
+    } | null;
     electricityBill: {
       filename: string;
       url: string;
       uploadedAt: string;
       fileSize: number;
-    };
+    } | null;
   };
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   submittedAt: string;
@@ -268,9 +268,48 @@ export default function AdminMaidVerification() {
     }
   };
 
-  const openDocumentViewer = (type: string, url: string, filename: string) => {
-    setSelectedDocument({ type, url, filename });
-    setIsDocumentViewOpen(true);
+  const openDocumentViewer = async (type: string, downloadUrl: string, filename: string) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(downloadUrl, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch document');
+      const data = await response.json();
+      // Backend returns cloudinaryUrl for cloud-stored documents
+      const viewUrl = data.cloudinaryUrl || data.url || downloadUrl;
+      setSelectedDocument({ type, url: viewUrl, filename });
+      setIsDocumentViewOpen(true);
+    } catch (error) {
+      console.error('Error opening document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load document for viewing',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDocumentDownload = async (downloadUrl: string, filename: string) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(downloadUrl, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch document');
+      const data = await response.json();
+      const fileUrl = data.cloudinaryUrl || data.url;
+      if (fileUrl) {
+        window.open(fileUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to download document',
+        variant: 'destructive'
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -538,103 +577,133 @@ export default function AdminMaidVerification() {
                       <h4 className="font-medium text-foreground mb-3">Documents</h4>
                       <div className="space-y-3">
                         {/* Aadhar Card */}
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-primary" />
-                            <div>
-                              <p className="font-medium text-sm">Aadhar Card</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFileSize(verification.documents.aadharCard.fileSize)}
-                              </p>
+                        {verification.documents.aadharCard ? (
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4 text-primary" />
+                              <div>
+                                <p className="font-medium text-sm">Aadhar Card</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatFileSize(verification.documents.aadharCard.fileSize)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openDocumentViewer(
+                                  'Aadhar Card',
+                                  verification.documents.aadharCard!.url,
+                                  verification.documents.aadharCard!.filename
+                                )}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDocumentDownload(
+                                  verification.documents.aadharCard!.url,
+                                  verification.documents.aadharCard!.filename
+                                )}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openDocumentViewer(
-                                'Aadhar Card',
-                                verification.documents.aadharCard.url,
-                                verification.documents.aadharCard.filename
-                              )}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(verification.documents.aadharCard.url, '_blank')}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                        ) : (
+                          <div className="flex items-center gap-2 p-3 border rounded-lg border-dashed">
+                            <CreditCard className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">Aadhar Card - Not uploaded</p>
                           </div>
-                        </div>
+                        )}
 
                         {/* PAN Card */}
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-primary" />
-                            <div>
-                              <p className="font-medium text-sm">PAN Card</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFileSize(verification.documents.panCard.fileSize)}
-                              </p>
+                        {verification.documents.panCard ? (
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-primary" />
+                              <div>
+                                <p className="font-medium text-sm">PAN Card</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatFileSize(verification.documents.panCard.fileSize)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openDocumentViewer(
+                                  'PAN Card',
+                                  verification.documents.panCard!.url,
+                                  verification.documents.panCard!.filename
+                                )}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDocumentDownload(
+                                  verification.documents.panCard!.url,
+                                  verification.documents.panCard!.filename
+                                )}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openDocumentViewer(
-                                'PAN Card',
-                                verification.documents.panCard.url,
-                                verification.documents.panCard.filename
-                              )}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(verification.documents.panCard.url, '_blank')}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                        ) : (
+                          <div className="flex items-center gap-2 p-3 border rounded-lg border-dashed">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">PAN Card - Not uploaded</p>
                           </div>
-                        </div>
+                        )}
 
                         {/* Electricity Bill */}
-                        <div className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <Zap className="h-4 w-4 text-primary" />
-                            <div>
-                              <p className="font-medium text-sm">Electricity Bill</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFileSize(verification.documents.electricityBill.fileSize)}
-                              </p>
+                        {verification.documents.electricityBill ? (
+                          <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <Zap className="h-4 w-4 text-primary" />
+                              <div>
+                                <p className="font-medium text-sm">Electricity Bill</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatFileSize(verification.documents.electricityBill.fileSize)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openDocumentViewer(
+                                  'Electricity Bill',
+                                  verification.documents.electricityBill!.url,
+                                  verification.documents.electricityBill!.filename
+                                )}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDocumentDownload(
+                                  verification.documents.electricityBill!.url,
+                                  verification.documents.electricityBill!.filename
+                                )}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openDocumentViewer(
-                                'Electricity Bill',
-                                verification.documents.electricityBill.url,
-                                verification.documents.electricityBill.filename
-                              )}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => window.open(verification.documents.electricityBill.url, '_blank')}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                        ) : (
+                          <div className="flex items-center gap-2 p-3 border rounded-lg border-dashed">
+                            <Zap className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">Electricity Bill - Not uploaded</p>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -775,7 +844,11 @@ export default function AdminMaidVerification() {
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => window.open(selectedDocument?.url, '_blank')}
+                onClick={() => {
+                  if (selectedDocument?.url) {
+                    window.open(selectedDocument.url, '_blank');
+                  }
+                }}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download

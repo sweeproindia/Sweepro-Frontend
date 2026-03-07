@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -88,6 +89,7 @@ export default function SignupPage() {
     floorNumber: '',
     maidAddress: '', // Separate field for maid's address
     maidPincode: '',
+    agreeTerms: false,
   });
 
   const navigate = useNavigate();
@@ -217,6 +219,8 @@ export default function SignupPage() {
 
     if (!formData.confirmPassword) nextErrors.confirmPassword = 'Please confirm your password.';
     else if (formData.password !== formData.confirmPassword) nextErrors.confirmPassword = 'Passwords do not match.';
+
+    if (!formData.agreeTerms) nextErrors.agreeTerms = 'You must agree to the Terms of Service and Privacy Policy.';
 
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
@@ -797,29 +801,53 @@ export default function SignupPage() {
                 </div>
 
                 {/* Terms and Conditions */}
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    required
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <Label htmlFor="terms" className="text-sm text-gray-600">
-                    I agree to the{' '}
-                    <Link to="/terms" className="text-blue-600 hover:text-blue-800 hover:underline">
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link to="/privacy" className="text-blue-600 hover:text-blue-800 hover:underline">
-                      Privacy Policy
-                    </Link>
-                  </Label>
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="terms"
+                      checked={formData.agreeTerms}
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({ ...prev, agreeTerms: checked === true }));
+                        setFieldErrors(prev => ({ ...prev, agreeTerms: undefined }));
+                        setFormError(null);
+                      }}
+                      className={`mt-0.5 ${fieldErrors.agreeTerms ? 'border-red-500 data-[state=unchecked]:border-red-500' : ''}`}
+                    />
+                    <Label
+                      htmlFor="terms"
+                      className={`text-sm leading-relaxed cursor-pointer ${fieldErrors.agreeTerms ? 'text-red-600' : 'text-gray-600'}`}
+                    >
+                      I agree to the{' '}
+                      <a
+                        href="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                      >
+                        Terms of Service
+                      </a>{' '}
+                      and{' '}
+                      <a
+                        href="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="text-blue-600 hover:text-blue-800 underline underline-offset-2"
+                      >
+                        Privacy Policy
+                      </a>
+                    </Label>
+                  </div>
+                  {fieldErrors.agreeTerms && (
+                    <p className="text-sm text-red-600">{fieldErrors.agreeTerms}</p>
+                  )}
                 </div>
 
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !formData.agreeTerms}
                   className="w-full py-6 text-base font-medium bg-[#1800ad] text-white hover:bg-[#ca0013]"
                 >
                   {isLoading ? (

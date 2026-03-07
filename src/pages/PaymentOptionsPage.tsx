@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -700,6 +700,13 @@ const PaymentOptionsPage = () => {
   const [timeSlotCounts, setTimeSlotCounts] = useState<TimeSlotCount[]>([]);
   const [isLoadingSlotCounts, setIsLoadingSlotCounts] = useState(false);
 
+  // Section refs for scroll-to-validation
+  const propertyTypeRef = useRef<HTMLDivElement>(null);
+  const propertyConfigRef = useRef<HTMLDivElement>(null);
+  const planDurationRef = useRef<HTMLDivElement>(null);
+  const scheduleRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLDivElement>(null);
+
   const isLuxPlan = selectedPlan?.id === 'premium';
 
   // Fetch global time slot counts (not date-specific)
@@ -1079,39 +1086,13 @@ const PaymentOptionsPage = () => {
   }, [toast]);
 
   const handleNext = () => {
-    if (!options.startDate) {
-      toast({
-        title: 'Select start date',
-        description: 'Pick a service start date to proceed.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!options.timeSlot) {
-      toast({
-        title: 'Select time slot',
-        description: 'Choose a preferred time window to continue.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!options.selectedPlanDuration) {
-      toast({
-        title: 'Select plan duration',
-        description: 'Choose a billing duration to proceed.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     if (!options.bhkType) {
       toast({
         title: 'Select property configuration',
         description: 'Choose a BHK configuration to continue.',
         variant: 'destructive'
       });
+      propertyConfigRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -1121,6 +1102,37 @@ const PaymentOptionsPage = () => {
         description: 'Choose the size range for your property.',
         variant: 'destructive'
       });
+      propertyConfigRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (!options.selectedPlanDuration) {
+      toast({
+        title: 'Select plan duration',
+        description: 'Choose a billing duration to proceed.',
+        variant: 'destructive'
+      });
+      planDurationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (!options.startDate) {
+      toast({
+        title: 'Select start date',
+        description: 'Pick a service start date to proceed.',
+        variant: 'destructive'
+      });
+      scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (!options.timeSlot) {
+      toast({
+        title: 'Select time slot',
+        description: 'Choose a preferred time window to continue.',
+        variant: 'destructive'
+      });
+      scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -1130,6 +1142,7 @@ const PaymentOptionsPage = () => {
         description: 'Please confirm your saved service address to continue.',
         variant: 'destructive'
       });
+      addressRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
@@ -1235,7 +1248,7 @@ const PaymentOptionsPage = () => {
               </p>
             </section>
 
-            <Card className="rounded-3xl border bg-white shadow-xl" style={{ borderColor: `${BRAND.indigo}26` }}>
+            <Card ref={propertyTypeRef} className="rounded-3xl border bg-white shadow-xl" style={{ borderColor: `${BRAND.indigo}26` }}>
               <CardHeader className="space-y-3">
                 <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
                   <span
@@ -1330,7 +1343,7 @@ const PaymentOptionsPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+            <Card ref={propertyConfigRef} className="rounded-3xl border border-slate-200 bg-white shadow-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
                   <span
@@ -1391,22 +1404,9 @@ const PaymentOptionsPage = () => {
                           </div>
                           <div className="flex flex-col gap-1 text-sm">
                             {isActive ? (
-                              <>
                                 <span className="text-base font-semibold" style={{ color: BRAND.indigo }}>Starting at ₹{option.pricing['6month'].toLocaleString()}{' '}
                                   <span className="text-xs font-medium" style={{ color: `${BRAND.indigo}c2` }}>/ month</span>
                                 </span>
-                                <Badge
-                                  variant="outline"
-                                  className="w-fit text-xs"
-                                  style={{
-                                    border: `1px solid ${BRAND.indigo}55`,
-                                    background: `${BRAND.indigo}0f`,
-                                    color: BRAND.indigo
-                                  }}
-                                >
-                                  Per visit ₹{Math.round(option.pricing['6month'] / 30).toLocaleString()}
-                                </Badge>
-                              </>
                             ) : (
                               <span className="text-xs font-medium uppercase tracking-[0.3em] text-slate-400">Select to view pricing</span>
                             )}
@@ -1427,7 +1427,7 @@ const PaymentOptionsPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+            <Card ref={planDurationRef} className="rounded-3xl border border-slate-200 bg-white shadow-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
                   <span
@@ -1503,7 +1503,7 @@ const PaymentOptionsPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+            <Card ref={scheduleRef} className="rounded-3xl border border-slate-200 bg-white shadow-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
                   <span
@@ -1650,7 +1650,7 @@ const PaymentOptionsPage = () => {
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl border border-slate-200 bg-white shadow-xl">
+            <Card ref={addressRef} className="rounded-3xl border border-slate-200 bg-white shadow-xl">
               <CardHeader className="space-y-3">
                 <CardTitle className="flex items-center gap-3 text-lg" style={{ color: BRAND.indigo }}>
                   <span
@@ -1817,8 +1817,7 @@ const PaymentOptionsPage = () => {
               <Button
                 size="lg"
                 onClick={handleNext}
-                disabled={!options.selectedPlanDuration || !options.startDate || !options.timeSlot}
-                className="group flex items-center gap-3 rounded-full border-none px-8 py-6 text-base font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+                className="group flex items-center gap-3 rounded-full border-none px-8 py-6 text-base font-semibold text-white transition hover:opacity-95"
                 style={{ background: INDIGO_STYLES.gradient, boxShadow: `0 25px 65px -30px ${BRAND.indigo}8c` }}
               >
                 Proceed to review
