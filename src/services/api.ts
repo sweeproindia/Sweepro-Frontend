@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
     ME: '/auth/me',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
   // User
   USER: {
@@ -200,15 +201,6 @@ export const API_ENDPOINTS = {
     REJECT: '/automatic-bookings/:bookingId/reject',
     CANCEL: '/automatic-bookings/:bookingId/cancel',
     GET_SETTINGS: '/automatic-bookings/settings/:customerId',
-  },
-  // Automatic Assignments
-  AUTOMATIC_ASSIGNMENTS: {
-    // Admin endpoints
-    PROCESS: '/automatic-assignments/process',
-    UPCOMING: '/automatic-assignments/upcoming',
-    STATISTICS: '/automatic-assignments/statistics',
-    CUSTOMER_TIMESLOTS: '/automatic-assignments/customer-timeslots',
-    TEST_TIMESLOT: '/automatic-assignments/test-timeslot',
   },
   // Feedback
   FEEDBACK: {

@@ -146,7 +146,7 @@ export default function UserDashboard() {
               </Link>
             )}
             {user.role === 'ADMIN' && (
-              <Link to="/admin-dashboard">
+              <Link to="/admin">
                 <Button>Go to Admin Dashboard</Button>
               </Link>
             )}

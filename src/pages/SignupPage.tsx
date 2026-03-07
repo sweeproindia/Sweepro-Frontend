@@ -128,7 +128,7 @@ export default function SignupPage() {
         } else {
           switch (loggedInUser.role) {
             case 'ADMIN':
-              navigate('/admin-dashboard');
+              navigate('/admin');
               break;
             case 'MAID':
               navigate('/maid-dashboard');
@@ -274,7 +274,7 @@ export default function SignupPage() {
         // Navigate based on role
         switch (loggedInUser.role) {
           case 'ADMIN':
-            navigate('/admin-dashboard');
+            navigate('/admin');
             break;
           case 'MAID':
             navigate('/maid-dashboard');

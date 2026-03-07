@@ -101,7 +101,7 @@ export default function LoginPage() {
 
     switch (user.role) {
       case 'ADMIN':
-        navigate('/admin-dashboard');
+        navigate('/admin');
         break;
       case 'MAID':
         navigate('/maid-dashboard');

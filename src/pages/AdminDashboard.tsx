@@ -30,7 +30,6 @@ import { AdminMaidVerificationSection } from '../components/dashboard/AdminMaidV
 import { AdminBufferManagementSection } from '../components/dashboard/AdminBufferManagementSection';
 import { AdminUsersSection } from '../components/dashboard/AdminUsersSection';
 import { AdminMaidsSection } from '../components/dashboard/AdminMaidsSection';
-import { AdminAutomaticAssignmentsSection } from '../components/dashboard/AdminAutomaticAssignmentsSection';
 import { EnhancedAdminBookingsSection } from '../components/dashboard/AdminBookingsSection';
 import { AdminSubscriptionsSection } from '../components/dashboard/AdminSubscriptionsSection';
 import { AdminPaymentsSection } from '../components/dashboard/AdminPaymentsSection';
@@ -63,6 +62,12 @@ interface Maid {
   weeklyOffDay?: string | null;
   availability?: Record<string, any> | null;
   user: User;
+  activeCustomerCount?: number;
+  todayBookingCount?: number;
+  maxDailyBookings?: number;
+  isFree?: boolean;
+  isAvailableToday?: boolean;
+  isWeeklyOff?: boolean;
 }
 
 const WEEKDAY_ENUM = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -99,7 +104,7 @@ export default function AdminDashboard() {
 
   const [activeSection, setActiveSection] = useState(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'automatic-assignments', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'payments', 'plans'].includes(hash)) {
       return hash;
     }
     return 'overview';
@@ -136,7 +141,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'automatic-assignments', 'payments', 'plans'].includes(hash)) {
+    if (hash && ['overview', 'bookings', 'pending-bookings', 'users', 'maids', 'maid-verification', 'subscriptions', 'buffer-management', 'payments', 'plans'].includes(hash)) {
       setActiveSection(hash);
     }
   }, [location.hash]);
@@ -276,7 +281,13 @@ export default function AdminDashboard() {
           status: (u.maidProfile?.status || 'ACTIVE') as Maid['status'],
           completedBookings: u.maidProfile?.completedBookings || 0,
           weeklyOffDay: u.maidProfile?.weeklyOffDay ?? null,
-          availability: (u.maidProfile?.availability && typeof u.maidProfile.availability === 'object') ? u.maidProfile.availability : null
+          availability: (u.maidProfile?.availability && typeof u.maidProfile.availability === 'object') ? u.maidProfile.availability : null,
+          activeCustomerCount: u.activeCustomerCount ?? 0,
+          todayBookingCount: u.todayBookingCount ?? 0,
+          maxDailyBookings: u.maxDailyBookings ?? u.maidProfile?.maxDailyBookings ?? 3,
+          isFree: u.isFree ?? false,
+          isAvailableToday: u.isAvailableToday ?? true,
+          isWeeklyOff: u.isWeeklyOff ?? false,
         }));
         setAvailableMaids(mapped);
       }
@@ -560,33 +571,40 @@ export default function AdminDashboard() {
   return (
     <AdminDashboardLayout>
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">
-          {activeSection === 'overview' && 'Dashboard Overview'}
-          {activeSection === 'bookings' && 'All Bookings'}
-          {activeSection === 'pending-bookings' && 'Automatic Booking Management'}
-          {activeSection === 'users' && 'Customer Management'}
-          {activeSection === 'maids' && 'Homecare Partner Management'}
-          {activeSection === 'maid-verification' && 'Homecare Partner Verification'}
-          {activeSection === 'subscriptions' && 'Subscriptions'}
-          {activeSection === 'buffer-management' && 'Buffer Period Management'}
-          {activeSection === 'automatic-assignments' && 'Automatic Assignment System'}
-          {activeSection === 'payments' && 'Payment Management'}
-          {activeSection === 'plans' && 'Subscription Plans'}
-        </h1>
-        <p className="text-muted-foreground mt-1">
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+              {activeSection === 'overview' && 'Dashboard Overview'}
+              {activeSection === 'bookings' && 'All Bookings'}
+              {activeSection === 'pending-bookings' && 'Automatic Booking Management'}
+              {activeSection === 'users' && 'Customer Management'}
+              {activeSection === 'maids' && 'Homecare Partner Management'}
+              {activeSection === 'maid-verification' && 'Homecare Partner Verification'}
+              {activeSection === 'subscriptions' && 'Subscriptions'}
+              {activeSection === 'buffer-management' && 'Buffer Period Management'}
+              {activeSection === 'payments' && 'Payment Management'}
+              {activeSection === 'plans' && 'Subscription Plans'}
+            </h1>
+            <p className="text-muted-foreground mt-1 text-sm">
           {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
           {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
-          {activeSection === 'pending-bookings' && 'Assign homecare parers to pending bookings'}
+          {activeSection === 'pending-bookings' && 'Assign homecare partners to pending bookings'}
           {activeSection === 'users' && 'Manage customer accounts and profiles'}
           {activeSection === 'maids' && 'Manage service providers and performance'}
           {activeSection === 'maid-verification' && 'Review and manage homecare partner verification requests'}
           {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
           {activeSection === 'buffer-management' && 'Review buffer requests and manage service interruptions'}
-          {activeSection === 'automatic-assignments' && 'Monitor and manage automatic assignment requests based on customer time slots'}
           {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
           {activeSection === 'plans' && 'Manage available service plans and pricing'}
         </p>
+          </div>
+          {/* Date display */}
+          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">
+            <Calendar className="h-4 w-4" />
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -595,85 +613,118 @@ export default function AdminDashboard() {
         {activeSection === 'overview' && (
           <>
             {/* Analytics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="dashboard-card">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-bl-[40px]" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+                  <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analyticsData.totalBookings}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {analyticsData.pendingBookings} pending approval
-                  </p>
+                  <div className="text-3xl font-bold tracking-tight">{analyticsData.totalBookings}</div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                      {analyticsData.pendingBookings} pending
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="dashboard-card">
+              <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/5 rounded-bl-[40px]" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>
+                  <div className="h-9 w-9 rounded-lg bg-green-50 flex items-center justify-center">
+                    <Users className="h-4 w-4 text-green-600" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analyticsData.totalCustomers}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {analyticsData.totalMaids} service providers
-                  </p>
+                  <div className="text-3xl font-bold tracking-tight">{analyticsData.totalCustomers}</div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+                      {analyticsData.totalMaids} partners
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="dashboard-card">
+              <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/5 rounded-bl-[40px]" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+                  <div className="h-9 w-9 rounded-lg bg-purple-50 flex items-center justify-center">
+                    <DollarSign className="h-4 w-4 text-purple-600" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₹{analyticsData.totalRevenue.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {analyticsData.completedPayments} completed payments
-                  </p>
+                  <div className="text-3xl font-bold tracking-tight">₹{analyticsData.totalRevenue.toLocaleString()}</div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                      {analyticsData.completedPayments} completed
+                    </span>
+                    {analyticsData.pendingPayments > 0 && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">
+                        {analyticsData.pendingPayments} pending
+                      </span>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="dashboard-card">
+              <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-amber-500/5 rounded-bl-[40px]" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Active Subscriptions</CardTitle>
+                  <div className="h-9 w-9 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <Package className="h-4 w-4 text-amber-600" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{analyticsData.activeSubscriptions}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {subscriptions.length} total subscriptions
-                  </p>
+                  <div className="text-3xl font-bold tracking-tight">{analyticsData.activeSubscriptions}</div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
+                      {subscriptions.length} total
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Quick Access Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button onClick={() => handleSectionChange('users')} className="group p-4 rounded-xl border bg-card hover:bg-blue-50 hover:border-blue-200 transition-all text-left">
-                <Users className="h-6 w-6 text-blue-600 mb-2" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
+              <button onClick={() => handleSectionChange('users')} className="group p-4 rounded-xl border bg-card hover:bg-blue-50/80 hover:border-blue-200 transition-all text-left shadow-sm">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
                 <p className="font-semibold text-sm">Customers</p>
-                <p className="text-xs text-muted-foreground">{users.filter(u => u.role === 'CUSTOMER').length} total</p>
-                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+                <p className="text-xs text-muted-foreground mt-0.5">{users.filter(u => u.role === 'CUSTOMER').length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-3 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button onClick={() => handleSectionChange('maids')} className="group p-4 rounded-xl border bg-card hover:bg-green-50 hover:border-green-200 transition-all text-left">
-                <Shield className="h-6 w-6 text-green-600 mb-2" />
+              <button onClick={() => handleSectionChange('maids')} className="group p-4 rounded-xl border bg-card hover:bg-green-50/80 hover:border-green-200 transition-all text-left shadow-sm">
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-3">
+                  <Shield className="h-5 w-5 text-green-600" />
+                </div>
                 <p className="font-semibold text-sm">Homecare Partners</p>
-                <p className="text-xs text-muted-foreground">{maids.length} total</p>
-                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+                <p className="text-xs text-muted-foreground mt-0.5">{maids.length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-3 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button onClick={() => handleSectionChange('bookings')} className="group p-4 rounded-xl border bg-card hover:bg-purple-50 hover:border-purple-200 transition-all text-left">
-                <Calendar className="h-6 w-6 text-purple-600 mb-2" />
+              <button onClick={() => handleSectionChange('bookings')} className="group p-4 rounded-xl border bg-card hover:bg-purple-50/80 hover:border-purple-200 transition-all text-left shadow-sm">
+                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3">
+                  <Calendar className="h-5 w-5 text-purple-600" />
+                </div>
                 <p className="font-semibold text-sm">All Bookings</p>
-                <p className="text-xs text-muted-foreground">{bookings.length} total</p>
-                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+                <p className="text-xs text-muted-foreground mt-0.5">{bookings.length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-3 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button onClick={() => handleSectionChange('payments')} className="group p-4 rounded-xl border bg-card hover:bg-amber-50 hover:border-amber-200 transition-all text-left">
-                <CreditCard className="h-6 w-6 text-amber-600 mb-2" />
+              <button onClick={() => handleSectionChange('payments')} className="group p-4 rounded-xl border bg-card hover:bg-amber-50/80 hover:border-amber-200 transition-all text-left shadow-sm">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center mb-3">
+                  <CreditCard className="h-5 w-5 text-amber-600" />
+                </div>
                 <p className="font-semibold text-sm">Payments</p>
-                <p className="text-xs text-muted-foreground">{payments.length} total</p>
-                <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 group-hover:translate-x-1 transition-transform" />
+                <p className="text-xs text-muted-foreground mt-0.5">{payments.length} total</p>
+                <ArrowRight className="h-4 w-4 text-muted-foreground mt-3 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
 
@@ -954,7 +1005,13 @@ export default function AdminDashboard() {
               phone: m.user.phone,
               rating: m.rating,
               skills: m.skills,
-              completedBookings: m.completedBookings
+              completedBookings: m.completedBookings,
+              activeCustomerCount: (m as any).activeCustomerCount ?? 0,
+              todayBookingCount: (m as any).todayBookingCount ?? 0,
+              maxDailyBookings: (m as any).maxDailyBookings ?? 3,
+              isFree: (m as any).isFree ?? false,
+              isAvailableToday: (m as any).isAvailableToday ?? true,
+              isWeeklyOff: (m as any).isWeeklyOff ?? false,
             }))}
             onVerifyUser={(userId) => updateUserStatus(userId, 'ACTIVE')}
             onRefreshData={fetchAdminData}
@@ -968,15 +1025,22 @@ export default function AdminDashboard() {
               id: s.id,
               customerName: s.customer?.user?.name || 'N/A',
               customerEmail: s.customer?.user?.email || 'N/A',
+              customerPhone: s.customer?.user?.phone,
               plan: s.plan?.name || 'N/A',
-              status: s.status === 'ACTIVE' ? 'active' : s.status === 'EXPIRED' ? 'expired' : 'cancelled',
+              status: s.status === 'ACTIVE' ? 'active' : s.status === 'EXPIRED' ? 'expired' : s.status === 'PENDING_PAYMENT' ? 'pending_payment' : 'cancelled',
               startDate: s.startDate,
               endDate: s.endDate,
               price: s.amount,
-              usage: 0, // This would need to be calculated
+              usage: s.completedCycles || 0,
               limit: s.plan?.sessionsPerMonth || 0,
-              nextBilling: s.endDate
+              nextBilling: s.nextBillDate || s.endDate,
+              billingCycle: s.billingCycle,
+              isInBufferPeriod: s.isInBufferPeriod,
+              bufferDaysUsed: s.bufferDaysUsed,
+              bufferDaysCount: s.bufferDaysCount,
+              autoRenew: s.autoRenew,
             }))}
+            onRefreshData={fetchAdminData}
           />
         )}
 
@@ -1005,11 +1069,6 @@ export default function AdminDashboard() {
         {/* Buffer Management Section */}
         {activeSection === 'buffer-management' && (
           <AdminBufferManagementSection />
-        )}
-
-        {/* Automatic Assignments Section */}
-        {activeSection === 'automatic-assignments' && (
-          <AdminAutomaticAssignmentsSection />
         )}
 
         {/* Plans Section */}

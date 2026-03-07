@@ -102,7 +102,7 @@ export function RequireGuest({ children }: { children: JSX.Element }) {
     return <Navigate to="/complete-profile" replace />;
   }
 
-  if (user.role === 'ADMIN') return <Navigate to="/admin-dashboard" replace />;
+  if (user.role === 'ADMIN') return <Navigate to="/admin" replace />;
   if (user.role === 'MAID') return <Navigate to="/maid-dashboard" replace />;
   return <Navigate to="/dashboard" replace />;
 }
@@ -134,7 +134,7 @@ export function RequireRole({ children, roles, requireProfileCompletion = true }
 
   // Check role — redirect to the user's actual dashboard if wrong role.
   if (!user.role || !roles.includes(user.role)) {
-    if (user.role === 'ADMIN') return <Navigate to="/admin-dashboard" replace />;
+    if (user.role === 'ADMIN') return <Navigate to="/admin" replace />;
     if (user.role === 'MAID') return <Navigate to="/maid-dashboard" replace />;
     return <Navigate to="/dashboard" replace />;
   }

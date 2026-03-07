@@ -68,6 +68,7 @@ const MaidVerification = lazy(() => import(/* webpackChunkName: "maid" */ "./pag
 // --- Admin chunk (loaded only for ADMIN role — heaviest, full isolation) ---
 const AdminDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/AdminDashboard"));
 const AdminFeedbackPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/AdminFeedbackPage"));
+const AdminProfilePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/AdminProfilePage"));
 
 // ---------------------------------------------------------------------------
 // P2 FIX: Global QueryClient configuration.
@@ -441,6 +442,16 @@ const App = () => {
                             <RequireAuth>
                               <RequireRole roles={["ADMIN"]}>
                                 <AdminFeedbackPage />
+                              </RequireRole>
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/admin/profile"
+                          element={
+                            <RequireAuth>
+                              <RequireRole roles={["ADMIN"]}>
+                                <AdminProfilePage />
                               </RequireRole>
                             </RequireAuth>
                           }

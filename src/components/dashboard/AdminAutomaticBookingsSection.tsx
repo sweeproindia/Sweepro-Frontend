@@ -19,10 +19,18 @@ import {
   MapPin,
   Star,
   Send,
-  RotateCcw
+  RotateCcw,
+  Phone,
+  Home,
+  Info,
+  Mail,
+  Eye,
+  Loader2
 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { AutomaticBookingService, AutomaticBooking } from '@/services/automaticBookingService';
 import { assignmentService } from '@/services/assignmentService';
+import { BookingService } from '@/services/bookingService';
 import { toast } from 'sonner';
 
 interface Maid {
@@ -66,6 +74,14 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
   const [selectedMaidId, setSelectedMaidId] = useState<string>('');
   const [reassignReason, setReassignReason] = useState<string>('');
   const [reassigning, setReassigning] = useState(false);
+
+  // Detail dialog state
+  const [detailDialog, setDetailDialog] = useState<{
+    open: boolean;
+    bookingId: string | null;
+  }>({ open: false, bookingId: null });
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [bookingDetail, setBookingDetail] = useState<any>(null);
 
   useEffect(() => {
     loadAllData();
@@ -207,6 +223,35 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
     }
   };
 
+  const handleViewDetails = async (bookingId: string) => {
+    setDetailDialog({ open: true, bookingId });
+    setDetailLoading(true);
+    setBookingDetail(null);
+    try {
+      const response = await BookingService.getBookingById(bookingId);
+      const data = (response as any).data ?? response;
+      setBookingDetail(data.booking ?? data);
+    } catch (error) {
+      console.error('Failed to load booking details:', error);
+      toast.error('Failed to load booking details');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const formatAddress = (customer: any) => {
+    if (!customer) return null;
+    const parts = [
+      customer.addressLine,
+      customer.locality,
+      customer.landmark && `Near ${customer.landmark}`,
+      customer.city,
+      customer.state,
+      customer.pincode,
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : customer.address || null;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'SCHEDULED':
@@ -258,41 +303,37 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        {/* <div>
-          <h2 className="text-2xl font-bold">Automatic Booking Management</h2>
-          <p className="text-muted-foreground">
-            Manage daily automatic bookings and maid assignments
-          </p>
-        </div> */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <div className="flex flex-col gap-3">
+          <div className="overflow-x-auto -mx-1 px-1">
+            <TabsList className="w-full sm:w-auto inline-flex">
+              <TabsTrigger value="pending-assignment" className="relative text-xs sm:text-sm whitespace-nowrap">
+                <span className="hidden sm:inline">Pending Assignment</span>
+                <span className="sm:hidden">Pending</span>
+                {(pendingAssignmentBookings.length + pendingManualBookings.length) > 0 && (
+                  <Badge className="ml-1.5 px-1 py-0 text-xs" variant="destructive">
+                    {pendingAssignmentBookings.length + pendingManualBookings.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="reassignment" className="relative text-xs sm:text-sm whitespace-nowrap">
+                <span className="hidden sm:inline">Reassignment Needed</span>
+                <span className="sm:hidden">Reassign</span>
+                {reassignmentBookings.length > 0 && (
+                  <Badge className="ml-1.5 px-1 py-0 text-xs" variant="destructive">
+                    {reassignmentBookings.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="all-bookings" className="text-xs sm:text-sm whitespace-nowrap">
+                <span className="hidden sm:inline">All Automatic Bookings</span>
+                <span className="sm:hidden">All Bookings</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 ">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <TabsList>
-            <TabsTrigger value="pending-assignment" className="relative">
-              Pending Assignment
-              {(pendingAssignmentBookings.length + pendingManualBookings.length) > 0 && (
-                <Badge className="ml-2 px-1 py-0 text-xs" variant="destructive">
-                  {pendingAssignmentBookings.length + pendingManualBookings.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="reassignment" className="relative">
-              Reassignment Needed
-              {reassignmentBookings.length > 0 && (
-                <Badge className="ml-2 px-1 py-0 text-xs" variant="destructive">
-                  {reassignmentBookings.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="all-bookings">All Automatic Bookings</TabsTrigger>
-          </TabsList>
-
-          <Button onClick={refreshData} disabled={refreshing} variant="outline" className="self-end sm:self-auto">
-            <RefreshCw className={`h-4 w-4 mr-2 flex  ${refreshing ? 'animate-spin' : ''}`} />
+          <Button onClick={refreshData} disabled={refreshing} variant="outline" size="sm" className="self-end">
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh Data
           </Button>
         </div>
@@ -653,15 +694,16 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Homecare Partner</TableHead>
-                    <TableHead>Service</TableHead>
+                    <TableHead className="hidden md:table-cell">Homecare Partner</TableHead>
+                    <TableHead className="hidden lg:table-cell">Service</TableHead>
                     <TableHead>Scheduled</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Assignment</TableHead>
+                    <TableHead className="hidden md:table-cell">Assignment</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -674,7 +716,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                           <p className="text-sm text-muted-foreground">{booking.customer?.email ?? '-'}</p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div>
                           <p className="font-medium">{booking.maid?.name ?? '(no homecare partner)'}</p>
                           <p className="text-sm text-muted-foreground">
@@ -682,7 +724,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         <p className="font-medium">{booking.service?.name ?? '(no service)'}</p>
                       </TableCell>
                       <TableCell>
@@ -703,20 +745,26 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                           {booking.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge className={getAssignmentStatusColor(booking.assignmentStatus)}>
                           {booking.assignmentStatus.replace('_', ' ')}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button size="sm" variant="outline">
-                          View Details
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewDetails(booking.id)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          <span className="hidden sm:inline">Details</span>
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {allBookings.length === 0 && (
                 <div className="text-center py-8">
@@ -728,6 +776,294 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Booking Detail Dialog */}
+      <Dialog
+        open={detailDialog.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDetailDialog({ open: false, bookingId: null });
+            setBookingDetail(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5" />
+              Booking Details
+            </DialogTitle>
+            <DialogDescription>
+              {bookingDetail ? `Booking ID: ${bookingDetail.id?.slice(-8)}` : 'Loading...'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : bookingDetail ? (
+            <div className="space-y-5">
+              {/* Status Bar */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={getStatusColor(bookingDetail.status)}>
+                  {bookingDetail.status}
+                </Badge>
+                {bookingDetail.assignmentStatus && (
+                  <Badge className={getAssignmentStatusColor(bookingDetail.assignmentStatus)}>
+                    {bookingDetail.assignmentStatus.replace(/_/g, ' ')}
+                  </Badge>
+                )}
+                {bookingDetail.isAutomatic && (
+                  <Badge variant="outline">Automatic</Badge>
+                )}
+                {bookingDetail.isSubscriptionBased && (
+                  <Badge variant="outline" className="border-blue-300 text-blue-700">Subscription</Badge>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Customer Info */}
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Customer Information</h4>
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="font-medium">{bookingDetail.customer?.name || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm">{bookingDetail.customer?.email || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm font-medium">{bookingDetail.customer?.phone || 'Not provided'}</span>
+                  </div>
+                  {formatAddress(bookingDetail.customer) && (
+                    <div className="flex items-start gap-2">
+                      <Home className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">{formatAddress(bookingDetail.customer)}</span>
+                    </div>
+                  )}
+                  {bookingDetail.customer?.apartment_id && (
+                    <div className="flex items-center gap-2">
+                      <Home className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm">Apartment: {bookingDetail.customer.apartment_id}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Service Address (from Booking) */}
+              {bookingDetail.serviceAddress && (
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Service Location</h4>
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <span className="text-sm">{bookingDetail.serviceAddress}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Service & Schedule */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Service</h4>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                    <p className="font-medium">{bookingDetail.service?.name || '-'}</p>
+                    {bookingDetail.service?.description && (
+                      <p className="text-sm text-muted-foreground">{bookingDetail.service.description}</p>
+                    )}
+                    {bookingDetail.service?.category && (
+                      <Badge variant="secondary" className="mt-1">{bookingDetail.service.category}</Badge>
+                    )}
+                    {bookingDetail.estimatedDuration && (
+                      <p className="text-sm text-muted-foreground">Duration: {bookingDetail.estimatedDuration} mins</p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Schedule</h4>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">
+                        {new Date(bookingDetail.scheduledAt).toLocaleDateString('en-IN', {
+                          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {new Date(bookingDetail.scheduledAt).toLocaleTimeString([], {
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    {bookingDetail.timeSlot && (
+                      <p className="text-sm text-muted-foreground">Slot: {bookingDetail.timeSlot}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment / Pricing */}
+              <div>
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Payment</h4>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Total Amount</span>
+                    <span className="font-medium">₹{bookingDetail.totalAmount?.toFixed(2) ?? '0.00'}</span>
+                  </div>
+                  {bookingDetail.discount > 0 && (
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-sm text-muted-foreground">Discount</span>
+                      <span className="text-green-600">-₹{bookingDetail.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between mt-1 pt-1 border-t">
+                    <span className="text-sm font-medium">Final Amount</span>
+                    <span className="font-bold text-lg">₹{bookingDetail.finalAmount?.toFixed(2) ?? '0.00'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subscription Info */}
+              {bookingDetail.customer?.customerProfile?.subscription && (() => {
+                const sub = bookingDetail.customer.customerProfile.subscription;
+                return (
+                  <div>
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Subscription Details</h4>
+                    <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{sub.plan?.name || 'Subscription Plan'}</span>
+                        <Badge className={sub.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                          {sub.status}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Billing</span>
+                          <span>{sub.billingCycle}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Amount</span>
+                          <span>₹{sub.amount?.toFixed(2)}</span>
+                        </div>
+                        {sub.plan?.sessionsPerWeek && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Sessions/Week</span>
+                            <span>{sub.plan.sessionsPerWeek}</span>
+                          </div>
+                        )}
+                        {sub.plan?.sessionsPerMonth && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Sessions/Month</span>
+                            <span>{sub.plan.sessionsPerMonth}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Valid: {new Date(sub.startDate).toLocaleDateString()} — {new Date(sub.endDate).toLocaleDateString()}
+                      </div>
+                      {sub.isInBufferPeriod && (
+                        <Badge variant="outline" className="border-orange-300 text-orange-700 mt-1">
+                          In Buffer Period ({sub.bufferDaysUsed}/{sub.bufferDaysCount} days used)
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Assigned Maid */}
+              {bookingDetail.maid && (
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Assigned Homecare Partner</h4>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{bookingDetail.maid.name}</span>
+                      {bookingDetail.maid.maidProfile?.rating && (
+                        <Badge variant="secondary" className="ml-auto">
+                          <Star className="h-3 w-3 mr-1 fill-yellow-500 text-yellow-500" />
+                          {bookingDetail.maid.maidProfile.rating.toFixed(1)}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{bookingDetail.maid.phone || 'Not provided'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{bookingDetail.maid.email}</span>
+                    </div>
+                    {bookingDetail.maid.maidProfile?.completedBookings != null && (
+                      <p className="text-sm text-muted-foreground">
+                        {bookingDetail.maid.maidProfile.completedBookings} bookings completed
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Special Instructions */}
+              {bookingDetail.specialInstructions && (
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Special Instructions</h4>
+                  <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-lg p-4">
+                    <p className="text-sm">{bookingDetail.specialInstructions}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Assignment History */}
+              {bookingDetail.assignmentRequests?.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide mb-3">Assignment History</h4>
+                  <div className="space-y-2">
+                    {bookingDetail.assignmentRequests.map((req: any) => (
+                      <div key={req.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-4 py-2 text-sm">
+                        <div>
+                          <span className="font-medium">{req.maid?.user?.name || 'Unknown'}</span>
+                          <span className="text-muted-foreground ml-2">
+                            {new Date(req.requestedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <Badge variant={req.status === 'ACCEPTED' ? 'default' : req.status === 'REJECTED' ? 'destructive' : 'secondary'}>
+                          {req.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+              <p>Failed to load booking details</p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDetailDialog({ open: false, bookingId: null });
+                setBookingDetail(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reassignment Dialog */}
       <Dialog

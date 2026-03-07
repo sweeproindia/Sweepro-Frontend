@@ -281,7 +281,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
   return (
     <Card className="dashboard-card">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
@@ -289,7 +289,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
             </CardTitle>
             <CardDescription>Manage homecare partner accounts, verify new homecare partners, and monitor performance</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="bg-success/20 text-success">
               {allMaids.filter(m => m.status === 'active').length} active
             </Badge>
@@ -314,7 +314,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
                       <Input
@@ -335,7 +335,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
                       <Input
@@ -373,7 +373,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                   </div>
                   <div className="space-y-2">
                     <Label>Specializations</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {['Regular Cleaning', 'Deep Cleaning', 'Kitchen Cleaning', 'Bathroom Cleaning', 'Full House Cleaning', 'Carpet Cleaning'].map((spec) => (
                         <div key={spec} className="flex items-center space-x-2">
                           <input
@@ -432,24 +432,38 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
           </div>
         </div>
 
-        <div className="rounded-lg border border-border bg-background">
+        <div className="rounded-lg border border-border bg-background overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[80px]">S.No</TableHead>
                 <TableHead>Homecare Partner</TableHead>
-                <TableHead>Contact</TableHead>
+                <TableHead className="hidden md:table-cell">Contact</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Weekly Leave</TableHead>
-                <TableHead>Performance</TableHead>
+                <TableHead className="hidden lg:table-cell">Weekly Leave</TableHead>
+                <TableHead className="hidden md:table-cell">Performance</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedMaids.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    {filteredMaids.length === 0 ? 'No maids match your search.' : 'No maids on this page.'}
+                  <TableCell colSpan={7} className="py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <Shield className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {searchTerm ? 'No results found' : 'No cleaning partners yet'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {searchTerm
+                            ? 'No partners match your search. Try a different term.'
+                            : 'Cleaning partner accounts will appear here once they register.'}
+                        </p>
+                      </div>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -476,7 +490,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
@@ -493,7 +507,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                         {formatStatus(maid.status)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {maid.weeklyOffDay ? (
                         <Badge variant="outline">
                           {maid.weeklyOffDay}
@@ -508,7 +522,7 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
                         </Button>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {maid.rating > 0 ? (
                         <div className="flex items-center gap-2 text-sm">
                           <Star className="h-4 w-4 text-amber-500" />
