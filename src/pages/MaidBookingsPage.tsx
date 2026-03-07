@@ -78,13 +78,9 @@ export default function MaidBookingsPage() {
     }
   };
 
-  const onStartService = async (bookingId: string) => {
-    await updateBookingStatus(bookingId, 'IN_PROGRESS');
-  };
-
-  const onCompleteService = async (bookingId: string) => {
-    await updateBookingStatus(bookingId, 'COMPLETED');
-  };
+  // NOTE: Maid-side action buttons (Start Service, Mark Complete) have been removed.
+  // Service completion is now customer-driven: the customer scans the maid's QR code
+  // to verify identity and mark the service as complete.
 
   const filterOptions: { key: BookingFilter; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -107,7 +103,7 @@ export default function MaidBookingsPage() {
               <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </Button>
             <Button size="sm" onClick={() => setQrOpen(true)} className="w-full sm:w-auto">
-              Show My QR
+              Show My Code
             </Button>
           </div>
         </div>
@@ -282,15 +278,11 @@ export default function MaidBookingsPage() {
                       <Button size="sm" variant="outline" className="w-full">
                         View Details
                       </Button>
-                      {(booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED') && (
-                        <Button size="sm" variant="outline" onClick={() => onStartService(booking.id)} className="w-full">
-                          Start Service
-                        </Button>
-                      )}
-                      {booking.status === 'IN_PROGRESS' && (
-                        <Button size="sm" variant="outline" onClick={() => onCompleteService(booking.id)} className="w-full">
-                          Mark Complete
-                        </Button>
+                      {/* Service status is now controlled by the customer scanning maid's QR */}
+                      {(booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED' || booking.status === 'IN_PROGRESS') && (
+                        <div className="text-xs text-muted-foreground text-center p-2 bg-muted/30 rounded-lg">
+                          Show your QR code to the customer to verify completion
+                        </div>
                       )}
                     </div>
                   </div>

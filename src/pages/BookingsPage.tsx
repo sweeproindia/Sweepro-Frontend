@@ -441,15 +441,15 @@ export default function BookingsPage() {
                       </Button>
                     </>
                   )}
-                  {['CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
+                  {['CONFIRMED', 'ASSIGNED', 'IN_PROGRESS'].includes(booking.status) && booking.maid && (
                     <Button
                       variant="default"
                       size="sm"
                       onClick={() => openQrScannerForBooking(booking.id)}
                       disabled={completingWithQr}
                     >
-                      <ScanLine className={`h-4 w-4 mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
-                      Scan Homecare Partner QR
+                      <CheckCircle className={`h-4 w-4 mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
+                      Enter Code to Complete
                     </Button>
                   )}
                   {booking.status === 'COMPLETED' && (

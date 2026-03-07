@@ -1,21 +1,31 @@
 import { apiRequest, API_ENDPOINTS, HttpMethod, ApiResponse } from './api';
 
+// Customer completes booking by entering maid's verification code
 export const completeBookingWithQRForCustomer = async (
   bookingId: string,
-  qrCodeData: string,
+  verificationCode: string,
   completionNotes?: string
-): Promise<ApiResponse<{ bookingId: string; status: string; completedAt: string }>> => {
+): Promise<ApiResponse<{ bookingId: string; status: string; completedAt: string; maidName?: string; serviceName?: string }>> => {
   const endpoint = API_ENDPOINTS.BOOKINGS.COMPLETE_WITH_QR.replace(':bookingId', bookingId);
-  return await apiRequest<{ bookingId: string; status: string; completedAt: string }>(endpoint, {
+  return await apiRequest<{ bookingId: string; status: string; completedAt: string; maidName?: string; serviceName?: string }>(endpoint, {
     method: HttpMethod.POST,
-    body: { qrCodeData, completionNotes },
+    body: { verificationCode, completionNotes },
     requiresAuth: true,
   });
 };
 
-export const getMaidQRCode = async (): Promise<ApiResponse<{ qrCodeData: string; maidInfo: { id: string; userId: string; name: string; email: string } }>> => {
+// Get maid's verification code
+export const getMaidQRCode = async (): Promise<ApiResponse<{
+  verificationCode: string;
+  qrCodeData: string;
+  maidInfo: { id: string; userId: string; name: string; email: string; phone?: string; profileImage?: string }
+}>> => {
   const endpoint = API_ENDPOINTS.BOOKING_COMPLETION.MAID_QR_CODE;
-  return await apiRequest<{ qrCodeData: string; maidInfo: { id: string; userId: string; name: string; email: string } }>(endpoint, {
+  return await apiRequest<{
+    verificationCode: string;
+    qrCodeData: string;
+    maidInfo: { id: string; userId: string; name: string; email: string; phone?: string; profileImage?: string }
+  }>(endpoint, {
     method: HttpMethod.GET,
     requiresAuth: true,
   });
