@@ -22,6 +22,8 @@ export interface CustomerMaidAssignment {
     rating: number;
     skills: string[];
     completedBookings: number;
+    weeklyOffDay?: string;
+    totalRatings?: number;
   };
   subscription?: {
     id: string;
@@ -38,9 +40,15 @@ export interface CustomerAssignmentStatus {
   assignment?: CustomerMaidAssignment;
   subscription?: {
     id: string;
+    planName: string;
     status: string;
     startDate: string;
     endDate: string;
+    sessionsPerWeek?: number;
+    sessionsPerMonth?: number;
+    isInBufferPeriod?: boolean;
+    bufferStartDate?: string;
+    bufferEndDate?: string;
   };
   isInBufferPeriod: boolean;
   bufferPeriod?: {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import  {DocumentUpload } from '@/components/ui/document-upload';
 import { Button } from '@/components/ui/button';
@@ -113,7 +113,7 @@ export default function MaidVerification() {
       // Create FormData for file uploads
       const formData = new FormData();
 
-      // Add documents
+      // Add documents with correct field names expected by backend
       if (documents.aadharCard[0]) {
         formData.append('aadharCard', documents.aadharCard[0]);
       }
@@ -124,26 +124,31 @@ export default function MaidVerification() {
         formData.append('electricityBill', documents.electricityBill[0]);
       }
 
-      // Call real API to upload verification documents
-      await verificationService.submitVerification(formData);
+      // Make actual API call to upload verification documents
+      const response = await verificationService.submitVerification(formData);
 
-      setVerificationStatus({
-        isSubmitted: true,
-        status: 'PENDING',
-        submittedAt: new Date().toISOString()
-      });
+      if (response.success) {
+        setVerificationStatus({
+          isSubmitted: true,
+          status: 'PENDING',
+          submittedAt: new Date().toISOString()
+        });
 
-      toast({
-        title: 'Verification Submitted Successfully',
-        description: 'Your documents have been submitted for admin review. You will be notified once verified.',
-        variant: 'default'
-      });
+        toast({
+          title: 'Verification Submitted Successfully',
+          description: 'Your documents have been submitted for admin review. You will be notified once verified.',
+          variant: 'default'
+        });
+      } else {
+        throw new Error(response.message || 'Failed to submit documents');
+      }
 
     } catch (error) {
       console.error('Error submitting verification:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit verification documents. Please try again.';
       toast({
         title: 'Submission Failed',
-        description: 'Failed to submit verification documents. Please try again.',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {

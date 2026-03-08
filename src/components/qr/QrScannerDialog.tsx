@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useRef, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ShieldCheck, Loader2 } from 'lucide-react';
 
 interface QrScannerDialogProps {
   open: boolean;
@@ -10,122 +11,108 @@ interface QrScannerDialogProps {
 }
 
 const QrScannerDialog: React.FC<QrScannerDialogProps> = ({ open, onOpenChange, onScan }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [manual, setManual] = useState<string>('');
-  const [scanning, setScanning] = useState<boolean>(false);
+  const [code, setCode] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Focus input when dialog opens
   useEffect(() => {
-    let active = true;
-    let rafId: number | null = null;
-    let detector: any = null;
-
-    const stop = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
-        setStream(null);
-      }
-      setScanning(false);
-    };
-
-    const loopDetect = async () => {
-      if (!active || !videoRef.current) return;
-      try {
-        if (detector && typeof detector.detect === 'function') {
-          const results = await detector.detect(videoRef.current as any);
-          if (results && results.length > 0) {
-            const value = results[0].rawValue || results[0].rawValue || results[0].displayValue || '';
-            if (value) {
-              onScan(value);
-              onOpenChange(false);
-              return;
-            }
-          }
-        }
-      } catch {}
-      rafId = requestAnimationFrame(loopDetect);
-    };
-
-    const start = async () => {
-      setError(null);
-      try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (!active) {
-          s.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        setStream(s);
-        if (videoRef.current) {
-          (videoRef.current as any).srcObject = s;
-          await videoRef.current.play().catch(() => {});
-        }
-        const BD = (window as any).BarcodeDetector;
-        if (BD && BD.getSupportedFormats) {
-          const formats = await BD.getSupportedFormats();
-          detector = new BD({ formats });
-          setScanning(true);
-          rafId = requestAnimationFrame(loopDetect);
-        } else {
-          setError('Scanner not supported. Paste the QR data manually.');
-        }
-      } catch (e: any) {
-        setError(e?.message || 'Camera access denied. Paste the QR data manually.');
-      }
-    };
-
     if (open) {
-      active = true;
-      start();
-    } else {
-      active = false;
-      stop();
+      setCode('');
+      setIsSubmitting(false);
+      // Small delay to ensure dialog is rendered
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
+  }, [open]);
 
-    return () => {
-      active = false;
-      stop();
-    };
-  }, [open, onOpenChange, onScan]);
+  const handleSubmit = async () => {
+    const trimmedCode = code.trim().toUpperCase();
+    if (!trimmedCode) return;
+
+    setIsSubmitting(true);
+    // Call the onScan callback with the verification code
+    onScan(trimmedCode);
+    // Dialog will be closed by parent after API call
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && code.trim()) {
+      handleSubmit();
+    }
+  };
+
+  // Format code as user types (uppercase, max 6 characters)
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    setCode(value);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Scan Homecare Partner QR</DialogTitle>
-          <DialogDescription>Align the QR within the frame. Grant camera permission if prompted.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            Verify Service Completion
+          </DialogTitle>
+          <DialogDescription>
+            Enter the 6-character code shown by your maid to verify and complete the service.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="relative bg-black rounded-lg overflow-hidden aspect-square">
-            <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-            {!scanning && !error && (
-              <div className="absolute inset-0 grid place-items-center text-white/80 text-sm">Starting camera…</div>
-            )}
-            {error && (
-              <div className="absolute inset-0 grid place-items-center text-red-200 text-sm px-4 text-center">{error}</div>
-            )}
-          </div>
+
+        <div className="space-y-6 py-4">
+          {/* Code Input */}
           <div className="space-y-2">
+            <label className="text-sm font-medium">Maid's Verification Code</label>
             <Input
-              value={manual}
-              onChange={(e) => setManual(e.target.value)}
-              placeholder="Or paste QR data here"
+              ref={inputRef}
+              value={code}
+              onChange={handleCodeChange}
+              onKeyDown={handleKeyDown}
+              placeholder="ABC123"
+              className="text-center text-2xl font-mono tracking-[0.2em] h-14 uppercase"
+              maxLength={6}
+              disabled={isSubmitting}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
             />
-            <Button
-              onClick={() => {
-                if (manual.trim()) {
-                  onScan(manual.trim());
-                  onOpenChange(false);
-                }
-              }}
-              disabled={!manual.trim()}
-            >
-              Submit
-            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Ask the maid to show you their code
+            </p>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            onClick={handleSubmit}
+            disabled={code.trim().length < 6 || isSubmitting}
+            className="w-full"
+            size="lg"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                Verify & Complete Service
+              </>
+            )}
+          </Button>
+
+          {/* Help Text */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <p className="text-xs text-muted-foreground">
+              <strong>Where to find the code?</strong><br />
+              The maid has a unique 6-character code (like ABC123).
+              Ask them to show it to you from their app or ID card.
+            </p>
           </div>
         </div>
-        <DialogFooter />
       </DialogContent>
     </Dialog>
   );
