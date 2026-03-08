@@ -576,8 +576,8 @@ export default function AdminDashboard() {
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
               {activeSection === 'overview' && 'Dashboard Overview'}
-              {activeSection === 'bookings' && 'All Bookings'}
-              {activeSection === 'pending-bookings' && 'Automatic Booking Management'}
+              {activeSection === 'bookings' && 'Automatic Bookings'}
+              {activeSection === 'pending-bookings' && 'Pending Assignment Management'}
               {activeSection === 'users' && 'Customer Management'}
               {activeSection === 'maids' && 'Homecare Partner Management'}
               {activeSection === 'maid-verification' && 'Homecare Partner Verification'}
@@ -588,8 +588,8 @@ export default function AdminDashboard() {
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
           {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
-          {activeSection === 'bookings' && 'Manage all customer bookings and assignments'}
-          {activeSection === 'pending-bookings' && 'Assign homecare partners to pending bookings'}
+          {activeSection === 'bookings' && 'Manage all automatic subscription bookings and assignments'}
+          {activeSection === 'pending-bookings' && 'Assign homecare partners to pending automatic bookings'}
           {activeSection === 'users' && 'Manage customer accounts and profiles'}
           {activeSection === 'maids' && 'Manage service providers and performance'}
           {activeSection === 'maid-verification' && 'Review and manage homecare partner verification requests'}
@@ -942,30 +942,13 @@ export default function AdminDashboard() {
             })) as any}
             onAssignManualMaid={assignMaidToBooking}
             onRefreshData={fetchAdminData}
+            mode="pending-only"
           />
         )}
 
-        {/* Bookings Section */}
+        {/* Bookings Section - Automatic Subscription Bookings */}
         {activeSection === 'bookings' && (
-          <EnhancedAdminBookingsSection
-            bookings={bookings.map((b: any) => ({
-              ...b,
-              serviceAddress: b.serviceAddress || b.customer?.address || '',
-              totalAmount: b.totalAmount ?? 0,
-              finalAmount: b.finalAmount ?? b.totalAmount ?? 0,
-              service: b.service || {
-                id: b.serviceId,
-                name: b.service?.name || 'Service',
-                description: b.service?.description || '',
-                basePrice: b.service?.basePrice || 0,
-              },
-              customer: b.customer || {
-                id: b.customerId,
-                name: b.customer?.name || 'Customer',
-                email: b.customer?.email || '',
-                phone: b.customer?.phone || '',
-              },
-            })) as any}
+          <AdminAutomaticBookingsSection
             availableMaids={availableMaids.map((m: any) => ({
               id: m.userId || m.id,
               name: m.user?.name || m.name,
@@ -976,8 +959,8 @@ export default function AdminDashboard() {
               completedBookings: m.completedBookings,
               skills: m.skills,
             })) as any}
-            onAssignMaid={assignMaidToBooking}
-            onRefreshBookings={fetchAdminData}
+            onRefreshData={fetchAdminData}
+            mode="all-only"
           />
         )}
 
