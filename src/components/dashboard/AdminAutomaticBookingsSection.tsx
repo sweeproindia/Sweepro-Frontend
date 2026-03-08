@@ -50,6 +50,7 @@ interface AdminAutomaticBookingsSectionProps {
   pendingManualBookings?: any[];
   onAssignManualMaid?: (bookingId: string, maidId: string) => Promise<void>;
   onRefreshData?: () => void;
+  mode?: 'all-only' | 'pending-only' | 'all';
 }
 
 export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSectionProps> = ({
@@ -57,10 +58,11 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
   pendingManualBookings = [],
   onAssignManualMaid,
   onRefreshData,
+  mode = 'all',
 }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState('pending-assignment');
+  const [activeTab, setActiveTab] = useState(mode === 'all-only' ? 'all-bookings' : 'pending-assignment');
 
   // Data states
   const [pendingAssignmentBookings, setPendingAssignmentBookings] = useState<AutomaticBooking[]>([]);
@@ -323,32 +325,36 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex flex-col gap-3">
-          <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="w-full sm:w-auto inline-flex">
-              <TabsTrigger value="pending-assignment" className="relative text-xs sm:text-sm whitespace-nowrap">
-                <span className="hidden sm:inline">Pending Assignment</span>
-                <span className="sm:hidden">Pending</span>
-                {(pendingAssignmentBookings.length + pendingManualBookings.length) > 0 && (
-                  <Badge className="ml-1.5 px-1 py-0 text-xs" variant="destructive">
-                    {pendingAssignmentBookings.length + pendingManualBookings.length}
-                  </Badge>
+          {mode !== 'all-only' && (
+            <div className="overflow-x-auto -mx-1 px-1">
+              <TabsList className="w-full sm:w-auto inline-flex">
+                <TabsTrigger value="pending-assignment" className="relative text-xs sm:text-sm whitespace-nowrap">
+                  <span className="hidden sm:inline">Pending Assignment</span>
+                  <span className="sm:hidden">Pending</span>
+                  {(pendingAssignmentBookings.length + pendingManualBookings.length) > 0 && (
+                    <Badge className="ml-1.5 px-1 py-0 text-xs" variant="destructive">
+                      {pendingAssignmentBookings.length + pendingManualBookings.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="reassignment" className="relative text-xs sm:text-sm whitespace-nowrap">
+                  <span className="hidden sm:inline">Reassignment Needed</span>
+                  <span className="sm:hidden">Reassign</span>
+                  {reassignmentBookings.length > 0 && (
+                    <Badge className="ml-1.5 px-1 py-0 text-xs" variant="destructive">
+                      {reassignmentBookings.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                {mode === 'all' && (
+                  <TabsTrigger value="all-bookings" className="text-xs sm:text-sm whitespace-nowrap">
+                    <span className="hidden sm:inline">All Automatic Bookings</span>
+                    <span className="sm:hidden">All Bookings</span>
+                  </TabsTrigger>
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="reassignment" className="relative text-xs sm:text-sm whitespace-nowrap">
-                <span className="hidden sm:inline">Reassignment Needed</span>
-                <span className="sm:hidden">Reassign</span>
-                {reassignmentBookings.length > 0 && (
-                  <Badge className="ml-1.5 px-1 py-0 text-xs" variant="destructive">
-                    {reassignmentBookings.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="all-bookings" className="text-xs sm:text-sm whitespace-nowrap">
-                <span className="hidden sm:inline">All Automatic Bookings</span>
-                <span className="sm:hidden">All Bookings</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+              </TabsList>
+            </div>
+          )}
 
           <Button onClick={refreshData} disabled={refreshing} variant="outline" size="sm" className="self-end">
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
@@ -357,6 +363,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
         </div>
 
         {/* Pending Assignment Tab */}
+        {mode !== 'all-only' && (
         <TabsContent value="pending-assignment" className="space-y-4">
           <Card>
             <CardHeader>
@@ -597,8 +604,10 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
         {/* Reassignment Tab */}
+        {mode !== 'all-only' && (
         <TabsContent value="reassignment" className="space-y-4">
           <Card>
             <CardHeader>
@@ -698,8 +707,10 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
         {/* All Bookings Tab */}
+        {mode !== 'pending-only' && (
         <TabsContent value="all-bookings" className="space-y-4">
           <Card>
             <CardHeader>
@@ -822,6 +833,7 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
             </CardContent>
           </Card>
         </TabsContent>
+        )}
       </Tabs>
 
       {/* Booking Detail Dialog */}

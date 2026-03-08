@@ -36,8 +36,8 @@ const adminNavigationSections: NavSection[] = [
   {
     label: 'Operations',
     items: [
-      { name: 'Bookings', href: '/admin#bookings', icon: <Calendar className={iconClass} /> },
-      { name: 'Pending Bookings', href: '/admin#pending-bookings', icon: <Clock className={iconClass} />, showBadge: true },
+      { name: 'Automatic Bookings', href: '/admin#bookings', icon: <Calendar className={iconClass} /> },
+      { name: 'Pending Assignments', href: '/admin#pending-bookings', icon: <Clock className={iconClass} />, showBadge: true },
     ],
   },
   {
