@@ -49,6 +49,14 @@ export interface AutomaticBooking {
     rejectionReason: string;
     rejectedAt: string;
   };
+  lastAttempt?: {
+    maidProfileId: string;
+    maidUserId: string;
+    maidName: string;
+    status: string;
+    reason: string;
+    respondedAt: string;
+  };
   subscription?: {
     id: string;
     planName: string;

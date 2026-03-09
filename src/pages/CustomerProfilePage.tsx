@@ -163,16 +163,16 @@ export const CustomerProfilePage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground mt-1">Manage your account information</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Profile</h1>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage your account information</p>
           </div>
-          <Button 
+          <Button
             onClick={() => setEditDialogOpen(true)}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Edit className="h-4 w-4" />
             Edit Profile
@@ -180,12 +180,12 @@ export const CustomerProfilePage: React.FC = () => {
         </div>
 
         {/* Main Profile Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1">
             <Card className="overflow-hidden">
               {/* Cover Image */}
-              <div className="relative h-36 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
+              <div className="relative h-28 sm:h-36 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
                 {profileData.coverImage ? (
                   <img
                     src={profileData.coverImage}
@@ -201,18 +201,18 @@ export const CustomerProfilePage: React.FC = () => {
                 </button>
               </div>
 
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {/* Profile Image */}
-                <div className="relative -mt-16 mb-4">
+                <div className="relative -mt-14 sm:-mt-16 mb-4">
                   <div className="relative inline-block">
                     <img
                       src={profileData.profileImage || '/default-avatar.png'}
                       alt={profileData.name || 'User'}
-                      className="w-28 h-28 rounded-full border-4 border-white object-cover shadow-xl ring-2 ring-primary/20"
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white object-cover shadow-xl ring-2 ring-primary/20"
                     />
                     <button
                       onClick={() => handleImageUpload('profile')}
-                      className="absolute bottom-1 right-1 p-2 bg-primary rounded-full text-white hover:bg-primary/90 transition-colors shadow-lg"
+                      className="absolute bottom-1 right-1 p-1.5 sm:p-2 bg-primary rounded-full text-white hover:bg-primary/90 transition-colors shadow-lg"
                     >
                       <Camera className="h-3 w-3" />
                     </button>
@@ -221,31 +221,31 @@ export const CustomerProfilePage: React.FC = () => {
 
                 {/* Name */}
                 <div className="mb-4">
-                  <h2 className="text-2xl font-bold text-foreground">{profileData.name || 'User'}</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">{profileData.name || 'User'}</h2>
                   {profileData.bio && (
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{profileData.bio}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-3">{profileData.bio}</p>
                   )}
                 </div>
 
                 {/* Contact Info */}
-                <div className="space-y-3 text-sm border-t pt-4">
+                <div className="space-y-2 sm:space-y-3 text-sm border-t pt-4">
                   {profileData.email && (
                     <div className="flex items-center gap-2 p-2 bg-muted rounded hover:bg-muted/80 cursor-pointer transition-colors"
                       onClick={() => navigator.clipboard.writeText(profileData.email)}>
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="truncate">{profileData.email}</span>
+                      <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate text-xs sm:text-sm">{profileData.email}</span>
                     </div>
                   )}
                   {profileData.phone && (
                     <div className="flex items-center gap-2 p-2 bg-muted rounded hover:bg-muted/80 cursor-pointer transition-colors"
                       onClick={() => navigator.clipboard.writeText(profileData.phone)}>
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="truncate">{profileData.phone}</span>
+                      <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate text-xs sm:text-sm">{profileData.phone}</span>
                     </div>
                   )}
                   {profileData.address && (
                     <div className="flex items-start gap-2 p-2 bg-muted rounded">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                       <span className="text-xs">{profileData.address}</span>
                     </div>
                   )}

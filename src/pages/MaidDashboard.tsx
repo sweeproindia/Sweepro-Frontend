@@ -270,9 +270,9 @@ export default function MaidDashboard() {
     <MaidDashboardLayout>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="fade-in text-center">
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+        <div className="fade-in text-center px-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
+          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto text-sm sm:text-base">
             Here's your comprehensive cleaning schedule, earnings overview, and performance metrics.
           </p>
         </div>
@@ -281,16 +281,17 @@ export default function MaidDashboard() {
         {verificationStatusLoaded && verificationStatus === 'NOT_SUBMITTED' && (
           <Alert className="border-2 border-warning bg-gradient-to-r from-warning/5 to-orange/5">
             <Shield className="h-5 w-5 text-warning" />
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
               <div>
-                <h4 className="font-semibold text-lg mb-2">Complete Your Profile Verification</h4>
-                <AlertDescription className="text-base">
-                  To start receiving cleaning assignments and earn money, please complete your profile verification by uploading your documents (Aadhar card, PAN card, and electricity bill for address verification).
+                <h4 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">Complete Your Profile Verification</h4>
+                <AlertDescription className="text-sm sm:text-base">
+                  <span className="hidden sm:inline">To start receiving cleaning assignments and earn money, please complete your profile verification by uploading your documents (Aadhar card, PAN card, and electricity bill for address verification).</span>
+                  <span className="sm:hidden">Upload your documents to start receiving assignments.</span>
                 </AlertDescription>
               </div>
-              <div className="flex gap-3 ml-4">
+              <div className="flex gap-3">
                 <Link to="/maid-verification">
-                  <Button className="bg-primary hover:bg-primary/90 text-white">
+                  <Button className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto text-sm">
                     <Upload className="h-4 w-4 mr-2" />
                     Verify Now
                   </Button>
@@ -304,9 +305,10 @@ export default function MaidDashboard() {
           <Alert className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50">
             <Clock className="h-5 w-5 text-blue-600" />
             <div>
-              <h4 className="font-semibold text-lg mb-2 text-blue-800">Verification Under Review</h4>
-              <AlertDescription className="text-blue-700">
-                Your verification documents are being reviewed by our admin team. This typically takes 24-48 hours. You'll receive a notification once the review is complete.
+              <h4 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 text-blue-800">Verification Under Review</h4>
+              <AlertDescription className="text-blue-700 text-sm sm:text-base">
+                <span className="hidden sm:inline">Your verification documents are being reviewed by our admin team. This typically takes 24-48 hours. You'll receive a notification once the review is complete.</span>
+                <span className="sm:hidden">Documents under review. You'll be notified once complete.</span>
               </AlertDescription>
             </div>
           </Alert>
@@ -315,16 +317,17 @@ export default function MaidDashboard() {
         {verificationStatusLoaded && verificationStatus === 'APPROVED' && showVerificationAlert && (
           <Alert className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-3">
               <div>
-                <h4 className="font-semibold text-lg mb-2 text-green-800">🎉 Welcome to Sweepro!</h4>
-                <AlertDescription className="text-green-700">
-                  Congratulations! Your profile has been verified and approved. You can now receive cleaning assignments and start earning money. Your account is fully active!
+                <h4 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 text-green-800">🎉 Welcome to Sweepro!</h4>
+                <AlertDescription className="text-green-700 text-sm sm:text-base">
+                  <span className="hidden sm:inline">Congratulations! Your profile has been verified and approved. You can now receive cleaning assignments and start earning money. Your account is fully active!</span>
+                  <span className="sm:hidden">You're verified! Start receiving assignments now.</span>
                 </AlertDescription>
               </div>
-              <div className="flex gap-3 ml-4">
+              <div className="flex gap-3">
                 <Link to="/maid-bookings">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">
+                  <Button className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto text-sm">
                     <Calendar className="h-4 w-4 mr-2" />
                     View Assignments
                   </Button>
@@ -337,18 +340,18 @@ export default function MaidDashboard() {
         {verificationStatusLoaded && verificationStatus === 'REJECTED' && (
           <Alert className="border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between w-full gap-3">
               <div className="flex-1">
-                <h4 className="font-semibold text-lg mb-2 text-red-800">Verification Rejected</h4>
-                <AlertDescription className="text-red-700">
+                <h4 className="font-semibold text-base sm:text-lg mb-1 sm:mb-2 text-red-800">Verification Rejected</h4>
+                <AlertDescription className="text-red-700 text-sm sm:text-base">
                   Some of your verification documents have been rejected. Please review the feedback below and upload the corrected documents.
                 </AlertDescription>
-                
+
                 {/* Individual Document Status */}
                 {verificationData?.documents && (
                   <div className="mt-3 space-y-2">
                     {verificationData.documents.aadharCard?.status === 'REJECTED' && (
-                      <div className="p-2 bg-red-100 border border-red-200 rounded text-sm">
+                      <div className="p-2 bg-red-100 border border-red-200 rounded text-xs sm:text-sm">
                         <strong className="text-red-800">Aadhar Card - Rejected</strong>
                         {verificationData.documents.aadharCard.rejectionReason && (
                           <p className="text-red-600 mt-1">{verificationData.documents.aadharCard.rejectionReason}</p>
@@ -356,7 +359,7 @@ export default function MaidDashboard() {
                       </div>
                     )}
                     {verificationData.documents.panCard?.status === 'REJECTED' && (
-                      <div className="p-2 bg-red-100 border border-red-200 rounded text-sm">
+                      <div className="p-2 bg-red-100 border border-red-200 rounded text-xs sm:text-sm">
                         <strong className="text-red-800">PAN Card - Rejected</strong>
                         {verificationData.documents.panCard.rejectionReason && (
                           <p className="text-red-600 mt-1">{verificationData.documents.panCard.rejectionReason}</p>
@@ -364,7 +367,7 @@ export default function MaidDashboard() {
                       </div>
                     )}
                     {verificationData.documents.electricityBill?.status === 'REJECTED' && (
-                      <div className="p-2 bg-red-100 border border-red-200 rounded text-sm">
+                      <div className="p-2 bg-red-100 border border-red-200 rounded text-xs sm:text-sm">
                         <strong className="text-red-800">Address Proof - Rejected</strong>
                         {verificationData.documents.electricityBill.rejectionReason && (
                           <p className="text-red-600 mt-1">{verificationData.documents.electricityBill.rejectionReason}</p>
@@ -374,11 +377,11 @@ export default function MaidDashboard() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-3 ml-4">
+              <div className="flex gap-3">
                 <Link to="/maid-verification">
-                  <Button className="bg-red-600 hover:bg-red-700 text-white">
+                  <Button className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto text-sm">
                     <Upload className="h-4 w-4 mr-2" />
-                    Re-upload Documents
+                    Re-upload
                   </Button>
                 </Link>
               </div>
@@ -387,7 +390,7 @@ export default function MaidDashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 slide-up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 slide-up">
           <Card className="dashboard-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -439,22 +442,22 @@ export default function MaidDashboard() {
           {/* Recent Bookings */}
           <Card className="dashboard-card slide-up">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     <Calendar className="h-5 w-5" />
                     Recent Assignments
                   </CardTitle>
-                  <CardDescription>Your recent and upcoming cleaning sessions</CardDescription>
+                  <CardDescription className="text-sm">Your recent and upcoming cleaning sessions</CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="text-xs px-2 py-1">
                     {stats.totalBookings} Total
                   </Badge>
                   <Link to="/maid-bookings">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                       View All
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                      <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
                     </Button>
                   </Link>
                 </div>
@@ -464,103 +467,105 @@ export default function MaidDashboard() {
               {bookings.length > 0 ? (
                 <div className="space-y-4">
                   {bookings.slice(0, 2).map((booking) => (
-                    <div key={booking.id} className="p-4 border rounded-2xl hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
-                      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-4 flex-1">
-                          <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
-                            booking.status === 'COMPLETED' ? 'bg-success' : 
-                            booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
-                            booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
-                          }`} />
-                          <div className="flex-1 space-y-3">
-                            <div className="flex items-center gap-2 mb-3">
-                              <p className="font-semibold text-foreground text-lg">
-                                {booking.service?.name || 'Cleaning Service'}
-                              </p>
-                              <Badge variant={
-                                booking.status === 'COMPLETED' ? 'default' :
-                                booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
-                                booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
-                              }>
-                                {booking.status}
-                              </Badge>
-                            </div>
-                            
-                            {/* Enhanced Assignment Details */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Calendar className="h-4 w-4 text-primary" />
-                                  <span className="font-medium">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Clock className="h-4 w-4 text-primary" />
-                                  <span>{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                  {booking.estimatedDuration && (
-                                    <span className="text-muted-foreground">({booking.estimatedDuration} mins)</span>
+                    <div key={booking.id} className="p-3 sm:p-4 border rounded-xl sm:rounded-2xl hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
+                      <div className="flex flex-col gap-3 sm:gap-4">
+                        <div className="flex flex-col gap-3 flex-1">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full mt-1 flex-shrink-0 ${
+                              booking.status === 'COMPLETED' ? 'bg-success' :
+                              booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
+                              booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
+                            }`} />
+                            <div className="flex-1 space-y-2 sm:space-y-3">
+                              <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
+                                <p className="font-semibold text-foreground text-base sm:text-lg">
+                                  {booking.service?.name || 'Cleaning Service'}
+                                </p>
+                                <Badge variant={
+                                  booking.status === 'COMPLETED' ? 'default' :
+                                  booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
+                                  booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
+                                } className="text-xs">
+                                  {booking.status}
+                                </Badge>
+                              </div>
+
+                              {/* Enhanced Assignment Details */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
+                                <div className="space-y-1.5 sm:space-y-2">
+                                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                                    <span className="font-medium">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                                    <span>{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    {booking.estimatedDuration && (
+                                      <span className="text-muted-foreground hidden sm:inline">({booking.estimatedDuration} mins)</span>
+                                    )}
+                                  </div>
+                                  {booking.customer?.name && (
+                                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                                      <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                                      <span className="font-medium truncate">{booking.customer.name}</span>
+                                    </div>
                                   )}
                                 </div>
-                                {booking.customer?.name && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <User className="h-4 w-4 text-primary" />
-                                    <span className="font-medium">{booking.customer.name}</span>
+
+                                <div className="space-y-1.5 sm:space-y-2">
+                                  {booking.customer?.phone && (
+                                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                                      <span className="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center text-xs">📞</span>
+                                      <span>{booking.customer.phone}</span>
+                                    </div>
+                                  )}
+                                  {booking.customer?.email && (
+                                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hidden sm:flex">
+                                      <span className="w-4 h-4 flex items-center justify-center">✉️</span>
+                                      <span className="truncate">{booking.customer.email}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                                    <span className="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center text-green-600 text-xs">💰</span>
+                                    <span className="font-bold text-green-600">₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}</span>
                                   </div>
-                                )}
-                              </div>
-                              
-                              <div className="space-y-2">
-                                {booking.customer?.phone && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span className="w-4 h-4 flex items-center justify-center">📞</span>
-                                    <span>{booking.customer.phone}</span>
-                                  </div>
-                                )}
-                                {booking.customer?.email && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span className="w-4 h-4 flex items-center justify-center">✉️</span>
-                                    <span className="truncate">{booking.customer.email}</span>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2 text-sm">
-                                  <span className="w-4 h-4 flex items-center justify-center text-green-600">💰</span>
-                                  <span className="font-bold text-green-600">₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}</span>
                                 </div>
                               </div>
+
+                              {booking.serviceAddress && (
+                                <div className="mb-2 sm:mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                                  <div className="flex items-start gap-2 text-xs sm:text-sm">
+                                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <span className="font-medium text-blue-700 dark:text-blue-300">Location:</span>
+                                      <p className="text-blue-600 dark:text-blue-400 truncate sm:whitespace-normal">{booking.serviceAddress}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {booking.specialInstructions && (
+                                <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-l-4 border-yellow-400">
+                                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2">
+                                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <span className="font-medium text-yellow-700 dark:text-yellow-300 text-xs sm:text-sm">Instructions:</span>
+                                      <p className="text-yellow-600 dark:text-yellow-400 text-xs sm:text-sm mt-0.5 sm:mt-1 break-words">{booking.specialInstructions}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Assignment Status & Timeline */}
+                              {booking.createdAt && (
+                                <div className="mb-2 sm:mb-3 p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                                  <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-green-700 dark:text-green-300">
+                                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span>Assigned on {new Date(booking.createdAt).toLocaleDateString()}</span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            
-                            {booking.serviceAddress && (
-                              <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                                <div className="flex items-start gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                  <div>
-                                    <span className="font-medium text-blue-700 dark:text-blue-300">Service Location:</span>
-                                    <p className="text-blue-600 dark:text-blue-400">{booking.serviceAddress}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {booking.specialInstructions && (
-                              <div className="mb-3 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border-l-4 border-yellow-400">
-                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                                  <MessageCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                  <div>
-                                    <span className="font-medium text-yellow-700 dark:text-yellow-300 text-sm">Special Instructions:</span>
-                                    <p className="text-yellow-600 dark:text-yellow-400 text-sm mt-1 break-words">{booking.specialInstructions}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Assignment Status & Timeline */}
-                            {booking.createdAt && (
-                              <div className="mb-3 p-2 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                                <div className="flex flex-wrap items-center gap-2 text-sm text-green-700 dark:text-green-300">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <span>Assigned on {new Date(booking.createdAt).toLocaleDateString()}</span>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>

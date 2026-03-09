@@ -17,9 +17,12 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   RefreshCw,
   Bell,
-  Timer
+  Timer,
+  Eye
 } from 'lucide-react';
 
 interface MaidBookingRequestsSectionProps {
@@ -37,9 +40,19 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
   const [processing, setProcessing] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [processedRequestIds, setProcessedRequestIds] = useState<Set<string>>(new Set());
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   
   const itemsPerPage = 5;
+
+  const toggleCardExpanded = (id: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetchAssignmentRequests();
@@ -207,7 +220,7 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
   };
 
   const Pagination = () => (
-    <div className="flex items-center justify-between mt-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-3">
       <div className="text-sm text-muted-foreground">
         Page {currentPage} of {getTotalPages()}
       </div>
@@ -238,19 +251,25 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
     <>
       <Card className="dashboard-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Bell className="h-5 w-5 text-primary" />
-                Booking Assignment Requests ({assignmentRequests.length})
+                Booking Assignment Requests
+                {assignmentRequests.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {assignmentRequests.length}
+                  </Badge>
+                )}
               </CardTitle>
-              <CardDescription>Accept or reject booking assignments from administrators</CardDescription>
+              <CardDescription className="mt-1">Accept or reject booking assignments from administrators</CardDescription>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefresh}
               disabled={loading}
+              className="w-full sm:w-auto"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -266,101 +285,107 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
               </div>
             ) : (
               <>
-                {getPaginatedData(assignmentRequests).map((request, index) => (
-                  <div key={request.id} className={`border rounded-lg p-4 ${
+                {getPaginatedData(assignmentRequests).map((request, index) => {
+                  const isExpanded = expandedCards.has(request.id);
+                  return (
+                  <div key={request.id} className={`border rounded-2xl p-3 sm:p-5 transition-shadow hover:shadow-md ${
                     isExpiringSoon(request.expiresAt) 
                       ? 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-red-200 dark:border-red-800' 
                       : 'bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20'
                   }`}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium text-primary">
-                          {getSerialNumber(index)}
+                    <div className="flex flex-col gap-3">
+                      {/* Compact Header: Service + Amount + Urgent badge */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium text-primary shrink-0">
+                            {getSerialNumber(index)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-foreground text-sm sm:text-base truncate">{request.booking.service.name}</p>
+                            <p className="text-xs font-medium text-green-700 dark:text-green-400">₹{request.booking.totalAmount.toLocaleString()}</p>
+                          </div>
                         </div>
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-4 flex-wrap">
-                            <div>
-                              <p className="font-semibold text-foreground">{request.booking.service.name}</p>
-                              <p className="text-sm text-muted-foreground">₹{request.booking.totalAmount.toLocaleString()}</p>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium">{request.booking.customer.name}</span>
-                              </div>
-                              <p className="text-sm text-muted-foreground">{request.booking.customer.phone}</p>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{new Date(request.booking.scheduledAt).toLocaleDateString()}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{request.booking.timeSlot || new Date(request.booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-start gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-muted-foreground">{request.booking.serviceAddress}</span>
-                          </div>
-
-                          {request.booking.specialInstructions && (
-                            <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                              <p className="text-sm text-blue-700 dark:text-blue-300">
-                                <strong>Special Instructions:</strong> {request.booking.specialInstructions}
-                              </p>
-                            </div>
-                          )}
-
-                          <div className="bg-gray-50 dark:bg-gray-950/20 p-3 rounded border border-gray-200 dark:border-gray-800">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <span className="font-medium">Service Duration:</span> {request.booking.service.baseDuration} minutes
-                              </div>
-                              <div>
-                                <span className="font-medium">Service Category:</span> {request.booking.service.category}
-                              </div>
-                              <div>
-                                <span className="font-medium">Requested:</span> {new Date(request.requestedAt).toLocaleString()}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Timer className="h-3 w-3 text-orange-600" />
-                                <span className={`text-sm ${isExpiringSoon(request.expiresAt) ? 'text-red-600 font-medium' : 'text-orange-600'}`}>
-                                  {getTimeRemaining(request.expiresAt)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-blue-600 border-blue-600">
-                              <Bell className="h-3 w-3 mr-1" />
-                              New Assignment
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isExpiringSoon(request.expiresAt) && (
+                            <Badge variant="destructive" className="animate-pulse text-[10px] px-1.5 py-0.5">
+                              Urgent
                             </Badge>
-                            {isExpiringSoon(request.expiresAt) && (
-                              <Badge variant="destructive" className="animate-pulse">
-                                <AlertCircle className="h-3 w-3 mr-1" />
-                                Urgent - Expiring Soon
-                              </Badge>
-                            )}
-                          </div>
+                          )}
+                          <Badge variant="outline" className="text-blue-600 border-blue-600 text-[10px] px-1.5 py-0.5 hidden sm:inline-flex">
+                            New
+                          </Badge>
                         </div>
                       </div>
-                      
-                      <div className="ml-4 flex flex-col gap-2">
+
+                      {/* Essential info row: Customer + Date */}
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <User className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                          <span className="font-medium truncate">{request.booking.customer.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{new Date(request.booking.scheduledAt).toLocaleDateString()}</span>
+                          <span className="text-muted-foreground/60">•</span>
+                          <span>{request.booking.timeSlot || new Date(request.booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                      </div>
+
+                      {/* Expiry timer - always visible */}
+                      <div className="flex items-center gap-1.5">
+                        <Timer className="h-3 w-3 text-orange-600 shrink-0" />
+                        <span className={`text-xs ${isExpiringSoon(request.expiresAt) ? 'text-red-600 font-semibold' : 'text-orange-600'}`}>
+                          {getTimeRemaining(request.expiresAt)}
+                        </span>
+                      </div>
+
+                      {/* View Details toggle (mobile-friendly) */}
+                      <button
+                        type="button"
+                        onClick={() => toggleCardExpanded(request.id)}
+                        className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium sm:hidden"
+                      >
+                        <Eye className="h-3 w-3" />
+                        {isExpanded ? 'Hide Details' : 'View Details'}
+                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+
+                      {/* Expanded details - always visible on sm+, toggle on mobile */}
+                      <div className={`space-y-3 ${isExpanded ? 'block' : 'hidden'} sm:block`}>
+                        {/* Customer details row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{request.booking.serviceAddress}</span>
+                          </span>
+                          <span className="hidden sm:inline text-muted-foreground/40">•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 shrink-0" />
+                            {request.booking.service.baseDuration} min • {request.booking.service.category}
+                          </span>
+                        </div>
+
+                        {request.booking.specialInstructions && (
+                          <div className="bg-blue-50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              <strong>Note:</strong> {request.booking.specialInstructions}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action Buttons - always visible */}
+                      <div className="flex gap-2 pt-1">
                         <Button
                           onClick={() => handleAcceptRequest(request.id)}
                           disabled={processing === request.id}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 text-white flex-1 h-9 text-xs sm:text-sm"
                           size="sm"
                         >
                           {processing === request.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-1.5"></div>
                           ) : (
-                            <CheckCircle className="h-4 w-4 mr-2" />
+                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                           )}
                           Accept
                         </Button>
@@ -368,16 +393,17 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
                           onClick={() => handleRejectClick(request)}
                           disabled={processing === request.id}
                           variant="outline"
-                          className="border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                          className="border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 flex-1 h-9 text-xs sm:text-sm"
                           size="sm"
                         >
-                          <XCircle className="h-4 w-4 mr-2" />
+                          <XCircle className="h-3.5 w-3.5 mr-1.5" />
                           Reject
                         </Button>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 
                 {assignmentRequests.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
@@ -396,7 +422,7 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
 
       {/* Rejection Dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Reject Assignment Request</DialogTitle>
             <DialogDescription>

@@ -221,21 +221,21 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Left Column - Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto">
         <div className="w-full max-w-2xl">
           {/* Logo */}
-          <div className="flex items-center justify-center mb-8">
-            <img src="/assets/logo.png" alt="Sweepro Logo" className="h-24 w-auto" />
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
+            <img src="/assets/logo.png" alt="Sweepro Logo" className="h-16 sm:h-20 md:h-24 w-auto" />
           </div>
 
           <Card className="border-none shadow-lg">
-            <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Sweepro</CardTitle>
-              <CardDescription className="text-gray-600">
+            <CardHeader className="space-y-1 text-center px-4 sm:px-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">Welcome to Sweepro</CardTitle>
+              <CardDescription className="text-gray-600 text-sm sm:text-base">
                 Sign in with email/password or Google
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
               <form onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>

@@ -141,38 +141,38 @@ export default function SupportPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Support Center</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Support Center</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Get help with your cleaning services and account management
           </p>
         </div>
 
         {/* AI Chat Support */}
         <Card className="dashboard-card slide-up">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Bot className="h-5 w-5 text-primary" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
+              <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <span>AI Assistant</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Get instant help with common questions and issues
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
             <div className="space-y-4">
-              <ScrollArea className="h-80 w-full border border-border rounded-lg p-4">
-                <div className="space-y-4">
+              <ScrollArea className="h-64 sm:h-80 w-full border border-border rounded-lg p-3 sm:p-4">
+                <div className="space-y-3 sm:space-y-4">
                   {chatMessages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`flex items-start space-x-2 max-w-[80%] ${msg.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${msg.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                          {msg.type === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                      <div className={`flex items-start space-x-2 max-w-[90%] sm:max-w-[80%] ${msg.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                          {msg.type === 'user' ? <User className="h-3 w-3 sm:h-4 sm:w-4" /> : <Bot className="h-3 w-3 sm:h-4 sm:w-4" />}
                         </div>
-                        <div className={`rounded-lg p-3 ${msg.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                          <p className="text-sm">{msg.message}</p>
+                        <div className={`rounded-lg p-2 sm:p-3 ${msg.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                          <p className="text-xs sm:text-sm">{msg.message}</p>
                           <p className={`text-xs mt-1 ${msg.type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                             {msg.timestamp.toLocaleTimeString()}
                           </p>
@@ -303,38 +303,38 @@ export default function SupportPage() {
 
         {/* FAQ Section */}
         <Card className="dashboard-card slide-up">
-          <CardHeader>
-            <CardTitle>Frequently Asked Questions</CardTitle>
-            <CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg sm:text-xl">Frequently Asked Questions</CardTitle>
+            <CardDescription className="text-sm">
               Find quick answers to common questions
             </CardDescription>
 
             {/* FAQ Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <div className="relative mt-3">
+              <Search className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search FAQ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-sm"
               />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+            <div className="space-y-3 sm:space-y-4">
               {filteredFAQ.map((item, index) => (
                 <details
                   key={index}
-                  className="group border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                  className="group border border-border rounded-lg p-3 sm:p-4 hover:bg-muted/30 transition-colors"
                 >
                   <summary className="flex items-center justify-between cursor-pointer list-none">
-                    <div className="flex items-center space-x-3">
-                      <HelpCircle className="h-5 w-5 text-primary" />
-                      <span className="font-medium text-foreground">{item.question}</span>
+                    <div className="flex items-start sm:items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                      <HelpCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0 mt-0.5 sm:mt-0" />
+                      <span className="font-medium text-foreground text-sm sm:text-base">{item.question}</span>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-open:rotate-90 transition-transform" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-open:rotate-90 transition-transform flex-shrink-0 ml-2" />
                   </summary>
-                  <div className="mt-3 pl-8 text-muted-foreground">
+                  <div className="mt-2 sm:mt-3 pl-6 sm:pl-8 text-muted-foreground text-sm">
                     {item.answer}
                   </div>
                 </details>

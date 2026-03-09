@@ -274,8 +274,8 @@ export default function MaidDashboardEnhanced() {
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-xl sm:text-3xl font-bold text-foreground">Welcome back, {user.name}!</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base hidden sm:block">
             Here's your comprehensive cleaning schedule, earnings overview, and performance metrics.
           </p>
         </div>
@@ -284,21 +284,19 @@ export default function MaidDashboardEnhanced() {
         {verificationStatus === 'NOT_SUBMITTED' && (
           <Alert className="border-2 border-warning bg-gradient-to-r from-warning/5 to-orange/5">
             <Shield className="h-5 w-5 text-warning" />
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3">
               <div>
-                <h4 className="font-semibold text-lg mb-2">Complete Your Profile Verification</h4>
-                <AlertDescription className="text-base">
-                  To start receiving cleaning assignments and earn money, please complete your profile verification by uploading your documents (Aadhar card, PAN card, and electricity bill for address verification).
+                <h4 className="font-semibold text-base sm:text-lg mb-1">Complete Your Profile Verification</h4>
+                <AlertDescription className="text-sm">
+                  Upload your documents to start receiving assignments.
                 </AlertDescription>
               </div>
-              <div className="flex gap-3 ml-4">
-                <Link to="/maid-verification">
-                  <Button className="bg-primary hover:bg-primary/90 text-white">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Verify Now
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/maid-verification">
+                <Button className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto" size="sm">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Verify Now
+                </Button>
+              </Link>
             </div>
           </Alert>
         )}
@@ -307,9 +305,9 @@ export default function MaidDashboardEnhanced() {
           <Alert className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50">
             <Clock className="h-5 w-5 text-blue-600" />
             <div>
-              <h4 className="font-semibold text-lg mb-2 text-blue-800">Verification Under Review</h4>
-              <AlertDescription className="text-blue-700">
-                Your verification documents are being reviewed by our admin team. This typically takes 24-48 hours. You'll receive a notification once the review is complete.
+              <h4 className="font-semibold text-base mb-1 text-blue-800">Verification Under Review</h4>
+              <AlertDescription className="text-blue-700 text-sm">
+                Your documents are being reviewed. This typically takes 24-48 hours.
               </AlertDescription>
             </div>
           </Alert>
@@ -318,21 +316,19 @@ export default function MaidDashboardEnhanced() {
         {verificationStatus === 'APPROVED' && showVerificationAlert && (
           <Alert className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3">
               <div>
-                <h4 className="font-semibold text-lg mb-2 text-green-800">🎉 Welcome to Sweepro!</h4>
-                <AlertDescription className="text-green-700">
-                  Congratulations! Your profile has been verified and approved. You can now receive cleaning assignments and start earning money. Your account is fully active!
+                <h4 className="font-semibold text-base mb-1 text-green-800">🎉 Welcome to Sweepro!</h4>
+                <AlertDescription className="text-green-700 text-sm">
+                  Your profile is verified. You can now receive assignments!
                 </AlertDescription>
               </div>
-              <div className="flex gap-3 ml-4">
-                <Link to="/maid-bookings">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    View Assignments
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/maid-bookings">
+                <Button className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto" size="sm">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  View Assignments
+                </Button>
+              </Link>
             </div>
           </Alert>
         )}
@@ -340,97 +336,94 @@ export default function MaidDashboardEnhanced() {
         {verificationStatus === 'REJECTED' && (
           <Alert className="border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between w-full gap-3">
               <div className="flex-1">
-                <h4 className="font-semibold text-lg mb-2 text-red-800">Verification Rejected</h4>
-                <AlertDescription className="text-red-700">
-                  Some of your verification documents have been rejected. Please review the feedback below and upload the corrected documents.
+                <h4 className="font-semibold text-base mb-1 text-red-800">Verification Rejected</h4>
+                <AlertDescription className="text-red-700 text-sm">
+                  Some documents were rejected. Please upload corrected documents.
                 </AlertDescription>
 
-                {/* Individual Document Status */}
                 {verificationData?.documents && (
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-2 space-y-1.5">
                     {verificationData.documents.aadharCard?.status === 'REJECTED' && (
-                      <div className="p-2 bg-red-100 border border-red-200 rounded text-sm">
-                        <strong className="text-red-800">Aadhar Card - Rejected</strong>
+                      <div className="p-1.5 bg-red-100 border border-red-200 rounded text-xs">
+                        <strong className="text-red-800">Aadhar Card</strong>
                         {verificationData.documents.aadharCard.rejectionReason && (
-                          <p className="text-red-600 mt-1">{verificationData.documents.aadharCard.rejectionReason}</p>
+                          <span className="text-red-600 ml-1">- {verificationData.documents.aadharCard.rejectionReason}</span>
                         )}
                       </div>
                     )}
                     {verificationData.documents.panCard?.status === 'REJECTED' && (
-                      <div className="p-2 bg-red-100 border border-red-200 rounded text-sm">
-                        <strong className="text-red-800">PAN Card - Rejected</strong>
+                      <div className="p-1.5 bg-red-100 border border-red-200 rounded text-xs">
+                        <strong className="text-red-800">PAN Card</strong>
                         {verificationData.documents.panCard.rejectionReason && (
-                          <p className="text-red-600 mt-1">{verificationData.documents.panCard.rejectionReason}</p>
+                          <span className="text-red-600 ml-1">- {verificationData.documents.panCard.rejectionReason}</span>
                         )}
                       </div>
                     )}
                     {verificationData.documents.electricityBill?.status === 'REJECTED' && (
-                      <div className="p-2 bg-red-100 border border-red-200 rounded text-sm">
-                        <strong className="text-red-800">Address Proof - Rejected</strong>
+                      <div className="p-1.5 bg-red-100 border border-red-200 rounded text-xs">
+                        <strong className="text-red-800">Address Proof</strong>
                         {verificationData.documents.electricityBill.rejectionReason && (
-                          <p className="text-red-600 mt-1">{verificationData.documents.electricityBill.rejectionReason}</p>
+                          <span className="text-red-600 ml-1">- {verificationData.documents.electricityBill.rejectionReason}</span>
                         )}
                       </div>
                     )}
                   </div>
                 )}
               </div>
-              <div className="flex gap-3 ml-4">
-                <Link to="/maid-verification">
-                  <Button className="bg-red-600 hover:bg-red-700 text-white">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Re-upload Documents
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/maid-verification">
+                <Button className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto" size="sm">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Re-upload
+                </Button>
+              </Link>
             </div>
           </Alert>
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 slide-up">
+        <div className="grid grid-cols-3 gap-3 sm:gap-6 slide-up">
           <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Bookings
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">
+                Bookings
               </CardTitle>
-              <Calendar className="h-5 w-5 text-primary" />
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.totalBookings}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold text-foreground">{stats.totalBookings}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                 {stats.upcomingBookings} upcoming
               </p>
             </CardContent>
           </Card>
 
           <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Completed Services
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">
+                Completed
               </CardTitle>
-              <CheckCircle className="h-5 w-5 text-success" />
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.completedBookings}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.completionRate}% completion rate
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold text-foreground">{stats.completedBookings}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                {stats.completionRate}% rate
               </p>
             </CardContent>
           </Card>
 
           <Card className="dashboard-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Average Rating
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">
+                Rating
               </CardTitle>
-              <Star className="h-5 w-5 text-yellow-500" />
+              <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{stats.averageRating}★</div>
-              <p className="text-xs text-muted-foreground mt-1">
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold text-foreground">{stats.averageRating}★</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                 {stats.totalReviews} reviews
               </p>
             </CardContent>
@@ -464,166 +457,99 @@ export default function MaidDashboardEnhanced() {
           </div>
         )} */}
 
-        {/* Customer Assignment Requests Section */}
-        <div className="mb-8">
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <User className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">Customer Assignment Requests</CardTitle>
-                    <CardDescription>New customer assignment requests waiting for your response</CardDescription>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-600">
-                  New
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <MaidAssignmentRequestsSection onRefresh={fetchMaidDashboardData} />
-            </CardContent>
-          </Card>
+        {/* Customer Assignment Requests Section - rendered directly, no wrapper card */}
+        <div className="slide-up">
+          <MaidAssignmentRequestsSection onRefresh={fetchMaidDashboardData} />
         </div>
 
-        {/* Add automatic booking assignment requests for maids */}
-        <div className="mb-8">
-          <Card className="dashboard-card slide-up">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Bell className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">Automatic Booking Assignment Requests</CardTitle>
-                    <CardDescription>Accept or reject automatic bookings assigned to you</CardDescription>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-600">
-                  Auto
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <MaidBookingRequestsSection onRefresh={fetchMaidDashboardData} />
-            </CardContent>
-          </Card>
+        {/* Automatic Booking Assignment Requests - rendered directly, no wrapper card */}
+        <div className="slide-up">
+          <MaidBookingRequestsSection onRefresh={fetchMaidDashboardData} />
         </div>
 
         {/* Recent Bookings and Quick Actions Grid */}
         <div className="grid grid-cols-1 gap-6">
           {/* Recent Bookings */}
           <Card className="dashboard-card slide-up">
-            <CardHeader>
+            <CardHeader className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
                     Recent Assignments
                   </CardTitle>
-                  <CardDescription>Your recent and upcoming cleaning sessions</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm mt-0.5">Your recent and upcoming cleaning sessions</CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="text-xs px-2 py-1">
-                    {stats.totalBookings} Total
-                  </Badge>
-                  <Link to="/maid-bookings">
-                    <Button variant="outline" size="sm">
-                      View All
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/maid-bookings">
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                    View All
+                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                  </Button>
+                </Link>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
               {bookings.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {bookings.slice(0, 2).map((booking) => (
-                    <div key={booking.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4 flex-1">
-                          <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${booking.status === 'COMPLETED' ? 'bg-success' :
+                    <div key={booking.id} className="p-3 sm:p-4 border rounded-xl hover:shadow-md transition-shadow bg-gradient-to-r from-card to-muted/20">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${booking.status === 'COMPLETED' ? 'bg-success' :
                               booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
                                 booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
                             }`} />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-3">
-                              <p className="font-semibold text-foreground text-lg">
-                                {booking.service?.name || 'Cleaning Service'}
-                              </p>
-                              <Badge variant={
-                                booking.status === 'COMPLETED' ? 'default' :
-                                  booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
-                                    booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
-                              }>
-                                {booking.status}
-                              </Badge>
-                            </div>
-
-                            {/* Enhanced Assignment Details */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Calendar className="h-4 w-4 text-primary" />
-                                  <span className="font-medium">{new Date(booking.scheduledAt).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Clock className="h-4 w-4 text-primary" />
-                                  <span>{booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                  {booking.estimatedDuration && (
-                                    <span className="text-muted-foreground">({booking.estimatedDuration} mins)</span>
-                                  )}
-                                </div>
-                                {booking.customer?.name && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <User className="h-4 w-4 text-primary" />
-                                    <span className="font-medium">{booking.customer.name}</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="space-y-2">
-                                {booking.customer?.phone && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span className="w-4 h-4 flex items-center justify-center">📞</span>
-                                    <span>{booking.customer.phone}</span>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2 text-sm">
-                                  <span className="w-4 h-4 flex items-center justify-center text-green-600">💰</span>
-                                  <span className="font-bold text-green-600">₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {booking.serviceAddress && (
-                              <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                                <div className="flex items-start gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                  <div>
-                                    <span className="font-medium text-blue-700 dark:text-blue-300">Service Location:</span>
-                                    <p className="text-blue-600 dark:text-blue-400">{booking.serviceAddress}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-semibold text-foreground text-sm sm:text-base truncate">
+                              {booking.service?.name || 'Cleaning Service'}
+                            </p>
+                            <Badge variant={
+                              booking.status === 'COMPLETED' ? 'default' :
+                                booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
+                                  booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
+                            } className="text-[10px] px-1.5 py-0 shrink-0">
+                              {booking.status}
+                            </Badge>
                           </div>
+
+                          {/* Compact info row */}
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-primary" />
+                              {new Date(booking.scheduledAt).toLocaleDateString()}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-primary" />
+                              {booking.timeSlot || new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {booking.customer?.name && (
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3 text-primary" />
+                                {booking.customer.name}
+                              </span>
+                            )}
+                            <span className="font-bold text-green-600">
+                              ₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}
+                            </span>
+                          </div>
+
+                          {booking.serviceAddress && (
+                            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground hidden sm:flex">
+                              <MapPin className="h-3 w-3 text-blue-600 mt-0.5 shrink-0" />
+                              <span className="truncate">{booking.serviceAddress}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h4 className="font-semibold text-lg mb-2">No Assignments Yet</h4>
-                  <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
-                    You'll see your cleaning assignments here once customers book your services. Make sure your availability is up to date!
+                <div className="text-center py-8 sm:py-12">
+                  <Calendar className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3" />
+                  <h4 className="font-semibold text-base sm:text-lg mb-1">No Assignments Yet</h4>
+                  <p className="text-muted-foreground text-xs sm:text-sm max-w-md mx-auto">
+                    Assignments will appear here once customers book your services.
                   </p>
                 </div>
               )}

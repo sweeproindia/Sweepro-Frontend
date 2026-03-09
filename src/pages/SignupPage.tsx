@@ -370,24 +370,24 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Left Column - Form - Adjusted for fixed right column */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto">
         <div className="w-full max-w-2xl">
           {/* Logo */}
-          <div className="flex flex-col items-center mb-8">
+          <div className="flex flex-col items-center mb-6 sm:mb-8">
             <img
               src="/assets/logo.png"
               alt="Sweepro Logo"
-              className="w-40 h-30 object-contain mb-2"
+              className="w-32 sm:w-40 h-auto object-contain mb-2"
               style={{ maxWidth: '180px', maxHeight: '180px' }}
             />
           </div>
 
           <Card className="border-none shadow-lg">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-gray-900">
+            <CardHeader className="space-y-1 px-4 sm:px-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">
                 {isMaid ? 'Join as Cleaning Professional' : 'Create Your Account'}
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-gray-600 text-sm sm:text-base">
                 {hasSelectedRole
                   ? (isMaid
                     ? 'Register to start accepting cleaning jobs'
@@ -395,7 +395,7 @@ export default function SignupPage() {
                   : 'Select account type to continue'}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 sm:px-6">
               <div className="space-y-3 mb-6">
                 <Label className="text-sm font-medium text-gray-700">Account Type</Label>
                 <RadioGroup
