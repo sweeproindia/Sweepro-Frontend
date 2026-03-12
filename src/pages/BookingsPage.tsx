@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause, ScanLine } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause, ScanLine, Camera } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserBookings, useBookingStats, useCancelBookingMutation } from '@/hooks/queries/useBookingQueries';
@@ -457,10 +457,10 @@ export default function BookingsPage() {
                       size="sm"
                       onClick={() => openQrScannerForBooking(booking.id)}
                       disabled={completingWithQr}
-                      className="text-xs sm:text-sm"
+                      className="text-xs sm:text-sm bg-primary"
                     >
-                      <CheckCircle className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
-                      <span className="hidden sm:inline">Enter Code to Complete</span>
+                      <Camera className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
+                      <span className="hidden sm:inline">Scan / Enter Code</span>
                       <span className="sm:hidden">Complete</span>
                     </Button>
                   )}

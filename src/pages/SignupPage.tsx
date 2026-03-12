@@ -368,9 +368,9 @@ export default function SignupPage() {
   const comingSoonAreas = ['Kondapur', 'Hitech City', 'Kokapet', 'Madhapur', 'Manikonda', 'Narsingi'];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Left Column - Form - Adjusted for fixed right column */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto">
         <div className="w-full max-w-2xl">
           {/* Logo */}
           <div className="flex flex-col items-center mb-6 sm:mb-8">
@@ -885,7 +885,7 @@ export default function SignupPage() {
       </div>
 
       {/* Right Column - Illustration/Info */}
-      <div className="hidden lg:flex flex-1 fixed right-0 top-0 h-screen w-1/2 bg-[#1800ad] text-white overflow-hidden">
+      <div className="hidden lg:flex fixed right-0 top-0 h-screen w-1/2 bg-[#1800ad] text-white overflow-hidden">
         {/* Modern Abstract Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#ca0013] rounded-full blur-[120px] opacity-20 animate-pulse"></div>
@@ -893,15 +893,15 @@ export default function SignupPage() {
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-16">
+        <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-8 xl:px-16 overflow-y-auto py-8">
           <div className="w-full max-w-lg">
             {/* Value Proposition Header */}
-            <div className="mb-12">
+            <div className="mb-8 xl:mb-12">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-4 xl:mb-6"
               >
                 <Sparkles className="h-4 w-4 text-[#eeebe3]" />
                 <span className="text-sm font-semibold tracking-wide uppercase">
@@ -913,7 +913,7 @@ export default function SignupPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-5xl font-extrabold mb-6 leading-tight"
+                className="text-3xl xl:text-5xl font-extrabold mb-4 xl:mb-6 leading-tight"
               >
                 {isMaid ? (
                   <>Elevate your <span className="text-[#eeebe3]">career.</span></>
@@ -926,7 +926,7 @@ export default function SignupPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-xl text-[#eeebe3]/80 leading-relaxed"
+                className="text-base xl:text-xl text-[#eeebe3]/80 leading-relaxed"
               >
                 {isMaid
                   ? 'Join our elite network of cleaning professionals and take control of your earnings.'
@@ -940,7 +940,7 @@ export default function SignupPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
-                className="relative mb-12 p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden group hover:border-white/20 transition-all duration-500"
+                className="relative mb-8 xl:mb-12 p-6 xl:p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 overflow-hidden group hover:border-white/20 transition-all duration-500"
               >
                 <div className="absolute top-0 right-0 p-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ca0013] shadow-lg shadow-[#ca0013]/40 animate-bounce">
@@ -948,8 +948,8 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold mb-2">Exclusively Live In</h3>
-                <p className="text-[#eeebe3] text-4xl font-black mb-6 tracking-tight">{liveArea}</p>
+                <h3 className="text-xl xl:text-2xl font-bold mb-2">Exclusively Live In</h3>
+                <p className="text-[#eeebe3] text-2xl xl:text-4xl font-black mb-4 xl:mb-6 tracking-tight">{liveArea}</p>
 
                 <div className="space-y-3">
                   <p className="text-sm font-medium text-[#eeebe3]/60 uppercase tracking-widest">Available Communities</p>
@@ -975,7 +975,7 @@ export default function SignupPage() {
                 </div>
               </motion.div>
             ) : (
-              <div className="space-y-6 mb-12">
+              <div className="space-y-4 xl:space-y-6 mb-8 xl:mb-12">
                 {[
                   { icon: Shield, title: 'Verified Customers', desc: 'Work with premium residents in high-end communities.' },
                   { icon: Clock, title: 'Flexible Schedule', desc: 'Choose your hours and maintain perfect work-life balance.' },

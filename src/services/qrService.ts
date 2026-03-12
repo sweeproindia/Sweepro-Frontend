@@ -31,6 +31,16 @@ export const getMaidQRCode = async (): Promise<ApiResponse<{
   });
 };
 
+// Set maid's custom verification code (10 alphanumeric characters)
+export const setMaidCustomCode = async (code: string): Promise<ApiResponse<{ verificationCode: string }>> => {
+  const endpoint = API_ENDPOINTS.BOOKING_COMPLETION.MAID_CUSTOM_CODE;
+  return await apiRequest<{ verificationCode: string }>(endpoint, {
+    method: HttpMethod.PUT,
+    body: { code },
+    requiresAuth: true,
+  });
+};
+
 export const startBookingServiceForMaid = async (
   bookingId: string
 ): Promise<ApiResponse<{ bookingId: string; status: string; actualStartTime: string; actualStartTimeIST?: string }>> => {
