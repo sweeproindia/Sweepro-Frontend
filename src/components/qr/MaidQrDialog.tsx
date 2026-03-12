@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { getMaidQRCode } from '@/services/qrService';
-import { Copy, Check, User } from 'lucide-react';
+import { Copy, Check, User, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import QRCode from 'qrcode';
 
 interface MaidQrDialogProps {
   open: boolean;
@@ -14,6 +15,7 @@ const MaidQrDialog: React.FC<MaidQrDialogProps> = ({ open, onOpenChange }) => {
   const { toast } = useToast();
   const [verificationCode, setVerificationCode] = useState<string>('');
   const [maidName, setMaidName] = useState<string>('');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
@@ -27,8 +29,19 @@ const MaidQrDialog: React.FC<MaidQrDialogProps> = ({ open, onOpenChange }) => {
         const res = await getMaidQRCode();
         if (!active) return;
         if (res.success && res.data) {
-          setVerificationCode(res.data.verificationCode || '');
+          const code = res.data.verificationCode || '';
+          setVerificationCode(code);
           setMaidName(res.data.maidInfo?.name || '');
+          // Generate QR code image
+          if (code) {
+            try {
+              const qrData = res.data.qrCodeData || JSON.stringify({ type: 'maid_verification', code });
+              const dataUrl = await QRCode.toDataURL(qrData, { width: 200, margin: 2 });
+              if (active) setQrDataUrl(dataUrl);
+            } catch {
+              // QR generation failed - code still shows
+            }
+          }
         } else {
           setError(res.message || 'Failed to load verification code');
         }
@@ -92,10 +105,19 @@ const MaidQrDialog: React.FC<MaidQrDialogProps> = ({ open, onOpenChange }) => {
 
           {!loading && !error && verificationCode && (
             <>
+              {/* QR Code Image */}
+              {qrDataUrl && (
+                <div className="flex justify-center">
+                  <div className="bg-white p-3 rounded-xl border-2 border-primary/20 shadow-sm">
+                    <img src={qrDataUrl} alt="QR Code" className="w-48 h-48" />
+                  </div>
+                </div>
+              )}
+
               {/* Large Code Display */}
-              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-6 text-center border-2 border-primary/20">
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-5 text-center border-2 border-primary/20">
                 <p className="text-sm text-muted-foreground mb-2">Your Code</p>
-                <p className="text-5xl font-mono font-bold tracking-[0.3em] text-primary">
+                <p className="text-3xl font-mono font-bold tracking-[0.2em] text-primary">
                   {verificationCode}
                 </p>
               </div>
@@ -131,8 +153,8 @@ const MaidQrDialog: React.FC<MaidQrDialogProps> = ({ open, onOpenChange }) => {
                 <p className="text-sm font-medium">How it works:</p>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                   <li>Complete the cleaning service</li>
-                  <li>Show this code to the customer</li>
-                  <li>Customer enters the code in their app</li>
+                  <li>Show this QR code or tell the code to the customer</li>
+                  <li>Customer scans QR or enters the code in their app</li>
                   <li>Service is marked as completed</li>
                 </ol>
               </div>

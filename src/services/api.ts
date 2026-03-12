@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
   },
   BOOKING_COMPLETION: {
     MAID_QR_CODE: '/booking-completion/maid/qr-code',
+    MAID_CUSTOM_CODE: '/booking-completion/maid/custom-code',
     START: '/booking-completion/:bookingId/start',
     COMPLETE_WITH_QR: '/booking-completion/:bookingId/complete'
   },

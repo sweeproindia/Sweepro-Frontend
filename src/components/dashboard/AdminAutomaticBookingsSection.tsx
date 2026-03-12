@@ -653,15 +653,17 @@ export const AdminAutomaticBookingsSection: React.FC<AdminAutomaticBookingsSecti
                               </div>
                               <div>
                                 <h4 className="font-medium text-sm text-muted-foreground mb-1">Previous Homecare Partner</h4>
-                                <p className="font-medium text-red-600">{booking.maid?.name ?? '(no homecare partner)'}</p>
+                                <p className="font-medium text-red-600">
+                                  {booking.lastAttempt?.maidName || booking.maid?.name || '(unknown)'}
+                                </p>
                                 <p className="text-sm text-muted-foreground">Rejected this booking</p>
                               </div>
                             </div>
 
-                            {booking.rejectionReason && (
+                            {(booking.lastAttempt?.reason || booking.rejectionReason) && (
                               <div className="mb-4 p-3 bg-red-50 rounded-lg">
                                 <h4 className="font-medium text-sm text-red-800 mb-1">Rejection Reason</h4>
-                                <p className="text-sm text-red-700">{booking.rejectionReason}</p>
+                                <p className="text-sm text-red-700">{booking.lastAttempt?.reason || booking.rejectionReason}</p>
                               </div>
                             )}
 

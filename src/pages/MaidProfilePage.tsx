@@ -4,11 +4,14 @@ import { MaidDashboardLayout } from '@/components/dashboard/MaidDashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Camera, Mail, Phone, Calendar, Star, Quote, ThumbsUp, MapPin, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Edit, Camera, Mail, Phone, Calendar, Star, Quote, ThumbsUp, MapPin, Clock, ShieldCheck, Copy, Check, RefreshCw, Loader2 } from 'lucide-react';
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
 import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
 import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getMaidQRCode, setMaidCustomCode } from '@/services/qrService';
+import { useToast } from '@/hooks/use-toast';
 
 interface MaidProfileData {
   id: string;
@@ -47,6 +50,7 @@ interface Review {
 
 export const MaidProfilePage: React.FC = () => {
   const { user } = useUser();
+  const { toast } = useToast();
   const [profileData, setProfileData] = useState<MaidProfileData | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,9 +58,18 @@ export const MaidProfilePage: React.FC = () => {
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [imageType, setImageType] = useState<'profile' | 'cover'>('profile');
 
+  // Verification code state
+  const [verificationCode, setVerificationCode] = useState<string>('');
+  const [customCodeInput, setCustomCodeInput] = useState<string>('');
+  const [isEditingCode, setIsEditingCode] = useState(false);
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeSaving, setCodeSaving] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
   useEffect(() => {
     fetchProfileData();
     fetchMaidReviews();
+    fetchVerificationCode();
   }, []);
 
   const fetchProfileData = async () => {
@@ -147,6 +160,59 @@ export const MaidProfilePage: React.FC = () => {
       totalReviews: reviews.length
     }) : prev);
   }, [reviews, profileData]);
+
+  const fetchVerificationCode = async () => {
+    try {
+      setCodeLoading(true);
+      const res = await getMaidQRCode();
+      if (res.success && res.data) {
+        setVerificationCode(res.data.verificationCode || '');
+      }
+    } catch (error) {
+      console.error('Error fetching verification code:', error);
+    } finally {
+      setCodeLoading(false);
+    }
+  };
+
+  const handleSaveCustomCode = async () => {
+    const trimmed = customCodeInput.trim().toUpperCase();
+    if (trimmed.length !== 10) {
+      toast({ title: 'Invalid code', description: 'Code must be exactly 10 alphanumeric characters', variant: 'destructive' });
+      return;
+    }
+    if (!/^[A-Z0-9]{10}$/.test(trimmed)) {
+      toast({ title: 'Invalid code', description: 'Code can only contain letters and numbers', variant: 'destructive' });
+      return;
+    }
+    try {
+      setCodeSaving(true);
+      const res = await setMaidCustomCode(trimmed);
+      if (res.success && res.data) {
+        setVerificationCode(res.data.verificationCode);
+        setIsEditingCode(false);
+        setCustomCodeInput('');
+        toast({ title: 'Code updated', description: 'Your verification code has been updated successfully' });
+      } else {
+        toast({ title: 'Error', description: (res as any).message || 'Failed to update code', variant: 'destructive' });
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.message || 'Failed to update code', variant: 'destructive' });
+    } finally {
+      setCodeSaving(false);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(verificationCode);
+      setCodeCopied(true);
+      toast({ title: 'Copied!', description: 'Verification code copied to clipboard' });
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      toast({ title: 'Copy failed', description: 'Please copy the code manually', variant: 'destructive' });
+    }
+  };
 
   const handleImageUpload = (type: 'profile' | 'cover') => {
     setImageType(type);
@@ -439,6 +505,118 @@ export const MaidProfilePage: React.FC = () => {
             </Card>
           </div>
         </div>
+
+        {/* Verification Code Section */}
+        <Card className="border-2 border-primary/30 shadow-md">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                My Verification Code
+              </CardTitle>
+              {!isEditingCode && verificationCode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsEditingCode(true);
+                    setCustomCodeInput(verificationCode);
+                  }}
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  Customize
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {codeLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading code...</span>
+              </div>
+            ) : isEditingCode ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Enter your custom 10-character code</label>
+                  <Input
+                    value={customCodeInput}
+                    onChange={(e) => setCustomCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+                    placeholder="e.g. MYCODE1234"
+                    className="text-center text-xl font-mono tracking-[0.15em] h-14 uppercase"
+                    maxLength={10}
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-muted-foreground text-center">
+                    {customCodeInput.length}/10 characters • Letters and numbers only
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveCustomCode}
+                    disabled={codeSaving || customCodeInput.length !== 10}
+                    className="flex-1"
+                  >
+                    {codeSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Code'
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditingCode(false);
+                      setCustomCodeInput('');
+                    }}
+                    disabled={codeSaving}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : verificationCode ? (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-6 text-center border-2 border-primary/20">
+                  <p className="text-sm text-muted-foreground mb-2">Your Code</p>
+                  <p className="text-3xl sm:text-4xl font-mono font-bold tracking-[0.2em] text-primary">
+                    {verificationCode}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={handleCopyCode}>
+                    {codeCopied ? (
+                      <><Check className="h-4 w-4 mr-2 text-green-500" />Copied!</>
+                    ) : (
+                      <><Copy className="h-4 w-4 mr-2" />Copy Code</>
+                    )}
+                  </Button>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>How it works:</strong> After completing a service, show this code to the customer. 
+                    They will enter it in their app to confirm service completion. You can customize this code using the button above.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 space-y-3">
+                <p className="text-sm text-muted-foreground">No verification code set yet.</p>
+                <Button onClick={() => setIsEditingCode(true)}>
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Set Custom Code
+                </Button>
+                <Button variant="outline" className="ml-2" onClick={fetchVerificationCode}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Generate Auto Code
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* FULL WIDTH: Rating & Reviews Section */}
         <div className="space-y-6">

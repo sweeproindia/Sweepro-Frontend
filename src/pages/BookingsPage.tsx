@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause, ScanLine } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Plus, Edit, Trash2, CheckCircle, Loader2, RefreshCw, Settings, Pause, ScanLine, Camera } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserBookings, useBookingStats, useCancelBookingMutation } from '@/hooks/queries/useBookingQueries';
@@ -193,17 +193,24 @@ export default function BookingsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 fade-in">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">My Bookings</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Bookings</h1>
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
               {isInBufferPeriod ? (
                 <span className="text-orange-600 font-medium">
                   <Pause className="h-4 w-4 inline mr-1" />
-                  {`Buffer period active until ${getFormattedEndDate()} • All booking services are paused during this time`}
+                  <span className="hidden sm:inline">{`Buffer period active until ${getFormattedEndDate()} • All booking services are paused during this time`}</span>
+                  <span className="sm:hidden">{`Buffer active until ${getFormattedEndDate()}`}</span>
                 </span>
               ) : hasPreferredSlot ? (
-                <>Your preferred time: <span className="font-medium text-primary">{preferredTimeSlot}</span> ({preferredDuration}) • Ready for quick booking!</>
+                <>
+                  <span className="hidden sm:inline">Your preferred time: <span className="font-medium text-primary">{preferredTimeSlot}</span> ({preferredDuration}) • Ready for quick booking!</span>
+                  <span className="sm:hidden">Time: <span className="font-medium text-primary">{preferredTimeSlot}</span></span>
+                </>
               ) : (
-                <>Set your preferred time slot in your profile to enable quick booking • <span className="text-amber-600">Profile setup recommended</span></>
+                <>
+                  <span className="hidden sm:inline">Set your preferred time slot in your profile to enable quick booking • <span className="text-amber-600">Profile setup recommended</span></span>
+                  <span className="sm:hidden text-amber-600">Set up your time slot in profile</span>
+                </>
               )}
             </p>
           </div>
@@ -213,6 +220,7 @@ export default function BookingsPage() {
               size="sm"
               onClick={refreshBookings}
               disabled={bookingsLoading}
+              className="w-full sm:w-auto"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${bookingsLoading ? 'animate-spin' : ''}`} />
               Refresh
@@ -222,7 +230,7 @@ export default function BookingsPage() {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 slide-up">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 slide-up">
             <Card className="dashboard-card">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -312,16 +320,16 @@ export default function BookingsPage() {
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <CardHeader className="pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {booking.maid ? 
-                        booking.maid.name.split(' ').map(n => n[0]).join('') : 
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-base flex-shrink-0">
+                      {booking.maid ?
+                        booking.maid.name.split(' ').map(n => n[0]).join('') :
                         'TBD'
                       }
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-base sm:text-lg truncate">
                         {booking.maid?.name || 'Homecare Partner to be assigned'}
                       </CardTitle>
                       <div className="flex items-center space-x-1 mt-1">
@@ -329,18 +337,18 @@ export default function BookingsPage() {
                           <>
                             <div className="flex text-yellow-400">
                               {[...Array(5)].map((_, i) => (
-                                <span key={i} className={i < Math.floor(booking.maid!.rating!) ? 'text-yellow-400' : 'text-gray-300'}>
+                                <span key={i} className={`text-xs sm:text-sm ${i < Math.floor(booking.maid!.rating!) ? 'text-yellow-400' : 'text-gray-300'}`}>
                                   ⭐
                                 </span>
                               ))}
                             </div>
-                            <span className="text-sm text-muted-foreground">({booking.maid.rating})</span>
+                            <span className="text-xs sm:text-sm text-muted-foreground">({booking.maid.rating})</span>
                           </>
                         )}
                       </div>
                     </div>
                   </div>
-                  <Badge className={getStatusColor(booking.status)}>
+                  <Badge className={`${getStatusColor(booking.status)} self-start sm:self-auto text-xs`}>
                     {getStatusLabel(booking.status)}
                   </Badge>
                 </div>
@@ -348,27 +356,27 @@ export default function BookingsPage() {
               
               <CardContent className="space-y-4">
                 {/* Booking Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="text-sm">{formatDate(booking.scheduledAt)}</span>
+                    <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-xs sm:text-sm">{formatDate(booking.scheduledAt)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-sm">
+                    <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-xs sm:text-sm truncate">
                       {booking.timeSlot || formatTime(booking.scheduledAt)}
-                      {booking.estimatedDuration && ` (${Math.round(booking.estimatedDuration / 60)}h ${booking.estimatedDuration % 60}m)`}
+                      {booking.estimatedDuration && <span className="hidden sm:inline"> ({Math.round(booking.estimatedDuration / 60)}h {booking.estimatedDuration % 60}m)</span>}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span className="text-sm truncate" title={booking.serviceAddress}>
+                    <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-xs sm:text-sm truncate" title={booking.serviceAddress}>
                       {booking.serviceAddress}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-primary" />
-                    <span className="text-sm">
+                    <User className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-xs sm:text-sm">
                       {booking.service?.name || 'Service'}
                     </span>
                   </div>
@@ -427,16 +435,18 @@ export default function BookingsPage() {
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
                   {['CONFIRMED', 'ASSIGNED', 'PENDING'].includes(booking.status) && (
                     <>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4 mr-2" />
-                        Reschedule
+                      <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Reschedule</span>
+                        <span className="sm:hidden">Edit</span>
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => onCancelBooking(booking.id)}
+                        className="text-xs sm:text-sm"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                         Cancel
                       </Button>
                     </>
@@ -447,19 +457,23 @@ export default function BookingsPage() {
                       size="sm"
                       onClick={() => openQrScannerForBooking(booking.id)}
                       disabled={completingWithQr}
+                      className="text-xs sm:text-sm bg-primary"
                     >
-                      <CheckCircle className={`h-4 w-4 mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
-                      Enter Code to Complete
+                      <Camera className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${completingWithQr ? 'animate-pulse' : ''}`} />
+                      <span className="hidden sm:inline">Scan / Enter Code</span>
+                      <span className="sm:hidden">Complete</span>
                     </Button>
                   )}
                   {booking.status === 'COMPLETED' && (
-                    <Button variant="outline" size="sm">
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Rate & Review
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Rate & Review</span>
+                      <span className="sm:hidden">Review</span>
                     </Button>
                   )}
-                  <Button variant="outline" size="sm">
-                    View Details
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                    <span className="hidden sm:inline">View Details</span>
+                    <span className="sm:hidden">Details</span>
                   </Button>
                 </div>
               </CardContent>

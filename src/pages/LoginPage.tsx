@@ -219,23 +219,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
       {/* Left Column - Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto min-h-screen">
         <div className="w-full max-w-2xl">
           {/* Logo */}
-          <div className="flex items-center justify-center mb-8">
-            <img src="/assets/logo.png" alt="Sweepro Logo" className="h-24 w-auto" />
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
+            <img src="/assets/logo.png" alt="Sweepro Logo" className="h-16 sm:h-20 md:h-24 w-auto" />
           </div>
 
           <Card className="border-none shadow-lg">
-            <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Sweepro</CardTitle>
-              <CardDescription className="text-gray-600">
+            <CardHeader className="space-y-1 text-center px-4 sm:px-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">Welcome to Sweepro</CardTitle>
+              <CardDescription className="text-gray-600 text-sm sm:text-base">
                 Sign in with email/password or Google
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
               <form onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
@@ -355,7 +355,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Column - Illustration/Info */}
-      <div className="hidden lg:flex flex-1 fixed right-0 top-0 h-screen w-1/2 bg-[#1800ad] text-white overflow-hidden">
+      <div className="hidden lg:flex fixed right-0 top-0 h-screen w-1/2 bg-[#1800ad] text-white overflow-hidden">
         {/* Modern Abstract Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#ca0013] rounded-full blur-[120px] opacity-20 animate-pulse"></div>
@@ -363,7 +363,7 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-16">
+        <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-8 xl:px-16">
           <div className="w-full max-w-lg">
             {/* Value Proposition Header */}
             <div className="mb-12">
@@ -381,7 +381,7 @@ export default function LoginPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-5xl font-extrabold mb-6 leading-tight"
+                className="text-3xl xl:text-5xl font-extrabold mb-4 xl:mb-6 leading-tight"
               >
                 Why choose <span className="text-[#eeebe3]">Sweepro?</span>
               </motion.h2>
@@ -390,7 +390,7 @@ export default function LoginPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-xl text-[#eeebe3]/80 leading-relaxed"
+                className="text-base xl:text-xl text-[#eeebe3]/80 leading-relaxed"
               >
                 Join the elite community of homeowners who trust us for impeccable hygiene and professional care.
               </motion.p>
@@ -409,8 +409,8 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <h3 className="text-2xl font-bold mb-2">Exclusively Live In</h3>
-              <p className="text-[#eeebe3] text-4xl font-black mb-6 tracking-tight">{liveArea}</p>
+              <h3 className="text-xl xl:text-2xl font-bold mb-2">Exclusively Live In</h3>
+              <p className="text-[#eeebe3] text-2xl xl:text-4xl font-black mb-4 xl:mb-6 tracking-tight">{liveArea}</p>
 
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#eeebe3]/60 uppercase tracking-widest">Available Communities</p>

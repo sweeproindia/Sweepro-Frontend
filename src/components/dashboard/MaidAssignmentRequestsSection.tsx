@@ -18,7 +18,10 @@ import {
   RefreshCw,
   Clock,
   Calendar,
-  UserCheck
+  UserCheck,
+  ChevronDown,
+  ChevronUp,
+  Eye
 } from 'lucide-react';
 
 interface CustomerAssignmentRequest {
@@ -60,6 +63,16 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [processedRequestIds, setProcessedRequestIds] = useState<Set<string>>(new Set());
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+
+  const toggleCardExpanded = (id: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetchAssignmentRequests();
@@ -214,7 +227,7 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
     return (
       <Card className="dashboard-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <UserCheck className="h-5 w-5 text-primary" />
             Customer Assignment Requests
           </CardTitle>
@@ -234,25 +247,25 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
     <>
       <Card className="dashboard-card">
         <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <UserCheck className="h-5 w-5 text-primary" />
                 Customer Assignment Requests
                 {assignmentRequests.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="secondary" className="ml-1">
                     {assignmentRequests.length}
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription>Review and respond to customer assignment requests</CardDescription>
+              <CardDescription className="mt-1">Review and respond to customer assignment requests</CardDescription>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={fetchAssignmentRequests}
               disabled={loading}
-              className="flex items-center gap-2 w-full md:w-auto"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -269,88 +282,96 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {assignmentRequests.map((request) => (
-                <Card key={request.id} className="border border-gray-200 rounded-2xl">
-                  <CardContent className="space-y-4 p-4">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="flex-1 space-y-3">
-                        {/* Customer Info */}
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 p-2 rounded-full">
-                            <User className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">{request.customer.name}</h4>
-                            <p className="text-sm text-gray-500">New customer assignment request</p>
-                          </div>
+            <div className="space-y-3">
+              {assignmentRequests.map((request) => {
+                const isExpanded = expandedCards.has(request.id);
+                return (
+                <Card key={request.id} className="border border-gray-200 rounded-2xl transition-shadow hover:shadow-md">
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="flex flex-col gap-3">
+                      {/* Compact Header: Avatar + Name + Phone + Expiry */}
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full shrink-0">
+                          <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
-
-                        {/* Customer Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Mail className="h-4 w-4" />
-                            <span>{request.customer.email}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Phone className="h-4 w-4" />
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base truncate">{request.customer.name}</h4>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Phone className="h-3 w-3 shrink-0" />
                             <span>{request.customer.phone}</span>
                           </div>
+                        </div>
+                        <div className={`text-[10px] sm:text-xs px-2 py-1 rounded-full shrink-0 font-medium ${
+                          isExpired(request.expiresAt)
+                            ? 'bg-red-50 dark:bg-red-900/20 text-red-600'
+                            : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600'
+                        }`}>
+                          {getTimeRemaining(request.expiresAt)}
+                        </div>
+                      </div>
+
+                      {/* View Details toggle (mobile only) */}
+                      <button
+                        type="button"
+                        onClick={() => toggleCardExpanded(request.id)}
+                        className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium sm:hidden"
+                      >
+                        <Eye className="h-3 w-3" />
+                        {isExpanded ? 'Hide Details' : 'View Details'}
+                        {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+
+                      {/* Expanded details - always visible on sm+, toggle on mobile */}
+                      <div className={`space-y-2.5 ${isExpanded ? 'block' : 'hidden'} sm:block`}>
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{request.customer.email}</span>
+                          </span>
                           {request.customer.address && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <MapPin className="h-4 w-4" />
+                            <span className="flex items-center gap-1.5 min-w-0">
+                              <MapPin className="h-3 w-3 shrink-0" />
                               <span className="truncate">{request.customer.address}</span>
-                            </div>
+                            </span>
                           )}
                           {request.customer.timeSlot && (
-                            <div className="flex items-center gap-2 text-gray-600">
-                              <Clock className="h-4 w-4" />
-                              <span>Preferred time: {request.customer.timeSlot}</span>
-                            </div>
+                            <span className="flex items-center gap-1.5">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              Preferred: {request.customer.timeSlot}
+                            </span>
                           )}
                         </div>
 
-                        {/* Request Details */}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>Requested: {new Date(request.requestedAt).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <AlertCircle className="h-4 w-4" />
-                            <span className={isExpired(request.expiresAt) ? 'text-red-500' : 'text-orange-500'}>
-                              {getTimeRemaining(request.expiresAt)}
-                            </span>
-                          </div>
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(request.requestedAt).toLocaleDateString()}
+                          </span>
+                          <span>•</span>
+                          <span>By: {request.admin.name}</span>
                         </div>
 
-                        {/* Admin Info */}
-                        <div className="text-xs text-gray-400">
-                          Requested by: {request.admin.name} ({request.admin.email})
-                        </div>
-
-                        {/* Notes */}
                         {request.notes && (
-                          <div className="bg-gray-50 p-3 rounded-md">
-                            <p className="text-sm text-gray-700">
+                          <div className="bg-gray-50 dark:bg-gray-800/30 p-2 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-700 dark:text-gray-300">
                               <strong>Notes:</strong> {request.notes}
                             </p>
                           </div>
                         )}
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex w-full flex-col gap-2 lg:ml-4 lg:w-auto">
+                      {/* Action Buttons - always visible */}
+                      <div className="flex gap-2 pt-1">
                         <Button
                           size="sm"
                           onClick={() => handleAcceptRequest(request.id)}
                           disabled={processing === request.id || isExpired(request.expiresAt)}
-                          className="w-full bg-green-600 text-white hover:bg-green-700"
+                          className="bg-green-600 text-white hover:bg-green-700 flex-1 h-9 text-xs sm:text-sm"
                         >
                           {processing === request.id ? (
-                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin mr-1.5" />
                           ) : (
-                            <CheckCircle className="h-4 w-4" />
+                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                           )}
                           Accept
                         </Button>
@@ -359,16 +380,17 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
                           variant="outline"
                           onClick={() => openRejectDialog(request)}
                           disabled={processing === request.id || isExpired(request.expiresAt)}
-                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                          className="border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 flex-1 h-9 text-xs sm:text-sm"
                         >
-                          <XCircle className="h-4 w-4" />
+                          <XCircle className="h-3.5 w-3.5 mr-1.5" />
                           Reject
                         </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -376,7 +398,7 @@ export const MaidAssignmentRequestsSection: React.FC<MaidAssignmentRequestsSecti
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Reject Assignment Request</DialogTitle>
             <DialogDescription>

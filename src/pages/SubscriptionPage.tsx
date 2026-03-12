@@ -191,8 +191,8 @@ function SubscriptionPage() {
           </Card>
         )}
         <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Subscription Details</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Subscription Details</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Manage your cleaning service subscription and billing preferences
           </p>
         </div>
@@ -220,7 +220,7 @@ function SubscriptionPage() {
                     <p className="text-muted-foreground text-sm mb-3">
                       {subscription.plan?.description || 'Premium cleaning services'}
                     </p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                       <div>
                         <span className="font-medium">Amount:</span>
                         <p className="text-lg font-bold text-primary">₹{subscription.amount.toLocaleString()}</p>
@@ -583,18 +583,18 @@ function SubscriptionPage() {
         )}
 
         {/* Plans Section with EXACT PricingSection Glow Effects */}
-        <div className="relative py-16 bg-gradient-to-br from-background via-muted/30 to-background rounded-3xl border border-border/50 shadow-sm overflow-hidden">
-          <div className="relative z-10 px-8">
+        <div className="relative py-8 sm:py-16 bg-gradient-to-br from-background via-muted/30 to-background rounded-2xl sm:rounded-3xl border border-border/50 shadow-sm overflow-hidden">
+          <div className="relative z-10 px-4 sm:px-8">
             <div
-              className={`text-center mb-16 transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+              className={`text-center mb-8 sm:mb-16 transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
                 }`}
             >
-              <h2 className="text-5xl font-black bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent mb-4 tracking-tight">
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent mb-4 tracking-tight">
                 {subscription ? 'Upgrade Your Plan' : 'Choose Your Cleaning Plan'}
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-16 max-w-4xl mx-auto">
               {enhancedPlans.map((plan, index) => {
                 const IconComponent = plan.icon;
                 const isCurrent = subscription?.plan?.id === plan.id;
@@ -612,9 +612,9 @@ function SubscriptionPage() {
                   >
                     {/* EXACT CARD DESIGN WITH GLOW EFFECTS FROM PRICING SECTION */}
                     <Card
-                      className={`relative overflow-hidden rounded-3xl border-0 bg-gradient-to-br ${
+                      className={`relative overflow-hidden rounded-2xl sm:rounded-3xl border-0 bg-gradient-to-br ${
                         plan.gradient
-                      } shadow-2xl ring-2 ring-white/10 transition-all duration-700 will-change-transform h-[420px] ${
+                      } shadow-2xl ring-2 ring-white/10 transition-all duration-700 will-change-transform min-h-[380px] sm:h-[420px] ${
                         hoveredCard === plan.id
                           ? `scale-[1.06] -translate-y-2 ring-white/40 ${
                               plan.id === 'standard'
@@ -651,11 +651,11 @@ function SubscriptionPage() {
                           }`}
                         />
 
-                        <CardHeader className="text-center pt-12 relative z-10">
-                          <div className="flex justify-center mb-6">
+                        <CardHeader className="text-center pt-8 sm:pt-12 relative z-10">
+                          <div className="flex justify-center mb-4 sm:mb-6">
                             {/* EXACT ICON WITH GLOW EFFECTS FROM PRICING SECTION */}
                             <div
-                              className="relative p-4 rounded-2xl ring-4 ring-white/20 shadow-xl transition-transform duration-300 group-hover:scale-110"
+                              className="relative p-3 sm:p-4 rounded-xl sm:rounded-2xl ring-4 ring-white/20 shadow-xl transition-transform duration-300 group-hover:scale-110"
                               style={{
                                 background:
                                   plan.id === 'standard'
@@ -664,7 +664,7 @@ function SubscriptionPage() {
                               }}
                             >
                               <IconComponent
-                                className={`h-8 w-8 ${
+                                className={`h-6 w-6 sm:h-8 sm:w-8 ${
                                   plan.id === 'standard' ? 'text-slate-700' : 'text-white'
                                 } drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]`}
                               />
@@ -672,7 +672,7 @@ function SubscriptionPage() {
                           </div>
 
                           <CardTitle
-                            className={`text-3xl font-bold mb-3 group-hover:scale-105 transition-transform duration-300 ${
+                            className={`text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 group-hover:scale-105 transition-transform duration-300 ${
                               plan.id === 'standard' ? 'text-black' : 'text-white'
                             }`}
                           >
@@ -680,9 +680,9 @@ function SubscriptionPage() {
                           </CardTitle>
                         </CardHeader>
 
-                        <CardContent className="px-8 pb-12 space-y-6 relative z-10 flex-1 flex flex-col justify-between">
+                        <CardContent className="px-4 sm:px-8 pb-8 sm:pb-12 space-y-4 sm:space-y-6 relative z-10 flex-1 flex flex-col justify-between">
                           <p
-                            className={`text-lg text-center ${
+                            className={`text-sm sm:text-lg text-center ${
                               plan.id === 'standard' ? 'text-black' : 'text-white/90'
                             }`}
                           >

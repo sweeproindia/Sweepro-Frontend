@@ -169,11 +169,11 @@ export default function UserDashboard() {
       />
 
       {/* Personalized Welcome Message */}
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+      <div className="mb-6 text-center px-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
           Welcome back, {user?.name || 'User'}!
         </h1>
-        <p className="text-lg text-gray-600">
+        <p className="text-sm sm:text-lg text-gray-600">
           Here's your comprehensive dashboard with all your activity and details.
         </p>
       </div>
@@ -190,7 +190,7 @@ export default function UserDashboard() {
       <div className="space-y-6">
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 slide-up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 slide-up">
           <Card className="dashboard-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -379,7 +379,7 @@ export default function UserDashboard() {
                   <p className="text-muted-foreground text-sm mb-3">
                     {subscription.plan?.description || 'Premium cleaning services'}
                   </p>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                     <div>
                       <span className="font-medium">Amount:</span>
                       <p className="text-lg font-bold text-primary">{subscription.amount.toLocaleString()}</p>
@@ -453,16 +453,16 @@ export default function UserDashboard() {
         {/* Recent Bookings */}
         <Card className="dashboard-card slide-up">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Calendar className="h-5 w-5" />
                   Recent Bookings
                 </CardTitle>
-                <CardDescription>Your recent and upcoming cleaning sessions</CardDescription>
+                <CardDescription className="text-sm">Your recent and upcoming cleaning sessions</CardDescription>
               </div>
               <Link to="/bookings">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   View All
                 </Button>
               </Link>
@@ -472,33 +472,33 @@ export default function UserDashboard() {
             {bookings.length > 0 ? (
               <div className="space-y-4">
                 {bookings.slice(0, 5).map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${
+                  <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
+                    <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1.5 sm:mt-0 ${
                         booking.status === 'COMPLETED' ? 'bg-success' :
                         booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'bg-primary' :
                         booking.status === 'IN_PROGRESS' ? 'bg-warning' : 'bg-destructive'
                       }`} />
-                      <div>
-                        <p className="font-medium">{booking.service?.name || 'Service'}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm sm:text-base truncate">{booking.service?.name || 'Service'}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {new Date(booking.scheduledAt).toLocaleDateString()} at {new Date(booking.scheduledAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </p>
                         {booking.serviceAddress && (
-                          <p className="text-xs text-muted-foreground">{booking.serviceAddress}</p>
+                          <p className="text-xs text-muted-foreground truncate">{booking.serviceAddress}</p>
                         )}
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center justify-between sm:justify-end sm:flex-col sm:items-end gap-2 sm:gap-1 pl-6 sm:pl-0">
                       <Badge variant={
                         booking.status === 'COMPLETED' ? 'default' :
                         booking.status === 'PENDING' || booking.status === 'CONFIRMED' ? 'secondary' :
                         booking.status === 'IN_PROGRESS' ? 'outline' : 'destructive'
-                      }>
+                      } className="text-xs">
                         {booking.status}
                       </Badge>
                       {booking.finalAmount && (
-                        <p className="text-sm font-medium mt-1">
+                        <p className="text-sm font-medium">
                           {booking.finalAmount.toLocaleString()}
                         </p>
                       )}
@@ -531,7 +531,7 @@ export default function UserDashboard() {
         <Link to="/buffer">
           <Button
             className={`
-              fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg
+              fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg
               flex items-center justify-center z-50 transition-all duration-200
               hover:shadow-xl hover:scale-105
               ${isInBufferPeriod
@@ -543,9 +543,9 @@ export default function UserDashboard() {
             title={isInBufferPeriod ? "Resume Services - Click to manage" : "Pause Services - Click to manage"}
           >
             {isInBufferPeriod ? (
-              <Play className="h-6 w-6" />
+              <Play className="h-5 w-5 sm:h-6 sm:w-6" />
             ) : (
-              <Pause className="h-6 w-6" />
+              <Pause className="h-5 w-5 sm:h-6 sm:w-6" />
             )}
 
             {/* Status indicator */}

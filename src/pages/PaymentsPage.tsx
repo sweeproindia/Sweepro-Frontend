@@ -120,36 +120,38 @@ function InvoiceModal({ payment, open, onClose }: InvoiceModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-4xl w-full p-0 overflow-hidden rounded-2xl">
-        <DialogHeader className="px-6 pt-5 pb-4 border-b flex-row items-center justify-between">
+      <DialogContent className="max-w-4xl w-[95vw] sm:w-full p-0 overflow-hidden rounded-xl sm:rounded-2xl">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b flex-row items-center justify-between">
           <div>
-            <DialogTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-primary" />
+            <DialogTitle className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Invoice Preview
             </DialogTitle>
             {payment && (
-              <p className="text-sm text-muted-foreground mt-0.5 font-mono">{invoiceLabel}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-mono">{invoiceLabel}</p>
             )}
           </div>
-          <div className="flex items-center gap-2 mr-8">
+          <div className="flex items-center gap-2 mr-6 sm:mr-8">
             <Button
               size="sm"
               variant="outline"
               onClick={handleDownload}
               disabled={downloading || loading}
               id="invoice-download-btn"
+              className="text-xs sm:text-sm"
             >
               {downloading ? (
-                <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5 animate-spin" />
               ) : (
-                <Download className="h-4 w-4 mr-1.5" />
+                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
               )}
-              {downloading ? 'Downloading…' : 'Download PDF'}
+              <span className="hidden sm:inline">{downloading ? 'Downloading…' : 'Download PDF'}</span>
+              <span className="sm:hidden">{downloading ? '...' : 'PDF'}</span>
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="h-[70vh] bg-zinc-100 relative">
+        <div className="h-[60vh] sm:h-[70vh] bg-zinc-100 relative">
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-100">
               <div className="w-10 h-10 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
@@ -182,10 +184,10 @@ function PaymentRow({ payment, onViewInvoice, onDownloadInvoice, downloadingId }
   const canInvoice = payment.status === 'COMPLETED';
 
   return (
-    <div className="flex items-start justify-between p-4 border border-border rounded-xl hover:bg-muted/30 transition-colors gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between p-3 sm:p-4 border border-border rounded-xl hover:bg-muted/30 transition-colors gap-3 sm:gap-4">
       {/* Left – icon + description */}
       <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${payment.status === 'COMPLETED'
+        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${payment.status === 'COMPLETED'
             ? 'bg-emerald-100 text-emerald-600'
             : payment.status === 'PENDING' || payment.status === 'PROCESSING'
               ? 'bg-amber-100 text-amber-600'
@@ -196,27 +198,27 @@ function PaymentRow({ payment, onViewInvoice, onDownloadInvoice, downloadingId }
           {getStatusIcon(payment.status)}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-foreground truncate">{getPaymentLabel(payment)}</p>
-          <div className="flex flex-wrap items-center gap-2 mt-1">
+          <p className="font-medium text-foreground text-sm sm:text-base truncate">{getPaymentLabel(payment)}</p>
+          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
             <p className="text-xs text-muted-foreground">
               {new Date(payment.createdAt).toLocaleDateString('en-IN', {
                 day: '2-digit', month: 'short', year: 'numeric'
               })}
             </p>
-            <span className="text-muted-foreground/40">·</span>
-            <p className="text-xs text-muted-foreground">{getPaymentMethodLabel(payment.paymentMethod)}</p>
+            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+            <p className="text-xs text-muted-foreground hidden sm:block">{getPaymentMethodLabel(payment.paymentMethod)}</p>
             {payment.transactionId && (
               <>
-                <span className="text-muted-foreground/40">·</span>
-                <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+                <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground hidden sm:inline">
                   #{payment.transactionId.slice(-8)}
                 </span>
               </>
             )}
             {payment.invoiceNumber && (
               <>
-                <span className="text-muted-foreground/40">·</span>
-                <span className="font-mono text-xs text-primary/70">{payment.invoiceNumber}</span>
+                <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+                <span className="font-mono text-xs text-primary/70 hidden sm:inline">{payment.invoiceNumber}</span>
               </>
             )}
           </div>
@@ -227,11 +229,11 @@ function PaymentRow({ payment, onViewInvoice, onDownloadInvoice, downloadingId }
       </div>
 
       {/* Right – amount + actions */}
-      <div className="flex flex-col items-end gap-2 flex-shrink-0">
-        <div className="text-right">
-          <p className="font-bold text-foreground">₹{payment.finalAmount.toLocaleString()}</p>
+      <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 flex-shrink-0 pl-12 sm:pl-0">
+        <div className="text-left sm:text-right">
+          <p className="font-bold text-foreground text-sm sm:text-base">₹{payment.finalAmount.toLocaleString()}</p>
           {payment.tax > 0 && (
-            <p className="text-xs text-muted-foreground">incl. ₹{payment.tax.toFixed(2)} tax</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">incl. ₹{payment.tax.toFixed(2)} tax</p>
           )}
           <Badge variant="outline" className={`text-xs mt-1 inline-flex gap-1 ${getStatusColor(payment.status)}`}>
             {getStatusIcon(payment.status)}
@@ -245,25 +247,25 @@ function PaymentRow({ payment, onViewInvoice, onDownloadInvoice, downloadingId }
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-3 text-xs gap-1.5"
+              className="h-7 sm:h-8 px-2 sm:px-3 text-xs gap-1 sm:gap-1.5"
               onClick={() => onViewInvoice(payment)}
               id={`view-invoice-${payment.id}`}
             >
-              <Eye className="h-3.5 w-3.5" />
-              View
+              <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <span className="hidden sm:inline">View</span>
             </Button>
             <Button
               variant="default"
               size="sm"
-              className="h-8 px-3 text-xs gap-1.5"
+              className="h-7 sm:h-8 px-2 sm:px-3 text-xs gap-1 sm:gap-1.5"
               onClick={() => onDownloadInvoice(payment)}
               disabled={isDownloading}
               id={`download-invoice-${payment.id}`}
             >
               {isDownloading
-                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                : <Download className="h-3.5 w-3.5" />}
-              {isDownloading ? 'Saving…' : 'Invoice'}
+                ? <RefreshCw className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin" />
+                : <Download className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
+              <span className="hidden sm:inline">{isDownloading ? 'Saving…' : 'Invoice'}</span>
             </Button>
           </div>
         )}
@@ -366,8 +368,8 @@ export default function PaymentsPage() {
 
         {/* ── Header ── */}
         <div className="fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Payment History</h1>
-          <p className="text-muted-foreground mt-1">View billing history, invoices, and manage payments</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Payment History</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">View billing history, invoices, and manage payments</p>
         </div>
 
         {/* ── Stats cards ── */}

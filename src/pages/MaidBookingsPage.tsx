@@ -93,67 +93,67 @@ export default function MaidBookingsPage() {
     <MaidDashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="fade-in flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">My Assignments</h1>
-            <p className="text-muted-foreground mt-2">Manage and track all your cleaning appointments</p>
+        <div className="fade-in flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1 sm:space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Assignments</h1>
+            <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">Manage and track all your cleaning appointments</p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading} className="w-full sm:w-auto">
-              <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={refreshBookings} disabled={loading} className="flex-1 sm:flex-initial text-xs sm:text-sm">
+              <RefreshCcw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </Button>
-            <Button size="sm" onClick={() => setQrOpen(true)} className="w-full sm:w-auto">
-              Show My Code
+            <Button size="sm" onClick={() => setQrOpen(true)} className="flex-1 sm:flex-initial text-xs sm:text-sm">
+              Show Code
             </Button>
           </div>
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 slide-up">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 slide-up">
           <Card className="dashboard-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Scheduled</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.scheduled ?? 0}</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Scheduled</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stats?.scheduled ?? 0}</p>
                 </div>
-                <Calendar className="h-8 w-8 text-primary" />
+                <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="dashboard-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.completed ?? 0}</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Completed</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stats?.completed ?? 0}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-success" />
+                <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-success" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="dashboard-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.cancelled ?? 0}</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Cancelled</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stats?.cancelled ?? 0}</p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-destructive" />
+                <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-destructive" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="dashboard-card">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold text-foreground">{stats?.total ?? 0}</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stats?.total ?? 0}</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-warning" />
+                <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-warning" />
               </div>
             </CardContent>
           </Card>
@@ -161,18 +161,21 @@ export default function MaidBookingsPage() {
 
         {/* Filters and Search */}
         <Card className="dashboard-card slide-up">
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Filter by:</span>
-                <div className="flex space-x-2">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm font-medium">Filter:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   {filterOptions.map((opt) => (
                     <Button
                       key={opt.key}
                       variant={filter === opt.key ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setFilter(opt.key)}
+                      className="text-xs sm:text-sm"
                     >
                       {opt.label}
                     </Button>
@@ -180,14 +183,14 @@ export default function MaidBookingsPage() {
                 </div>
               </div>
 
-              <div className="relative w-full md:w-auto">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search by customer, address or service..."
+                  placeholder="Search by customer, address..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full md:w-80 pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -222,66 +225,66 @@ export default function MaidBookingsPage() {
 
             <div className="space-y-4">
               {!loading && filteredBookings.map((booking) => (
-                <div key={booking.id} className="border border-border rounded-2xl p-6 hover:bg-muted/30 transition-colors">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div key={booking.id} className="border border-border rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-muted/30 transition-colors">
+                  <div className="flex flex-col gap-4">
                     <div className="flex-1 space-y-3">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-lg ${getStatusColor(booking.status)}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                        <div className="flex items-start sm:items-center space-x-3">
+                          <div className={`p-1.5 sm:p-2 rounded-lg ${getStatusColor(booking.status)} flex-shrink-0`}>
                             {getStatusIcon(booking.status)}
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-foreground">{booking.customer?.name || 'Customer'}</h3>
-                            <p className="text-sm text-muted-foreground">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{booking.customer?.name || 'Customer'}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {new Date(booking.scheduledAt).toLocaleDateString()} at {new Date(booking.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                             {booking.serviceAddress && (
-                              <p className="text-xs text-muted-foreground">{booking.serviceAddress}</p>
+                              <p className="text-xs text-muted-foreground truncate sm:hidden">{booking.serviceAddress}</p>
                             )}
                           </div>
                         </div>
-                        <Badge className={`${getStatusColor(booking.status)} w-fit`}>
+                        <Badge className={`${getStatusColor(booking.status)} w-fit text-xs self-start sm:self-auto`}>
                           {booking.status.replace('_', ' ')}
                         </Badge>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-2 sm:mb-4">
                         <div className="flex items-center space-x-2">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{booking.serviceAddress}</span>
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-xs sm:text-sm truncate">{booking.serviceAddress}</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{booking.timeSlot || `${booking.estimatedDuration || 180} mins`}</span>
+                          <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-xs sm:text-sm">{booking.timeSlot || `${booking.estimatedDuration || 180} mins`}</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">₹{(booking.finalAmount ?? booking.totalAmount ?? 0).toLocaleString()}</span>
+                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-xs sm:text-sm font-medium">₹{(booking.finalAmount ?? booking.totalAmount ?? 0).toLocaleString()}</span>
                         </div>
                         {booking.customer?.phone && (
                           <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{booking.customer.phone}</span>
+                            <User className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-xs sm:text-sm">{booking.customer.phone}</span>
                           </div>
                         )}
                       </div>
 
                       {booking.specialInstructions && (
-                        <div className="mb-2 p-3 bg-muted/30 rounded-lg">
-                          <p className="text-sm font-medium text-foreground mb-1">Special Instructions:</p>
-                          <p className="text-sm text-muted-foreground break-words">{booking.specialInstructions}</p>
+                        <div className="mb-2 p-2 sm:p-3 bg-muted/30 rounded-lg">
+                          <p className="text-xs sm:text-sm font-medium text-foreground mb-1">Instructions:</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground break-words">{booking.specialInstructions}</p>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex w-full flex-col space-y-2 min-w-[160px] lg:w-[180px]">
-                      <Button size="sm" variant="outline" className="w-full">
-                        View Details
+                    <div className="flex flex-row sm:flex-col gap-2 sm:min-w-[160px] lg:w-[180px]">
+                      <Button size="sm" variant="outline" className="flex-1 sm:w-full text-xs sm:text-sm">
+                        Details
                       </Button>
                       {/* Service status is now controlled by the customer scanning maid's QR */}
                       {(booking.status === 'CONFIRMED' || booking.status === 'ASSIGNED' || booking.status === 'IN_PROGRESS') && (
-                        <div className="text-xs text-muted-foreground text-center p-2 bg-muted/30 rounded-lg">
-                          Show your QR code to the customer to verify completion
+                        <div className="hidden sm:block text-xs text-muted-foreground text-center p-2 bg-muted/30 rounded-lg">
+                          Show QR to customer to verify
                         </div>
                       )}
                     </div>
