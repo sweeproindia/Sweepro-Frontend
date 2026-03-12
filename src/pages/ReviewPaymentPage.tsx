@@ -314,7 +314,7 @@ export default function ReviewPaymentPage() {
         backendPlan = backendPlans.find((p: any) => {
           const n = normalizeName(p.name);
           if (selectedPlan.id === 'standard') {
-            // Map UI "Sweepro Touch" to backend "SweepPro Touch" (name contains "touch")
+            // Map UI "Sweepro Touch" to backend "Sweepro Touch" (name contains "touch")
             return n.includes('touch');
           }
           if (selectedPlan.id === 'premium') {

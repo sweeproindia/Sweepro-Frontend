@@ -4,7 +4,7 @@ import FeaturesSection from '@/components/landing/FeaturesSection';
 import { HeroSection} from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
-import SweepProAboutUs from '@/components/landing/SweepProAboutUs';
+import SweeproAboutUs from '@/components/landing/SweeproAboutUs';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
 import { useEffect } from 'react';
@@ -97,7 +97,7 @@ export default function LandingPage() {
         user={contextUser}
         onDashboardClick={handleDashboardClick}
       />
-      <SweepProAboutUs/>
+      <SweeproAboutUs/>
       <FeaturesSection />
       <HowItWorksSection />
       

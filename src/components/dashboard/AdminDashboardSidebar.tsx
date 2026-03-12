@@ -110,7 +110,7 @@ export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBooking
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                   <Lock className="h-3.5 w-3.5 text-white" />
                 </div>
-                <span className="text-sm font-bold text-white tracking-wide">SweepPro Admin</span>
+                <span className="text-sm font-bold text-white tracking-wide">Sweepro Admin</span>
               </div>
               <p className="text-xs text-slate-400 ml-9">Management Console</p>
             </motion.div>
