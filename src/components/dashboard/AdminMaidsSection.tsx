@@ -31,6 +31,7 @@ interface Maid {
   joinDate: string;
   weeklyOffDay?: string | null;
   availability?: Record<string, any> | null;
+  verificationCode?: string | null;
 }
 
 interface AdminMaidsSectionProps {
@@ -178,12 +179,9 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
 
   const qrPayload = qrMaid
     ? JSON.stringify({
-      maidId: qrMaid.id,
-      userId: qrMaid.id,
-      name: qrMaid.name,
-      email: qrMaid.email,
       type: 'maid_verification',
-      timestamp: new Date().toISOString(),
+      code: qrMaid.verificationCode || '',
+      maidName: qrMaid.name,
     })
     : '';
 
@@ -595,9 +593,19 @@ export const AdminMaidsSection: React.FC<AdminMaidsSectionProps> = ({
             <DialogDescription>Customer can scan this QR to verify and complete the booking.</DialogDescription>
           </DialogHeader>
           <div className="grid place-items-center gap-3">
-            {qrPayload && <QrCodeRenderer data={qrPayload} size={220} />}
+            {qrMaid?.verificationCode ? (
+              <>
+                <QrCodeRenderer data={qrPayload} size={220} />
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-muted-foreground">Verification Code</p>
+                  <p className="text-2xl font-mono font-bold tracking-widest">{qrMaid.verificationCode}</p>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground py-4">No verification code set for this maid.</p>
+            )}
             {qrMaid?.name && <div className="text-sm text-muted-foreground">{qrMaid.name}</div>}
-            {qrPayload && (
+            {qrPayload && qrMaid?.verificationCode && (
               <Button variant="outline" size="sm" onClick={copyQrPayload}>
                 Copy QR Data
               </Button>
