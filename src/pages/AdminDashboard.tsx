@@ -231,7 +231,8 @@ export default function AdminDashboard() {
           status: (u.maidProfile?.status || 'ACTIVE') as Maid['status'],
           completedBookings: u.maidProfile?.completedBookings || 0,
           weeklyOffDay: u.maidProfile?.weeklyOffDay ?? null,
-          availability: (u.maidProfile?.availability && typeof u.maidProfile.availability === 'object') ? u.maidProfile.availability : null
+          availability: (u.maidProfile?.availability && typeof u.maidProfile.availability === 'object') ? u.maidProfile.availability : null,
+          verificationCode: u.maidProfile?.verificationCode ?? null
         }));
         setMaids(mapped);
       }
@@ -898,7 +899,8 @@ export default function AdminDashboard() {
               availability: (m.availability && typeof m.availability === 'object') ? m.availability : null,
               totalBookings: m.completedBookings,
               joinDate: m.user.createdAt,
-              weeklyOffDay: m.weeklyOffDay || null
+              weeklyOffDay: m.weeklyOffDay || null,
+              verificationCode: (m as any).verificationCode || null
             }))}
             onAddMaid={(maidData) => {
               toast({
