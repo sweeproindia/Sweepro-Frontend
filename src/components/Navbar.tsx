@@ -159,10 +159,8 @@ export const Navbar = ({
         ? [{ href: 'subscription-plans', label: 'Plans' }]
         : []
     ),
-    {
-      href: 'testimonials',
-      label: 'Testimonials',
-    },
+    // TESTIMONIALS NAV — commented out for launch, restore when TestimonialsSection is re-enabled:
+    // { href: 'testimonials', label: 'Testimonials' },
     {
       href: 'faq-section',
       label: 'FAQ',

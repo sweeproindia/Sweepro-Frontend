@@ -965,7 +965,7 @@ export default function ReviewPaymentPage() {
                     <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
                       <Shield className="h-4 w-4 text-slate-600" />
                     </span>
-                    SweePro assurance
+                    Sweepro assurance
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-slate-600">

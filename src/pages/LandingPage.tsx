@@ -5,7 +5,8 @@ import { HeroSection} from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import SweeproAboutUs from '@/components/landing/SweeproAboutUs';
-import TestimonialsSection from '@/components/landing/TestimonialsSection';
+// TESTIMONIALS — commented out for launch, restore when ready:
+// import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -108,7 +109,7 @@ export default function LandingPage() {
         />
       )}
       
-      <TestimonialsSection />
+      {/* <TestimonialsSection /> */}
       <FAQSection />
       <Footer />
 

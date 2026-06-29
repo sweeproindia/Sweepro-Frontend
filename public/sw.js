@@ -1,4 +1,4 @@
-// SweePro Service Worker
+// Sweepro Service Worker
 const CACHE_NAME = 'sweepro-v1';
 
 self.addEventListener('install', (event) => {

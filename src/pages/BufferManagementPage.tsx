@@ -149,7 +149,7 @@ function BufferManagementPage() {
                 </CardTitle>
               </div>
               <CardDescription className="text-yellow-800 dark:text-yellow-200">
-                Buffer management is exclusive to SweePro Lux subscribers
+                Buffer management is exclusive to Sweepro Lux subscribers
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -160,7 +160,7 @@ function BufferManagementPage() {
                     {accessDeniedReason}
                   </p>
                   <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-4">
-                    Upgrade to SweePro Lux to unlock buffer management and enjoy:
+                    Upgrade to Sweepro Lux to unlock buffer management and enjoy:
                   </p>
                   <ul className="space-y-2 text-sm text-yellow-800 dark:text-yellow-200 mb-6">
                     <li className="flex items-center space-x-2">
