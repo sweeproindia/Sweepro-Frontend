@@ -5,7 +5,7 @@
 // In production we now warn loudly if VITE_API_BASE_URL is not set,
 // so a misconfigured deploy is immediately obvious rather than silently
 // sending real user traffic to the test server.
-const DEFAULT_PROD_API_BASE_URL = 'https://sweep-pro-backend-testing.onrender.com/api';
+const DEFAULT_PROD_API_BASE_URL = 'https://sweepro.in/api';
 
 const ENV_API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
 
@@ -26,7 +26,7 @@ const RAW_API_BASE_URL = ENV_API_BASE_URL
 if (!import.meta.env.DEV && !ENV_API_BASE_URL) {
   console.error(
     '[Sweep Pro] WARNING: VITE_API_BASE_URL is not set. '
-    + 'Requests will fall back to the TEST backend. '
+    + 'Requests will fall back to the LIVE backend. '
     + 'Set VITE_API_BASE_URL in your production environment variables.'
   );
 }
