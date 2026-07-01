@@ -29,7 +29,7 @@ class WebSocketService {
 
     const backendOrigin =
       (import.meta as any).env?.VITE_BACKEND_ORIGIN ||
-      (import.meta.env.DEV ? 'http://localhost:3000' : 'https://sweepro.in');
+      (import.meta.env.DEV ? 'http://localhost:3000' : 'https://sweep-pro-backend-testing.onrender.com');
 
     const wsFromBackend = backendOrigin.startsWith('https://')
       ? backendOrigin.replace('https://', 'wss://')
