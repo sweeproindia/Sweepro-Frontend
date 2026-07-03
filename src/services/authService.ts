@@ -217,7 +217,6 @@ export class AuthService {
    * Email/password registration
    */
   static async register(registerData: RegisterData): Promise<ApiResponse<AuthResponse>> {
-    // C10 FIX: Response no longer contains `token` in the body.
     const response = await apiRequest<AuthResponse>(
       API_ENDPOINTS.AUTH.REGISTER,
       {
@@ -230,6 +229,16 @@ export class AuthService {
     if (response.success && response.data?.user) {
       // M6: JWT is stored in an HttpOnly cookie set by the backend.
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      // FIX: Mark this as a JWT session so getCurrentUser() calls /auth/me
+      // (not /auth/firebase/me) on future refreshes — same as login().
+      localStorage.setItem('authTokenType', 'jwt');
+      // FIX: Store JWT for Authorization header auth (cross-origin deployments).
+      // Without this, post-registration API calls like /auth/me fail with 401
+      // because no token is sent in the Authorization header.
+      const token = (response.data as any).token;
+      if (token) {
+        setAuthToken(token, 'local', 'jwt');
+      }
     }
 
     return response;

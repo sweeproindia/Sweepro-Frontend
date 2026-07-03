@@ -1,7 +1,7 @@
 import { Footer } from '@/components/Footer';
 import { FAQSection } from '@/components/landing/FAQSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
-import { HeroSection} from '@/components/landing/HeroSection';
+import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import SweepProAboutUs from '@/components/landing/SweepProAboutUs';
@@ -88,27 +88,26 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar 
+      <Navbar
         isAuthenticated={contextIsAuthenticated}
         user={contextUser}
       />
-      <HeroSection 
+      <HeroSection
         isAuthenticated={contextIsAuthenticated}
         user={contextUser}
         onDashboardClick={handleDashboardClick}
       />
-      <SweepProAboutUs/>
+      <SweepProAboutUs />
       <FeaturesSection />
       <HowItWorksSection />
-      
+
       {!contextIsAuthenticated && (
-        <PricingSection 
+        <PricingSection
           isAuthenticated={contextIsAuthenticated}
           onPlanSelect={handlePlanSelect}
         />
       )}
-      
-      <TestimonialsSection />
+
       <FAQSection />
       <Footer />
 
