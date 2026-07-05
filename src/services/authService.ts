@@ -28,6 +28,7 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
+  token?: string; // JWT token returned by backend for Google OAuth login
 }
 
 export interface LoginCredentials {
@@ -85,6 +86,12 @@ export class AuthService {
         removeAuthToken();
         localStorage.setItem('authTokenType', 'jwt');
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Store the JWT in localStorage for subsequent API calls
+        // The backend sets it as a cookie, but we also need it in localStorage
+        // for the Authorization header to work correctly
+        if (response.data.token) {
+          setAuthToken(response.data.token, 'local', 'jwt');
+        }
       }
 
       return response;
