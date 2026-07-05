@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Lock, Mail, Phone, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
+import { AuthService } from '@/services/authService';
 
 export default function SignupForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose?: () => void }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,15 +30,42 @@ export default function SignupForm({ onSuccess, onClose }: { onSuccess?: () => v
       return;
     }
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Account created successfully!",
-        description: "Welcome to Sweepro. Let's get your subscription set up.",
+    try {
+      const response = await AuthService.register({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        role: 'CUSTOMER',
+        address: '',
+        serviceArea: '',
+        pincode: ''
       });
-      if (onSuccess) onSuccess();
-      if (onClose) onClose();
-    }, 1000);
+      
+      if (response.success) {
+        toast({
+          title: "Account created successfully!)",
+          description: "Please check your email for verification OTP.",
+        });
+        if (onSuccess) onSuccess();
+        if (onClose) onClose();
+      } else {
+        toast({
+          title: "Registration failed",
+          description: response.message || "Something went wrong. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Registration failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
