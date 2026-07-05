@@ -6,12 +6,13 @@ import { useToast } from '@/hooks/use-toast';
 import { API_ENDPOINTS, HttpMethod, apiRequest } from '@/services/api';
 import { Loader2, Mail } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,10 +27,11 @@ export default function ForgotPasswordPage() {
 
       toast({
         title: 'Check your email',
-        description: response.message || 'If an account exists for that email, a reset link has been sent.'
+        description: response.message || 'If an account exists for that email, a reset code has been sent.'
       });
 
-      setEmail('');
+      // Navigate to OTP verification page
+      navigate(`/reset-otp?email=${encodeURIComponent(email.trim())}`);
     } catch (error: any) {
       toast({
         title: 'Request failed',
@@ -52,7 +54,7 @@ export default function ForgotPasswordPage() {
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold text-gray-900">Forgot password</CardTitle>
             <CardDescription className="text-gray-600">
-              Enter your email and we’ll send you a reset link.
+              Enter your email and we'll send you a reset code.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -81,7 +83,7 @@ export default function ForgotPasswordPage() {
                     Sending...
                   </span>
                 ) : (
-                  'Send reset link'
+                  'Send reset code'
                 )}
               </Button>
             </form>

@@ -17,6 +17,8 @@ export interface User {
   status: string;
   createdAt: string;
   updatedAt?: string;
+  requiresVerification?: boolean;
+  isNewUser?: boolean;
   profiles?: {
     customer?: any;
     maid?: any;
@@ -79,17 +81,9 @@ export class AuthService {
         }
       );
 
-      // Store token and user data on successful login
       if (response.success && response.data?.user) {
-        const appToken = (response.data as any).token;
-        if (appToken) {
-          // CROSS-ORIGIN FIX: Store the app JWT (not Firebase idToken) in localStorage.
-          // This ensures Authorization: Bearer header is sent on all cross-origin API calls.
-          setAuthToken(appToken, 'local', 'jwt');
-        } else {
-          // Fallback: store Firebase token for same-origin use
-          setAuthToken(idToken, 'local', 'firebase');
-        }
+        removeAuthToken();
+        localStorage.setItem('authTokenType', 'jwt');
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
 
@@ -141,16 +135,10 @@ export class AuthService {
         }
       );
 
-      // Update stored user data and store the new role-bearing JWT
       if (response.success && response.data?.user) {
+        removeAuthToken();
+        localStorage.setItem('authTokenType', 'jwt');
         localStorage.setItem('user', JSON.stringify(response.data.user));
-
-        // Backend re-issues a JWT with the correct role after profile completion.
-        // Store it so subsequent API calls send the updated token.
-        const newToken = (response.data as any).token;
-        if (newToken) {
-          setAuthToken(newToken, 'local', 'jwt');
-        }
       }
 
       return response;
@@ -197,17 +185,10 @@ export class AuthService {
     );
 
     if (response.success && response.data?.user) {
-      // M6: JWT is stored in an HttpOnly cookie set by the backend.
-      // Store only the user profile for UI rendering.
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      // CROSS-ORIGIN FIX: Mark this as a JWT session so getCurrentUser()
-      // knows to call /auth/me (not /auth/firebase/me) on future refreshes.
+      // JWT is stored only in the HttpOnly cookie set by the backend.
+      removeAuthToken();
       localStorage.setItem('authTokenType', 'jwt');
-      // Store JWT for Authorization header auth (cross-origin deployments)
-      const token = (response.data as any).token;
-      if (token) {
-        setAuthToken(token, 'local', 'jwt');
-      }
+      localStorage.setItem('user', JSON.stringify(response.data.user));
     }
 
     return response;
@@ -227,9 +208,10 @@ export class AuthService {
       }
     );
 
-    if (response.success && response.data?.user) {
-      // M6: JWT is stored in an HttpOnly cookie set by the backend.
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    if (response.success) {
+      removeAuthToken();
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
     }
 
     return response;

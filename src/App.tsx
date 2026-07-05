@@ -33,6 +33,8 @@ const SignupPage = lazy(() => import(/* webpackChunkName: "signup"    */ "./page
 const TestLoginPage = lazy(() => import(/* webpackChunkName: "testlogin" */ "./pages/TestLoginPage"));
 const ForgotPasswordPage = lazy(() => import(/* webpackChunkName: "forgot-pw" */ "./pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import(/* webpackChunkName: "reset-pw"  */ "./pages/ResetPasswordPage"));
+const ResetPasswordOtpPage = lazy(() => import(/* webpackChunkName: "reset-otp" */ "./pages/ResetPasswordOtpPage"));
+const VerifyEmailPage = lazy(() => import(/* webpackChunkName: "verify-email" */ "./pages/VerifyEmailPage"));
 const TermsPage = lazy(() => import(/* webpackChunkName: "terms"     */ "./pages/TermsPage"));
 const PrivacyPolicyPage = lazy(() => import(/* webpackChunkName: "privacy"   */ "./pages/PrivacyPolicyPage"));
 const CookiePolicyPage = lazy(() => import(/* webpackChunkName: "cookies"   */ "./pages/CookiePolicyPage"));
@@ -201,6 +203,8 @@ const App = () => {
                         />
                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                         <Route path="/reset-password" element={<ResetPasswordPage />} />
+                        <Route path="/reset-otp" element={<ResetPasswordOtpPage />} />
+                        <Route path="/verify-email" element={<VerifyEmailPage />} />
                         <Route path="/terms" element={<TermsPage />} />
                         <Route path="/privacy" element={<PrivacyPolicyPage />} />
                         <Route path="/cookies" element={<CookiePolicyPage />} />

@@ -49,6 +49,12 @@ export const API_ENDPOINTS = {
     ME: '/auth/me',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_RESET_OTP: '/auth/verify-reset-otp',
+    VERIFY_EMAIL: '/auth/verify-email',
+    RESEND_VERIFICATION: '/auth/resend-verification',
+    VERIFY_EMAIL_OTP: '/auth/verify-email-otp',
+    SEND_VERIFICATION_OTP: '/auth/send-verification-otp',
+    RESEND_VERIFICATION_OTP: '/auth/resend-verification-otp',
     CHANGE_PASSWORD: '/auth/change-password',
   },
   // User
@@ -512,7 +518,9 @@ export const apiRequest = async <T = any>(
   if (import.meta.env.DEV) {
     console.log(`🚀 API Request: ${method} ${url}`);
     console.log('Request URL:', url);
-    console.log('Request Headers:', requestHeaders);
+    const redactedHeaders = { ...requestHeaders };
+    if (redactedHeaders.Authorization) redactedHeaders.Authorization = '[REDACTED]';
+    console.log('Request Headers:', redactedHeaders);
   }
 
   try {

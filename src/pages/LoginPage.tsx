@@ -152,6 +152,16 @@ export default function LoginPage() {
       if (response.success && response.data?.user) {
         const user = response.data.user;
 
+        // Check if email verification is required
+        if (user.requiresVerification) {
+          toast({
+            title: 'Check your email',
+            description: 'Please verify your email with the OTP sent to your email address.',
+          });
+          navigate(`/verify-otp?email=${encodeURIComponent(user.email)}`);
+          return;
+        }
+
         // Mark as authenticated immediately so route guards / refreshUser can work.
         setAuthenticatedUser(user);
 
@@ -208,6 +218,16 @@ export default function LoginPage() {
 
       await navigateAfterAuth(loggedInUser);
     } catch (error: any) {
+      if (error?.message?.toLowerCase().includes('verify your email')) {
+        toast({
+          title: 'Verification required',
+          description: 'Please verify your email before logging in.',
+          variant: 'default',
+        });
+        navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+        return;
+      }
+
       toast({
         title: 'Login failed',
         description: error?.message || 'Please check your credentials and try again.',
