@@ -152,16 +152,6 @@ export default function LoginPage() {
       if (response.success && response.data?.user) {
         const user = response.data.user;
 
-        // Check if email verification is required
-        if (user.requiresVerification) {
-          toast({
-            title: 'Check your email',
-            description: 'Please verify your email with the OTP sent to your email address.',
-          });
-          navigate(`/verify-otp?email=${encodeURIComponent(user.email)}`);
-          return;
-        }
-
         // Mark as authenticated immediately so route guards / refreshUser can work.
         setAuthenticatedUser(user);
 
