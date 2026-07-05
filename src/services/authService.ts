@@ -180,8 +180,6 @@ export class AuthService {
     credentials: LoginCredentials,
     rememberMe: boolean = false
   ): Promise<ApiResponse<AuthResponse>> {
-    // C10 FIX: Response no longer contains `token` in the body.
-    // The backend sets an HttpOnly cookie; this client just reads the user object.
     const response = await apiRequest<AuthResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
       {
@@ -191,11 +189,17 @@ export class AuthService {
       }
     );
 
-    if (response.success && response.data?.user) {
-      // JWT is stored only in the HttpOnly cookie set by the backend.
-      removeAuthToken();
-      localStorage.setItem('authTokenType', 'jwt');
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    if (response.success && response.data) {
+      const { user, token } = response.data;
+
+      if (token) {
+        // Store JWT in localStorage
+        localStorage.setItem('jwtToken', token);
+        localStorage.setItem('authTokenType', 'jwt');
+      }
+
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(user));
     }
 
     return response;
