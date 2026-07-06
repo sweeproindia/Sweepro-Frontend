@@ -17,6 +17,8 @@ export interface User {
   status: string;
   createdAt: string;
   updatedAt?: string;
+  requiresVerification?: boolean;
+  isNewUser?: boolean;
   profiles?: {
     customer?: any;
     maid?: any;
@@ -26,6 +28,7 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
+  token?: string; // JWT token returned by backend for Google OAuth login
 }
 
 export interface LoginCredentials {
@@ -79,18 +82,16 @@ export class AuthService {
         }
       );
 
-      // Store token and user data on successful login
       if (response.success && response.data?.user) {
-        const appToken = (response.data as any).token;
-        if (appToken) {
-          // CROSS-ORIGIN FIX: Store the app JWT (not Firebase idToken) in localStorage.
-          // This ensures Authorization: Bearer header is sent on all cross-origin API calls.
-          setAuthToken(appToken, 'local', 'jwt');
-        } else {
-          // Fallback: store Firebase token for same-origin use
-          setAuthToken(idToken, 'local', 'firebase');
-        }
+        removeAuthToken();
+        localStorage.setItem('authTokenType', 'jwt');
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        // Store the JWT in localStorage for subsequent API calls
+        // The backend sets it as a cookie, but we also need it in localStorage
+        // for the Authorization header to work correctly
+        if (response.data.token) {
+          setAuthToken(response.data.token, 'local', 'jwt');
+        }
       }
 
       return response;
@@ -141,16 +142,10 @@ export class AuthService {
         }
       );
 
-      // Update stored user data and store the new role-bearing JWT
       if (response.success && response.data?.user) {
+        removeAuthToken();
+        localStorage.setItem('authTokenType', 'jwt');
         localStorage.setItem('user', JSON.stringify(response.data.user));
-
-        // Backend re-issues a JWT with the correct role after profile completion.
-        // Store it so subsequent API calls send the updated token.
-        const newToken = (response.data as any).token;
-        if (newToken) {
-          setAuthToken(newToken, 'local', 'jwt');
-        }
       }
 
       return response;
@@ -185,8 +180,6 @@ export class AuthService {
     credentials: LoginCredentials,
     rememberMe: boolean = false
   ): Promise<ApiResponse<AuthResponse>> {
-    // C10 FIX: Response no longer contains `token` in the body.
-    // The backend sets an HttpOnly cookie; this client just reads the user object.
     const response = await apiRequest<AuthResponse>(
       API_ENDPOINTS.AUTH.LOGIN,
       {
@@ -196,18 +189,17 @@ export class AuthService {
       }
     );
 
-    if (response.success && response.data?.user) {
-      // M6: JWT is stored in an HttpOnly cookie set by the backend.
-      // Store only the user profile for UI rendering.
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      // CROSS-ORIGIN FIX: Mark this as a JWT session so getCurrentUser()
-      // knows to call /auth/me (not /auth/firebase/me) on future refreshes.
-      localStorage.setItem('authTokenType', 'jwt');
-      // Store JWT for Authorization header auth (cross-origin deployments)
-      const token = (response.data as any).token;
+    if (response.success && response.data) {
+      const { user, token } = response.data;
+
       if (token) {
-        setAuthToken(token, 'local', 'jwt');
+        // Store JWT in localStorage
+        localStorage.setItem('jwtToken', token);
+        localStorage.setItem('authTokenType', 'jwt');
       }
+
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(user));
     }
 
     return response;

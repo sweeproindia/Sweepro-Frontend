@@ -208,6 +208,16 @@ export default function LoginPage() {
 
       await navigateAfterAuth(loggedInUser);
     } catch (error: any) {
+      if (error?.message?.toLowerCase().includes('verify your email')) {
+        toast({
+          title: 'Verification required',
+          description: 'Please verify your email before logging in.',
+          variant: 'default',
+        });
+        navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+        return;
+      }
+
       toast({
         title: 'Login failed',
         description: error?.message || 'Please check your credentials and try again.',

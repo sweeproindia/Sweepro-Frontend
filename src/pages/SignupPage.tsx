@@ -120,6 +120,16 @@ export default function SignupPage() {
         const loggedInUser = response.data.user;
         setAuthenticatedUser(loggedInUser);
 
+        // Check if email verification is required
+        if (loggedInUser.requiresVerification) {
+          toast({
+            title: 'Check your email',
+            description: 'Please verify your email with the OTP sent to your email address.',
+          });
+          navigate(`/verify-otp?email=${encodeURIComponent(loggedInUser.email)}`);
+          return;
+        }
+
         toast({
           title: 'Signed up with Google',
           description: 'Please complete your profile to continue.',
@@ -262,30 +272,13 @@ export default function SignupPage() {
       };
 
       const response = await AuthService.register(registerData);
-      if (response.success && response.data?.user) {
-        const loggedInUser = response.data.user;
-        setAuthenticatedUser(loggedInUser);
-
-        const roleSpecificMessage = formData.role === 'MAID'
-          ? 'Welcome aboard! You can now start accepting cleaning jobs.'
-          : 'Services available in your area.';
-
+      if (response.success) {
         toast({
-          title: 'Account created successfully!',
-          description: `Welcome to Sweepro, ${loggedInUser.name}! ${roleSpecificMessage}`,
+          title: 'Check your email',
+          description: response.message || 'We sent a 6-digit verification code. Verify your email before logging in.',
         });
 
-        // Navigate based on role
-        switch (loggedInUser.role) {
-          case 'ADMIN':
-            navigate('/admin');
-            break;
-          case 'MAID':
-            navigate('/maid-dashboard');
-            break;
-          default:
-            navigate('/dashboard');
-        }
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       }
     } catch (error: any) {
       if (error instanceof ApiError) {

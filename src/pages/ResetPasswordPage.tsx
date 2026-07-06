@@ -27,7 +27,26 @@ export default function ResetPasswordPage() {
     if (!token) {
       toast({
         title: 'Invalid reset link',
-        description: 'Missing token. Please request a new password reset link.',
+        description: 'Missing token. Please request a new password reset code.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (password.length < 8 || password.length > 128) {
+      toast({
+        title: 'Invalid password',
+        description: 'Password must be between 8 and 128 characters long.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&].*$/;
+    if (!strongPasswordRegex.test(password)) {
+      toast({
+        title: 'Weak password',
+        description: 'Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.',
         variant: 'destructive'
       });
       return;
