@@ -143,8 +143,12 @@ export class AuthService {
       );
 
       if (response.success && response.data?.user) {
-        removeAuthToken();
-        localStorage.setItem('authTokenType', 'jwt');
+        const newToken = (response.data as any).token;
+        if (newToken) {
+          setAuthToken(newToken, 'local', 'jwt');
+        } else {
+          localStorage.setItem('authTokenType', 'jwt');
+        }
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
 
@@ -193,9 +197,8 @@ export class AuthService {
       const { user, token } = response.data;
 
       if (token) {
-        // Store JWT in localStorage
-        localStorage.setItem('jwtToken', token);
-        localStorage.setItem('authTokenType', 'jwt');
+        // Store JWT in storage using standard setAuthToken helper
+        setAuthToken(token, rememberMe ? 'local' : 'session', 'jwt');
       }
 
       // Store user data in localStorage
