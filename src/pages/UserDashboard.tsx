@@ -526,7 +526,7 @@ export default function UserDashboard() {
         )}
       </div>
 
-      {/* Floating Buffer Button for SweePro Lux Users */}
+      {/* Floating Buffer Button for Sweepro Lux Users */}
       {hasBufferAccess && !bufferLoading && (
         <Link to="/buffer">
           <Button

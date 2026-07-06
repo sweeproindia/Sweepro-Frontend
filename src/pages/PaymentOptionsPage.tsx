@@ -38,73 +38,6 @@ const INDIGO_STYLES = {
   border: `${BRAND.indigo}26`
 } as const;
 
-const FALLBACK_PLANS: Record<string, SubscriptionPlan> = {
-  standard: {
-    id: 'standard',
-    name: 'Sweepro Touch',
-    description: 'Essential care plan for medium-sized homes with consistent daily cleaning support.',
-    duration: 'month',
-    features: [
-      'Utensil cleaning 3 days/week',
-      'Floor sweeping & mopping 3 days/week',
-      'Bathroom cleaning 2 times/month',
-      'Professional cleaning kit provided once',
-      'Fixed time slots for consistency',
-      'Basic backup homecare partner guarantee',
-      'Standard customer support',
-      '2 days free trial'
-    ],
-    serviceBreakdown: {
-      utensilCleaning: '3 days/week',
-      floorCleaning: '3 days/week (Sweeping & Mopping)',
-      bathroomCleaning: '2 times/month',
-      homeDusting: 'Not included',
-      kitProvided: 'Professional kit provided once only',
-      timings: 'Fixed slots',
-      backupGuarantee: 'Basic backup homecare partner guarantee',
-      customerCare: 'Standard support included',
-      bufferDays: 'No buffer days'
-    },
-    popular: true,
-    finalPrice: 1499,
-    sessionsPerWeek: 3,
-    sessionsPerMonth: 12
-  },
-  premium: {
-    id: 'premium',
-    name: 'Sweepro Lux',
-    description: 'Premium care plan with comprehensive daily cleaning and priority support for luxury homes.',
-    duration: 'month',
-    features: [
-      'Utensil cleaning 6 days/week',
-      'Floor sweeping & mopping 6 days/week',
-      'Bathroom cleaning 4 times/month',
-      'Home dusting 1 time/month',
-      'Professional kit provided monthly',
-      'Fixed time slots with flexibility',
-      'Priority backup homecare partner guarantee',
-      'Priority customer care 24/7',
-      'Buffer days included for flexibility',
-      '2 days free trial'
-    ],
-    serviceBreakdown: {
-      utensilCleaning: '6 days/week',
-      floorCleaning: '6 days/week (Sweeping & Mopping)',
-      bathroomCleaning: '4 times/month',
-      homeDusting: '1 time/month',
-      kitProvided: 'Professional kit provided every month',
-      timings: 'Fixed slots with priority flexibility',
-      backupGuarantee: 'Priority backup homecare partner guarantee',
-      customerCare: 'Priority customer care 24/7',
-      bufferDays: 'Buffer days included'
-    },
-    popular: true,
-    finalPrice: 2499,
-    sessionsPerWeek: 6,
-    sessionsPerMonth: 24
-  }
-};
-
 interface SubscriptionPlan {
   id: string;
   name: string;
@@ -127,6 +60,16 @@ interface SubscriptionPlan {
   finalPrice?: number;
   sessionsPerWeek?: number;
   sessionsPerMonth?: number;
+  propertyPricing?: Array<{
+    id: string;
+    planId: string;
+    propertyType: string;
+    bhkType: string;
+    squareFeet: number;
+    sqftLabel: string;
+    pricing: Record<PlanDurationId, number>;
+    isActive: boolean;
+  }>;
 }
 
 type PropertyTypeId = 'apartment' | 'bungalow';
@@ -237,426 +180,7 @@ const PROPERTY_TYPES: PropertyType[] = [
     disabled: true,
     comingSoonLabel: 'Coming soon'
   }
-];
-
-const DEFAULT_BHK_CONFIGS: BhkConfig[] = [
-  {
-    id: '2bhk',
-    label: '2 BHK',
-    sqftOptions: [
-      {
-        value: 1100,
-        range: '1000 - 1200 sq ft',
-        pricing: {
-          '1month': 5499,
-          '3month': 5299,
-          '6month': 4999
-        }
-      },
-      {
-        value: 1300,
-        range: '1201 - 1400 sq ft',
-        pricing: {
-          '1month': 5699,
-          '3month': 5499,
-          '6month': 5199
-        }
-      },
-      {
-        value: 1500,
-        range: '1401 - 1600 sq ft',
-        pricing: {
-          '1month': 5899,
-          '3month': 5699,
-          '6month': 5399
-        }
-      },
-      {
-        value: 1700,
-        range: '1601 - 1800 sq ft',
-        pricing: {
-          '1month': 6099,
-          '3month': 5899,
-          '6month': 5599
-        }
-      },
-      {
-        value: 1900,
-        range: '1801 - 2000 sq ft',
-        pricing: {
-          '1month': 6299,
-          '3month': 6099,
-          '6month': 5799
-        }
-      }
-    ]
-  },
-  {
-    id: '3bhk',
-    label: '3 BHK',
-    sqftOptions: [
-      {
-        value: 1300,
-        range: '1200 - 1400 sq ft',
-        pricing: {
-          '1month': 6199,
-          '3month': 5899,
-          '6month': 5599
-        }
-      },
-      {
-        value: 1500,
-        range: '1401 - 1600 sq ft',
-        pricing: {
-          '1month': 6399,
-          '3month': 6099,
-          '6month': 5799
-        }
-      },
-      {
-        value: 1700,
-        range: '1601 - 1800 sq ft',
-        pricing: {
-          '1month': 6599,
-          '3month': 6299,
-          '6month': 5999
-        }
-      },
-      {
-        value: 1900,
-        range: '1801 - 2000 sq ft',
-        pricing: {
-          '1month': 6799,
-          '3month': 6499,
-          '6month': 6199
-        }
-      },
-      {
-        value: 2100,
-        range: '2001 - 2200 sq ft',
-        pricing: {
-          '1month': 6999,
-          '3month': 6699,
-          '6month': 6399
-        }
-      },
-      {
-        value: 2300,
-        range: '2201 - 2400 sq ft',
-        pricing: {
-          '1month': 7199,
-          '3month': 6899,
-          '6month': 6599
-        }
-      },
-      {
-        value: 2500,
-        range: '2401 - 2600 sq ft',
-        pricing: {
-          '1month': 7399,
-          '3month': 7099,
-          '6month': 6799
-        }
-      },
-      {
-        value: 2700,
-        range: '2601 - 2800 sq ft',
-        pricing: {
-          '1month': 7599,
-          '3month': 7299,
-          '6month': 6999
-        }
-      }
-    ]
-  },
-  {
-    id: '4bhk',
-    label: '4 BHK',
-    sqftOptions: [
-      {
-        value: 2300,
-        range: '2201 - 2400 sq ft',
-        pricing: {
-          '1month': 6499,
-          '3month': 6199,
-          '6month': 5999
-        }
-      },
-      {
-        value: 2500,
-        range: '2401 - 2600 sq ft',
-        pricing: {
-          '1month': 6699,
-          '3month': 6399,
-          '6month': 6199
-        }
-      },
-      {
-        value: 2700,
-        range: '2601 - 2800 sq ft',
-        pricing: {
-          '1month': 6899,
-          '3month': 6599,
-          '6month': 6399
-        }
-      },
-      {
-        value: 2900,
-        range: '2801 - 3000 sq ft',
-        pricing: {
-          '1month': 7099,
-          '3month': 6799,
-          '6month': 6599
-        }
-      },
-      {
-        value: 3100,
-        range: '3001 - 3200 sq ft',
-        pricing: {
-          '1month': 7299,
-          '3month': 6999,
-          '6month': 6799
-        }
-      },
-      {
-        value: 3300,
-        range: '3201 - 3400 sq ft',
-        pricing: {
-          '1month': 7499,
-          '3month': 7199,
-          '6month': 6999
-        }
-      },
-      {
-        value: 3500,
-        range: '3401 - 3600 sq ft',
-        pricing: {
-          '1month': 7699,
-          '3month': 7399,
-          '6month': 7199
-        }
-      },
-      {
-        value: 3700,
-        range: '3601 - 3800 sq ft',
-        pricing: {
-          '1month': 7899,
-          '3month': 7599,
-          '6month': 7399
-        }
-      }
-    ]
-  }
-];
-
-const LUX_BHK_CONFIGS: BhkConfig[] = [
-  {
-    id: '2bhk',
-    label: '2 BHK',
-    sqftOptions: [
-      {
-        value: 1100,
-        range: '1000 - 1200 sq ft',
-        pricing: {
-          '1month': 6499,
-          '3month': 5999,
-          '6month': 5599
-        }
-      },
-      {
-        value: 1300,
-        range: '1201 - 1400 sq ft',
-        pricing: {
-          '1month': 6799,
-          '3month': 6299,
-          '6month': 5899
-        }
-      },
-      {
-        value: 1500,
-        range: '1401 - 1600 sq ft',
-        pricing: {
-          '1month': 6999,
-          '3month': 6599,
-          '6month': 6199
-        }
-      },
-      {
-        value: 1700,
-        range: '1601 - 1800 sq ft',
-        pricing: {
-          '1month': 7299,
-          '3month': 6899,
-          '6month': 6499
-        }
-      },
-      {
-        value: 1900,
-        range: '1801 - 2000 sq ft',
-        pricing: {
-          '1month': 7599,
-          '3month': 7199,
-          '6month': 6799
-        }
-      }
-    ]
-  },
-  {
-    id: '3bhk',
-    label: '3 BHK',
-    sqftOptions: [
-      {
-        value: 1300,
-        range: '1200 - 1400 sq ft',
-        pricing: {
-          '1month': 6899,
-          '3month': 6499,
-          '6month': 6199
-        }
-      },
-      {
-        value: 1500,
-        range: '1401 - 1600 sq ft',
-        pricing: {
-          '1month': 7199,
-          '3month': 6799,
-          '6month': 6499
-        }
-      },
-      {
-        value: 1700,
-        range: '1601 - 1800 sq ft',
-        pricing: {
-          '1month': 7499,
-          '3month': 7099,
-          '6month': 6799
-        }
-      },
-      {
-        value: 1900,
-        range: '1801 - 2000 sq ft',
-        pricing: {
-          '1month': 7799,
-          '3month': 7399,
-          '6month': 7099
-        }
-      },
-      {
-        value: 2100,
-        range: '2001 - 2200 sq ft',
-        pricing: {
-          '1month': 8099,
-          '3month': 7699,
-          '6month': 7399
-        }
-      },
-      {
-        value: 2300,
-        range: '2201 - 2400 sq ft',
-        pricing: {
-          '1month': 8399,
-          '3month': 7999,
-          '6month': 7699
-        }
-      },
-      {
-        value: 2500,
-        range: '2401 - 2600 sq ft',
-        pricing: {
-          '1month': 8699,
-          '3month': 8299,
-          '6month': 7999
-        }
-      },
-      {
-        value: 2700,
-        range: '2601 - 2800 sq ft',
-        pricing: {
-          '1month': 8999,
-          '3month': 8599,
-          '6month': 8299
-        }
-      }
-    ]
-  },
-  {
-    id: '4bhk',
-    label: '4 BHK',
-    sqftOptions: [
-      {
-        value: 2300,
-        range: '2201 - 2400 sq ft',
-        pricing: {
-          '1month': 7999,
-          '3month': 7599,
-          '6month': 7199
-        }
-      },
-      {
-        value: 2500,
-        range: '2401 - 2600 sq ft',
-        pricing: {
-          '1month': 8299,
-          '3month': 7899,
-          '6month': 7499
-        }
-      },
-      {
-        value: 2700,
-        range: '2601 - 2800 sq ft',
-        pricing: {
-          '1month': 8599,
-          '3month': 8199,
-          '6month': 7799
-        }
-      },
-      {
-        value: 2900,
-        range: '2801 - 3000 sq ft',
-        pricing: {
-          '1month': 8899,
-          '3month': 8499,
-          '6month': 8099
-        }
-      },
-      {
-        value: 3100,
-        range: '3001 - 3200 sq ft',
-        pricing: {
-          '1month': 9199,
-          '3month': 8799,
-          '6month': 8399
-        }
-      },
-      {
-        value: 3300,
-        range: '3201 - 3400 sq ft',
-        pricing: {
-          '1month': 9499,
-          '3month': 9099,
-          '6month': 8699
-        }
-      },
-      {
-        value: 3500,
-        range: '3401 - 3600 sq ft',
-        pricing: {
-          '1month': 9799,
-          '3month': 9399,
-          '6month': 8999
-        }
-      },
-      {
-        value: 3700,
-        range: '3601 - 3800 sq ft',
-        pricing: {
-          '1month': 10499,
-          '3month': 9899,
-          '6month': 9399
-        }
-      }
-    ]
-  }
+// Backend authoritative PropertyPricing is used dynamically for BHK configurations 
 ];
 
 const TIME_SLOTS = [
@@ -707,7 +231,7 @@ const PaymentOptionsPage = () => {
   const scheduleRef = useRef<HTMLDivElement>(null);
   const addressRef = useRef<HTMLDivElement>(null);
 
-  const isLuxPlan = selectedPlan?.id === 'premium';
+  const isLuxPlan = selectedPlan?.id === 'premium' || selectedPlan?.name?.toLowerCase().includes('lux') || selectedPlan?.name?.toLowerCase().includes('premium') || false;
 
   // Fetch global time slot counts (not date-specific)
   const fetchTimeSlotCounts = useCallback(async () => {
@@ -766,55 +290,137 @@ const PaymentOptionsPage = () => {
   };
 
   useEffect(() => {
-    try {
-      const savedPlan = (location.state as any)?.selectedPlan as SubscriptionPlan | undefined;
-      const savedOptions = (location.state as any)?.selectedOptions as ServiceOptions | undefined;
+    let isMounted = true;
+    const loadBackendPlans = async () => {
+      try {
+        setIsLoading(true);
+        const searchParams = new URLSearchParams(location.search);
+        const planIdFromQuery = searchParams.get('planId') ?? 'standard';
+        const savedPlan = (location.state as any)?.selectedPlan as SubscriptionPlan | undefined;
+        const storedPlan = getFromStorage(STORAGE_KEYS.SELECTED_PLAN) as SubscriptionPlan | null;
 
-      if (savedPlan) {
-        setSelectedPlan(savedPlan);
-        if (savedOptions) {
-          setOptions(savedOptions);
+        const targetPlanId = savedPlan?.id || storedPlan?.id || planIdFromQuery;
+
+        // Fetch real plans with PropertyPricing from backend
+        const response = await SubscriptionService.getSubscriptionPlans();
+        const rawPlans: any = response?.data;
+        const backendPlans: any[] = Array.isArray(rawPlans)
+          ? rawPlans
+          : rawPlans?.plans || (response as any)?.plans || [];
+
+        if (isMounted && backendPlans.length > 0) {
+          const normalizeName = (val: string) => (val || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+          
+          let matchedPlan = backendPlans.find((p: any) => p.id === targetPlanId || normalizeName(p.name) === normalizeName(targetPlanId));
+          if (!matchedPlan) {
+            matchedPlan = backendPlans.find((p: any) => {
+              const n = normalizeName(p.name);
+              if (targetPlanId === 'standard' || targetPlanId?.toLowerCase().includes('touch')) return n.includes('touch');
+              if (targetPlanId === 'premium' || targetPlanId?.toLowerCase().includes('lux')) return n.includes('lux');
+              return false;
+            });
+          }
+          if (!matchedPlan) {
+            matchedPlan = backendPlans[0];
+          }
+
+          const baseUI = savedPlan || storedPlan || {
+            duration: 'month',
+            features: [
+              'Utensil cleaning & floor mopping',
+              'Professional cleaning kit provided',
+              'Fixed time slots for consistency',
+              'Backup homecare partner guarantee',
+              'Customer support included'
+            ],
+            serviceBreakdown: {
+              utensilCleaning: 'Included',
+              floorCleaning: 'Included (Sweeping & Mopping)',
+              bathroomCleaning: 'Included',
+              homeDusting: 'Included',
+              kitProvided: 'Professional kit provided',
+              timings: 'Fixed slots',
+              backupGuarantee: 'Backup homecare partner guarantee',
+              customerCare: 'Support included',
+              bufferDays: 'Included'
+            }
+          };
+
+          const mergedPlan: SubscriptionPlan = {
+            ...baseUI,
+            id: matchedPlan.id,
+            name: matchedPlan.name || baseUI.name || 'Sweepro Plan',
+            description: matchedPlan.description || baseUI.description || '',
+            finalPrice: matchedPlan.finalPrice || matchedPlan.basePrice || 0,
+            price: matchedPlan.finalPrice || matchedPlan.basePrice || 0,
+            sessionsPerWeek: matchedPlan.sessionsPerWeek || baseUI.sessionsPerWeek || 6,
+            sessionsPerMonth: matchedPlan.sessionsPerMonth || baseUI.sessionsPerMonth || 24,
+            propertyPricing: matchedPlan.propertyPricing || []
+          };
+
+          setSelectedPlan(mergedPlan);
+          saveToStorage(STORAGE_KEYS.SELECTED_PLAN, mergedPlan);
+
+          const savedOptions = (location.state as any)?.selectedOptions || getFromStorage(STORAGE_KEYS.SERVICE_OPTIONS);
+          if (savedOptions) {
+            setOptions(savedOptions);
+          }
         }
-        saveToStorage(STORAGE_KEYS.SELECTED_PLAN, savedPlan);
-        if (savedOptions) {
-          saveToStorage(STORAGE_KEYS.SERVICE_OPTIONS, savedOptions);
+      } catch (error) {
+        console.error('Failed to fetch subscription plans from backend:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
-        setIsLoading(false);
-        return;
       }
+    };
 
-      const storedPlan = getFromStorage(STORAGE_KEYS.SELECTED_PLAN) as SubscriptionPlan | null;
-      const storedOptions = getFromStorage(STORAGE_KEYS.SERVICE_OPTIONS) as ServiceOptions | null;
-
-      if (storedPlan) {
-        setSelectedPlan(storedPlan);
-        if (storedOptions) {
-          setOptions(storedOptions);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      const searchParams = new URLSearchParams(location.search);
-      const planIdFromQuery = searchParams.get('planId') ?? 'standard';
-      const fallbackPlan = FALLBACK_PLANS[planIdFromQuery] ?? FALLBACK_PLANS.standard;
-
-      setSelectedPlan(fallbackPlan);
-      saveToStorage(STORAGE_KEYS.SELECTED_PLAN, fallbackPlan);
-      setIsLoading(false);
-    } catch {
-      setSelectedPlan(FALLBACK_PLANS.standard);
-      setIsLoading(false);
-    }
+    loadBackendPlans();
+    return () => {
+      isMounted = false;
+    };
   }, [location.search, location.state]);
 
   const bhkConfigs = useMemo(() => {
-    if (options.propertyType !== 'apartment') {
+    if (options.propertyType !== 'apartment' || !selectedPlan?.propertyPricing || !Array.isArray(selectedPlan.propertyPricing)) {
       return [] as BhkConfig[];
     }
 
-    return isLuxPlan ? LUX_BHK_CONFIGS : DEFAULT_BHK_CONFIGS;
-  }, [isLuxPlan, options.propertyType]);
+    const groups: Record<string, SquareFootOption[]> = {};
+    const bhkLabels: Record<string, string> = {
+      '2bhk': '2 BHK',
+      '3bhk': '3 BHK',
+      '4bhk': '4 BHK'
+    };
+
+    selectedPlan.propertyPricing.forEach((row) => {
+      if (!row.isActive || row.propertyType !== options.propertyType) return;
+      const bhk = row.bhkType.toLowerCase();
+      if (!groups[bhk]) {
+        groups[bhk] = [];
+      }
+      groups[bhk].push({
+        value: row.squareFeet,
+        range: row.sqftLabel || `${row.squareFeet} sq ft`,
+        pricing: row.pricing as Record<PlanDurationId, number>
+      });
+    });
+
+    const order = ['2bhk', '3bhk', '4bhk'];
+    const result: BhkConfig[] = [];
+    order.forEach((bhkId) => {
+      if (groups[bhkId] && groups[bhkId].length > 0) {
+        groups[bhkId].sort((a, b) => a.value - b.value);
+        result.push({
+          id: bhkId as BhkId,
+          label: bhkLabels[bhkId] || bhkId.toUpperCase(),
+          sqftOptions: groups[bhkId]
+        });
+      }
+    });
+
+    return result;
+  }, [selectedPlan, options.propertyType]);
 
   const selectedBhkConfig = useMemo(() => {
     if (!options.bhkType) return null;
@@ -826,26 +432,18 @@ const PaymentOptionsPage = () => {
     return selectedBhkConfig.sqftOptions.find((opt) => opt.value === options.squareFeet) ?? null;
   }, [options.squareFeet, selectedBhkConfig]);
 
-  const calculatePlanPrice = (duration: PlanDuration): PlanPriceBreakdown => {
-    const monthlyBaseCost =
-      selectedSqftOption?.pricing?.['1month'] ?? selectedPlan?.finalPrice ?? selectedPlan?.price ?? 0;
-
-    const monthlyAfterDiscount =
-      selectedSqftOption?.pricing?.[duration.id] ?? Math.round(monthlyBaseCost * (1 - duration.discount / 100));
-
-    const totalBeforeDiscount = monthlyBaseCost * duration.multiplier;
-    const finalTotal = monthlyAfterDiscount * duration.multiplier;
-
+  const calculatePlanPrice = useCallback((duration: PlanDuration): PlanPriceBreakdown => {
+    const backendAmount = Number(selectedSqftOption?.pricing?.[duration.id]) || 0;
     return {
-      monthlyBaseCost,
-      propertyBaseCost: monthlyBaseCost,
-      totalBeforeDiscount,
-      discountPercent: duration.discount,
-      discountAmount: Math.max(0, totalBeforeDiscount - finalTotal),
-      monthlyAfterDiscount,
-      finalTotal
+      monthlyBaseCost: backendAmount,
+      propertyBaseCost: backendAmount,
+      totalBeforeDiscount: backendAmount,
+      discountPercent: 0,
+      discountAmount: 0,
+      monthlyAfterDiscount: backendAmount,
+      finalTotal: backendAmount
     };
-  };
+  }, [selectedSqftOption]);
 
   const handlePlanDurationSelect = (durationId: PlanDurationId) => {
     const duration = PLAN_DURATIONS.find((d) => d.id === durationId);

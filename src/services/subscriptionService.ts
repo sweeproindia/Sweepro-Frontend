@@ -244,7 +244,6 @@ export interface SubscribeData {
   autoRenewal?: boolean;
   startDate?: string;
   planDuration?: '1month' | '3month' | '6month' | null;
-  finalAmount?: number;
   serviceDetails?: {
     timeSlot?: string;
     frequency?: string;
@@ -271,7 +270,6 @@ export interface SubscribeData {
 export interface SubscriptionPaymentData {
   subscriptionId: string;
   paymentMethod: string;
-  amount: number;
 }
 
 export class SubscriptionService {
@@ -295,9 +293,11 @@ export class SubscriptionService {
    */
   static async subscribeToPlan(subscribeData: SubscribeData): Promise<ApiResponse<{ subscription: Subscription }>> {
     try {
+      // Remove any client-supplied price information to enforce backend pricing trust boundary
+      const { finalAmount, amount, totalPrice, calculatedPrice, ...cleanSubscribeData } = subscribeData as any;
       return await apiRequest<{ subscription: Subscription }>(API_ENDPOINTS.SUBSCRIPTIONS.SUBSCRIBE, {
         method: HttpMethod.POST,
-        body: subscribeData,
+        body: cleanSubscribeData,
         requiresAuth: true
       });
     } catch (error) {
@@ -479,9 +479,11 @@ export class SubscriptionService {
    */
   static async completeSubscriptionPayment(paymentData: SubscriptionPaymentData): Promise<ApiResponse<{ subscription: Subscription, payment: any }>> {
     try {
+      // Remove any client-supplied price information to enforce backend pricing trust boundary
+      const { amount, finalAmount, totalPrice, calculatedPrice, ...cleanPaymentData } = paymentData as any;
       return await apiRequest<{ subscription: Subscription, payment: any }>(API_ENDPOINTS.SUBSCRIPTIONS.COMPLETE_PAYMENT, {
         method: HttpMethod.POST,
-        body: paymentData,
+        body: cleanPaymentData,
         requiresAuth: true
       });
     } catch (error) {

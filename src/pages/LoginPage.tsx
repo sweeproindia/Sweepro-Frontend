@@ -363,8 +363,8 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col w-full h-full items-center justify-center px-8 xl:px-16">
-          <div className="w-full max-w-lg">
+        <div className="relative z-10 flex flex-col w-full h-full items-center px-8 xl:px-16 overflow-y-auto py-8 sm:py-12">
+          <div className="w-full max-w-lg my-auto">
             {/* Value Proposition Header */}
             <div className="mb-12">
               <motion.div

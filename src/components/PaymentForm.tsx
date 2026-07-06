@@ -34,24 +34,52 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({ plan, onComplete }) =>
     setError(null);
 
     try {
+      let subscriptionId: string | undefined;
+
+      try {
+        const existingSubscriptionResponse = await SubscriptionService.getUserSubscription();
+        const existingSubscription: any =
+          (existingSubscriptionResponse.data as any)?.subscription ||
+          (existingSubscriptionResponse as any)?.subscription ||
+          existingSubscriptionResponse.data ||
+          null;
+
+        if (existingSubscription?.status === 'PENDING_PAYMENT') {
+          subscriptionId = existingSubscription.id;
+        }
+      } catch (error) {
+        console.warn('Failed to load existing subscription before payment:', error);
+      }
+
       // Step 1: Create subscription on backend (status: PENDING_PAYMENT)
-      const subscriptionResponse = await SubscriptionService.subscribeToPlan({
-        planId: plan.id,
-        paymentMethod: 'RAZORPAY',
-        autoRenewal: true,
-        startDate: new Date().toISOString(),
-      });
+      if (!subscriptionId) {
+        try {
+          const subscriptionResponse = await SubscriptionService.subscribeToPlan({
+            planId: plan.id,
+            paymentMethod: 'RAZORPAY',
+            autoRenewal: true,
+            startDate: new Date().toISOString(),
+          });
 
-      const subscriptionPayload: any =
-        (subscriptionResponse.data as any)?.subscription ||
-        (subscriptionResponse.data as any) ||
-        (subscriptionResponse as any).subscription;
+          const subscriptionPayload: any =
+            (subscriptionResponse.data as any)?.subscription ||
+            (subscriptionResponse.data as any) ||
+            (subscriptionResponse as any).subscription;
 
-      const subscriptionId = subscriptionPayload?.id;
-      if (!subscriptionId) throw new Error('Failed to initialize subscription. Please try again.');
+          subscriptionId = subscriptionPayload?.id;
+          if (!subscriptionId) throw new Error('Failed to initialize subscription. Please try again.');
+        } catch (error: any) {
+          const conflictData = error?.response?.data?.data || error?.response?.data || error?.response || error?.data;
+          if (error?.statusCode === 409 && conflictData?.id && conflictData?.status === 'PENDING_PAYMENT') {
+            subscriptionId = conflictData.id;
+          } else {
+            throw error;
+          }
+        }
+      }
 
-      // Step 2: Create Razorpay order
-      const orderResponse = await PaymentService.createRazorpaySubscriptionOrder(subscriptionId, plan.price);
+      // Step 2: Create Razorpay order without sending client-side price
+      const orderResponse = await PaymentService.createRazorpaySubscriptionOrder(subscriptionId);
       if (!orderResponse.success || !orderResponse.data) throw new Error('Failed to create payment order. Please try again.');
 
       const { orderId, amount, currency, key } = orderResponse.data as any;
@@ -143,7 +171,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({ plan, onComplete }) =>
       {/* Pay Button */}
       <Button className="w-full" size="lg" disabled={isProcessing} onClick={handleRazorpayPayment}>
         {isProcessing ? (
-          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing…</>
+          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processingï¿½</>
         ) : (
           <><CheckCircle className="mr-2 h-4 w-4" />Pay ?{(plan.price || 0).toLocaleString()} via Razorpay</>
         )}

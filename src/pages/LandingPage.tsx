@@ -4,8 +4,9 @@ import FeaturesSection from '@/components/landing/FeaturesSection';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
-import SweepProAboutUs from '@/components/landing/SweepProAboutUs';
-import TestimonialsSection from '@/components/landing/TestimonialsSection';
+import SweeproAboutUs from '@/components/landing/SweeproAboutUs';
+// TESTIMONIALS — commented out for launch, restore when ready:
+// import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -97,7 +98,7 @@ export default function LandingPage() {
         user={contextUser}
         onDashboardClick={handleDashboardClick}
       />
-      <SweepProAboutUs />
+      <SweeproAboutUs />
       <FeaturesSection />
       <HowItWorksSection />
 
@@ -108,6 +109,7 @@ export default function LandingPage() {
         />
       )}
 
+      {/* <TestimonialsSection /> */}
       <FAQSection />
       <Footer />
 

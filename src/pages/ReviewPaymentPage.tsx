@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ToastAction } from '@/components/ui/toast';
 
 import { ArrowLeft, Calendar, Check, Clock, CreditCard, Shield, Sparkles, Home, MapPin, CheckCircle, Users, Package } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -280,6 +281,25 @@ export default function ReviewPaymentPage() {
     console.log('Total with GST:', totalWithGst);
 
     try {
+      // If a pending subscription already exists, reuse it instead of trying
+      // to create a duplicate record. This keeps payment retries idempotent.
+      let createdSubscriptionId: string | undefined;
+
+      try {
+        const existingSubscriptionResponse = await SubscriptionService.getUserSubscription();
+        const existingSubscription: any =
+          (existingSubscriptionResponse.data as any)?.subscription ||
+          (existingSubscriptionResponse as any)?.subscription ||
+          existingSubscriptionResponse.data ||
+          null;
+
+        if (existingSubscription?.status === 'PENDING_PAYMENT') {
+          createdSubscriptionId = existingSubscription.id;
+        }
+      } catch (error) {
+        console.warn('Failed to load existing subscription before payment:', error);
+      }
+
       // Step 1: Resolve the actual backend plan and create a subscription
       // Map the selected UI plan (Sweepro Touch / Sweepro Lux) to the real
       // ServicePlan in the backend so we pass a valid planId.
@@ -314,7 +334,7 @@ export default function ReviewPaymentPage() {
         backendPlan = backendPlans.find((p: any) => {
           const n = normalizeName(p.name);
           if (selectedPlan.id === 'standard') {
-            // Map UI "Sweepro Touch" to backend "SweepPro Touch" (name contains "touch")
+            // Map UI "Sweepro Touch" to backend "Sweepro Touch" (name contains "touch")
             return n.includes('touch');
           }
           if (selectedPlan.id === 'premium') {
@@ -337,7 +357,6 @@ export default function ReviewPaymentPage() {
         autoRenewal: true,
         startDate: selectedOptions.startDate,
         planDuration: selectedOptions.selectedPlanDuration,
-        finalAmount: totalWithGst, // Pass the final amount including GST
         serviceDetails: {
           timeSlot: selectedOptions.timeSlot,
           frequency: selectedOptions.frequency,
@@ -361,33 +380,41 @@ export default function ReviewPaymentPage() {
         }
       };
 
-      console.log('🔵 Step 1: Creating subscription with data:', subscriptionData);
-      
-      const subscriptionResponse = await SubscriptionService.subscribeToPlan(subscriptionData);
-      
-      console.log('✅ Subscription response:', subscriptionResponse);
-      
-      const subscriptionPayload: any =
-        (subscriptionResponse.data as any)?.subscription ||
-        (subscriptionResponse.data as any) ||
-        (subscriptionResponse as any).subscription;
-
-      const createdSubscriptionId = subscriptionPayload?.id;
       if (!createdSubscriptionId) {
-        console.error('❌ No subscription ID in response:', subscriptionResponse);
-        throw new Error('Failed to create subscription - no subscription ID returned');
+        console.log('🔵 Step 1: Creating subscription with data:', subscriptionData);
+
+        try {
+          const subscriptionResponse = await SubscriptionService.subscribeToPlan(subscriptionData);
+
+          console.log('✅ Subscription response:', subscriptionResponse);
+
+          const subscriptionPayload: any =
+            (subscriptionResponse.data as any)?.subscription ||
+            (subscriptionResponse.data as any) ||
+            (subscriptionResponse as any).subscription;
+
+          createdSubscriptionId = subscriptionPayload?.id;
+          if (!createdSubscriptionId) {
+            console.error('❌ No subscription ID in response:', subscriptionResponse);
+            throw new Error('Failed to create subscription - no subscription ID returned');
+          }
+        } catch (error: any) {
+          const conflictData = error?.response?.data?.data || error?.response?.data || error?.response || error?.data;
+          if (error?.statusCode === 409 && conflictData?.id && conflictData?.status === 'PENDING_PAYMENT') {
+            createdSubscriptionId = conflictData.id;
+            console.warn('⚠️ Reusing existing pending subscription after 409 conflict:', conflictData.id);
+          } else {
+            throw error;
+          }
+        }
       }
 
       console.log('✅ Subscription created with ID:', createdSubscriptionId);
-      console.log('🔵 Step 2: Creating Razorpay order with amount:', totalWithGst, '(₹', totalWithGst.toFixed(2), ')');
+      console.log('🔵 Step 2: Creating Razorpay order for subscription ID:', createdSubscriptionId);
 
-      // Step 2: Create Razorpay order for this subscription
-      // Step 2: Create Razorpay order for this subscription using the exact
-      // final amount shown in the payment summary (including GST). This keeps
-      // the backend/Razorpay amount in sync with the UI.
+      // Step 2: Create Razorpay order for this subscription without sending client-calculated amount
       const orderResponse = await PaymentService.createRazorpaySubscriptionOrder(
-        createdSubscriptionId,
-        totalWithGst
+        createdSubscriptionId
       );
       
       console.log('✅ Razorpay order response:', orderResponse);
@@ -414,6 +441,43 @@ export default function ReviewPaymentPage() {
           name: (user as any).name || '',
           email: (user as any).email || '',
           contact: (user as any).phone || ''
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay via UPI (GPay, PhonePe, Paytm, BHIM)',
+                instruments: [
+                  {
+                    method: 'upi'
+                  }
+                ]
+              },
+              cards: {
+                name: 'Credit & Debit Cards',
+                instruments: [
+                  {
+                    method: 'card'
+                  }
+                ]
+              },
+              netbanking: {
+                name: 'Net Banking & Wallets',
+                instruments: [
+                  {
+                    method: 'netbanking'
+                  },
+                  {
+                    method: 'wallet'
+                  }
+                ]
+              }
+            },
+            sequence: ['block.upi', 'block.cards', 'block.netbanking'],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
         },
         notes: {
           planName: selectedPlan.name,
@@ -467,17 +531,21 @@ export default function ReviewPaymentPage() {
         title: 'Payment Failed',
         description: errorMessage + ' Razorpay SDK may not have loaded. Please check your internet connection and try again.',
         variant: 'destructive',
-        action: {
-          label: 'Retry',
-          onClick: () => {
-            // Retry will be triggered by clicking the "Proceed to Payment" button again
-            toast({
-              title: 'Retry',
-              description: 'Click "Proceed to Payment" again to retry the payment.',
-              variant: 'default'
-            });
-          }
-        }
+        action: (
+          <ToastAction
+            altText="Retry"
+            onClick={() => {
+              // Retry will be triggered by clicking the "Proceed to Payment" button again
+              toast({
+                title: 'Retry',
+                description: 'Click "Proceed to Payment" again to retry the payment.',
+                variant: 'default'
+              });
+            }}
+          >
+            Retry
+          </ToastAction>
+        )
       });
     }
   };
@@ -954,7 +1022,15 @@ export default function ReviewPaymentPage() {
                         </span>
                       )}
                     </Button>
-                    <p className="mt-3 text-center text-xs text-slate-500">🔒 Secured by Razorpay · Instant confirmation on success</p>
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-medium shadow-sm">
+                        ⚡ UPI (GPay, PhonePe, Paytm)
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-medium shadow-sm">
+                        💳 Cards & Net Banking
+                      </span>
+                    </div>
+                    <p className="mt-3 text-center text-xs text-slate-500">🔒 100% Secure payment by Razorpay · Instant confirmation</p>
                   </div>
                 </CardContent>
               </Card>
@@ -965,7 +1041,7 @@ export default function ReviewPaymentPage() {
                     <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
                       <Shield className="h-4 w-4 text-slate-600" />
                     </span>
-                    SweePro assurance
+                    Sweepro assurance
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-slate-600">

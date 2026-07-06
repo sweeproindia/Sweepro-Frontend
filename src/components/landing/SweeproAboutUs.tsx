@@ -38,7 +38,7 @@ const floatingVariants = {
   },
 };
 
-const  SweepProAboutUs: React.FC = () => {
+const SweeproAboutUs: React.FC = () => {
 
   const features = [
     'Verified Professionals',
@@ -161,4 +161,4 @@ const  SweepProAboutUs: React.FC = () => {
   );
 };
 
-export default SweepProAboutUs;
+export default SweeproAboutUs;

@@ -26,7 +26,7 @@ const RAW_API_BASE_URL = ENV_API_BASE_URL
 if (!import.meta.env.DEV && !ENV_API_BASE_URL) {
   console.error(
     '[Sweep Pro] WARNING: VITE_API_BASE_URL is not set. '
-    + 'Requests will fall back to the TEST backend. '
+    + 'Requests will fall back to the Render backend. '
     + 'Set VITE_API_BASE_URL in your production environment variables.'
   );
 }
@@ -267,6 +267,7 @@ export type AuthTokenStorage = 'local' | 'session';
 export type AuthTokenType = 'jwt' | 'firebase';
 
 const AUTH_TOKEN_EXPIRES_AT_KEY = 'authTokenExpiresAt';
+const CSRF_TOKEN_STORAGE_KEY = 'csrfToken';
 // IMPORTANT: Must match backend JWT expiration time! Backend uses '24h' in jwt.sign({ expiresIn: '24h' })
 const DEFAULT_AUTH_TTL_DAYS = 1; // Changed from 30 days to 1 day to match JWT server-side TTL
 
@@ -426,6 +427,22 @@ const getCookieValue = (name: string): string | null => {
   return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : null;
 };
 
+const getStoredCsrfToken = (): string | null => {
+  try {
+    return localStorage.getItem(CSRF_TOKEN_STORAGE_KEY) || getCookieValue('csrf-token');
+  } catch {
+    return getCookieValue('csrf-token');
+  }
+};
+
+const setStoredCsrfToken = (token: string): void => {
+  try {
+    localStorage.setItem(CSRF_TOKEN_STORAGE_KEY, token);
+  } catch {
+    // Ignore storage failures; the token can still be reused from memory in this session.
+  }
+};
+
 // Generic API request function
 export const apiRequest = async <T = any>(
   endpoint: string,
@@ -466,10 +483,12 @@ export const apiRequest = async <T = any>(
   }
 
   // M7: Attach CSRF token for state-changing requests (double-submit cookie pattern).
-  // The backend CSRF middleware sets a non-HttpOnly 'csrf-token' cookie readable here.
+  // In production the frontend and backend are cross-origin, so the token is
+  // cached from the backend's X-CSRF-Token response header rather than read
+  // directly from a backend cookie.
   const csrfMethods: HttpMethod[] = [HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE];
   if (csrfMethods.includes(method)) {
-    const csrfToken = getCookieValue('csrf-token');
+    const csrfToken = getStoredCsrfToken();
     if (csrfToken) {
       requestHeaders['X-CSRF-Token'] = csrfToken;
     }
@@ -514,6 +533,11 @@ export const apiRequest = async <T = any>(
       } catch {
         data = { message: text || 'Empty response' };
       }
+    }
+
+    const responseCsrfToken = response.headers.get('X-CSRF-Token') || response.headers.get('x-csrf-token');
+    if (responseCsrfToken) {
+      setStoredCsrfToken(responseCsrfToken);
     }
 
     if (!response.ok) {

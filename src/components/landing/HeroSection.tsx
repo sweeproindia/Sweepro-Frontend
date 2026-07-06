@@ -133,14 +133,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   onClick={() => navigate('/login')}
                   style={{ letterSpacing: '1px' }}
                 >
-                  Hire Me
+                  Join as a Pro
                 </button>
                 <button
                   className="flex items-center justify-center gap-2 sm:gap-3 bg-[#eeebe3] text-[#1800ad] font-bold text-base sm:text-lg px-8 sm:px-14 py-4 sm:py-5 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 hover:bg-white active:scale-95 border-2 border-[#1800ad] ring-2 ring-[#eeebe3] focus:outline-none focus:ring-4 focus:ring-[#1800ad] min-w-[180px]"
                   onClick={() => navigate('/signup')}
                   style={{ letterSpacing: '1px' }}
                 >
-                  Hire
+                  Find a Maid
                 </button>
               </>
             )}
