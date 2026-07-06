@@ -71,6 +71,9 @@ const MaidVerification = lazy(() => import(/* webpackChunkName: "maid" */ "./pag
 const AdminDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/AdminDashboard"));
 const AdminFeedbackPage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/AdminFeedbackPage"));
 const AdminProfilePage = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/AdminProfilePage"));
+const AdminMaidVerification = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/AdminMaidVerification"));
+const MaidProfilePage = lazy(() => import(/* webpackChunkName: "maid" */ "./pages/MaidProfilePage"));
+const CustomerProfilePage = lazy(() => import(/* webpackChunkName: "customer" */ "./pages/CustomerProfilePage"));
 
 // ---------------------------------------------------------------------------
 // P2 FIX: Global QueryClient configuration.
@@ -267,6 +270,16 @@ const App = () => {
                           }
                         />
                         <Route
+                          path="/customer-profile"
+                          element={
+                            <RequireAuth>
+                              <RequireRole roles={["CUSTOMER"]}>
+                                <CustomerProfilePage />
+                              </RequireRole>
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
                           path="/subscription"
                           element={
                             <RequireAuth>
@@ -389,6 +402,16 @@ const App = () => {
                           }
                         />
                         <Route
+                          path="/maid-profile"
+                          element={
+                            <RequireAuth>
+                              <RequireRole roles={["MAID"]}>
+                                <MaidProfilePage />
+                              </RequireRole>
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
                           path="/maid-bookings"
                           element={
                             <RequireAuth>
@@ -446,6 +469,26 @@ const App = () => {
                             <RequireAuth>
                               <RequireRole roles={["ADMIN"]}>
                                 <AdminFeedbackPage />
+                              </RequireRole>
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/admin/profile"
+                          element={
+                            <RequireAuth>
+                              <RequireRole roles={["ADMIN"]}>
+                                <AdminProfilePage />
+                              </RequireRole>
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/admin/maid-verification"
+                          element={
+                            <RequireAuth>
+                              <RequireRole roles={["ADMIN"]}>
+                                <AdminMaidVerification />
                               </RequireRole>
                             </RequireAuth>
                           }

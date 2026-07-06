@@ -198,21 +198,19 @@ export class PaymentService {
   /**
    * Create Razorpay order for subscription
    * @param subscriptionId - The subscription ID
-   * @param amount - Amount to charge
+   * @param amount - Optional amount (ignored by backend as backend is sole source of truth)
    * @param currency - Currency code (default: INR)
    */
-  static async createRazorpaySubscriptionOrder(subscriptionId: string, amount: number, currency: string = 'INR'): Promise<ApiResponse<RazorpayOrderData>> {
+  static async createRazorpaySubscriptionOrder(subscriptionId: string, amount?: number, currency: string = 'INR'): Promise<ApiResponse<RazorpayOrderData>> {
     try {
-      // Note: Backend handles the paise conversion if needed
       console.log('🔵 Creating Razorpay subscription order:', {
         subscriptionId,
-        amount,
         currency
       });
 
       const res = await apiRequest<any>(API_ENDPOINTS.PAYMENTS.RAZORPAY.SUBSCRIPTION_ORDER, {
         method: HttpMethod.POST,
-        body: { subscriptionId, amount, currency },
+        body: { subscriptionId, currency },
         requiresAuth: true
       });
 
@@ -454,9 +452,51 @@ export class PaymentService {
         return;
       }
 
+      const defaultGatewayConfig = {
+        display: {
+          blocks: {
+            upi: {
+              name: 'Pay via UPI (GPay, PhonePe, Paytm, BHIM)',
+              instruments: [
+                {
+                  method: 'upi'
+                }
+              ]
+            },
+            cards: {
+              name: 'Credit & Debit Cards',
+              instruments: [
+                {
+                  method: 'card'
+                }
+              ]
+            },
+            netbanking: {
+              name: 'Net Banking & Wallets',
+              instruments: [
+                {
+                  method: 'netbanking'
+                },
+                {
+                  method: 'wallet'
+                }
+              ]
+            }
+          },
+          sequence: ['block.upi', 'block.cards', 'block.netbanking'],
+          preferences: {
+            show_default_blocks: true
+          }
+        }
+      };
+
       const userModal = options?.modal || {};
       const rzp = new window.Razorpay({
         ...options,
+        config: {
+          ...defaultGatewayConfig,
+          ...(options?.config || {})
+        },
         handler: (response: any) => {
           resolve(response);
         },
