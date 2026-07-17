@@ -24,7 +24,7 @@ import { Payment } from '../services/paymentService';
 import { apiRequest, HttpMethod } from '../services/api';
 import { useUser } from '../contexts/UserContext';
 import { Link } from 'react-router-dom';
-import EditPlanDialog from '../components/admin/EditPlanDialog';
+import { AdminPlansSection } from '../components/dashboard/AdminPlansSection';
 import EditUserDialog from '../components/admin/EditUserDialog';
 import { AdminMaidVerificationSection } from '../components/dashboard/AdminMaidVerificationSection';
 import { AdminBufferManagementSection } from '../components/dashboard/AdminBufferManagementSection';
@@ -132,8 +132,6 @@ export default function AdminDashboard() {
   const [subscriptionFilter, setSubscriptionFilter] = useState('');
   const [userFilter, setUserFilter] = useState('');
   const [assigningBooking, setAssigningBooking] = useState<string | null>(null);
-  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
-  const [isEditPlanDialogOpen, setIsEditPlanDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
 
@@ -445,14 +443,6 @@ export default function AdminDashboard() {
       sub.customer?.user?.name.toLowerCase().includes(subscriptionFilter.toLowerCase());
   });
 
-  const handleEditPlan = (plan: SubscriptionPlan) => {
-    setEditingPlan(plan);
-    setIsEditPlanDialogOpen(true);
-  };
-
-  const handleEditPlanSuccess = () => {
-    fetchAdminData(); // Refresh data
-  };
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
@@ -585,7 +575,7 @@ export default function AdminDashboard() {
               {activeSection === 'subscriptions' && 'Subscriptions'}
               {activeSection === 'buffer-management' && 'Buffer Period Management'}
               {activeSection === 'payments' && 'Payment Management'}
-              {activeSection === 'plans' && 'Subscription Plans'}
+              {activeSection === 'plans' && 'View Subscription Plans'}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
           {activeSection === 'overview' && 'Comprehensive platform management and analytics'}
@@ -597,7 +587,7 @@ export default function AdminDashboard() {
           {activeSection === 'subscriptions' && 'Monitor subscription plans and billing'}
           {activeSection === 'buffer-management' && 'Review buffer requests and manage service interruptions'}
           {activeSection === 'payments' && 'Monitor all payment activities and revenue'}
-          {activeSection === 'plans' && 'Manage available service plans and pricing'}
+          {activeSection === 'plans' && 'View current subscription plans and pricing configuration'}
         </p>
           </div>
           {/* Date display */}
@@ -1058,77 +1048,11 @@ export default function AdminDashboard() {
 
         {/* Plans Section */}
         {activeSection === 'plans' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscription Plans</CardTitle>
-              <CardDescription>Manage available service plans and pricing</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {subscriptionPlans.map((plan) => (
-                  <Card key={plan.id} className={plan.isPopular ? 'border-primary' : ''}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        {plan.name}
-                        {plan.isPopular && <Badge>Popular</Badge>}
-                      </CardTitle>
-                      <CardDescription>{plan.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold">₹{plan.finalPrice.toLocaleString()}</div>
-                          <div className="text-sm text-muted-foreground">/{plan.duration} month(s)</div>
-                          {plan.discountPercent > 0 && (
-                            <div className="text-xs text-success">
-                              {plan.discountPercent}% off (₹{plan.basePrice.toLocaleString()} original)
-                            </div>
-                          )}
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div>• {plan.sessionsPerWeek} sessions per week</div>
-                          <div>• {plan.sessionsPerMonth} sessions per month</div>
-                          <div>• {plan.service?.name || 'Service'} included</div>
-                          <div>• Professional cleaning staff</div>
-                        </div>
-                        <div className="flex items-center justify-between pt-2">
-                          <Badge variant={plan.isActive ? 'default' : 'outline'}>
-                            {plan.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditPlan(plan)}
-                          >
-                            Edit Plan
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              {subscriptionPlans.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No subscription plans found</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <AdminPlansSection plans={subscriptionPlans} />
         )}
       </div>
 
 
-      {/* Edit Plan Dialog */}
-      <EditPlanDialog
-        plan={editingPlan}
-        isOpen={isEditPlanDialogOpen}
-        onClose={() => {
-          setIsEditPlanDialogOpen(false);
-          setEditingPlan(null);
-        }}
-        onSuccess={handleEditPlanSuccess}
-      />
 
       {/* Edit User Dialog */}
       <EditUserDialog
