@@ -528,9 +528,6 @@ export default function MaidDashboardEnhanced() {
                                 {booking.customer.name}
                               </span>
                             )}
-                            <span className="font-bold text-green-600">
-                              ₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}
-                            </span>
                           </div>
 
                           {booking.serviceAddress && (
