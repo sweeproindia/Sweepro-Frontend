@@ -525,10 +525,6 @@ export default function MaidDashboard() {
                                       <span className="truncate">{booking.customer.email}</span>
                                     </div>
                                   )}
-                                  <div className="flex items-center gap-2 text-xs sm:text-sm">
-                                    <span className="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center text-green-600 text-xs">💰</span>
-                                    <span className="font-bold text-green-600">₹{(booking.finalAmount || booking.totalAmount).toLocaleString()}</span>
-                                  </div>
                                 </div>
                               </div>
 

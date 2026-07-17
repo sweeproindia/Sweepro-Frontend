@@ -309,6 +309,15 @@ export default function LoginPage() {
                     'Sign in'
                   )}
                 </Button>
+
+                {(isEmailLoading || isLoading || hasNavigated) && (
+                  <div className="mt-3 p-3.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center space-x-2.5 shadow-sm animate-pulse">
+                    <Loader2 className="h-5 w-5 animate-spin text-[#1800ad]" />
+                    <span className="text-sm font-medium text-[#1800ad]">
+                      {hasNavigated ? 'Opening your dashboard...' : 'Signing you in, please wait...'}
+                    </span>
+                  </div>
+                )}
               </form>
 
               <div className="relative">

@@ -302,7 +302,6 @@ export const MaidBookingRequestsSection: React.FC<MaidBookingRequestsSectionProp
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-foreground text-sm sm:text-base truncate">{request.booking.service.name}</p>
-                            <p className="text-xs font-medium text-green-700 dark:text-green-400">₹{request.booking.totalAmount.toLocaleString()}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">

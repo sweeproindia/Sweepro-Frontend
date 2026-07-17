@@ -257,10 +257,6 @@ export default function MaidBookingsPage() {
                           <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                           <span className="text-xs sm:text-sm">{booking.timeSlot || `${booking.estimatedDuration || 180} mins`}</span>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-xs sm:text-sm font-medium">₹{(booking.finalAmount ?? booking.totalAmount ?? 0).toLocaleString()}</span>
-                        </div>
                         {booking.customer?.phone && (
                           <div className="flex items-center space-x-2">
                             <User className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
