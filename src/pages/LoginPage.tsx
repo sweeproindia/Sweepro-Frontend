@@ -228,8 +228,19 @@ export default function LoginPage() {
     }
   };
 
+  // Show a full-screen loader when any auth action is in progress
+  const showFullScreenLoader = isEmailLoading || isLoading || (hasNavigated && isAuthLoading);
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-blue-50 to-indigo-50">
+      {/* Full-screen loading overlay for all login types */}
+      {showFullScreenLoader && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+          <Loader2 className="h-12 w-12 animate-spin text-[#1800ad] mb-4" />
+          <p className="text-lg font-medium text-gray-700 animate-pulse">Signing you in...</p>
+        </div>
+      )}
+
       {/* Left Column - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 md:p-8 overflow-y-auto min-h-screen">
         <div className="w-full max-w-2xl">

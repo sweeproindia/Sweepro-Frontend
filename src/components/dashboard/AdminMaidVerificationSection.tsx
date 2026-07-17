@@ -54,14 +54,14 @@ interface MaidVerification {
       status: 'PENDING' | 'APPROVED' | 'REJECTED';
       filename?: string;
     };
-    policeVerification: {
+    panCard: {
       id: string;
       url: string;
       uploaded: boolean;
       status: 'PENDING' | 'APPROVED' | 'REJECTED';
       filename?: string;
     };
-    photo: {
+    electricityBill: {
       id: string;
       url: string;
       uploaded: boolean;
@@ -106,14 +106,14 @@ interface BackendMaidData {
       fileSize: number;
       status: 'PENDING' | 'APPROVED' | 'REJECTED';
     } | null;
-    policeVerification?: {
+    panCard?: {
       id: string;
       filename: string;
       uploadedAt: string;
       fileSize: number;
       status: 'PENDING' | 'APPROVED' | 'REJECTED';
     } | null;
-    photo?: {
+    electricityBill?: {
       id: string;
       filename: string;
       uploadedAt: string;
@@ -198,19 +198,19 @@ export const AdminMaidVerificationSection: React.FC = () => {
           status: backendData.documents.aadharCard?.status || 'PENDING',
           filename: backendData.documents.aadharCard?.filename
         },
-        policeVerification: {
-          id: backendData.documents.policeVerification?.id || '',
-          url: backendData.documents.policeVerification?.id || '',
-          uploaded: !!backendData.documents.policeVerification,
-          status: backendData.documents.policeVerification?.status || 'PENDING',
-          filename: backendData.documents.policeVerification?.filename
+        panCard: {
+          id: backendData.documents.panCard?.id || '',
+          url: backendData.documents.panCard?.id || '',
+          uploaded: !!backendData.documents.panCard,
+          status: backendData.documents.panCard?.status || 'PENDING',
+          filename: backendData.documents.panCard?.filename
         },
-        photo: {
-          id: backendData.documents.photo?.id || '',
-          url: backendData.documents.photo?.id || '',
-          uploaded: !!backendData.documents.photo,
-          status: backendData.documents.photo?.status || 'PENDING',
-          filename: backendData.documents.photo?.filename
+        electricityBill: {
+          id: backendData.documents.electricityBill?.id || '',
+          url: backendData.documents.electricityBill?.id || '',
+          uploaded: !!backendData.documents.electricityBill,
+          status: backendData.documents.electricityBill?.status || 'PENDING',
+          filename: backendData.documents.electricityBill?.filename
         }
       },
       personalInfo: {
@@ -749,27 +749,27 @@ export const AdminMaidVerificationSection: React.FC = () => {
                   <Label className="font-medium">PAN Card</Label>
                   <div className="flex items-center gap-2">
                     <Badge 
-                      variant={verification.documents.policeVerification.status === 'APPROVED' ? 'default' : 
-                              verification.documents.policeVerification.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                      variant={verification.documents.panCard.status === 'APPROVED' ? 'default' : 
+                              verification.documents.panCard.status === 'REJECTED' ? 'destructive' : 'secondary'}
                       className="text-xs"
                     >
-                      {verification.documents.policeVerification.status}
+                      {verification.documents.panCard.status}
                     </Badge>
-                    {verification.documents.policeVerification.uploaded ? (
+                    {verification.documents.panCard.uploaded ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     ) : (
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                   </div>
                 </div>
-                {verification.documents.policeVerification.uploaded && (
+                {verification.documents.panCard.uploaded && (
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => handleDocumentPreview(verification.documents.policeVerification.url, 'PAN Card')}
+                        onClick={() => handleDocumentPreview(verification.documents.panCard.url, 'PAN Card')}
                       >
                         <Eye className="h-3 w-3 mr-1" />
                         Preview
@@ -777,20 +777,20 @@ export const AdminMaidVerificationSection: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleDocumentDownload(verification.documents.policeVerification.url, 'pan_card.jpg')}
+                        onClick={() => handleDocumentDownload(verification.documents.panCard.url, 'pan_card.jpg')}
                       >
                         <Download className="h-3 w-3" />
                       </Button>
                     </div>
-                    {verification.documents.policeVerification.status === 'PENDING' && (
+                    {verification.documents.panCard.status === 'PENDING' && (
                       <div className="flex gap-2">
                         <Button 
                           size="sm" 
                           className="flex-1 bg-green-600 hover:bg-green-700"
-                          onClick={() => handleDocumentAction(verification.documents.policeVerification.id, 'approve')}
-                          disabled={documentActionLoading === verification.documents.policeVerification.id}
+                          onClick={() => handleDocumentAction(verification.documents.panCard.id, 'approve')}
+                          disabled={documentActionLoading === verification.documents.panCard.id}
                         >
-                          {documentActionLoading === verification.documents.policeVerification.id ? (
+                          {documentActionLoading === verification.documents.panCard.id ? (
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           ) : (
                             <Check className="h-3 w-3 mr-1" />
@@ -801,10 +801,10 @@ export const AdminMaidVerificationSection: React.FC = () => {
                           size="sm" 
                           variant="destructive"
                           className="flex-1"
-                          onClick={() => handleDocumentAction(verification.documents.policeVerification.id, 'reject', 'Document quality issues')}
-                          disabled={documentActionLoading === verification.documents.policeVerification.id}
+                          onClick={() => handleDocumentAction(verification.documents.panCard.id, 'reject', 'Document quality issues')}
+                          disabled={documentActionLoading === verification.documents.panCard.id}
                         >
-                          {documentActionLoading === verification.documents.policeVerification.id ? (
+                          {documentActionLoading === verification.documents.panCard.id ? (
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           ) : (
                             <X className="h-3 w-3 mr-1" />
@@ -822,27 +822,27 @@ export const AdminMaidVerificationSection: React.FC = () => {
                   <Label className="font-medium">Address Proof</Label>
                   <div className="flex items-center gap-2">
                     <Badge 
-                      variant={verification.documents.photo.status === 'APPROVED' ? 'default' : 
-                              verification.documents.photo.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                      variant={verification.documents.electricityBill.status === 'APPROVED' ? 'default' : 
+                              verification.documents.electricityBill.status === 'REJECTED' ? 'destructive' : 'secondary'}
                       className="text-xs"
                     >
-                      {verification.documents.photo.status}
+                      {verification.documents.electricityBill.status}
                     </Badge>
-                    {verification.documents.photo.uploaded ? (
+                    {verification.documents.electricityBill.uploaded ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     ) : (
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                   </div>
                 </div>
-                {verification.documents.photo.uploaded && (
+                {verification.documents.electricityBill.uploaded && (
                   <div className="space-y-2">
                     <div className="flex gap-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => handleDocumentPreview(verification.documents.photo.url, 'Address Proof')}
+                        onClick={() => handleDocumentPreview(verification.documents.electricityBill.url, 'Address Proof')}
                       >
                         <Eye className="h-3 w-3 mr-1" />
                         Preview
@@ -850,20 +850,20 @@ export const AdminMaidVerificationSection: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleDocumentDownload(verification.documents.photo.url, 'address_proof.jpg')}
+                        onClick={() => handleDocumentDownload(verification.documents.electricityBill.url, 'address_proof.jpg')}
                       >
                         <Download className="h-3 w-3" />
                       </Button>
                     </div>
-                    {verification.documents.photo.status === 'PENDING' && (
+                    {verification.documents.electricityBill.status === 'PENDING' && (
                       <div className="flex gap-2">
                         <Button 
                           size="sm" 
                           className="flex-1 bg-green-600 hover:bg-green-700"
-                          onClick={() => handleDocumentAction(verification.documents.photo.id, 'approve')}
-                          disabled={documentActionLoading === verification.documents.photo.id}
+                          onClick={() => handleDocumentAction(verification.documents.electricityBill.id, 'approve')}
+                          disabled={documentActionLoading === verification.documents.electricityBill.id}
                         >
-                          {documentActionLoading === verification.documents.photo.id ? (
+                          {documentActionLoading === verification.documents.electricityBill.id ? (
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           ) : (
                             <Check className="h-3 w-3 mr-1" />
@@ -874,10 +874,10 @@ export const AdminMaidVerificationSection: React.FC = () => {
                           size="sm" 
                           variant="destructive"
                           className="flex-1"
-                          onClick={() => handleDocumentAction(verification.documents.photo.id, 'reject', 'Document quality issues')}
-                          disabled={documentActionLoading === verification.documents.photo.id}
+                          onClick={() => handleDocumentAction(verification.documents.electricityBill.id, 'reject', 'Document quality issues')}
+                          disabled={documentActionLoading === verification.documents.electricityBill.id}
                         >
-                          {documentActionLoading === verification.documents.photo.id ? (
+                          {documentActionLoading === verification.documents.electricityBill.id ? (
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           ) : (
                             <X className="h-3 w-3 mr-1" />
@@ -1103,18 +1103,18 @@ export const AdminMaidVerificationSection: React.FC = () => {
                       ) : (
                         <XCircle className="h-4 w-4 text-red-500" />
                       )}
-                      {verification.documents.policeVerification.uploaded ? (
+                      {verification.documents.panCard.uploaded ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
                         <XCircle className="h-4 w-4 text-red-500" />
                       )}
-                      {verification.documents.photo.uploaded ? (
+                      {verification.documents.electricityBill.uploaded ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       ) : (
                         <XCircle className="h-4 w-4 text-red-500" />
                       )}
                       <span className="text-xs text-muted-foreground ml-2">
-                        {[verification.documents.aadharCard.uploaded, verification.documents.policeVerification.uploaded, verification.documents.photo.uploaded].filter(Boolean).length}/3
+                        {[verification.documents.aadharCard.uploaded, verification.documents.panCard.uploaded, verification.documents.electricityBill.uploaded].filter(Boolean).length}/3
                       </span>
                     </div>
                   </TableCell>
