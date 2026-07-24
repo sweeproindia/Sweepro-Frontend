@@ -5,6 +5,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import SweeproAboutUs from '@/components/landing/SweeproAboutUs';
+import { B2BSection } from '@/components/landing/B2BSection';
 // TESTIMONIALS — commented out for launch, restore when ready:
 // import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
@@ -111,6 +112,7 @@ export default function LandingPage() {
 
       {/* <TestimonialsSection /> */}
       <FAQSection />
+      <B2BSection />
       <Footer />
 
     </div>
