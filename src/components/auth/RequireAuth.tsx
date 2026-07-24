@@ -59,8 +59,6 @@ export function RequireAuth({ children, requireProfileCompletion = true }: Requi
   const { user, isLoading, authInitialized } = useUser();
 
   // Wait for auth to complete initial verification before rendering anything.
-  // Previously this returned `token ? children : null` which rendered protected
-  // content before confirming the token was still valid.
   if (!authInitialized || isLoading) {
     return <AuthLoadingSpinner />;
   }
