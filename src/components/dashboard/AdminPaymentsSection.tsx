@@ -175,13 +175,12 @@ export const AdminPaymentsSection: React.FC<AdminPaymentsSectionProps> = ({
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
                 <TableHead className="hidden lg:table-cell">Transaction ID</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedPayments.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-16 text-center">
+                  <TableCell colSpan={7} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                         <CreditCardIcon className="h-6 w-6 text-muted-foreground" />
@@ -241,23 +240,6 @@ export const AdminPaymentsSection: React.FC<AdminPaymentsSectionProps> = ({
                       <code className="text-xs bg-muted px-2 py-1 rounded block w-max">
                         {payment.transactionId}
                       </code>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline">
-                          View Details
-                        </Button>
-                        {payment.status === 'pending' && (
-                          <Button size="sm" variant="outline">
-                            Process
-                          </Button>
-                        )}
-                        {payment.status === 'completed' && (
-                          <Button size="sm" variant="outline">
-                            Refund
-                          </Button>
-                        )}
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))
