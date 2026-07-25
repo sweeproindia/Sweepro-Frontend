@@ -166,8 +166,8 @@ export const Navbar = ({
       label: 'FAQ',
     },
     {
-      href: 'b2b-partnership',
-      label: 'B2B Partnership',
+      href: 'b2b-services',
+      label: 'B2B Services',
     },
   ];
 
