@@ -31,40 +31,47 @@ export default function SEO({
   const location = useLocation();
 
   useEffect(() => {
-    // Update document title
-    document.title = title || defaultSEO.title;
+    // Ensure we're on the client side
+    if (typeof document === 'undefined') return;
 
-    // Update meta description
-    updateMetaTag('description', description || defaultSEO.description);
+    try {
+      // Update document title
+      document.title = title || defaultSEO.title;
 
-    // Update meta keywords
-    updateMetaTag('keywords', keywords || defaultSEO.keywords);
+      // Update meta description
+      updateMetaTag('description', description || defaultSEO.description);
 
-    // Update Open Graph tags
-    updateMetaTag('og:title', title || defaultSEO.title, 'property');
-    updateMetaTag('og:description', description || defaultSEO.description, 'property');
-    updateMetaTag('og:image', ogImage || defaultSEO.ogImage, 'property');
-    updateMetaTag('og:type', ogType || defaultSEO.ogType, 'property');
-    updateMetaTag('og:url', `https://www.sweepro.in${location.pathname}`, 'property');
+      // Update meta keywords
+      updateMetaTag('keywords', keywords || defaultSEO.keywords);
 
-    // Update Twitter tags
-    updateMetaTag('twitter:title', title || defaultSEO.title);
-    updateMetaTag('twitter:description', description || defaultSEO.description);
-    updateMetaTag('twitter:image', ogImage || defaultSEO.ogImage);
+      // Update Open Graph tags
+      updateMetaTag('og:title', title || defaultSEO.title, 'property');
+      updateMetaTag('og:description', description || defaultSEO.description, 'property');
+      updateMetaTag('og:image', ogImage || defaultSEO.ogImage, 'property');
+      updateMetaTag('og:type', ogType || defaultSEO.ogType, 'property');
+      updateMetaTag('og:url', `https://www.sweepro.in${location.pathname}`, 'property');
 
-    // Update canonical URL
-    updateCanonicalTag(`https://www.sweepro.in${location.pathname}`);
+      // Update Twitter tags
+      updateMetaTag('twitter:title', title || defaultSEO.title);
+      updateMetaTag('twitter:description', description || defaultSEO.description);
+      updateMetaTag('twitter:image', ogImage || defaultSEO.ogImage);
 
-    // Handle noindex
-    if (noIndex) {
-      updateMetaTag('robots', 'noindex, nofollow');
-    } else {
-      updateMetaTag('robots', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
-    }
+      // Update canonical URL
+      updateCanonicalTag(`https://www.sweepro.in${location.pathname}`);
 
-    // Update structured data
-    if (structuredData) {
-      updateStructuredData(structuredData);
+      // Handle noindex
+      if (noIndex) {
+        updateMetaTag('robots', 'noindex, nofollow');
+      } else {
+        updateMetaTag('robots', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
+      }
+
+      // Update structured data
+      if (structuredData) {
+        updateStructuredData(structuredData);
+      }
+    } catch (error) {
+      console.error('SEO component error:', error);
     }
 
     // Cleanup on unmount
@@ -77,40 +84,70 @@ export default function SEO({
 }
 
 function updateMetaTag(name: string, content: string, attribute: 'name' | 'property' = 'name') {
-  let element = document.querySelector(`meta[${attribute}="${name}"]`) as HTMLMetaElement;
+  if (typeof document === 'undefined') return;
   
-  if (!element) {
-    element = document.createElement('meta');
-    element.setAttribute(attribute, name);
-    document.head.appendChild(element);
+  try {
+    let element = document.querySelector(`meta[${attribute}="${name}"]`) as HTMLMetaElement;
+    
+    if (!element) {
+      element = document.createElement('meta');
+      element.setAttribute(attribute, name);
+      if (document.head) {
+        document.head.appendChild(element);
+      }
+    }
+    
+    if (element) {
+      element.setAttribute('content', content);
+    }
+  } catch (error) {
+    console.error(`Error updating meta tag ${name}:`, error);
   }
-  
-  element.setAttribute('content', content);
 }
 
 function updateCanonicalTag(href: string) {
-  let element = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+  if (typeof document === 'undefined') return;
   
-  if (!element) {
-    element = document.createElement('link');
-    element.setAttribute('rel', 'canonical');
-    document.head.appendChild(element);
+  try {
+    let element = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    
+    if (!element) {
+      element = document.createElement('link');
+      element.setAttribute('rel', 'canonical');
+      if (document.head) {
+        document.head.appendChild(element);
+      }
+    }
+    
+    if (element) {
+      element.setAttribute('href', href);
+    }
+  } catch (error) {
+    console.error('Error updating canonical tag:', error);
   }
-  
-  element.setAttribute('href', href);
 }
 
 function updateStructuredData(data: Record<string, any>) {
-  let element = document.getElementById('dynamic-structured-data');
+  if (typeof document === 'undefined') return;
   
-  if (!element) {
-    element = document.createElement('script');
-    element.setAttribute('type', 'application/ld+json');
-    element.setAttribute('id', 'dynamic-structured-data');
-    document.head.appendChild(element);
+  try {
+    let element = document.getElementById('dynamic-structured-data');
+    
+    if (!element) {
+      element = document.createElement('script');
+      element.setAttribute('type', 'application/ld+json');
+      element.setAttribute('id', 'dynamic-structured-data');
+      if (document.head) {
+        document.head.appendChild(element);
+      }
+    }
+    
+    if (element) {
+      element.textContent = JSON.stringify(data);
+    }
+  } catch (error) {
+    console.error('Error updating structured data:', error);
   }
-  
-  element.textContent = JSON.stringify(data);
 }
 
 // Helper function to generate Organization schema
