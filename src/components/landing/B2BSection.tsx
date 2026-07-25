@@ -121,7 +121,7 @@ export const B2BSection: React.FC = () => {
             Partner with <span className="text-[#1800ad]">Sweepro</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Are you a bank, school, corporate, or other business looking for professional cleaning and security services? Partner with Sweepro for reliable facility管理 solutions.
+            Are you a bank, school, corporate, or other business looking for professional cleaning and security services? Partner with Sweepro for reliable facility management solutions.
           </p>
         </motion.div>
 
