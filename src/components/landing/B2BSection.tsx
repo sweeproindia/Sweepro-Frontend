@@ -32,7 +32,14 @@ export const B2BSection: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Only allow digits for phone field
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, '');
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleServiceTypeToggle = (type: string) => {
@@ -174,8 +181,10 @@ export const B2BSection: React.FC = () => {
                   value={formData.phone}
                   onChange={handleInputChange}
                   required
+                  pattern="\d{10}"
+                  maxLength={10}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#1800ad] focus:ring-2 focus:ring-[#1800ad]/20 transition-all"
-                  placeholder="+91 XXXXX XXXXX"
+                  placeholder="10-digit phone number"
                 />
               </div>
               <div>
