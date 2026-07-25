@@ -3,98 +3,86 @@ import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageCircle, Phone, Mail, Clock, HelpCircle, Search, ChevronRight, Send, Bot, User } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const faqItems = [
   {
     question: 'How do I reschedule a cleaning appointment?',
-    answer: 'You can reschedule appointments up to 24 hours in advance through your dashboard. Go to My Bookings and click Reschedule next to the appointment.'
+    answer: 'You can reschedule appointments up to 24 hours in advance through your dashboard. Go to My Bookings and click Reschedule next to the appointment. For urgent changes, contact support via WhatsApp: +91 81433 53030'
   },
   {
     question: 'What happens if I am not home during the cleaning?',
-    answer: 'Our cleaners can work while you are away. Just ensure they have access to your home and any specific instructions. You will receive updates via SMS.'
+    answer: 'Our cleaners can work while you are away. Just ensure they have access to your home and any specific instructions. You will receive updates via SMS. For access issues, contact support immediately.'
   },
   {
     question: 'Can I pause my subscription temporarily?',
-    answer: 'Yes, you can pause your subscription for up to 3 months. Go to Subscription Details and click "Pause Subscription". Your plan will resume automatically.'
+    answer: 'Yes, you can pause your subscription for up to 3 months. Go to Subscription Details and click "Pause Subscription". Your plan will resume automatically after the pause period ends.'
   },
   {
     question: 'What cleaning supplies do the homecare partners bring?',
-    answer: 'Our cleaners bring all necessary supplies including eco-friendly cleaning products, vacuum cleaners, mops, and other equipment.'
+    answer: 'Our cleaners bring all necessary supplies including eco-friendly cleaning products, vacuum cleaners, mops, and other equipment. You don\'t need to provide anything unless you have specific preferences.'
   },
   {
     question: 'How do I change my subscription plan?',
-    answer: 'You can upgrade or downgrade your plan anytime from the Subscription page. Changes take effect from your next billing cycle.'
+    answer: 'You can upgrade or downgrade your plan anytime from the Subscription page. Changes take effect from your next billing cycle. Upgrades are immediate, downgrades apply from next billing cycle.'
   },
   {
     question: 'What if I am not satisfied with the cleaning?',
-    answer: 'We offer a 100% satisfaction guarantee. Contact us within 24 hours of the service, and we will arrange a re-clean at no extra cost.'
+    answer: 'We offer a 100% satisfaction guarantee. Contact us within 24 hours of the service via WhatsApp (+91 81433 53030) or email (sweeproindia@gmail.com), and we will arrange a re-clean at no extra cost.'
+  },
+  {
+    question: 'How do buffer days work?',
+    answer: 'Buffer days allow you to skip cleaning when needed. Available with SweePro Lux plan (3 buffer days/month). Use Buffer Management in your dashboard to request buffer days. Buffer days don\'t affect your subscription billing.'
+  },
+  {
+    question: 'What payment methods do you accept?',
+    answer: 'We accept all major payment methods including UPI, credit/debit cards, net banking, and wallets through Razorpay. All payments are secure and encrypted.'
+  },
+  {
+    question: 'How do I cancel my subscription?',
+    answer: 'You can cancel your subscription anytime from the Subscription page. Your subscription will remain active until the end of your current billing cycle. No refunds for partial months.'
+  },
+  {
+    question: 'What if my cleaner doesn\'t show up?',
+    answer: 'This rarely happens, but if your cleaner doesn\'t arrive within 30 minutes of the scheduled time, contact support immediately via WhatsApp (+91 81433 53030). We will arrange a replacement or reschedule at no extra cost.'
   }
 ];
 
 const supportChannels = [
-
   {
     icon: Phone,
-    title: 'Whatsapp Support',
-    description: 'Speak directly with our specialists',
+    title: 'WhatsApp Support',
+    description: 'Chat directly with our support team',
     availability: 'Mon-Sun, 8 AM - 10 PM',
-    action: 'Call Now: +91 98765 43210',
-    color: 'text-success'
+    action: 'Chat on WhatsApp',
+    link: 'https://wa.me/918143353030',
+    color: 'text-success',
+    hasButton: true
   },
   {
     icon: Mail,
     title: 'Email Support',
     description: 'Send us detailed queries via email',
     availability: 'Response within 4 hours',
-    action: 'Send Email',
-    color: 'text-warning'
+    email: 'sweeproindia@gmail.com',
+    color: 'text-warning',
+    hasButton: false
   }
 ];
 
 export default function SupportPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    subject: '',
-    category: '',
-    message: ''
-  });
   const [chatMessages, setChatMessages] = useState([
     { id: 1, type: 'bot', message: 'Hi! I\'m your AI assistant. How can I help you today?', timestamp: new Date() }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const { toast } = useToast();
 
   const filteredFAQ = faqItems.filter(item =>
     item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      toast({
-        title: "Support ticket created!",
-        description: "We'll get back to you within 24 hours.",
-      });
-      setFormData({ subject: '', category: '', message: '' });
-    }, 1000);
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
 
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,17 +114,54 @@ export default function SupportPage() {
 
   const getBotResponse = (userInput: string): string => {
     const input = userInput.toLowerCase();
-    if (input.includes('booking') || input.includes('schedule')) {
-      return 'You can book services from your dashboard. Your preferred time slot is already set from your subscription. Just click "Book for Tomorrow" on the Bookings page!';
-    } else if (input.includes('payment') || input.includes('bill')) {
-      return 'You can view your payment history and manage billing in the Payments section. All payments are securely processed through Razorpay.';
-    } else if (input.includes('subscription') || input.includes('plan')) {
-      return 'You can view and manage your subscription plan in the Subscription section. You can upgrade, downgrade, or pause your subscription anytime.';
-    } else if (input.includes('time') || input.includes('reschedule')) {
-      return 'Your time slot was set during subscription signup. To change it, please contact our support team or update it in your subscription settings.';
-    } else {
-      return 'I\'m here to help! You can ask me about bookings, payments, subscriptions, or any other questions. For complex issues, please use the support form below or contact our human agents.';
+
+    // Critical issues - escalate immediately
+    if (input.includes('emergency') || input.includes('urgent') || input.includes('safety') || input.includes('danger')) {
+      return '⚠️ This sounds urgent! Please contact our support team immediately:\n\n📱 WhatsApp: +91 81433 53030\n📧 Email: sweeproindia@gmail.com\n\nOur team is available Mon-Sun, 8 AM - 10 PM for critical issues.';
     }
+
+    // Booking related
+    if (input.includes('booking') || input.includes('schedule') || input.includes('appointment')) {
+      return 'You can book services from your dashboard. Your preferred time slot is already set from your subscription. Just click "Book for Tomorrow" on the Bookings page! Need to change your time slot? Contact support via WhatsApp.';
+    }
+
+    // Payment related
+    if (input.includes('payment') || input.includes('bill') || input.includes('refund') || input.includes('charge')) {
+      return 'You can view your payment history and manage billing in the Payments section. All payments are securely processed through Razorpay. For payment disputes or refunds, please contact support via WhatsApp: +91 81433 53030';
+    }
+
+    // Subscription related
+    if (input.includes('subscription') || input.includes('plan') || input.includes('upgrade') || input.includes('downgrade')) {
+      return 'You can view and manage your subscription plan in the Subscription section. You can upgrade, downgrade, or pause your subscription anytime. Changes take effect from your next billing cycle.';
+    }
+
+    // Rescheduling
+    if (input.includes('reschedule') || input.includes('cancel') || input.includes('change time')) {
+      return 'You can reschedule appointments up to 24 hours in advance through your dashboard. Go to My Bookings and click Reschedule. For urgent changes, contact support via WhatsApp.';
+    }
+
+    // Service quality
+    if (input.includes('cleaning') || input.includes('quality') || input.includes('satisfied') || input.includes('complaint')) {
+      return 'We offer a 100% satisfaction guarantee. If you\'re not satisfied with the cleaning, contact us within 24 hours and we\'ll arrange a re-clean at no extra cost. WhatsApp: +91 81433 53030';
+    }
+
+    // Access/entry
+    if (input.includes('access') || input.includes('key') || input.includes('not home') || input.includes('away')) {
+      return 'Our cleaners can work while you\'re away. Just ensure they have access to your home and any specific instructions. You\'ll receive updates via SMS. For access issues, contact support immediately.';
+    }
+
+    // Supplies
+    if (input.includes('supplies') || input.includes('equipment') || input.includes('bring')) {
+      return 'Our cleaners bring all necessary supplies including eco-friendly cleaning products, vacuum cleaners, mops, and other equipment. You don\'t need to provide anything!';
+    }
+
+    // Buffer system
+    if (input.includes('buffer') || input.includes('skip') || input.includes('pause')) {
+      return 'Buffer days allow you to skip cleaning when needed. Available with SweePro Lux plan. You can manage buffer days in the Buffer Management section of your dashboard.';
+    }
+
+    // General help
+    return 'I\'m here to help! You can ask me about:\n• Bookings and rescheduling\n• Payments and billing\n• Subscriptions and plans\n• Service quality issues\n• Buffer days\n\nFor complex issues, please use the support form below or contact our team:\n📱 WhatsApp: +91 81433 53030\n📧 Email: sweeproindia@gmail.com';
   };
 
   return (
@@ -220,7 +245,7 @@ export default function SupportPage() {
           {supportChannels.map((channel, index) => (
             <Card
               key={channel.title}
-              className="dashboard-card hover:shadow-feature cursor-pointer group"
+              className="dashboard-card hover:shadow-feature group"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <CardHeader className="text-center p-4 sm:p-6">
@@ -235,71 +260,20 @@ export default function SupportPage() {
                   <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span>{channel.availability}</span>
                 </div>
-                <Button className="w-full btn-hero text-sm sm:text-base">
-                  {channel.action}
-                </Button>
+                {channel.hasButton ? (
+                  <Button className="h-11 rounded-full border-2 border-transparent bg-[#1800ad] text-white hover:bg-[#ca0013] font-semibold w-full text-sm sm:text-base shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl" onClick={() => window.open(channel.link, '_blank')}>
+                    {channel.action}
+                  </Button>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">{channel.email}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Copy the email above to contact us</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
-
-        {/* Quick Support Form */}
-        <Card className="dashboard-card slide-up">
-          <CardHeader>
-            <CardTitle>Submit a Support Request</CardTitle>
-            <CardDescription>
-              Describe your issue and we'll get back to you as soon as possible
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    placeholder="Brief description of your issue"
-                    value={formData.subject}
-                    onChange={(e) => handleInputChange('subject', e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="booking">Booking Issues</SelectItem>
-                      <SelectItem value="billing">Billing & Payments</SelectItem>
-                      <SelectItem value="service">Service Quality</SelectItem>
-                      <SelectItem value="technical">Technical Issues</SelectItem>
-                      <SelectItem value="general">General Inquiry</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Please provide detailed information about your issue..."
-                  value={formData.message}
-                  onChange={(e) => handleInputChange('message', e.target.value)}
-                  rows={5}
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="btn-hero" disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit Request'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
 
         {/* FAQ Section */}
         <Card className="dashboard-card slide-up">
