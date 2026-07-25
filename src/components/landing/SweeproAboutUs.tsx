@@ -138,7 +138,7 @@ const SweeproAboutUs: React.FC = () => {
             <motion.div variants={itemVariants}>
               <p className="text-lg text-gray-700 leading-relaxed space-y-4">
                 <span className="block mb-4">
-                  <strong className="text-[#1800ad]">SWEEPRO</strong>, a modern home care service with a traditional touch, built for reliability, hygiene, and professionalism in everyday housekeeping.
+                  <strong className="text-[#1800ad]">Sweepro</strong>, a modern home care service with a traditional touch, built for reliability, hygiene, and professionalism in everyday housekeeping.
                 </span>
 
                 <span className="block mb-4">

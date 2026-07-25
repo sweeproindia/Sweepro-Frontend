@@ -24,7 +24,7 @@ export default function PrivacyPolicyPage() {
                 <section className="space-y-2">
                   <h2 className="text-lg font-semibold text-gray-900">1. Overview</h2>
                   <p>
-                    This Privacy Policy explains how SWEEPRO PRIVATE LIMITED (&quot;Sweepro&quot;) collects, uses, shares, and protects personal information when you use our
+                    This Privacy Policy explains how Sweepro Private Limited (&quot;Sweepro&quot;) collects, uses, shares, and protects personal information when you use our
                     website/app and subscription-based home care services.
                   </p>
                 </section>

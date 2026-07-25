@@ -5,7 +5,7 @@ export function TermsContent() {
         <h2 className="text-2xl font-bold text-gray-900">1. Definitions</h2>
         <div className="space-y-2 text-sm leading-6 text-gray-700">
           <p>
-            <span className="font-semibold">&quot;Sweepro&quot;</span> / <span className="font-semibold">&quot;Company&quot;</span> / <span className="font-semibold">&quot;we&quot;</span> means SWEEPRO PRIVATE LIMITED.
+            <span className="font-semibold">&quot;Sweepro&quot;</span> / <span className="font-semibold">&quot;Company&quot;</span> / <span className="font-semibold">&quot;we&quot;</span> means Sweepro Private Limited.
           </p>
           <p>
             <span className="font-semibold">&quot;Customer&quot;</span> / <span className="font-semibold">&quot;you&quot;</span> means the person who books, subscribes to, or uses the services.

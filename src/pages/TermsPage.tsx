@@ -20,7 +20,7 @@ export default function TermsPage() {
                   <span className="font-semibold text-gray-800">Effective Date:</span> ___ / ___ / 20__
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-800">Company:</span> SWEEPRO PRIVATE LIMITED
+                  <span className="font-semibold text-gray-800">Company:</span> Sweepro Private Limited
                 </div>
                 <div>
                   <span className="font-semibold text-gray-800">Registered Office:</span> Hyderabad, Telangana
