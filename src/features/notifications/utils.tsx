@@ -37,8 +37,73 @@ export function getNotificationIcon(type: string) {
 
 export function getNotificationHref(notification: Notification): string | null {
   const data = notification.data as any;
-  if (data?.bookingId) return `/bookings/${data.bookingId}`;
-  if (data?.paymentId) return `/payments/${data.paymentId}`;
-  if (data?.subscriptionId) return `/subscription`;
-  return null;
+  const type = notification.type?.toUpperCase() || '';
+
+  // Booking-related notifications
+  if (type.includes('BOOKING') || type.includes('SERVICE')) {
+    if (data?.bookingId) return `/bookings`;
+    return '/bookings';
+  }
+
+  // Payment-related notifications
+  if (type.includes('PAYMENT')) {
+    if (data?.paymentId) return `/payments`;
+    return '/payments';
+  }
+
+  // Subscription-related notifications
+  if (type.includes('SUBSCRIPTION')) {
+    if (data?.subscriptionId) return `/subscription`;
+    return '/subscription';
+  }
+
+  // Buffer-related notifications
+  if (type.includes('BUFFER')) {
+    return '/buffer';
+  }
+
+  // Assignment-related notifications (for maids)
+  if (type.includes('ASSIGNMENT')) {
+    if (data?.assignmentRequestId) return '/maid-bookings';
+    return '/maid-bookings';
+  }
+
+  // User registration (for admins)
+  if (type.includes('USER_REGISTERED') && data?.userId) {
+    return '/admin';
+  }
+
+  // Issue-related notifications
+  if (type.includes('ISSUE')) {
+    if (data?.issueId) return '/support';
+    return '/support';
+  }
+
+  // Feedback-related notifications
+  if (type.includes('FEEDBACK')) {
+    return '/admin/feedback';
+  }
+
+  // Maid verification notifications
+  if (type.includes('DOCUMENT') || type.includes('VERIFICATION')) {
+    return '/admin/maid-verification';
+  }
+
+  // Maid status changes
+  if (type.includes('MAID_STATUS') || type.includes('ATTENDANCE') || type.includes('PERFORMANCE')) {
+    return '/maid-profile';
+  }
+
+  // Profile-related notifications
+  if (type.includes('PROFILE')) {
+    return '/profile';
+  }
+
+  // System notifications (no specific page)
+  if (type.includes('SYSTEM') || type.includes('EMERGENCY') || type.includes('MAINTENANCE')) {
+    return '/dashboard';
+  }
+
+  // Default to dashboard for unknown types
+  return '/dashboard';
 }

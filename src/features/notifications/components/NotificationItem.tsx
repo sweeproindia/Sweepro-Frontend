@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Notification } from '../types';
-import { getNotificationHref, getNotificationIcon, getNotificationPriority, getPriorityClasses } from '../utils';
+import { getNotificationHref, getNotificationPriority, getPriorityClasses } from '../utils';
 
 export function NotificationItem({
   notification,
@@ -33,10 +32,6 @@ export function NotificationItem({
       onClick={() => onOpen(notification)}
     >
       <div className="flex items-start gap-3">
-        <div className="mt-0.5" aria-hidden="true">
-          {getNotificationIcon(notification.type)}
-        </div>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -59,7 +54,7 @@ export function NotificationItem({
                   }}
                   aria-label="Delete notification"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  ×
                 </Button>
               )}
 

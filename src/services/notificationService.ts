@@ -60,11 +60,12 @@ class NotificationAPIService {
         ).toString()
         : '';
 
-      const response = await apiRequest<NotificationResponse>(
+      const response = await apiRequest<any>(
         `/notifications${qs}`,
         { method: HttpMethod.GET, requiresAuth: true }
       );
-      return response.data as NotificationResponse;
+      // Backend returns NotificationResponse structure directly
+      return response as NotificationResponse;
     } catch (error: any) {
       console.error('Failed to fetch notifications:', error);
       throw error;
@@ -96,7 +97,9 @@ class NotificationAPIService {
         '/notifications/unread/count',
         { method: HttpMethod.GET, requiresAuth: true }
       );
-      return (response.data as UnreadCountResponse)?.unreadCount || 0;
+      // Handle both response formats: direct or wrapped in data
+      const data = (response as any).data || response;
+      return data?.unreadCount || 0;
     } catch (error: any) {
       console.error('Failed to fetch unread count:', error);
       return 0;

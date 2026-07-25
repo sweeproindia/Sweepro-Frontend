@@ -4,17 +4,10 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { useNotifications } from '@/contexts/NotificationContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  CheckCheck, 
-  Trash2, 
-  Wifi,
-  WifiOff,
-  RefreshCw
-} from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useClearReadNotificationsMutation, useDeleteNotificationMutation, useMarkAllAsReadMutation, useMarkAsReadMutation, useNotificationsListQuery, useUnreadCountQuery } from '@/features/notifications/hooks';
 import { NotificationEmptyState } from '@/features/notifications/components/NotificationEmptyState';
 import { NotificationSkeletonList } from '@/features/notifications/components/NotificationSkeletonList';
@@ -25,7 +18,6 @@ import { useNavigate } from 'react-router-dom';
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { isConnected } = useNotifications();
 
   const listQuery = useNotificationsListQuery({ limit: 50 });
   const notifications = useMemo(() => listQuery.data?.notifications ?? [], [listQuery.data]);
@@ -44,31 +36,38 @@ export const NotificationsPage: React.FC = () => {
     return true;
   });
 
-  const handleOpen = async (notification: Notification) => {
-    if (!notification.read) {
-      await markReadMutation.mutateAsync(notification.id);
-    }
-
+  const handleOpen = (notification: Notification) => {
+    // Navigate immediately
     const href = getNotificationHref(notification);
     if (href) {
       navigate(href);
     }
+
+    // Mark as read in background (don't wait for it)
+    if (!notification.read) {
+      markReadMutation.mutate(notification.id);
+    }
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   return (
     <div className="container mx-auto py-6 px-4 max-w-4xl">
-      {/* Header */}
+      {/* Header with back button */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="p-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <h1 className="text-3xl font-bold">Notifications</h1>
-            <div title={isConnected ? "Connected" : "Disconnected"}>
-              {isConnected ? (
-                <Wifi className="h-5 w-5 text-green-500" />
-              ) : (
-                <WifiOff className="h-5 w-5 text-red-500" />
-              )}
-            </div>
           </div>
           <Button
             variant="outline"
@@ -76,8 +75,7 @@ export const NotificationsPage: React.FC = () => {
             onClick={() => listQuery.refetch()}
             disabled={listQuery.isFetching}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${listQuery.isFetching ? 'animate-spin' : ''}`} />
-            Refresh
+            {listQuery.isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
         <p className="text-muted-foreground">
@@ -96,7 +94,6 @@ export const NotificationsPage: React.FC = () => {
             onClick={() => markAllMutation.mutate()}
             disabled={markAllMutation.isPending}
           >
-            <CheckCheck className="h-4 w-4 mr-2" />
             Mark all as read
           </Button>
         )}
@@ -107,7 +104,6 @@ export const NotificationsPage: React.FC = () => {
             onClick={() => clearReadMutation.mutate()}
             disabled={clearReadMutation.isPending}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
             Clear read
           </Button>
         )}
