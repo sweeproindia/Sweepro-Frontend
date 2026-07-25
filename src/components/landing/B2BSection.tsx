@@ -56,7 +56,7 @@ export const B2BSection: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/b2b/partnership', {
+      const response = await fetch('/api/b2b/services', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ export const B2BSection: React.FC = () => {
   }
 
   return (
-    <section id="b2b-partnership" className="py-20 bg-gradient-to-br from-[#1800ad]/5 to-[#eeebe3]/30">
+    <section id="b2b-services" className="py-20 bg-gradient-to-br from-[#1800ad]/5 to-[#eeebe3]/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -122,7 +122,7 @@ export const B2BSection: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 bg-[#1800ad] text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
             <Handshake className="w-4 h-4" />
-            B2B Partnership
+            B2B Services
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Partner with <span className="text-[#1800ad]">Sweepro</span>
@@ -304,7 +304,7 @@ export const B2BSection: React.FC = () => {
                 onChange={handleInputChange}
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-[#1800ad] focus:ring-2 focus:ring-[#1800ad]/20 transition-all resize-none"
-                placeholder="Tell us about your partnership goals or any specific requirements..."
+                placeholder="Tell us about your service requirements or any specific needs..."
               />
             </div>
           </div>
