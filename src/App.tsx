@@ -9,6 +9,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import ScrollToTop from '@/components/ScrollToTop';
 import { RequireAuth, RequireGuest, RequireRole } from '@/components/auth/RequireAuth';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import SEO from '@/components/SEO';
 import { Suspense, lazy, useEffect } from 'react';
 
 // ---------------------------------------------------------------------------
@@ -160,6 +161,7 @@ const App = () => {
     // F1 FIX: Root ErrorBoundary — catches render errors in any child component.
     // Before this, a single component crash = blank white screen with no recovery.
     <ErrorBoundary>
+      <SEO />
       <QueryClientProvider client={queryClient}>
         <UserProvider>
           <NotificationProvider>

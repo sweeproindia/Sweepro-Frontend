@@ -33,7 +33,7 @@ const faqItems = [
   },
   {
     question: 'How do buffer days work?',
-    answer: 'Buffer days allow you to skip cleaning when needed. Available with SweePro Lux plan (3 buffer days/month). Use Buffer Management in your dashboard to request buffer days. Buffer days don\'t affect your subscription billing.'
+    answer: 'Buffer days allow you to skip cleaning when needed. Available with Sweepro Lux plan (3 buffer days/month). Use Buffer Management in your dashboard to request buffer days. Buffer days don\'t affect your subscription billing.'
   },
   {
     question: 'What payment methods do you accept?',
@@ -157,7 +157,7 @@ export default function SupportPage() {
 
     // Buffer system
     if (input.includes('buffer') || input.includes('skip') || input.includes('pause')) {
-      return 'Buffer days allow you to skip cleaning when needed. Available with SweePro Lux plan. You can manage buffer days in the Buffer Management section of your dashboard.';
+      return 'Buffer days allow you to skip cleaning when needed. Available with Sweepro Lux plan. You can manage buffer days in the Buffer Management section of your dashboard.';
     }
 
     // General help
