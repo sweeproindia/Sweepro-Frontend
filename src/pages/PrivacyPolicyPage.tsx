@@ -5,6 +5,18 @@ import { ArrowLeft } from "lucide-react";
 export default function PrivacyPolicyPage() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [effectiveDate, setEffectiveDate] = useState('');
+
+  useEffect(() => {
+    // Set effective date to current date when page loads (when user views/accepts)
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    setEffectiveDate(formattedDate);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,7 +72,7 @@ export default function PrivacyPolicyPage() {
             <div className="border-b border-gray-100 px-6 py-8 sm:px-10">
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Privacy Policy</h1>
               <p className="mt-3 text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">Effective Date:</span> January 1, 2025
+                <span className="font-semibold text-gray-800">Effective Date:</span> {effectiveDate}
               </p>
             </div>
 
