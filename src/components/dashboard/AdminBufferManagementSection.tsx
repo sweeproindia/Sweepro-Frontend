@@ -163,7 +163,32 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
     try {
       const response = await BufferService.getPendingBufferRequests(pendingPage, 10);
       if (response.success && response.data) {
-        setPendingRequests(response.data.requests || []);
+        // Normalize nested API response → flat PendingBufferRequest shape.
+        // The backend returns: request.subscription.customer.user.{name,email}
+        // and request.subscription.plan.name — but the UI reads flat fields.
+        const normalized: PendingBufferRequest[] = (response.data.requests || []).map((req: any) => ({
+          ...req,
+          customerName:
+            req.customerName ||
+            req.subscription?.customer?.user?.name ||
+            req.customer?.user?.name ||
+            req.customer?.name ||
+            'Unknown Customer',
+          customerEmail:
+            req.customerEmail ||
+            req.subscription?.customer?.user?.email ||
+            req.customer?.user?.email ||
+            req.customer?.email ||
+            '',
+          planName:
+            req.planName ||
+            req.subscription?.plan?.name ||
+            req.servicePlan?.name ||
+            'Unknown Plan',
+          requestedAt:
+            req.requestedAt || req.createdAt,
+        }));
+        setPendingRequests(normalized);
         setPendingTotalPages(response.data.pagination?.totalPages || 1);
       }
     } catch (error) {
@@ -604,8 +629,18 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                     <TableRow key={period.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{period.customer?.name || period.subscription?.customer?.name}</p>
-                          <p className="text-sm text-muted-foreground">{period.customer?.email || period.subscription?.customer?.email}</p>
+                          <p className="font-medium">
+                            {period.subscription?.customer?.user?.name ||
+                             period.customer?.user?.name ||
+                             period.customer?.name ||
+                             'Unknown Customer'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {period.subscription?.customer?.user?.email ||
+                             period.customer?.user?.email ||
+                             period.customer?.email ||
+                             ''}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -720,12 +755,22 @@ export const AdminBufferManagementSection: React.FC<AdminBufferManagementSection
                 <p className="text-sm mt-1 p-3 bg-muted rounded">{reviewDialog.request.reason}</p>
               </div>
 
-              {reviewDialog.request.notes && (
-                <div>
-                  <Label className="text-sm font-medium">Customer Notes</Label>
-                  <p className="text-sm mt-1 p-3 bg-muted rounded">{reviewDialog.request.notes}</p>
-                </div>
-              )}
+              {reviewDialog.request.notes && (() => {
+                // Strip internal STATUS markers — show only the customer's human-readable notes
+                const rawNotes = reviewDialog.request.notes || '';
+                const cleanNotes = rawNotes
+                  .replace(/\.?\s*STATUS:\s*(PENDING_APPROVAL|APPROVED|REJECTED)\b/gi, '')
+                  .replace(/^Customer request:\s*/i, '')
+                  .trim()
+                  .replace(/^[.\s]+|[.\s]+$/g, '')
+                  .trim();
+                return cleanNotes ? (
+                  <div>
+                    <Label className="text-sm font-medium">Customer Notes</Label>
+                    <p className="text-sm mt-1 p-3 bg-muted rounded">{cleanNotes}</p>
+                  </div>
+                ) : null;
+              })()}
 
               <div className="space-y-4">
                 <div>
