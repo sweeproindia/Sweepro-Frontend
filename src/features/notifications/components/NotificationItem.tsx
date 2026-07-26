@@ -21,15 +21,22 @@ export function NotificationItem({
   const createdLabel = format(new Date(notification.createdAt), 'MMM d • h:mm a');
 
   return (
-    <button
-      type="button"
+    <div
       className={cn(
-        'w-full text-left p-4 border-b border-border hover:bg-muted/50 transition-colors group',
+        'w-full text-left p-4 border-b border-border hover:bg-muted/50 transition-colors group cursor-pointer',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         !notification.read ? styles.bg : '',
         !notification.read ? `border-l-4 ${styles.ring}` : 'border-l-4 border-l-transparent'
       )}
       onClick={() => onOpen(notification)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(notification);
+        }
+      }}
     >
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
@@ -71,6 +78,6 @@ export function NotificationItem({
           ) : null}
         </div>
       </div>
-    </button>
+    </div>
   );
 }

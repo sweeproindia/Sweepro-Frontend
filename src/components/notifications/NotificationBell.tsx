@@ -52,10 +52,11 @@ export const NotificationBell: React.FC = () => {
           description: 'The notification has been removed.',
         });
       },
-      onError: () => {
+      onError: (error: any) => {
+        console.error('Delete notification error:', error);
         toast({
           title: 'Failed to delete',
-          description: 'Please try again later.',
+          description: error?.message || 'Please try again later.',
           variant: 'destructive',
         });
       }

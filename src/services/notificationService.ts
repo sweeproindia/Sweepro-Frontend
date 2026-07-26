@@ -111,12 +111,14 @@ class NotificationAPIService {
    */
   async markAsRead(notificationId: string): Promise<void> {
     try {
-      await apiRequest(
+      console.log('[NotificationService] Marking notification as read:', notificationId);
+      const response = await apiRequest(
         `/notifications/${notificationId}/read`,
         { method: HttpMethod.PATCH, requiresAuth: true }
       );
+      console.log('[NotificationService] Mark as read response:', response);
     } catch (error: any) {
-      console.error('Failed to mark notification as read:', error);
+      console.error('[NotificationService] Failed to mark notification as read:', error);
       throw error;
     }
   }
