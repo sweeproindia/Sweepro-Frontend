@@ -812,7 +812,7 @@ export default function SignupPage() {
                     >
                       I agree to the{' '}
                       <a
-                        href="/terms"
+                        href={`/terms?type=${isMaid ? 'worker' : 'customer'}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={e => e.stopPropagation()}

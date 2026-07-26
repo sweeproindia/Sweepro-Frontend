@@ -1,21 +1,66 @@
-import { Footer } from "@/components/Footer";
-import { Navbar } from "@/components/Navbar";
-import { useUser } from "@/contexts/UserContext";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 export default function PrivacyPolicyPage() {
-  const { user, isAuthenticated } = useUser();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Hide header when scrolling down, show when scrolling up
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar isAuthenticated={isAuthenticated} user={user} />
+      {/* Simple Header - Logo Only with Scroll Hide */}
+      <header 
+        className={`fixed top-0 left-0 right-0 z-[100] border-b border-gray-100 bg-white/95 backdrop-blur-sm transition-transform duration-300 ${
+          isVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-20">
+            <Link to="/" className="flex items-center">
+              <img
+                src="/assets/logo.png"
+                alt="Sweepro Logo"
+                className="h-16 w-auto object-contain"
+              />
+            </Link>
+          </div>
+        </div>
+      </header>
 
       <main className="pt-28 pb-16">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <Link 
+            to="/" 
+            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
+
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="border-b border-gray-100 px-6 py-8 sm:px-10">
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Privacy Policy</h1>
               <p className="mt-3 text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">Effective Date:</span> ___ / ___ / 20__
+                <span className="font-semibold text-gray-800">Effective Date:</span> January 1, 2025
               </p>
             </div>
 
@@ -101,8 +146,6 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
