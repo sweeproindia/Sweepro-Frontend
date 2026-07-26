@@ -61,6 +61,10 @@ interface ServiceOptions {
   startDate: string;
   frequency: string;
   address: string;
+  apartmentId?: string;
+  apartmentNumber?: string;
+  floorNumber?: string;
+  additionalInfo?: string;
   latitude?: number;
   longitude?: number;
   pincode: string;
@@ -900,8 +904,20 @@ export default function ReviewPaymentPage() {
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Service address</p>
                   <p className="mt-2 text-sm text-slate-700">{formatAddress()}</p>
+                  
+                  {(selectedOptions.apartmentNumber || selectedOptions.floorNumber) && (
+                    <div className="mt-2 flex gap-4 border-t border-slate-200 pt-2 text-sm">
+                      {selectedOptions.apartmentNumber && (
+                        <p className="text-slate-600"><span className="font-semibold text-slate-800">Apt/House:</span> {selectedOptions.apartmentNumber}</p>
+                      )}
+                      {selectedOptions.floorNumber && (
+                        <p className="text-slate-600"><span className="font-semibold text-slate-800">Floor:</span> {selectedOptions.floorNumber}</p>
+                      )}
+                    </div>
+                  )}
+
                   {selectedOptions.landmark && (
-                    <p className="text-xs text-slate-500">Landmark — {selectedOptions.landmark}</p>
+                    <p className="mt-2 text-xs text-slate-500">Landmark — {selectedOptions.landmark}</p>
                   )}
                   {(selectedOptions.latitude && selectedOptions.longitude) && (
                     <p className="text-xs text-slate-400">
