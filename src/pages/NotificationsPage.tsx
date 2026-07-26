@@ -15,9 +15,21 @@ import { NotificationItem } from '@/features/notifications/components/Notificati
 import type { Notification } from '@/features/notifications/types';
 import { getNotificationHref } from '@/features/notifications/utils';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const listQuery = useNotificationsListQuery({ limit: 50 });
   const notifications = useMemo(() => listQuery.data?.notifications ?? [], [listQuery.data]);
@@ -29,6 +41,7 @@ export const NotificationsPage: React.FC = () => {
   const clearReadMutation = useClearReadNotificationsMutation();
 
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const filteredNotifications = notifications.filter((notif) => {
     if (activeTab === 'unread') return !notif.read;
@@ -47,6 +60,29 @@ export const NotificationsPage: React.FC = () => {
     if (!notification.read) {
       markReadMutation.mutate(notification.id);
     }
+  };
+
+  const handleClearRead = () => {
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearRead = () => {
+    clearReadMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast({
+          title: 'Read notifications cleared',
+          description: 'All read notifications have been removed.',
+        });
+        setShowClearConfirm(false);
+      },
+      onError: () => {
+        toast({
+          title: 'Failed to clear notifications',
+          description: 'Please try again later.',
+          variant: 'destructive',
+        });
+      }
+    });
   };
 
   const handleBack = () => {
@@ -91,7 +127,23 @@ export const NotificationsPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => markAllMutation.mutate()}
+            onClick={() => {
+              markAllMutation.mutate(undefined, {
+                onSuccess: () => {
+                  toast({
+                    title: 'All notifications marked as read',
+                    description: 'You have no unread notifications.',
+                  });
+                },
+                onError: () => {
+                  toast({
+                    title: 'Failed to mark as read',
+                    description: 'Please try again later.',
+                    variant: 'destructive',
+                  });
+                }
+              });
+            }}
             disabled={markAllMutation.isPending}
           >
             Mark all as read
@@ -101,7 +153,7 @@ export const NotificationsPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => clearReadMutation.mutate()}
+            onClick={handleClearRead}
             disabled={clearReadMutation.isPending}
           >
             Clear read
@@ -150,7 +202,23 @@ export const NotificationsPage: React.FC = () => {
                       <NotificationItem
                         notification={notification}
                         onOpen={handleOpen}
-                        onDelete={(id) => deleteMutation.mutate(id)}
+                        onDelete={(id) => {
+                          deleteMutation.mutate(id, {
+                            onSuccess: () => {
+                              toast({
+                                title: 'Notification deleted',
+                                description: 'The notification has been removed.',
+                              });
+                            },
+                            onError: () => {
+                              toast({
+                                title: 'Failed to delete',
+                                description: 'Please try again later.',
+                                variant: 'destructive',
+                              });
+                            }
+                          });
+                        }}
                         showUnreadDot={activeTab !== 'read'}
                       />
                     </div>
@@ -161,6 +229,22 @@ export const NotificationsPage: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Clear Read Confirmation Dialog */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all read notifications?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all read notifications. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearRead}>Clear</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

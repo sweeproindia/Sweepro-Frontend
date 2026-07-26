@@ -39,26 +39,35 @@ export function getNotificationHref(notification: Notification): string | null {
   const data = notification.data as any;
   const type = notification.type?.toUpperCase() || '';
 
+  // Check if user is admin
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERVISOR';
+
   // Booking-related notifications
   if (type.includes('BOOKING') || type.includes('SERVICE')) {
+    if (isAdmin) return '/admin#bookings';
     if (data?.bookingId) return `/bookings`;
     return '/bookings';
   }
 
   // Payment-related notifications
   if (type.includes('PAYMENT')) {
+    if (isAdmin) return '/admin#payments';
     if (data?.paymentId) return `/payments`;
     return '/payments';
   }
 
   // Subscription-related notifications
   if (type.includes('SUBSCRIPTION')) {
+    if (isAdmin) return '/admin#subscriptions';
     if (data?.subscriptionId) return `/subscription`;
     return '/subscription';
   }
 
   // Buffer-related notifications
   if (type.includes('BUFFER')) {
+    if (isAdmin) return '/admin#buffer-management';
     return '/buffer';
   }
 
@@ -70,11 +79,12 @@ export function getNotificationHref(notification: Notification): string | null {
 
   // User registration (for admins)
   if (type.includes('USER_REGISTERED') && data?.userId) {
-    return '/admin';
+    return '/admin#users';
   }
 
   // Issue-related notifications
   if (type.includes('ISSUE')) {
+    if (isAdmin) return '/admin#bookings';
     if (data?.issueId) return '/support';
     return '/support';
   }
@@ -91,6 +101,7 @@ export function getNotificationHref(notification: Notification): string | null {
 
   // Maid status changes
   if (type.includes('MAID_STATUS') || type.includes('ATTENDANCE') || type.includes('PERFORMANCE')) {
+    if (isAdmin) return '/admin#maids';
     return '/maid-profile';
   }
 
@@ -101,9 +112,9 @@ export function getNotificationHref(notification: Notification): string | null {
 
   // System notifications (no specific page)
   if (type.includes('SYSTEM') || type.includes('EMERGENCY') || type.includes('MAINTENANCE')) {
-    return '/dashboard';
+    return isAdmin ? '/admin' : '/dashboard';
   }
 
   // Default to dashboard for unknown types
-  return '/dashboard';
+  return isAdmin ? '/admin' : '/dashboard';
 }

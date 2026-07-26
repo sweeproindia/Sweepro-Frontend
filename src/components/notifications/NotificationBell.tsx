@@ -11,10 +11,12 @@ import { NotificationItem } from '@/features/notifications/components/Notificati
 import { NotificationSkeletonList } from '@/features/notifications/components/NotificationSkeletonList';
 import type { Notification } from '@/features/notifications/types';
 import { getNotificationHref } from '@/features/notifications/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const { data: unreadCount = 0 } = useUnreadCountQuery();
   const listQuery = useNotificationsListQuery({ limit: 10 });
@@ -23,6 +25,42 @@ export const NotificationBell: React.FC = () => {
   const markAllMutation = useMarkAllAsReadMutation();
   const markReadMutation = useMarkAsReadMutation();
   const deleteMutation = useDeleteNotificationMutation();
+
+  const handleMarkAllRead = () => {
+    markAllMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast({
+          title: 'All notifications marked as read',
+          description: 'You have no unread notifications.',
+        });
+      },
+      onError: () => {
+        toast({
+          title: 'Failed to mark as read',
+          description: 'Please try again later.',
+          variant: 'destructive',
+        });
+      }
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast({
+          title: 'Notification deleted',
+          description: 'The notification has been removed.',
+        });
+      },
+      onError: () => {
+        toast({
+          title: 'Failed to delete',
+          description: 'Please try again later.',
+          variant: 'destructive',
+        });
+      }
+    });
+  };
 
   const handleOpen = (notification: Notification) => {
     // Navigate immediately
@@ -68,7 +106,7 @@ export const NotificationBell: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => markAllMutation.mutate()}
+                  onClick={handleMarkAllRead}
                   className="text-xs"
                   disabled={markAllMutation.isPending}
                 >
@@ -95,7 +133,7 @@ export const NotificationBell: React.FC = () => {
                     <NotificationItem
                       notification={notification}
                       onOpen={handleOpen}
-                      onDelete={(id) => deleteMutation.mutate(id)}
+                      onDelete={handleDelete}
                       showUnreadDot
                     />
                   </div>
