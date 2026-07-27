@@ -106,11 +106,11 @@ const BHK_CONFIGS = [
   { id: '4bhk' as const, label: '4 BHK' },
 ];
 
-// Plan duration options for display
+// Plan duration options with multiplier and discount for transparent breakdown
 const PLAN_DURATIONS = [
-  { id: '1month' as const, label: '1 Month', description: 'Monthly billing' },
-  { id: '3month' as const, label: '3 Months', description: 'Quarterly plan with 5% savings' },
-  { id: '6month' as const, label: '6 Months', description: 'Semi-annual plan with 10% savings' },
+  { id: '1month' as const, label: '1 Month', description: 'Monthly billing', multiplier: 1, discount: 0 },
+  { id: '3month' as const, label: '3 Months', description: 'Quarterly plan with 5% savings', multiplier: 3, discount: 5 },
+  { id: '6month' as const, label: '6 Months', description: 'Semi-annual plan with 10% savings', multiplier: 6, discount: 10 },
 ];
 
 // LocalStorage keys
@@ -245,6 +245,25 @@ export default function ReviewPaymentPage() {
   const finalTotal = selectedOptions.finalTotalPrice || 0;
   // No GST calculation - final total is the payable amount
   const totalWithGst = finalTotal;
+
+  // Compute billing breakdown for transparent display
+  const durationInfo = getPlanDurationInfo();
+  const billingBreakdown = (() => {
+    if (!durationInfo || !finalTotal) return null;
+    const { multiplier, discount } = durationInfo;
+    // Reverse-compute monthly rate from finalTotal:
+    // finalTotal = monthlyRate × multiplier × (1 - discount/100)
+    const monthlyRate = multiplier > 0 ? Math.round((finalTotal / (multiplier * (1 - discount / 100))) * 100) / 100 : 0;
+    const totalBeforeDiscount = Math.round(monthlyRate * multiplier * 100) / 100;
+    const discountAmount = Math.round((totalBeforeDiscount - finalTotal) * 100) / 100;
+    return {
+      monthlyRate,
+      totalBeforeDiscount,
+      discountPercent: discount,
+      discountAmount,
+      months: multiplier,
+    };
+  })();
 
   const handleMakePayment = async () => {
     if (!user) {
@@ -795,8 +814,14 @@ export default function ReviewPaymentPage() {
                     </div>
                   </div>
                   <div className="text-left md:text-right">
-                    <p className="text-3xl font-bold" style={{ color: BRAND.indigo }}>₹{finalTotal.toLocaleString()}</p>
-                    <p className="text-sm" style={{ color: `${BRAND.indigo}b3` }}>{getPlanDurationInfo()?.description}</p>
+                    <p className="text-3xl font-bold" style={{ color: BRAND.indigo }}>₹{finalTotal.toLocaleString('en-IN')}</p>
+                    {billingBreakdown && billingBreakdown.months > 1 ? (
+                      <p className="text-sm font-medium" style={{ color: `${BRAND.indigo}b3` }}>
+                        ₹{billingBreakdown.monthlyRate.toLocaleString('en-IN')}/mo · {getPlanDurationInfo()?.label} plan
+                      </p>
+                    ) : (
+                      <p className="text-sm" style={{ color: `${BRAND.indigo}b3` }}>{getPlanDurationInfo()?.description}</p>
+                    )}
                   </div>
                 </div>
 
@@ -990,10 +1015,29 @@ export default function ReviewPaymentPage() {
                 </CardHeader>
                 <CardContent className="space-y-5 text-sm">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-600">Plan total ({getPlanDurationInfo()?.label})</span>
-                      <span className="font-semibold text-slate-900">₹{finalTotal.toLocaleString()}</span>
-                    </div>
+                    {billingBreakdown && billingBreakdown.months > 1 ? (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600">Monthly rate</span>
+                          <span className="font-semibold text-slate-900">₹{billingBreakdown.monthlyRate.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600">× {billingBreakdown.months} months</span>
+                          <span className="font-semibold text-slate-900">₹{billingBreakdown.totalBeforeDiscount.toLocaleString()}</span>
+                        </div>
+                        {billingBreakdown.discountPercent > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium" style={{ color: BRAND.indigo }}>{billingBreakdown.discountPercent}% plan discount</span>
+                            <span className="font-semibold" style={{ color: BRAND.indigo }}>−₹{billingBreakdown.discountAmount.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600">Plan total ({getPlanDurationInfo()?.label})</span>
+                        <span className="font-semibold text-slate-900">₹{finalTotal.toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-slate-600">Daily concierge staffing</span>
                       <span className="font-semibold" style={{ color: BRAND.indigo }}>Included</span>
@@ -1013,7 +1057,7 @@ export default function ReviewPaymentPage() {
                   <div className="rounded-2xl border px-4 py-3" style={{ borderColor: INDIGO_STYLES.border, background: `${BRAND.indigo}0d` }}>
                     <div className="flex items-center justify-between text-base font-semibold">
                       <span>Total payable</span>
-                      <span style={{ color: BRAND.indigo }}>₹{totalWithGst.toFixed(0)}</span>
+                      <span style={{ color: BRAND.indigo }}>₹{Math.round(totalWithGst).toLocaleString('en-IN')}</span>
                     </div>
 
                     <p className="mt-1 text-xs text-center" style={{ color: `${BRAND.indigo}b3` }}>Charged once for the selected billing cycle</p>
@@ -1034,7 +1078,7 @@ export default function ReviewPaymentPage() {
                       ) : (
                         <span className="flex items-center justify-center gap-2">
                           <CreditCard className="h-5 w-5" />
-                          Pay ₹{totalWithGst.toFixed(0)}
+                          Pay ₹{Math.round(totalWithGst).toLocaleString('en-IN')}
                         </span>
                       )}
                     </Button>

@@ -351,10 +351,11 @@ const PaymentOptionsPage = () => {
           };
 
           // Generate dummy property pricing if not provided by backend
+          // Pricing is stored as MONTHLY rates. Frontend calculates totals with duration multipliers and discounts.
           const fallbackPropertyPricing = [
-            { id: '1', planId: 'dummy', propertyType: 'apartment', bhkType: '2bhk', squareFeet: 1000, sqftLabel: 'Up to 1000 sq ft', pricing: { '1month': 2000, '3month': 5700, '6month': 10800 }, isActive: true },
-            { id: '2', planId: 'dummy', propertyType: 'apartment', bhkType: '3bhk', squareFeet: 1500, sqftLabel: 'Up to 1500 sq ft', pricing: { '1month': 3000, '3month': 8550, '6month': 16200 }, isActive: true },
-            { id: '3', planId: 'dummy', propertyType: 'apartment', bhkType: '4bhk', squareFeet: 2000, sqftLabel: 'Up to 2000 sq ft', pricing: { '1month': 4000, '3month': 11400, '6month': 21600 }, isActive: true }
+            { id: '1', planId: 'dummy', propertyType: 'apartment', bhkType: '2bhk', squareFeet: 1000, sqftLabel: 'Up to 1000 sq ft', pricing: { '1month': 2000, '3month': 2000, '6month': 2000 }, isActive: true },
+            { id: '2', planId: 'dummy', propertyType: 'apartment', bhkType: '3bhk', squareFeet: 1500, sqftLabel: 'Up to 1500 sq ft', pricing: { '1month': 3000, '3month': 3000, '6month': 3000 }, isActive: true },
+            { id: '3', planId: 'dummy', propertyType: 'apartment', bhkType: '4bhk', squareFeet: 2000, sqftLabel: 'Up to 2000 sq ft', pricing: { '1month': 4000, '3month': 4000, '6month': 4000 }, isActive: true }
           ];
 
           const mergedPlan: SubscriptionPlan = {
@@ -444,15 +445,21 @@ const PaymentOptionsPage = () => {
   }, [options.squareFeet, selectedBhkConfig]);
 
   const calculatePlanPrice = useCallback((duration: PlanDuration): PlanPriceBreakdown => {
-    const backendAmount = Number(selectedSqftOption?.pricing?.[duration.id]) || 0;
+    // The 1-month price is the authoritative monthly base rate.
+    // Total = monthlyRate × months × (1 - discount%)
+    const monthlyBaseRate = Number(selectedSqftOption?.pricing?.['1month']) || 0;
+    const totalBeforeDiscount = monthlyBaseRate * duration.multiplier;
+    const discountAmount = totalBeforeDiscount * (duration.discount / 100);
+    const finalTotal = Math.round((totalBeforeDiscount - discountAmount) * 100) / 100;
+    
     return {
-      monthlyBaseCost: backendAmount,
-      propertyBaseCost: backendAmount,
-      totalBeforeDiscount: backendAmount,
-      discountPercent: 0,
-      discountAmount: 0,
-      monthlyAfterDiscount: backendAmount,
-      finalTotal: backendAmount
+      monthlyBaseCost: monthlyBaseRate,
+      propertyBaseCost: monthlyBaseRate,
+      totalBeforeDiscount,
+      discountPercent: duration.discount,
+      discountAmount: Math.round(discountAmount * 100) / 100,
+      monthlyAfterDiscount: Math.round((finalTotal / duration.multiplier) * 100) / 100,
+      finalTotal
     };
   }, [selectedSqftOption]);
 
@@ -1051,9 +1058,11 @@ const PaymentOptionsPage = () => {
                         </div>
                         <div className="space-y-1">
                           <p className="text-2xl font-semibold" style={{ color: BRAND.indigo }}>₹{monthly.toLocaleString()}<span className="text-sm font-medium" style={{ color: `${BRAND.indigo}99` }}>/month</span></p>
-                          {/* <p className="text-xs font-medium text-slate-500">
-                            Total: ₹{pricing.finalTotal.toLocaleString()}
-                          </p> */}
+                          {duration.multiplier > 1 && (
+                            <p className="text-xs font-medium text-slate-500">
+                              Total: ₹{pricing.finalTotal.toLocaleString()}
+                            </p>
+                          )}
                         </div>
                         {pricing.discountPercent > 0 && (
                           <p className="text-xs font-medium" style={{ color: BRAND.indigo }}>

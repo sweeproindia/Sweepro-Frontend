@@ -226,28 +226,39 @@ export const AdminPlansSection: React.FC<AdminPlansSectionProps> = ({ plans }) =
                                     <thead>
                                       <tr className="border-b">
                                         <th className="text-left py-2 px-3 font-medium">Size Range</th>
-                                        <th className="text-right py-2 px-3 font-medium">1 Month</th>
-                                        <th className="text-right py-2 px-3 font-medium">3 Months</th>
-                                        <th className="text-right py-2 px-3 font-medium">6 Months</th>
+                                        <th className="text-right py-2 px-3 font-medium">1 Month (Monthly)</th>
+                                        <th className="text-right py-2 px-3 font-medium">3 Months (Total / Mo)</th>
+                                        <th className="text-right py-2 px-3 font-medium">6 Months (Total / Mo)</th>
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {pricingArray.map((pricing, idx) => (
-                                        <tr key={idx} className="border-b last:border-0">
-                                          <td className="py-2 px-3">
-                                            {pricing.sqftLabel || `${pricing.squareFeet} sq ft`}
-                                          </td>
-                                          <td className="text-right py-2 px-3 font-medium">
-                                            {formatPrice(pricing.pricing['1month'] || 0)}
-                                          </td>
-                                          <td className="text-right py-2 px-3 font-medium">
-                                            {formatPrice(pricing.pricing['3month'] || 0)}
-                                          </td>
-                                          <td className="text-right py-2 px-3 font-medium">
-                                            {formatPrice(pricing.pricing['6month'] || 0)}
-                                          </td>
-                                        </tr>
-                                      ))}
+                                      {pricingArray.map((pricing, idx) => {
+                                        const p1 = pricing.pricing['1month'] || 0;
+                                        const p3 = pricing.pricing['3month'] || 0;
+                                        const p6 = pricing.pricing['6month'] || 0;
+                                        const p3Monthly = Math.round((p3 / 3) * 100) / 100;
+                                        const p6Monthly = Math.round((p6 / 6) * 100) / 100;
+
+                                        return (
+                                          <tr key={idx} className="border-b last:border-0">
+                                            <td className="py-2.5 px-3">
+                                              <span className="font-medium">{pricing.sqftLabel || `${pricing.squareFeet} sq ft`}</span>
+                                            </td>
+                                            <td className="text-right py-2.5 px-3 font-medium">
+                                              <div>{formatPrice(p1)}</div>
+                                              <div className="text-xs text-muted-foreground font-normal">/month</div>
+                                            </td>
+                                            <td className="text-right py-2.5 px-3 font-medium">
+                                              <div>{formatPrice(p3)}</div>
+                                              <div className="text-xs text-green-600 font-normal">₹{p3Monthly.toLocaleString('en-IN')}/mo (Save 5%)</div>
+                                            </td>
+                                            <td className="text-right py-2.5 px-3 font-medium">
+                                              <div>{formatPrice(p6)}</div>
+                                              <div className="text-xs text-green-600 font-normal">₹{p6Monthly.toLocaleString('en-IN')}/mo (Save 10%)</div>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
                                     </tbody>
                                   </table>
                                 </div>
