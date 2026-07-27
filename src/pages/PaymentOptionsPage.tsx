@@ -523,19 +523,51 @@ const PaymentOptionsPage = () => {
   }, [calculatePlanPrice, options.selectedPlanDuration]);
 
   useEffect(() => {
-    // Don't auto-populate address fields - keep them empty for mandatory user input
-    // Only set address mode to edit if no address exists
-    const addr = (user as any)?.address || '';
-    
-    if (!addr && !options.address) {
+    if (!apartments.length) return;
+
+    // Check saved options first, then user context
+    const storedAddress = options.address || (user as any)?.address || '';
+    const storedAptId = options.apartmentId || (user as any)?.apartment_id || (user as any)?.apartmentId || '';
+    const storedAptNum = options.apartmentNumber || '';
+    const storedFloorNum = options.floorNumber || '';
+
+    // Parse apartment/flat number and floor number if not explicitly in options
+    const parsed = parseUnitDetails(storedAddress);
+    const finalAptNum = storedAptNum || parsed.apartmentNumber;
+    const finalFloorNum = storedFloorNum || parsed.floorNumber;
+
+    // Find apartment complex ID from storedAptId or by matching name in address string
+    let finalAptId = storedAptId;
+    if (!finalAptId && storedAddress) {
+      const foundApt = apartments.find((a) => storedAddress.toLowerCase().includes(a.name.toLowerCase()));
+      if (foundApt) {
+        finalAptId = foundApt.id;
+      }
+    }
+
+    // Set form input states
+    if (finalAptId) setSelectedApartmentId(finalAptId);
+    if (finalAptNum) setApartmentNumber(finalAptNum);
+    if (finalFloorNum) setFloorNumber(finalFloorNum);
+
+    // Address is complete if complex ID, flat number, and floor number are present
+    const isComplete = Boolean(finalAptId && finalAptNum && finalFloorNum && storedAddress);
+
+    if (isComplete) {
+      const aptObj = apartments.find((a) => a.id === finalAptId) || null;
+      const fullAddr = buildAddressFromApartment(aptObj, finalAptNum, finalFloorNum) || storedAddress;
+      setOptions((prev) => ({
+        ...prev,
+        apartmentId: finalAptId,
+        apartmentNumber: finalAptNum,
+        floorNumber: finalFloorNum,
+        address: fullAddr
+      }));
+      setAddressMode('confirm');
+    } else {
       setAddressMode('edit');
     }
-  }, [user, options.address]);
-
-  useEffect(() => {
-    // Don't auto-select apartment - user must manually select
-    if (!apartments.length) return;
-  }, [apartments]);
+  }, [user, apartments]);
 
   const handleOptionChange = (field: keyof ServiceOptions, value: string) => {
     setOptions((prev) => {
@@ -554,19 +586,26 @@ const PaymentOptionsPage = () => {
   };
 
   const handleCancelAddressEdit = () => {
-    // Clear all address fields when canceling edit
-    setApartmentNumber('');
-    setFloorNumber('');
-    setSelectedApartmentId('');
-    
-    setOptions((prev) => ({
-      ...prev,
-      address: '',
-      apartmentNumber: '',
-      floorNumber: '',
-      apartmentId: ''
-    }));
-    setAddressMode('edit');
+    // If we already have a confirmed complete address, revert to confirmed mode
+    if (options.address && options.apartmentId && options.apartmentNumber && options.floorNumber) {
+      setSelectedApartmentId(options.apartmentId);
+      setApartmentNumber(options.apartmentNumber);
+      setFloorNumber(options.floorNumber);
+      setAddressMode('confirm');
+    } else {
+      // If no valid confirmed address exists, clear and remain in edit mode
+      setApartmentNumber('');
+      setFloorNumber('');
+      setSelectedApartmentId('');
+      setOptions((prev) => ({
+        ...prev,
+        address: '',
+        apartmentNumber: '',
+        floorNumber: '',
+        apartmentId: ''
+      }));
+      setAddressMode('edit');
+    }
   };
 
   const handleSaveAddress = async () => {
