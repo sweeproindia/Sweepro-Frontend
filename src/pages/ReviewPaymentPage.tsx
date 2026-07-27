@@ -250,17 +250,10 @@ export default function ReviewPaymentPage() {
   const durationInfo = getPlanDurationInfo();
   const billingBreakdown = (() => {
     if (!durationInfo || !finalTotal) return null;
-    const { multiplier, discount } = durationInfo;
-    // Reverse-compute monthly rate from finalTotal:
-    // finalTotal = monthlyRate × multiplier × (1 - discount/100)
-    const monthlyRate = multiplier > 0 ? Math.round((finalTotal / (multiplier * (1 - discount / 100))) * 100) / 100 : 0;
-    const totalBeforeDiscount = Math.round(monthlyRate * multiplier * 100) / 100;
-    const discountAmount = Math.round((totalBeforeDiscount - finalTotal) * 100) / 100;
+    const { multiplier } = durationInfo;
+    const monthlyRate = multiplier > 0 ? Math.round((finalTotal / multiplier) * 100) / 100 : finalTotal;
     return {
       monthlyRate,
-      totalBeforeDiscount,
-      discountPercent: discount,
-      discountAmount,
       months: multiplier,
     };
   })();
@@ -1018,19 +1011,13 @@ export default function ReviewPaymentPage() {
                     {billingBreakdown && billingBreakdown.months > 1 ? (
                       <>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-600">Monthly rate</span>
-                          <span className="font-semibold text-slate-900">₹{billingBreakdown.monthlyRate.toLocaleString()}</span>
+                          <span className="text-slate-600">Monthly effective rate</span>
+                          <span className="font-semibold text-slate-900">₹{billingBreakdown.monthlyRate.toLocaleString()}/mo</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-600">× {billingBreakdown.months} months</span>
-                          <span className="font-semibold text-slate-900">₹{billingBreakdown.totalBeforeDiscount.toLocaleString()}</span>
+                          <span className="text-slate-600">Billing cycle ({billingBreakdown.months} Months)</span>
+                          <span className="font-semibold text-slate-900">₹{finalTotal.toLocaleString()}</span>
                         </div>
-                        {billingBreakdown.discountPercent > 0 && (
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium" style={{ color: BRAND.indigo }}>{billingBreakdown.discountPercent}% plan discount</span>
-                            <span className="font-semibold" style={{ color: BRAND.indigo }}>−₹{billingBreakdown.discountAmount.toLocaleString()}</span>
-                          </div>
-                        )}
                       </>
                     ) : (
                       <div className="flex items-center justify-between">

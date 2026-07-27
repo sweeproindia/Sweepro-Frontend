@@ -445,20 +445,22 @@ const PaymentOptionsPage = () => {
   }, [options.squareFeet, selectedBhkConfig]);
 
   const calculatePlanPrice = useCallback((duration: PlanDuration): PlanPriceBreakdown => {
-    // The 1-month price is the authoritative monthly base rate.
-    // Total = monthlyRate × months × (1 - discount%)
-    const monthlyBaseRate = Number(selectedSqftOption?.pricing?.['1month']) || 0;
-    const totalBeforeDiscount = monthlyBaseRate * duration.multiplier;
-    const discountAmount = totalBeforeDiscount * (duration.discount / 100);
-    const finalTotal = Math.round((totalBeforeDiscount - discountAmount) * 100) / 100;
+    // Read the authoritative backend total price for the specific billing duration
+    const finalTotal = Number(selectedSqftOption?.pricing?.[duration.id]) || 0;
+    const monthlyAfterDiscount = duration.multiplier > 0 ? finalTotal / duration.multiplier : finalTotal;
+    
+    const monthlyBaseCost = Number(selectedSqftOption?.pricing?.['1month']) || 0;
+    const totalBeforeDiscount = monthlyBaseCost * duration.multiplier;
+    const discountAmount = Math.max(0, totalBeforeDiscount - finalTotal);
+    const discountPercent = totalBeforeDiscount > 0 ? Math.round((discountAmount / totalBeforeDiscount) * 100) : 0;
     
     return {
-      monthlyBaseCost: monthlyBaseRate,
-      propertyBaseCost: monthlyBaseRate,
+      monthlyBaseCost,
+      propertyBaseCost: monthlyBaseCost,
       totalBeforeDiscount,
-      discountPercent: duration.discount,
-      discountAmount: Math.round(discountAmount * 100) / 100,
-      monthlyAfterDiscount: Math.round((finalTotal / duration.multiplier) * 100) / 100,
+      discountPercent,
+      discountAmount,
+      monthlyAfterDiscount: Math.round(monthlyAfterDiscount * 100) / 100,
       finalTotal
     };
   }, [selectedSqftOption]);
