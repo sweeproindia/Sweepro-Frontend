@@ -161,10 +161,11 @@ export const Navbar = ({
     ),
     // TESTIMONIALS NAV — commented out for launch, restore when TestimonialsSection is re-enabled:
     // { href: 'testimonials', label: 'Testimonials' },
-    {
-      href: 'faq-section',
-      label: 'FAQ',
-    },
+    // TEMPORARY TEST: Commented out FAQ link to verify client deployment
+    // {
+    //   href: 'faq-section',
+    //   label: 'FAQ',
+    // },
     {
       href: 'b2b-services',
       label: 'B2B Services',
