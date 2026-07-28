@@ -1,43 +1,20 @@
-// API Configuration - Use local backend in development, deployed URL in production
-//
-// M5 FIX: The old DEFAULT_PROD_API_BASE_URL pointed to
-// 'sweep-pro-backend-testing.onrender.com' — a testing deployment.
-// In production we now warn loudly if VITE_API_BASE_URL is not set,
-// so a misconfigured deploy is immediately obvious rather than silently
-// sending real user traffic to the test server.
-const DEFAULT_PROD_API_BASE_URL = 'https://sweep-pro-backend-testing.onrender.com/api';
-
+// API Configuration - Loaded strictly from environment variable (VITE_API_BASE_URL)
 const ENV_API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL as string | undefined;
 
 const normalizeApiBaseUrl = (value: string): string => {
   const trimmed = value.trim();
-  if (!trimmed) return DEFAULT_PROD_API_BASE_URL;
-  if (!/^https?:\/\//i.test(trimmed)) return DEFAULT_PROD_API_BASE_URL;
+  if (!trimmed) return '/api';
   return /\/api\/?$/i.test(trimmed) ? trimmed.replace(/\/api\/?$/i, '/api') : `${trimmed.replace(/\/+$/, '')}/api`;
 };
 
-const RAW_API_BASE_URL = ENV_API_BASE_URL
+export const API_BASE_URL = ENV_API_BASE_URL
   ? normalizeApiBaseUrl(ENV_API_BASE_URL)
-  : (import.meta.env.DEV ? '/api' : DEFAULT_PROD_API_BASE_URL);
-
-// M5 FIX: Fail loudly in production when VITE_API_BASE_URL is not configured.
-// This surfaces misconfigurations immediately rather than sending prod traffic
-// to a test server.
-if (!import.meta.env.DEV && !ENV_API_BASE_URL) {
-  console.error(
-    '[Sweep Pro] WARNING: VITE_API_BASE_URL is not set. '
-    + 'Requests will fall back to the Render backend. '
-    + 'Set VITE_API_BASE_URL in your production environment variables.'
-  );
-}
-
-export const API_BASE_URL = import.meta.env.DEV
-  ? RAW_API_BASE_URL
-  : normalizeApiBaseUrl(RAW_API_BASE_URL);
+  : '/api';
 
 export const BACKEND_ORIGIN =
   (import.meta as any).env?.VITE_BACKEND_ORIGIN ||
-  (API_BASE_URL.startsWith('http') ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:3000');
+  (API_BASE_URL.startsWith('http') ? API_BASE_URL.replace(/\/api\/?$/, '') : '');
+
 
 // API endpoints
 export const API_ENDPOINTS = {
