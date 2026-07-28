@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Mail, Phone, Briefcase, CheckCircle, Send, Sparkles, Handshake } from 'lucide-react';
 import { useState } from 'react';
+import { API_BASE_URL } from '@/services/api';
 
 interface FormData {
   contactPerson: string;
@@ -56,7 +57,7 @@ export const B2BSection: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/b2b/services', {
+      const response = await fetch(`${API_BASE_URL}/b2b/services`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
