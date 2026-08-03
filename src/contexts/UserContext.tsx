@@ -137,14 +137,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
           }
         } else {
-          // Clean up if not authenticated
-          AuthService.logout();
+          // BUG 6 FIX: Do NOT call AuthService.logout() here.
+          // This tab may have opened without a token in sessionStorage (new tab
+          // with session-only auth). Calling logout() would call removeAuthToken()
+          // which clears SHARED localStorage, killing every other open tab's session.
+          // Simply mark this tab as unauthenticated without touching shared storage.
           setUser(null);
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        AuthService.logout();
+        // BUG 6 FIX: Do NOT call AuthService.logout() here either.
+        // An error during initialization (e.g. network blip) should not wipe
+        // the session for all other tabs. Just clear local React state.
         setUser(null);
         setIsAuthenticated(false);
       } finally {
@@ -155,6 +160,42 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     initializeAuth();
   }, []);
+
+  // ------------------------------------------------------------------
+  // BUG 6 FIX: Cross-tab logout synchronisation.
+  //
+  // When the user explicitly logs out in tab A, AuthService.logout() removes
+  // the 'user' key from localStorage. The 'storage' event fires in every
+  // OTHER tab that shares the same origin. This listener picks that up and
+  // cleanly clears React state in the other tabs — without calling
+  // AuthService.logout() again (which would be a no-op but could cause
+  // side-effects if the backend call fails in a closed tab race).
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      // 'user' key being removed means an explicit logout happened elsewhere
+      if (event.key === 'user' && event.newValue === null && isAuthenticated) {
+        console.warn('[UserContext] Session cleared in another tab — syncing logout state.');
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+      // 'user' key being set means a login happened in another tab — sync it
+      if (event.key === 'user' && event.newValue !== null && !isAuthenticated) {
+        try {
+          const syncedUser = JSON.parse(event.newValue);
+          if (syncedUser) {
+            setUser(syncedUser);
+            setIsAuthenticated(true);
+          }
+        } catch {
+          // Malformed data — ignore
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [isAuthenticated]);
 
   const login = useCallback(
     async (email: string, password: string, rememberMe: boolean = false): Promise<User> => {

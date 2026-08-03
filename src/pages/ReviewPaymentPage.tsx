@@ -529,7 +529,13 @@ export default function ReviewPaymentPage() {
       
       toast({
         title: 'Payment Failed',
-        description: errorMessage + ' Razorpay SDK may not have loaded. Please check your internet connection and try again.',
+        // BUG 2 FIX: Previously the catch block always appended "Razorpay SDK may not have
+        // loaded" to every error, even server 500s, network blips, or auth failures —
+        // none of which are SDK loading issues. This caused random misleading error messages.
+        // Now we only add the SDK hint when window.Razorpay is actually missing.
+        description: errorMessage + (typeof window !== 'undefined' && !(window as any).Razorpay
+          ? ' Please check your internet connection — the payment SDK may not have loaded.'
+          : ' Please try again or contact support if the issue persists.'),
         variant: 'destructive',
         action: (
           <ToastAction

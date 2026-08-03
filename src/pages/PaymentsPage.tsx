@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -278,6 +278,7 @@ function PaymentRow({ payment, onViewInvoice, onDownloadInvoice, downloadingId }
 export default function PaymentsPage() {
   const { user, isAuthenticated } = useUser();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const isCustomer = user?.role === 'CUSTOMER';
 
@@ -310,8 +311,9 @@ export default function PaymentsPage() {
     return {
       totalPaid: completed.reduce((s, p) => s + p.finalAmount, 0),
       thisMonthPaid: thisMonth.reduce((s, p) => s + p.finalAmount, 0),
-      nextPaymentAmount: subscription?.amount || 0,
-      nextPaymentDate: subscription?.nextBillDate || null,
+      // BUG 3 FIX: Only show next payment info when subscription is genuinely ACTIVE
+      nextPaymentAmount: subscription?.status === 'ACTIVE' ? (subscription?.amount || 0) : 0,
+      nextPaymentDate: subscription?.status === 'ACTIVE' ? (subscription?.nextBillDate || null) : null,
       completedCount: completed.length,
       pendingCount: allPayments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING').length,
       failedCount: allPayments.filter(p => p.status === 'FAILED' || p.status === 'CANCELLED').length,
@@ -355,7 +357,11 @@ export default function PaymentsPage() {
 
   const completedPayments = allPayments.filter(p => p.status === 'COMPLETED');
   const pendingPayments = allPayments.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING');
-  const upcomingPayments = subscription?.nextBillDate
+  // BUG 3 FIX: Only show upcoming billing when the subscription is genuinely ACTIVE.
+  // Before this fix, any subscription with a nextBillDate field (including those in
+  // PENDING_PAYMENT state where the user never completed checkout) would create a
+  // spurious "upcoming payment" entry, misleading the user into thinking they were billed.
+  const upcomingPayments = subscription?.status === 'ACTIVE' && subscription?.nextBillDate
     ? [{
       id: subscription.id, date: subscription.nextBillDate, amount: subscription.amount,
       description: subscription.plan?.name ? `${subscription.plan.name} – Next Billing` : 'Subscription Payment'
@@ -443,7 +449,20 @@ export default function PaymentsPage() {
                       <p className="text-xs text-muted-foreground">Due {new Date(up.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                     </div>
                   </div>
-                  <p className="font-semibold text-foreground">₹{up.amount.toLocaleString()}</p>
+                  {/* BUG 5 FIX: Pay Early button for upcoming scheduled payments */}
+                  <div className="flex items-center gap-3">
+                    <p className="font-semibold text-foreground">₹{up.amount.toLocaleString()}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-8 gap-1.5 border-amber-400 text-amber-700 hover:bg-amber-100"
+                      onClick={() => navigate('/subscription-plans')}
+                      id={`pay-early-${up.id}`}
+                    >
+                      <CreditCard className="h-3.5 w-3.5" />
+                      Pay Early
+                    </Button>
+                  </div>
                 </div>
               ))}
               {pendingPayments.map(p => (
@@ -460,11 +479,25 @@ export default function PaymentsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">₹{p.finalAmount.toLocaleString()}</p>
-                    <Badge variant="outline" className={`text-xs ${getStatusColor(p.status)}`}>
-                      {p.status.toLowerCase()}
-                    </Badge>
+                  {/* BUG 5 FIX: Pay Now button for pending payments so users can complete checkout */}
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">₹{p.finalAmount.toLocaleString()}</p>
+                      <Badge variant="outline" className={`text-xs ${getStatusColor(p.status)}`}>
+                        {p.status.toLowerCase()}
+                      </Badge>
+                    </div>
+                    {p.subscriptionId && (
+                      <Button
+                        size="sm"
+                        className="text-xs h-8 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white"
+                        onClick={() => navigate('/review-payment', { state: { subscriptionId: p.subscriptionId } })}
+                        id={`pay-now-${p.id}`}
+                      >
+                        <CreditCard className="h-3.5 w-3.5" />
+                        Pay Now
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

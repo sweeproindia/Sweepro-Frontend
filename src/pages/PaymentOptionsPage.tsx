@@ -724,6 +724,25 @@ const PaymentOptionsPage = () => {
       return;
     }
 
+    // BUG 1 FIX: The HTML `min` attribute only restricts the calendar picker, NOT
+    // manually typed input. A user can type any date string (e.g. "01/01/2000") and
+    // the browser happily accepts it. We explicitly validate the entered date here.
+    {
+      const dayAfterTomorrow = new Date();
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+      dayAfterTomorrow.setHours(0, 0, 0, 0);
+      const enteredDate = new Date(options.startDate);
+      if (isNaN(enteredDate.getTime()) || enteredDate < dayAfterTomorrow) {
+        toast({
+          title: 'Invalid start date',
+          description: 'Service can only be scheduled from the day after tomorrow onwards. Please pick a valid date.',
+          variant: 'destructive'
+        });
+        scheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+
     if (!options.timeSlot) {
       toast({
         title: 'Select time slot',
