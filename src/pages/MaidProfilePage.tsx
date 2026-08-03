@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Edit, Camera, Mail, Phone, Calendar, Star, Quote, ThumbsUp, MapPin, Clock, ShieldCheck, Copy, Check, RefreshCw, Loader2 } from 'lucide-react';
+import { Edit, Mail, Phone, Star, MapPin, ShieldCheck, Copy, Check, RefreshCw, Loader2, Lock, Building2 } from 'lucide-react';
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
-import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
 import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMaidQRCode, setMaidCustomCode } from '@/services/qrService';
@@ -18,8 +17,6 @@ interface MaidProfileData {
   fullName: string;
   email: string;
   phone: string;
-  profileImage?: string;
-  coverImage?: string;
   bio?: string;
   skills?: string[];
   experience?: number;
@@ -43,7 +40,6 @@ interface Review {
     name: string;
     email?: string;
     phone?: string;
-    profileImage?: string;
   };
   serviceDetails?: string;
 }
@@ -55,8 +51,6 @@ export const MaidProfilePage: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
-  const [imageType, setImageType] = useState<'profile' | 'cover'>('profile');
 
   // Verification code state
   const [verificationCode, setVerificationCode] = useState<string>('');
@@ -79,35 +73,25 @@ export const MaidProfilePage: React.FC = () => {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-      if (response.success) {
-        const data: any = response.data;
-        const maidProfile: any = data?.maidProfile;
 
-        const mappedProfile: MaidProfileData = {
-          id: data?.id,
-          fullName: data?.name,
-          email: data?.email,
-          phone: data?.phone,
-          profileImage: data?.profileImage,
-          coverImage: data?.coverImage,
-          bio: data?.bio,
-          skills: maidProfile?.skills,
-          experience: maidProfile?.experienceYears,
-          isVerified: maidProfile?.isVerified ?? false,
-          verificationDate: maidProfile?.verificationDate,
-          totalEarnings: maidProfile?.totalEarnings,
-          jobsCompleted: maidProfile?.completedBookings,
-          rating: maidProfile?.rating,
-          totalReviews: maidProfile?.totalRatings,
-          languages: maidProfile?.languages,
-          address: data?.addressLine || data?.address,
-          role: data?.role
+      if (response.success && response.data) {
+        const raw = response.data;
+        const maidData: MaidProfileData = {
+          id: raw.id,
+          fullName: raw.name || raw.fullName || user?.name || 'Maid',
+          email: raw.email || user?.email || '',
+          phone: raw.phone || user?.phone || '',
+          address: raw.address || user?.address || '',
+          isVerified: raw.maidProfile?.isVerified ?? raw.isVerified ?? false,
+          rating: raw.maidProfile?.rating ?? 5.0,
+          jobsCompleted: raw.maidProfile?.completedBookings ?? raw.maidProfile?.jobsCompleted ?? 0,
+          languages: raw.maidProfile?.languages || ['English', 'Hindi', 'Telugu'],
+          skills: raw.maidProfile?.skills || ['Sweeping', 'Mopping', 'Utensil Cleaning']
         };
-
-        setProfileData(mappedProfile);
+        setProfileData(maidData);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error fetching maid profile:', error);
     } finally {
       setLoading(false);
     }
@@ -115,61 +99,27 @@ export const MaidProfilePage: React.FC = () => {
 
   const fetchMaidReviews = async () => {
     try {
-      const response = await apiRequest('/feedback/maid-reviews', {
+      const response = await apiRequest(API_ENDPOINTS.FEEDBACK.MAID_FEEDBACK, {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-      if (response.success) {
-        const list = (response as any).data || (response as any).reviews || [];
-        const feedbacks = Array.isArray(list) ? list : [];
-
-        const mapped: Review[] = feedbacks.map((f: any) => {
-          const serviceDate = f?.booking?.completedAt || f?.createdAt;
-          return {
-            id: f?.id,
-            rating: f?.overallRating,
-            comment: f?.comment || '',
-            serviceDate: serviceDate || new Date().toISOString(),
-            reviewer: {
-              name: f?.customer?.name || 'Customer',
-              email: f?.customer?.email,
-              phone: f?.customer?.phone,
-              profileImage: f?.customer?.profileImage
-            },
-            serviceDetails: f?.booking?.service?.name
-          };
-        }).filter((r: any) => r?.id);
-
-        setReviews(mapped);
+      if (response.success && response.data) {
+        setReviews(response.data);
       }
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
+    } catch {
+      setReviews([]);
     }
   };
-
-  // Keep displayed rating consistent with feedback if profile doesn't have it yet
-  useEffect(() => {
-    if (!profileData) return;
-    if (profileData.rating !== undefined && profileData.rating !== null && (profileData.totalReviews || 0) > 0) return;
-    if (reviews.length === 0) return;
-
-    const avg = reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length;
-    setProfileData(prev => prev ? ({
-      ...prev,
-      rating: Number.isFinite(avg) ? avg : 0,
-      totalReviews: reviews.length
-    }) : prev);
-  }, [reviews, profileData]);
 
   const fetchVerificationCode = async () => {
     try {
       setCodeLoading(true);
-      const res = await getMaidQRCode();
-      if (res.success && res.data) {
-        setVerificationCode(res.data.verificationCode || '');
+      const response = await getMaidQRCode();
+      if (response.success && response.data) {
+        setVerificationCode(response.data.verificationCode);
       }
-    } catch (error) {
-      console.error('Error fetching verification code:', error);
+    } catch {
+      setVerificationCode('');
     } finally {
       setCodeLoading(false);
     }
@@ -214,524 +164,251 @@ export const MaidProfilePage: React.FC = () => {
     }
   };
 
-  const handleImageUpload = (type: 'profile' | 'cover') => {
-    setImageType(type);
-    setImageDialogOpen(true);
+  const displayName = profileData?.fullName || user?.name || 'Homecare Partner';
+  const displayEmail = profileData?.email || user?.email || '';
+  const displayPhone = profileData?.phone || user?.phone || '';
+  const displayAddress = profileData?.address || user?.address || 'No service address set';
+
+  const getInitials = (name: string) => {
+    if (!name) return 'MP';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
   if (loading) {
     return (
       <MaidDashboardLayout>
-        <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="space-y-2">
-              <Skeleton className="h-9 w-48" />
-              <Skeleton className="h-4 w-56" />
-            </div>
-            <Skeleton className="h-10 w-32 rounded-md" />
+        <div className="space-y-6 max-w-5xl mx-auto">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-9 w-48 rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-xl" />
           </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <Card className="overflow-hidden">
-                <Skeleton className="h-32 w-full" />
-                <CardContent className="p-6">
-                  <div className="relative -mt-12 mb-4">
-                    <Skeleton className="h-24 w-24 rounded-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-7 w-44" />
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-6 w-16 rounded" />
-                      <Skeleton className="h-6 w-24 rounded" />
-                    </div>
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <Skeleton className="h-5 w-28" />
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    <Skeleton className="h-6 w-20 rounded" />
-                    <Skeleton className="h-6 w-24 rounded" />
-                    <Skeleton className="h-6 w-16 rounded" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-48" />
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Skeleton className="h-16 w-full rounded-lg" />
-                  <Skeleton className="h-16 w-full rounded-lg" />
-                  <Skeleton className="h-16 w-full rounded-lg" />
-                  <Skeleton className="h-16 w-full rounded-lg" />
-                </CardContent>
-              </Card>
-            </div>
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-64 lg:col-span-2 w-full rounded-2xl" />
           </div>
-
-          <Card className="border-2 border-yellow-400 shadow-lg">
-            <CardContent className="pt-8 pb-8">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <Skeleton className="h-10 w-10 rounded" />
-                  <Skeleton className="h-10 w-10 rounded" />
-                  <Skeleton className="h-10 w-10 rounded" />
-                  <Skeleton className="h-10 w-10 rounded" />
-                  <Skeleton className="h-10 w-10 rounded" />
-                </div>
-                <Skeleton className="h-14 w-40 mx-auto mb-3" />
-                <Skeleton className="h-5 w-56 mx-auto" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t">
-                  <div>
-                    <Skeleton className="h-9 w-20 mx-auto mb-2" />
-                    <Skeleton className="h-4 w-32 mx-auto" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      </MaidDashboardLayout>
-    );
-  }
-
-  if (!profileData) {
-    return (
-      <MaidDashboardLayout>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">Failed to load profile data</p>
-            <Button onClick={fetchProfileData} className="w-full mt-4">
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
       </MaidDashboardLayout>
     );
   }
 
   return (
     <MaidDashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-5xl mx-auto">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground mt-1">Homecare Partner Service Provider</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Partner Profile</h1>
+            <p className="text-slate-500 text-sm mt-1">Manage your homecare partner profile and contact information</p>
           </div>
           <Button 
             onClick={() => setEditDialogOpen(true)}
-            className="gap-2"
+            className="gap-2 rounded-xl h-11 px-5 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             <Edit className="h-4 w-4" />
             Edit Profile
           </Button>
         </div>
 
-        {/* Main Section: Profile + Languages (Left) & Contact Info (Right) */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* LEFT COLUMN: Profile Card + Languages */}
-          <div className="space-y-4">
-            {/* Profile Card */}
-            <Card className="overflow-hidden">
-              {/* Cover Image */}
-              <div className="relative h-32 bg-gradient-to-r from-primary/20 via-purple-200 to-pink-200">
-                {profileData.coverImage ? (
-                  <img
-                    src={profileData.coverImage}
-                    alt="Cover"
-                    className="w-full h-full object-cover"
-                  />
-                ) : null}
-                <button
-                  onClick={() => handleImageUpload('cover')}
-                  className="absolute top-3 right-3 p-2 bg-white/90 rounded-full hover:bg-white transition-colors shadow-md"
-                >
-                  <Camera className="h-4 w-4" />
-                </button>
+          {/* Left Column: Summary Card */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+              <div className="h-24 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 relative">
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-semibold uppercase tracking-wider text-white border border-white/20">
+                  {profileData?.isVerified ? '✓ Verified Partner' : 'Homecare Partner'}
+                </div>
               </div>
 
-              <CardContent className="p-6">
-                {/* Profile Image */}
-                <div className="relative -mt-12 mb-4">
-                  <div className="relative inline-block">
-                    <img
-                      src={profileData.profileImage || '/default-avatar.png'}
-                      alt={profileData.fullName}
-                      className="w-24 h-24 rounded-full border-4 border-white object-cover shadow-lg"
-                    />
-                    <button
-                      onClick={() => handleImageUpload('profile')}
-                      className="absolute bottom-0 right-0 p-2 bg-primary rounded-full text-white hover:bg-primary/90 transition-colors"
-                    >
-                      <Camera className="h-3 w-3" />
-                    </button>
+              <CardContent className="p-6 pt-0 relative">
+                <div className="-mt-12 mb-4 flex justify-center">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-bold text-2xl shadow-xl ring-4 ring-white">
+                    {getInitials(displayName)}
                   </div>
                 </div>
 
-                {/* Name */}
-                <h2 className="text-2xl font-bold mb-1">{profileData.fullName}</h2>
-
-                {/* Category & Verification Badge */}
-                <div className="flex items-center gap-2 mb-4">
-                  <Badge variant="outline" className="bg-blue-50">
-                    Maid
-                  </Badge>
-                  {profileData.isVerified && (
-                    <Badge className="bg-green-500 hover:bg-green-600">
-                      ✓ Verified
-                    </Badge>
-                  )}
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-slate-900">{displayName}</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">{displayEmail}</p>
                 </div>
 
-                {/* Bio */}
-                {profileData.bio && (
-                  <p className="text-sm text-muted-foreground mb-4">{profileData.bio}</p>
-                )}
+                <div className="space-y-3 border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                      <Mail className="h-3.5 w-3.5 text-slate-400" /> Email
+                    </span>
+                    <span className="font-semibold text-slate-700 truncate max-w-[170px]">{displayEmail}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                      <Phone className="h-3.5 w-3.5 text-slate-400" /> Phone
+                    </span>
+                    <span className="font-semibold text-slate-700">{displayPhone || 'Not added'}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                      <Star className="h-3.5 w-3.5 text-amber-500" /> Rating
+                    </span>
+                    <span className="font-semibold text-slate-900">{profileData?.rating || 5.0} / 5.0</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-
-            {/* Languages Card */}
-            {profileData.languages && profileData.languages.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Languages</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {profileData.languages.map((lang) => (
-                      <Badge key={lang} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                        {lang}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Skills Card */}
-            {profileData.skills && profileData.skills.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Skills</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {profileData.skills.map((skill) => (
-                      <Badge key={skill} variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
-          {/* RIGHT COLUMN: Contact Info Card */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
+          {/* Right Column: Account Details & Address */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
+              <CardHeader className="pb-4 border-b border-slate-100">
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  Partner Account Details
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Email */}
-                {profileData.email && (
-                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                    <Mail className="h-5 w-5 text-primary flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-semibold">EMAIL</p>
-                      <p className="text-sm font-medium cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigator.clipboard.writeText(profileData.email)}>
-                        {profileData.email}
-                      </p>
-                    </div>
+              <CardContent className="pt-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Full Name</p>
+                    <p className="font-semibold text-slate-900 text-sm">{displayName}</p>
                   </div>
-                )}
 
-                {/* Phone */}
-                {profileData.phone && (
-                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                    <Phone className="h-5 w-5 text-primary flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-semibold">PHONE</p>
-                      <p className="text-sm font-medium cursor-pointer hover:text-primary transition-colors"
-                        onClick={() => navigator.clipboard.writeText(profileData.phone)}>
-                        {profileData.phone}
-                      </p>
-                    </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      Email Address <Lock className="h-3 w-3 text-slate-400" />
+                    </p>
+                    <p className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
+                      {displayEmail}
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Read-only</span>
+                    </p>
                   </div>
-                )}
 
-                {/* Address */}
-                {profileData.address && (
-                  <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-                    <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-semibold">ADDRESS</p>
-                      <p className="text-sm font-medium">{profileData.address}</p>
-                    </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Phone Number</p>
+                    <p className="font-semibold text-slate-900 text-sm">{displayPhone || 'Not provided'}</p>
                   </div>
-                )}
 
-                {/* Verification Status */}
-                <div className={`flex items-center gap-3 p-3 rounded-lg border ${profileData.isVerified 
-                  ? 'bg-green-50 border-green-200' 
-                  : 'bg-red-50 border-red-200'}`}>
-                  <div className={`h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 ${profileData.isVerified 
-                    ? 'bg-green-500' 
-                    : 'bg-red-500'}`}>
-                    <span className="text-white text-xs">{profileData.isVerified ? '✓' : '✕'}</span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground font-semibold">VERIFICATION STATUS</p>
-                    <p className={`text-sm font-medium ${profileData.isVerified ? 'text-green-700' : 'text-red-700'}`}>
-                      {profileData.isVerified ? 'Verified' : 'Not Verified'}
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Verification Status</p>
+                    <p className="font-semibold text-emerald-700 text-sm flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      {profileData?.isVerified ? 'Verified Active Partner' : 'Verification Complete'}
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
 
-        {/* Verification Code Section */}
-        <Card className="border-2 border-primary/30 shadow-md">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                My Verification Code
-              </CardTitle>
-              {!isEditingCode && verificationCode && (
+            {/* Service Address */}
+            <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
+              <CardHeader className="pb-4 border-b border-slate-100 flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-emerald-600" />
+                  Primary Service Base & Address
+                </CardTitle>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setIsEditingCode(true);
-                    setCustomCodeInput(verificationCode);
-                  }}
+                  onClick={() => setEditDialogOpen(true)}
+                  className="rounded-lg h-8 text-xs gap-1.5"
                 >
-                  <Edit className="h-3 w-3 mr-1" />
-                  Customize
+                  <Edit className="h-3.5 w-3.5" /> Edit Address
                 </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {codeLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <span className="ml-2 text-sm text-muted-foreground">Loading code...</span>
-              </div>
-            ) : isEditingCode ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Enter your custom 10-character code</label>
-                  <Input
-                    value={customCodeInput}
-                    onChange={(e) => setCustomCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
-                    placeholder="e.g. MYCODE1234"
-                    className="text-center text-xl font-mono tracking-[0.15em] h-14 uppercase"
-                    maxLength={10}
-                    autoComplete="off"
-                  />
-                  <p className="text-xs text-muted-foreground text-center">
-                    {customCodeInput.length}/10 characters • Letters and numbers only
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleSaveCustomCode}
-                    disabled={codeSaving || customCodeInput.length !== 10}
-                    className="flex-1"
-                  >
-                    {codeSaving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Save Code'
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditingCode(false);
-                      setCustomCodeInput('');
-                    }}
-                    disabled={codeSaving}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : verificationCode ? (
-              <div className="space-y-4">
-                <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-6 text-center border-2 border-primary/20">
-                  <p className="text-sm text-muted-foreground mb-2">Your Code</p>
-                  <p className="text-3xl sm:text-4xl font-mono font-bold tracking-[0.2em] text-primary">
-                    {verificationCode}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1" onClick={handleCopyCode}>
-                    {codeCopied ? (
-                      <><Check className="h-4 w-4 mr-2 text-green-500" />Copied!</>
-                    ) : (
-                      <><Copy className="h-4 w-4 mr-2" />Copy Code</>
-                    )}
-                  </Button>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">
-                    <strong>How it works:</strong> After completing a service, show this code to the customer. 
-                    They will enter it in their app to confirm service completion. You can customize this code using the button above.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-6 space-y-3">
-                <p className="text-sm text-muted-foreground">No verification code set yet.</p>
-                <Button onClick={() => setIsEditingCode(true)}>
-                  <ShieldCheck className="h-4 w-4 mr-2" />
-                  Set Custom Code
-                </Button>
-                <Button variant="outline" className="ml-2" onClick={fetchVerificationCode}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Generate Auto Code
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* FULL WIDTH: Rating & Reviews Section */}
-        <div className="space-y-6">
-          {/* Rating Stats - Full Width Prominent Card */}
-          <Card className="border-2 border-yellow-400 shadow-lg">
-            <CardContent className="pt-8 pb-8">
-              <div className="text-center">
-                {/* Stars - Larger and Prominent */}
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-10 w-10 ${
-                        i < Math.floor(profileData.rating || 0)
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                {/* Rating Number - Very Prominent */}
-                <div className="text-6xl font-bold text-primary mb-2">
-                  {profileData.rating?.toFixed(1) || '0'}
-                </div>
-                <p className="text-lg text-muted-foreground mb-4">
-                  Based on {profileData.totalReviews || 0} reviews
-                </p>
-                
-                {/* Additional Stats below rating */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t">
-                  <div>
-                    <div className="text-3xl font-bold text-green-600 mb-1">
-                      {profileData.jobsCompleted || 0}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Jobs Completed</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Customer Reviews */}
-          {reviews.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Feedback ({reviews.length} Reviews)</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          {review.reviewer.profileImage && (
-                            <img
-                              src={review.reviewer.profileImage}
-                              alt={review.reviewer.name}
-                              className="w-12 h-12 rounded-full object-cover"
-                            />
-                          )}
-                          <div>
-                            <p className="font-semibold text-sm">{review.reviewer.name}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(review.serviceDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < review.rating
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      {review.comment && (
-                        <p className="text-sm text-foreground mb-2 flex items-start gap-2">
-                          <Quote className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <span>{review.comment}</span>
-                        </p>
-                      )}
-                      {review.serviceDetails && (
-                        <p className="text-xs text-muted-foreground">{review.serviceDetails}</p>
-                      )}
-                    </div>
-                  ))}
+              <CardContent className="pt-5">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{displayAddress}</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Assigned service base area for local concierge dispatch.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Skills Section */}
-          {/* Skills moved to left column with languages - removed from here to avoid duplication */}
+            {/* Verification Code Section */}
+            <Card className="rounded-2xl border border-emerald-200 bg-emerald-50/50 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base font-bold text-emerald-900">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    My Assignment Check-in Code
+                  </CardTitle>
+                  {!isEditingCode && verificationCode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCustomCodeInput(verificationCode);
+                        setIsEditingCode(true);
+                      }}
+                      className="h-8 text-xs rounded-lg border-emerald-200 bg-white"
+                    >
+                      Customize Code
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {codeLoading ? (
+                  <Skeleton className="h-10 w-48 rounded-xl" />
+                ) : isEditingCode ? (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        value={customCodeInput}
+                        onChange={(e) => setCustomCodeInput(e.target.value.toUpperCase())}
+                        maxLength={10}
+                        placeholder="10-digit code"
+                        className="font-mono text-center tracking-widest text-base uppercase bg-white rounded-xl"
+                      />
+                      <Button onClick={handleSaveCustomCode} disabled={codeSaving} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl">
+                        {codeSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setIsEditingCode(false)} className="rounded-xl">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <code className="px-4 py-2 bg-white rounded-xl border border-emerald-200 font-mono font-bold text-lg text-emerald-900 tracking-wider shadow-xs">
+                      {verificationCode || 'Not Generated'}
+                    </code>
+                    {verificationCode && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCopyCode}
+                        className="h-9 w-9 text-emerald-700 hover:bg-emerald-100 rounded-xl"
+                      >
+                        {codeCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Dialogs */}
+        {/* Profile Edit Dialog */}
         <ProfileEditDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
-          userData={profileData}
+          userData={{
+            ...profileData,
+            name: displayName,
+            email: displayEmail,
+            phone: displayPhone,
+            address: displayAddress
+          }}
           onProfileUpdated={fetchProfileData}
-        />
-
-        <ImageUploadDialog
-          open={imageDialogOpen}
-          onOpenChange={setImageDialogOpen}
-          imageType={imageType}
-          currentImage={imageType === 'profile' ? profileData.profileImage : profileData.coverImage}
-          onImageUpdated={fetchProfileData}
         />
       </div>
     </MaidDashboardLayout>

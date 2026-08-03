@@ -3,9 +3,8 @@ import { useUser } from '@/contexts/UserContext';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Camera, Mail, Phone, MapPin, Calendar, User } from 'lucide-react';
+import { Edit, Mail, Phone, MapPin, Calendar, User, Lock, Building2 } from 'lucide-react';
 import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
-import { ImageUploadDialog } from '@/components/profile/ImageUploadDialog';
 import { apiRequest, API_ENDPOINTS, HttpMethod } from '@/services/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -14,11 +13,7 @@ interface CustomerProfileData {
   name: string;
   email: string;
   phone: string;
-  profileImage?: string;
-  coverImage?: string;
-  bio?: string;
   address?: string;
-  addressLine?: string;
   locality?: string;
   city?: string;
   state?: string;
@@ -28,7 +23,6 @@ interface CustomerProfileData {
   createdAt?: string;
   totalBookings?: number;
   remainingDays?: number;
-  favoriteServices?: string[];
 }
 
 export const CustomerProfilePage: React.FC = () => {
@@ -36,8 +30,6 @@ export const CustomerProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<CustomerProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [imageDialogOpen, setImageDialogOpen] = useState(false);
-  const [imageType, setImageType] = useState<'profile' | 'cover'>('profile');
 
   useEffect(() => {
     fetchProfileData();
@@ -50,7 +42,7 @@ export const CustomerProfilePage: React.FC = () => {
         method: HttpMethod.GET,
         requiresAuth: true
       });
-      if (response.success) {
+      if (response.success && response.data) {
         setProfileData(response.data);
       }
     } catch (error) {
@@ -60,193 +52,107 @@ export const CustomerProfilePage: React.FC = () => {
     }
   };
 
-  const handleImageUpload = (type: 'profile' | 'cover') => {
-    setImageType(type);
-    setImageDialogOpen(true);
+  const displayName = profileData?.name || user?.name || 'Customer';
+  const displayEmail = profileData?.email || user?.email || '';
+  const displayPhone = profileData?.phone || user?.phone || '';
+  const displayAddress = profileData?.address || user?.address || 'No service address set';
+  const getInitials = (name: string) => {
+    if (!name) return 'CU';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-6 max-w-5xl mx-auto">
+          <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <Skeleton className="h-9 w-48" />
-              <Skeleton className="h-4 w-64" />
+              <Skeleton className="h-8 w-48 rounded-lg" />
+              <Skeleton className="h-4 w-64 rounded-lg" />
             </div>
-            <Skeleton className="h-10 w-32 rounded-md" />
+            <Skeleton className="h-10 w-32 rounded-xl" />
           </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <Card className="overflow-hidden">
-                <Skeleton className="h-32 w-full" />
-                <CardContent className="p-6">
-                  <div className="relative -mt-12 mb-4">
-                    <Skeleton className="h-24 w-24 rounded-full" />
-                  </div>
-                  <div className="mb-4 space-y-2">
-                    <Skeleton className="h-7 w-40" />
-                    <Skeleton className="h-4 w-full" />
-                  </div>
-                  <div className="space-y-3 border-t pt-4">
-                    <Skeleton className="h-10 w-full rounded" />
-                    <Skeleton className="h-10 w-full rounded" />
-                    <Skeleton className="h-10 w-full rounded" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="lg:col-span-2 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardContent className="pt-6 text-center space-y-2">
-                    <Skeleton className="h-9 w-20 mx-auto" />
-                    <Skeleton className="h-4 w-28 mx-auto" />
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6 text-center space-y-2">
-                    <Skeleton className="h-9 w-24 mx-auto" />
-                    <Skeleton className="h-4 w-24 mx-auto" />
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-48" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-5 w-40" />
-                    </div>
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-5 w-56" />
-                    </div>
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-5 w-32" />
-                    </div>
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-5 w-36" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-64 lg:col-span-2 w-full rounded-2xl" />
           </div>
         </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!profileData) {
-    return (
-      <DashboardLayout>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">Failed to load profile data</p>
-            <Button onClick={fetchProfileData} className="w-full mt-4">
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
       </DashboardLayout>
     );
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-6 max-w-5xl mx-auto">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage your account information</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">My Profile</h1>
+            <p className="text-slate-500 text-sm mt-1">Manage your account details and default service address</p>
           </div>
           <Button
             onClick={() => setEditDialogOpen(true)}
-            className="gap-2 w-full sm:w-auto"
+            className="gap-2 rounded-xl h-11 px-5 shadow-sm"
           >
             <Edit className="h-4 w-4" />
-            Edit Profile
+            Edit Profile & Address
           </Button>
         </div>
 
-        {/* Main Profile Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Left Column - Profile Card */}
-          <div className="lg:col-span-1">
-            <Card className="overflow-hidden">
-              {/* Cover Image */}
-              <div className="relative h-28 sm:h-36 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500">
-                {profileData.coverImage ? (
-                  <img
-                    src={profileData.coverImage}
-                    alt="Cover"
-                    className="w-full h-full object-cover"
-                  />
-                ) : null}
-                <button
-                  onClick={() => handleImageUpload('cover')}
-                  className="absolute top-3 right-3 p-2 bg-white/90 rounded-full hover:bg-white transition-colors shadow-md"
-                >
-                  <Camera className="h-4 w-4" />
-                </button>
+        {/* Profile Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column – Personal Summary Card */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+              {/* Header Gradient */}
+              <div className="h-24 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 relative">
+                <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-semibold uppercase tracking-wider text-white border border-white/20">
+                  Customer
+                </div>
               </div>
 
-              <CardContent className="p-4 sm:p-6">
-                {/* Profile Image */}
-                <div className="relative -mt-14 sm:-mt-16 mb-4">
-                  <div className="relative inline-block">
-                    <img
-                      src={profileData.profileImage || '/default-avatar.png'}
-                      alt={profileData.name || 'User'}
-                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white object-cover shadow-xl ring-2 ring-primary/20"
-                    />
-                    <button
-                      onClick={() => handleImageUpload('profile')}
-                      className="absolute bottom-1 right-1 p-1.5 sm:p-2 bg-primary rounded-full text-white hover:bg-primary/90 transition-colors shadow-lg"
-                    >
-                      <Camera className="h-3 w-3" />
-                    </button>
+              <CardContent className="p-6 pt-0 relative">
+                {/* Initials Avatar */}
+                <div className="-mt-12 mb-4 flex justify-center">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex items-center justify-center font-bold text-2xl shadow-xl ring-4 ring-white">
+                    {getInitials(displayName)}
                   </div>
                 </div>
 
-                {/* Name */}
-                <div className="mb-4">
-                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">{profileData.name || 'User'}</h2>
-                  {profileData.bio && (
-                    <p className="text-xs sm:text-sm text-muted-foreground mt-2 line-clamp-3">{profileData.bio}</p>
-                  )}
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-slate-900">{displayName}</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">{displayEmail}</p>
                 </div>
 
-                {/* Contact Info */}
-                <div className="space-y-2 sm:space-y-3 text-sm border-t pt-4">
-                  {profileData.email && (
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded hover:bg-muted/80 cursor-pointer transition-colors"
-                      onClick={() => navigator.clipboard.writeText(profileData.email)}>
-                      <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="truncate text-xs sm:text-sm">{profileData.email}</span>
-                    </div>
-                  )}
-                  {profileData.phone && (
-                    <div className="flex items-center gap-2 p-2 bg-muted rounded hover:bg-muted/80 cursor-pointer transition-colors"
-                      onClick={() => navigator.clipboard.writeText(profileData.phone)}>
-                      <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="truncate text-xs sm:text-sm">{profileData.phone}</span>
-                    </div>
-                  )}
-                  {profileData.address && (
-                    <div className="flex items-start gap-2 p-2 bg-muted rounded">
-                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <span className="text-xs">{profileData.address}</span>
+                {/* Account Details Quick Summary */}
+                <div className="space-y-3 border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                      <Mail className="h-3.5 w-3.5 text-slate-400" /> Email
+                    </span>
+                    <span className="font-semibold text-slate-700 truncate max-w-[170px]">{displayEmail}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                      <Phone className="h-3.5 w-3.5 text-slate-400" /> Phone
+                    </span>
+                    <span className="font-semibold text-slate-700">{displayPhone || 'Not added'}</span>
+                  </div>
+
+                  {(profileData?.joinDate || profileData?.createdAt) && (
+                    <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      <span className="text-slate-500 flex items-center gap-1.5 font-medium">
+                        <Calendar className="h-3.5 w-3.5 text-slate-400" /> Joined
+                      </span>
+                      <span className="font-semibold text-slate-700">
+                        {new Date(profileData.joinDate || profileData.createdAt!).toLocaleDateString('en-IN', {
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -254,111 +160,89 @@ export const CustomerProfilePage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Right Column - Stats */}
+          {/* Right Column – Account & Address Cards */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <div className="text-3xl font-bold text-primary mb-1">
-                    {profileData.totalBookings || 0}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Total Bookings</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <div className="text-3xl font-bold text-blue-600 mb-1">
-                    {profileData.remainingDays || 0} days
-                  </div>
-                  <p className="text-sm text-muted-foreground">Remaining Days</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Account Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" />
-                  Account Information
+            {/* Account Info Details */}
+            <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
+              <CardHeader className="pb-4 border-b border-slate-100">
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <User className="h-4 w-4 text-indigo-600" />
+                  Personal Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="pt-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Full Name</p>
-                    <p className="font-semibold text-foreground">{profileData.name || 'Not provided'}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Full Name</p>
+                    <p className="font-semibold text-slate-900 text-sm">{displayName}</p>
                   </div>
+
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-semibold text-foreground">{profileData.email || 'Not provided'}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      Email Address <Lock className="h-3 w-3 text-slate-400" />
+                    </p>
+                    <p className="font-semibold text-slate-700 text-sm flex items-center gap-1.5">
+                      {displayEmail}
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Fixed</span>
+                    </p>
                   </div>
+
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-semibold text-foreground">{profileData.phone || 'Not provided'}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Phone Number</p>
+                    <p className="font-semibold text-slate-900 text-sm">{displayPhone || 'Not provided'}</p>
                   </div>
-                  {(profileData.joinDate || profileData.createdAt) && (
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Member Since</p>
-                      <p className="font-semibold flex items-center gap-2 text-foreground">
-                        <Calendar className="h-4 w-4 text-primary" />
-                        {new Date(profileData.joinDate || profileData.createdAt!).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                  )}
-                  {(profileData.addressLine || profileData.address || profileData.city) && (
-                    <div className="col-span-full space-y-1">
-                      <p className="text-sm text-muted-foreground">Address</p>
-                      <p className="font-semibold text-foreground">
-                        {[profileData.addressLine, profileData.locality, profileData.city, profileData.state, profileData.pincode]
-                          .filter(Boolean)
-                          .join(', ') || profileData.address || 'Not provided'}
-                      </p>
-                    </div>
-                  )}
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Account Role</p>
+                    <p className="font-semibold text-slate-900 text-sm">Customer / Resident</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Favorite Services */}
-            {profileData.favoriteServices && profileData.favoriteServices.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Favorite Services</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {profileData.favoriteServices.map((service) => (
-                      <div key={service} className="p-3 bg-muted rounded-lg text-center text-sm font-medium">
-                        {service}
-                      </div>
-                    ))}
+            {/* Structured Service Address Card (Matches Payments & Signup) */}
+            <Card className="rounded-2xl border border-slate-200 shadow-sm bg-white">
+              <CardHeader className="pb-4 border-b border-slate-100 flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-indigo-600" />
+                  Service & Billing Address
+                </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditDialogOpen(true)}
+                  className="rounded-lg h-8 text-xs gap-1.5"
+                >
+                  <Edit className="h-3.5 w-3.5" /> Edit Address
+                </Button>
+              </CardHeader>
+              <CardContent className="pt-5 space-y-4">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{displayAddress}</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      This address is automatically pre-selected when booking concierge cleaning services.
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        {/* Dialogs */}
+        {/* Profile Edit Dialog */}
         <ProfileEditDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
-          userData={profileData}
+          userData={{
+            ...profileData,
+            name: displayName,
+            email: displayEmail,
+            phone: displayPhone,
+            address: displayAddress
+          }}
           onProfileUpdated={fetchProfileData}
-        />
-
-        <ImageUploadDialog
-          open={imageDialogOpen}
-          onOpenChange={setImageDialogOpen}
-          imageType={imageType}
-          currentImage={imageType === 'profile' ? profileData.profileImage : profileData.coverImage}
-          onImageUpdated={fetchProfileData}
         />
       </div>
     </DashboardLayout>
