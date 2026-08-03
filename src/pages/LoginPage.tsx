@@ -9,6 +9,7 @@ import { useUser } from '@/contexts/UserContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAuthTokenType } from '@/services/api';
+import { validateEmail } from '@/utils/validation';
 import { motion } from 'framer-motion';
 
 // Predefined addresses for displaying available communities
@@ -198,6 +199,26 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      toast({
+        title: 'Invalid Email',
+        description: emailErr,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!password) {
+      toast({
+        title: 'Password Required',
+        description: 'Please enter your password.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsEmailLoading(true);
 
     try {
@@ -259,7 +280,7 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
-              <form onSubmit={handleEmailLogin} className="space-y-4">
+              <form noValidate onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
                   <div className="relative">

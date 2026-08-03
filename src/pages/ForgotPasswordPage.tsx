@@ -7,6 +7,7 @@ import { API_ENDPOINTS, HttpMethod, apiRequest } from '@/services/api';
 import { Loader2, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { validateEmail } from '@/utils/validation';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,17 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      toast({
+        title: 'Invalid email',
+        description: emailErr,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -58,7 +70,7 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form noValidate onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
                 <div className="relative">

@@ -7,6 +7,7 @@ import { API_ENDPOINTS, HttpMethod, apiRequest } from '@/services/api';
 import { Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { validatePassword } from '@/utils/validation';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -33,20 +34,11 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (password.length < 8 || password.length > 128) {
+    const passwordError = validatePassword(password);
+    if (passwordError) {
       toast({
-        title: 'Invalid password',
-        description: 'Password must be between 8 and 128 characters long.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&].*$/;
-    if (!strongPasswordRegex.test(password)) {
-      toast({
-        title: 'Weak password',
-        description: 'Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.',
+        title: 'Invalid Password',
+        description: passwordError,
         variant: 'destructive'
       });
       return;
@@ -120,7 +112,7 @@ export default function ResetPasswordPage() {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form noValidate onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-medium text-gray-700">New password</Label>
                   <div className="relative">
