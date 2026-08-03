@@ -7,13 +7,13 @@ import { ArrowLeft, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-type VerifyState = 'verifying' | 'success' | 'error';
+type VerifyState = 'idle' | 'verifying' | 'success' | 'error';
 
 export default function ResetPasswordOtpPage() {
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
   const [otp, setOtp] = useState('');
-  const [state, setState] = useState<VerifyState>('verifying');
+  const [state, setState] = useState<VerifyState>('idle');
   const [message, setMessage] = useState('Enter the 6-digit code sent to your email');
   const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
   const { toast } = useToast();
