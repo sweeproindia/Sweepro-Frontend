@@ -37,8 +37,84 @@ export function getNotificationIcon(type: string) {
 
 export function getNotificationHref(notification: Notification): string | null {
   const data = notification.data as any;
-  if (data?.bookingId) return `/bookings/${data.bookingId}`;
-  if (data?.paymentId) return `/payments/${data.paymentId}`;
-  if (data?.subscriptionId) return `/subscription`;
-  return null;
+  const type = notification.type?.toUpperCase() || '';
+
+  // Check if user is admin
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERVISOR';
+
+  // Booking-related notifications
+  if (type.includes('BOOKING') || type.includes('SERVICE')) {
+    if (isAdmin) return '/admin#bookings';
+    if (data?.bookingId) return `/bookings`;
+    return '/bookings';
+  }
+
+  // Payment-related notifications
+  if (type.includes('PAYMENT')) {
+    if (isAdmin) return '/admin#payments';
+    if (data?.paymentId) return `/payments`;
+    return '/payments';
+  }
+
+  // Subscription-related notifications
+  if (type.includes('SUBSCRIPTION')) {
+    if (isAdmin) return '/admin#subscriptions';
+    if (data?.subscriptionId) return `/subscription`;
+    return '/subscription';
+  }
+
+  // Buffer-related notifications
+  if (type.includes('BUFFER')) {
+    if (isAdmin) return '/admin#buffer-management';
+    return '/buffer';
+  }
+
+  // Assignment-related notifications (for maids)
+  if (type.includes('ASSIGNMENT')) {
+    if (data?.assignmentRequestId) return '/maid-bookings';
+    return '/maid-bookings';
+  }
+
+  // User registration (for admins)
+  if (type.includes('USER_REGISTERED') && data?.userId) {
+    return '/admin#users';
+  }
+
+  // Issue-related notifications
+  if (type.includes('ISSUE')) {
+    if (isAdmin) return '/admin#bookings';
+    if (data?.issueId) return '/support';
+    return '/support';
+  }
+
+  // Feedback-related notifications
+  if (type.includes('FEEDBACK')) {
+    return '/admin/feedback';
+  }
+
+  // Maid verification notifications
+  if (type.includes('DOCUMENT') || type.includes('VERIFICATION')) {
+    return '/admin/maid-verification';
+  }
+
+  // Maid status changes
+  if (type.includes('MAID_STATUS') || type.includes('ATTENDANCE') || type.includes('PERFORMANCE')) {
+    if (isAdmin) return '/admin#maids';
+    return '/maid-profile';
+  }
+
+  // Profile-related notifications
+  if (type.includes('PROFILE')) {
+    return '/profile';
+  }
+
+  // System notifications (no specific page)
+  if (type.includes('SYSTEM') || type.includes('EMERGENCY') || type.includes('MAINTENANCE')) {
+    return isAdmin ? '/admin' : '/dashboard';
+  }
+
+  // Default to dashboard for unknown types
+  return isAdmin ? '/admin' : '/dashboard';
 }

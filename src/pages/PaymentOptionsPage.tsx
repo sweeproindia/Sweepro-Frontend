@@ -114,7 +114,6 @@ interface ServiceOptions {
   apartmentId: string;
   apartmentNumber: string;
   floorNumber: string;
-  additionalInfo: string;
   propertyType: PropertyTypeId;
   bhkType: BhkId | null;
   squareFeet: number;
@@ -204,7 +203,6 @@ const PaymentOptionsPage = () => {
     apartmentId: '',
     apartmentNumber: '',
     floorNumber: '',
-    additionalInfo: '',
     propertyType: 'apartment',
     bhkType: null,
     squareFeet: 0,
@@ -213,14 +211,13 @@ const PaymentOptionsPage = () => {
     finalTotalPrice: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [addressMode, setAddressMode] = useState<'confirm' | 'edit'>('confirm');
+  const [addressMode, setAddressMode] = useState<'confirm' | 'edit'>('edit');
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [isLoadingApartments, setIsLoadingApartments] = useState(false);
   const [selectedApartmentId, setSelectedApartmentId] = useState<string>('');
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [floorNumber, setFloorNumber] = useState('');
-  const [additionalInfo, setAdditionalInfo] = useState('');
   const [timeSlotCounts, setTimeSlotCounts] = useState<TimeSlotCount[]>([]);
   const [isLoadingSlotCounts, setIsLoadingSlotCounts] = useState(false);
 
@@ -308,7 +305,7 @@ const PaymentOptionsPage = () => {
           ? rawPlans
           : rawPlans?.plans || (response as any)?.plans || [];
 
-        if (isMounted && backendPlans.length > 0) {
+        if (isMounted) {
           const normalizeName = (val: string) => (val || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
           
           let matchedPlan = backendPlans.find((p: any) => p.id === targetPlanId || normalizeName(p.name) === normalizeName(targetPlanId));
@@ -320,11 +317,18 @@ const PaymentOptionsPage = () => {
               return false;
             });
           }
-          if (!matchedPlan) {
+          if (!matchedPlan && backendPlans.length > 0) {
             matchedPlan = backendPlans[0];
           }
 
           const baseUI = savedPlan || storedPlan || {
+            id: 'dummy-plan',
+            name: 'Sweepro Touch',
+            description: 'Premium cleaning service for your home.',
+            price: 2000,
+            finalPrice: 1800,
+            sessionsPerWeek: 6,
+            sessionsPerMonth: 24,
             duration: 'month',
             features: [
               'Utensil cleaning & floor mopping',
@@ -346,16 +350,24 @@ const PaymentOptionsPage = () => {
             }
           };
 
+          // Generate dummy property pricing if not provided by backend
+          // Pricing is stored as MONTHLY rates. Frontend calculates totals with duration multipliers and discounts.
+          const fallbackPropertyPricing = [
+            { id: '1', planId: 'dummy', propertyType: 'apartment', bhkType: '2bhk', squareFeet: 1000, sqftLabel: 'Up to 1000 sq ft', pricing: { '1month': 2000, '3month': 2000, '6month': 2000 }, isActive: true },
+            { id: '2', planId: 'dummy', propertyType: 'apartment', bhkType: '3bhk', squareFeet: 1500, sqftLabel: 'Up to 1500 sq ft', pricing: { '1month': 3000, '3month': 3000, '6month': 3000 }, isActive: true },
+            { id: '3', planId: 'dummy', propertyType: 'apartment', bhkType: '4bhk', squareFeet: 2000, sqftLabel: 'Up to 2000 sq ft', pricing: { '1month': 4000, '3month': 4000, '6month': 4000 }, isActive: true }
+          ];
+
           const mergedPlan: SubscriptionPlan = {
             ...baseUI,
-            id: matchedPlan.id,
-            name: matchedPlan.name || baseUI.name || 'Sweepro Plan',
-            description: matchedPlan.description || baseUI.description || '',
-            finalPrice: matchedPlan.finalPrice || matchedPlan.basePrice || 0,
-            price: matchedPlan.finalPrice || matchedPlan.basePrice || 0,
-            sessionsPerWeek: matchedPlan.sessionsPerWeek || baseUI.sessionsPerWeek || 6,
-            sessionsPerMonth: matchedPlan.sessionsPerMonth || baseUI.sessionsPerMonth || 24,
-            propertyPricing: matchedPlan.propertyPricing || []
+            id: matchedPlan?.id || baseUI.id,
+            name: matchedPlan?.name || baseUI.name || 'Sweepro Plan',
+            description: matchedPlan?.description || baseUI.description || '',
+            finalPrice: matchedPlan?.finalPrice || matchedPlan?.basePrice || baseUI.finalPrice,
+            price: matchedPlan?.finalPrice || matchedPlan?.basePrice || baseUI.price,
+            sessionsPerWeek: matchedPlan?.sessionsPerWeek || baseUI.sessionsPerWeek || 6,
+            sessionsPerMonth: matchedPlan?.sessionsPerMonth || baseUI.sessionsPerMonth || 24,
+            propertyPricing: (matchedPlan?.propertyPricing?.length > 0) ? matchedPlan.propertyPricing : fallbackPropertyPricing
           };
 
           setSelectedPlan(mergedPlan);
@@ -433,15 +445,23 @@ const PaymentOptionsPage = () => {
   }, [options.squareFeet, selectedBhkConfig]);
 
   const calculatePlanPrice = useCallback((duration: PlanDuration): PlanPriceBreakdown => {
-    const backendAmount = Number(selectedSqftOption?.pricing?.[duration.id]) || 0;
+    // Read the authoritative backend total price for the specific billing duration
+    const finalTotal = Number(selectedSqftOption?.pricing?.[duration.id]) || 0;
+    const monthlyAfterDiscount = duration.multiplier > 0 ? finalTotal / duration.multiplier : finalTotal;
+    
+    const monthlyBaseCost = Number(selectedSqftOption?.pricing?.['1month']) || 0;
+    const totalBeforeDiscount = monthlyBaseCost * duration.multiplier;
+    const discountAmount = Math.max(0, totalBeforeDiscount - finalTotal);
+    const discountPercent = totalBeforeDiscount > 0 ? Math.round((discountAmount / totalBeforeDiscount) * 100) : 0;
+    
     return {
-      monthlyBaseCost: backendAmount,
-      propertyBaseCost: backendAmount,
-      totalBeforeDiscount: backendAmount,
-      discountPercent: 0,
-      discountAmount: 0,
-      monthlyAfterDiscount: backendAmount,
-      finalTotal: backendAmount
+      monthlyBaseCost,
+      propertyBaseCost: monthlyBaseCost,
+      totalBeforeDiscount,
+      discountPercent,
+      discountAmount,
+      monthlyAfterDiscount: Math.round(monthlyAfterDiscount * 100) / 100,
+      finalTotal
     };
   }, [selectedSqftOption]);
 
@@ -503,51 +523,51 @@ const PaymentOptionsPage = () => {
   }, [calculatePlanPrice, options.selectedPlanDuration]);
 
   useEffect(() => {
-    const addr = (user as any)?.address || '';
-    const parsed = addr ? parseUnitDetails(addr) : { apartmentNumber: '', floorNumber: '' };
-    setApartmentNumber(parsed.apartmentNumber);
-    setFloorNumber(parsed.floorNumber);
-    
-    // Load additional info from user data
-    const userAdditionalInfo = (user as any)?.additional_info || '';
-    setAdditionalInfo(userAdditionalInfo);
+    if (!apartments.length) return;
 
-    if (!options.address && addr) {
+    // Check saved options first, then user context
+    const storedAddress = options.address || (user as any)?.address || '';
+    const storedAptId = options.apartmentId || (user as any)?.apartment_id || (user as any)?.apartmentId || '';
+    const storedAptNum = options.apartmentNumber || '';
+    const storedFloorNum = options.floorNumber || '';
+
+    // Parse apartment/flat number and floor number if not explicitly in options
+    const parsed = parseUnitDetails(storedAddress);
+    const finalAptNum = storedAptNum || parsed.apartmentNumber;
+    const finalFloorNum = storedFloorNum || parsed.floorNumber;
+
+    // Find apartment complex ID from storedAptId or by matching name in address string
+    let finalAptId = storedAptId;
+    if (!finalAptId && storedAddress) {
+      const foundApt = apartments.find((a) => storedAddress.toLowerCase().includes(a.name.toLowerCase()));
+      if (foundApt) {
+        finalAptId = foundApt.id;
+      }
+    }
+
+    // Set form input states
+    if (finalAptId) setSelectedApartmentId(finalAptId);
+    if (finalAptNum) setApartmentNumber(finalAptNum);
+    if (finalFloorNum) setFloorNumber(finalFloorNum);
+
+    // Address is complete if complex ID, flat number, and floor number are present
+    const isComplete = Boolean(finalAptId && finalAptNum && finalFloorNum && storedAddress);
+
+    if (isComplete) {
+      const aptObj = apartments.find((a) => a.id === finalAptId) || null;
+      const fullAddr = buildAddressFromApartment(aptObj, finalAptNum, finalFloorNum) || storedAddress;
       setOptions((prev) => ({
         ...prev,
-        address: addr,
-        additionalInfo: userAdditionalInfo
+        apartmentId: finalAptId,
+        apartmentNumber: finalAptNum,
+        floorNumber: finalFloorNum,
+        address: fullAddr
       }));
-    }
-
-    if (!addr && !options.address) {
+      setAddressMode('confirm');
+    } else {
       setAddressMode('edit');
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (!apartments.length) return;
-    if (selectedApartmentId) return;
-
-    const signupApartmentId = (user as any)?.apartment_id;
-    if (signupApartmentId && apartments.some((a) => a.id === signupApartmentId)) {
-      setSelectedApartmentId(signupApartmentId);
-      return;
-    }
-
-    const raw = options.address || (user as any)?.address || '';
-    if (!raw) return;
-
-    const match = apartments.find(
-      (apt) =>
-        raw.includes(`${apt.name} - ${apt.area}`) ||
-        (raw.includes(apt.name) && raw.includes(apt.area))
-    );
-
-    if (match) {
-      setSelectedApartmentId(match.id);
-    }
-  }, [apartments, options.address, selectedApartmentId, user]);
+  }, [user, apartments]);
 
   const handleOptionChange = (field: keyof ServiceOptions, value: string) => {
     setOptions((prev) => {
@@ -566,28 +586,26 @@ const PaymentOptionsPage = () => {
   };
 
   const handleCancelAddressEdit = () => {
-    const addr = (user as any)?.address || '';
-    const parsed = addr ? parseUnitDetails(addr) : { apartmentNumber: '', floorNumber: '' };
-    setApartmentNumber(parsed.apartmentNumber);
-    setFloorNumber(parsed.floorNumber);
-    
-    // Reset additional info from user data
-    const userAdditionalInfo = (user as any)?.additional_info || '';
-    setAdditionalInfo(userAdditionalInfo);
-
-    const signupApartmentId = (user as any)?.apartment_id;
-    if (signupApartmentId && apartments.some((a) => a.id === signupApartmentId)) {
-      setSelectedApartmentId(signupApartmentId);
+    // If we already have a confirmed complete address, revert to confirmed mode
+    if (options.address && options.apartmentId && options.apartmentNumber && options.floorNumber) {
+      setSelectedApartmentId(options.apartmentId);
+      setApartmentNumber(options.apartmentNumber);
+      setFloorNumber(options.floorNumber);
+      setAddressMode('confirm');
     } else {
+      // If no valid confirmed address exists, clear and remain in edit mode
+      setApartmentNumber('');
+      setFloorNumber('');
       setSelectedApartmentId('');
+      setOptions((prev) => ({
+        ...prev,
+        address: '',
+        apartmentNumber: '',
+        floorNumber: '',
+        apartmentId: ''
+      }));
+      setAddressMode('edit');
     }
-
-    setOptions((prev) => ({
-      ...prev,
-      address: addr,
-      additionalInfo: userAdditionalInfo
-    }));
-    setAddressMode('confirm');
   };
 
   const handleSaveAddress = async () => {
@@ -631,18 +649,16 @@ const PaymentOptionsPage = () => {
         requiresAuth: true,
         body: {
           address: nextAddress,
-          apartment_id: selectedApartmentId,
-          additional_info: additionalInfo
+          apartment_id: selectedApartmentId
         }
       });
 
-      updateUser({ address: nextAddress, apartment_id: selectedApartmentId, additional_info: additionalInfo } as any);
+      updateUser({ address: nextAddress, apartment_id: selectedApartmentId } as any);
       setOptions((prev) => ({
         ...prev,
         apartmentId: selectedApartmentId,
         apartmentNumber,
         floorNumber,
-        additionalInfo,
         address: nextAddress
       }));
       setAddressMode('confirm');
@@ -753,10 +769,21 @@ const PaymentOptionsPage = () => {
       return;
     }
 
-    if (!options.address) {
+    if (!selectedApartmentId || !apartmentNumber.trim() || !floorNumber.trim()) {
       toast({
-        title: 'Complete address details',
-        description: 'Please confirm your saved service address to continue.',
+        title: 'Complete address details required',
+        description: 'Please fill in all address fields (apartment complex, apartment number, floor number) and save to continue.',
+        variant: 'destructive'
+      });
+      addressRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    // Also check if address has been saved
+    if (!options.address || addressMode !== 'confirm') {
+      toast({
+        title: 'Please save your address',
+        description: 'Click "Save Address" to save your details before proceeding.',
         variant: 'destructive'
       });
       addressRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1091,9 +1118,11 @@ const PaymentOptionsPage = () => {
                         </div>
                         <div className="space-y-1">
                           <p className="text-2xl font-semibold" style={{ color: BRAND.indigo }}>₹{monthly.toLocaleString()}<span className="text-sm font-medium" style={{ color: `${BRAND.indigo}99` }}>/month</span></p>
-                          {/* <p className="text-xs font-medium text-slate-500">
-                            Total: ₹{pricing.finalTotal.toLocaleString()}
-                          </p> */}
+                          {duration.multiplier > 1 && (
+                            <p className="text-xs font-medium text-slate-500">
+                              Total: ₹{pricing.finalTotal.toLocaleString()}
+                            </p>
+                          )}
                         </div>
                         {pricing.discountPercent > 0 && (
                           <p className="text-xs font-medium" style={{ color: BRAND.indigo }}>
@@ -1289,12 +1318,6 @@ const PaymentOptionsPage = () => {
                       <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Saved address</p>
                       <p className="mt-2 text-sm font-semibold text-slate-900">{options.address || 'No address found'}</p>
                     </div>
-                    {options.additionalInfo && (
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Additional Information</p>
-                        <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{options.additionalInfo}</p>
-                      </div>
-                    )}
                     <div className="flex flex-wrap items-center gap-3">
                       <Button
                         variant="outline"
@@ -1383,22 +1406,6 @@ const PaymentOptionsPage = () => {
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">Additional Information</label>
-                      <Textarea
-                        value={additionalInfo}
-                        onChange={(event) => {
-                          const value = event.target.value;
-                          setAdditionalInfo(value);
-                          setOptions((prev) => ({ ...prev, additionalInfo: value }));
-                        }}
-                        placeholder="Any special instructions, access codes, or important details for our homecare partner..."
-                        className="rounded-xl border border-slate-200 bg-white text-slate-800 min-h-[100px] resize-y"
-                      />
-                      <p className="text-xs text-slate-500">
-                        This information will be shared with the assigned homecare partner and admin for better service delivery
-                      </p>
-                    </div>
                     <div className="flex flex-wrap gap-3">
                       <Button
                         variant="outline"
@@ -1434,7 +1441,8 @@ const PaymentOptionsPage = () => {
               <Button
                 size="lg"
                 onClick={handleNext}
-                className="group flex items-center gap-3 rounded-full border-none px-8 py-6 text-base font-semibold text-white transition hover:opacity-95"
+                disabled={!options.address || !options.apartmentNumber || !options.floorNumber || !options.apartmentId}
+                className="group flex items-center gap-3 rounded-full border-none px-8 py-6 text-base font-semibold text-white transition hover:opacity-95 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ background: INDIGO_STYLES.gradient, boxShadow: `0 25px 65px -30px ${BRAND.indigo}8c` }}
               >
                 Proceed to review

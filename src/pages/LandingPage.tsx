@@ -5,9 +5,11 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { PricingSection } from '@/components/landing/PricingSection';
 import SweeproAboutUs from '@/components/landing/SweeproAboutUs';
+import { B2BSection } from '@/components/landing/B2BSection';
 // TESTIMONIALS — commented out for launch, restore when ready:
 // import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import { Navbar } from '@/components/Navbar';
+import SEO from '@/components/SEO';
 import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '@/contexts/UserContext';
@@ -89,6 +91,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Sweepro | Professional Cleaning Services & Booking Platform - India"
+        description="Book professional cleaning services in India with Sweepro. House cleaning, office cleaning, facility management, and more. Easy booking, reliable staff, secure payments."
+        keywords="Sweepro, professional cleaning services India, house cleaning, office cleaning, facility management, maid service, cleaning booking platform, home cleaning services, commercial cleaning, cleaning subscription"
+      />
       <Navbar
         isAuthenticated={contextIsAuthenticated}
         user={contextUser}
@@ -111,6 +118,7 @@ export default function LandingPage() {
 
       {/* <TestimonialsSection /> */}
       <FAQSection />
+      <B2BSection />
       <Footer />
 
     </div>

@@ -493,7 +493,7 @@ export default function CompleteProfilePage() {
                   <div className="text-xs text-gray-500 mb-4">
                     Please scroll to the bottom to enable acceptance.
                   </div>
-                  <TermsContent />
+                  <TermsContent userType={formData.role === 'MAID' ? 'worker' : 'customer'} />
                 </div>
 
                 <div className="flex items-start space-x-2">

@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Bell, Check, Wifi, WifiOff } from 'lucide-react';
-import { useNotifications } from '@/contexts/NotificationContext';
+import { Bell, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationsListQuery, useUnreadCountQuery, useDeleteNotificationMutation, useMarkAllAsReadMutation, useMarkAsReadMutation } from '@/features/notifications/hooks';
 import { NotificationEmptyState } from '@/features/notifications/components/NotificationEmptyState';
@@ -12,11 +11,12 @@ import { NotificationItem } from '@/features/notifications/components/Notificati
 import { NotificationSkeletonList } from '@/features/notifications/components/NotificationSkeletonList';
 import type { Notification } from '@/features/notifications/types';
 import { getNotificationHref } from '@/features/notifications/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const { isConnected } = useNotifications();
+  const { toast } = useToast();
 
   const { data: unreadCount = 0 } = useUnreadCountQuery();
   const listQuery = useNotificationsListQuery({ limit: 10 });
@@ -26,15 +26,54 @@ export const NotificationBell: React.FC = () => {
   const markReadMutation = useMarkAsReadMutation();
   const deleteMutation = useDeleteNotificationMutation();
 
-  const handleOpen = async (notification: Notification) => {
-    if (!notification.read) {
-      await markReadMutation.mutateAsync(notification.id);
-    }
+  const handleMarkAllRead = () => {
+    markAllMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast({
+          title: 'All notifications marked as read',
+          description: 'You have no unread notifications.',
+        });
+      },
+      onError: () => {
+        toast({
+          title: 'Failed to mark as read',
+          description: 'Please try again later.',
+          variant: 'destructive',
+        });
+      }
+    });
+  };
 
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast({
+          title: 'Notification deleted',
+          description: 'The notification has been removed.',
+        });
+      },
+      onError: (error: any) => {
+        console.error('Delete notification error:', error);
+        toast({
+          title: 'Failed to delete',
+          description: error?.message || 'Please try again later.',
+          variant: 'destructive',
+        });
+      }
+    });
+  };
+
+  const handleOpen = (notification: Notification) => {
+    // Navigate immediately
     const href = getNotificationHref(notification);
     if (href) {
       navigate(href);
       setIsOpen(false);
+    }
+
+    // Mark as read in background (don't wait for it)
+    if (!notification.read) {
+      markReadMutation.mutate(notification.id);
     }
   };
 
@@ -63,21 +102,12 @@ export const NotificationBell: React.FC = () => {
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">Notifications</CardTitle>
-                <div title={isConnected ? "Connected" : "Disconnected"}>
-                  {isConnected ? (
-                    <Wifi className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <WifiOff className="h-4 w-4 text-red-500" />
-                  )}
-                </div>
-              </div>
+              <CardTitle className="text-lg">Notifications</CardTitle>
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => markAllMutation.mutate()}
+                  onClick={handleMarkAllRead}
                   className="text-xs"
                   disabled={markAllMutation.isPending}
                 >
@@ -104,7 +134,7 @@ export const NotificationBell: React.FC = () => {
                     <NotificationItem
                       notification={notification}
                       onOpen={handleOpen}
-                      onDelete={(id) => deleteMutation.mutate(id)}
+                      onDelete={handleDelete}
                       showUnreadDot
                     />
                   </div>

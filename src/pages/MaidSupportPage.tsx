@@ -133,17 +133,59 @@ export default function MaidSupportPage() {
     setNewMessage('');
     setIsTyping(true);
 
-    // Simulate support response
+    // Simulate AI support response
     setTimeout(() => {
       const supportMessage: Message = {
         id: messages.length + 2,
-        text: "Thank you for your message. Our support team will get back to you shortly. Is there anything else I can help you with?",
+        text: getBotResponse(newMessage),
         sender: 'support',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, supportMessage]);
       setIsTyping(false);
-    }, 2000);
+    }, 1500);
+  };
+
+  const getBotResponse = (userInput: string): string => {
+    const input = userInput.toLowerCase();
+
+    // Critical issues - escalate immediately
+    if (input.includes('emergency') || input.includes('urgent') || input.includes('safety') || input.includes('danger') || input.includes('police')) {
+      return '⚠️ This sounds urgent! Please contact our support team immediately:\n\n📱 WhatsApp: +91 81433 53030\n📧 Email: sweeproindia@gmail.com\n\nFor safety emergencies, call local authorities first, then contact us.';
+    }
+
+    // Payment related
+    if (input.includes('payment') || input.includes('paid') || input.includes('salary') || input.includes('money')) {
+      return 'Payments are processed within 24-48 hours after service completion. If you haven\'t received payment after 48 hours, please contact support via WhatsApp: +91 81433 53030 with your booking ID.';
+    }
+
+    // Booking related
+    if (input.includes('booking') || input.includes('schedule') || input.includes('appointment') || input.includes('client')) {
+      return 'You can view your upcoming bookings in the dashboard. For booking changes, cancellations, or client issues, contact support via WhatsApp with your booking details.';
+    }
+
+    // Availability
+    if (input.includes('availability') || input.includes('available') || input.includes('time slot') || input.includes('working hours')) {
+      return 'You can update your availability in your profile settings. Go to Profile > Set Availability to select your working hours and days. For issues updating availability, contact support.';
+    }
+
+    // Cancellation
+    if (input.includes('cancel') || input.includes('cancellation')) {
+      return 'If a client wants to cancel, contact support immediately. Cancellation policies vary based on timing. We\'ll help you understand compensation and next steps. WhatsApp: +91 81433 53030';
+    }
+
+    // Supplies
+    if (input.includes('supplies') || input.includes('equipment') || input.includes('bring') || input.includes('products')) {
+      return 'We provide basic supplies, but you can bring your preferred products. Check the booking details for specific requirements. For supply issues, contact support.';
+    }
+
+    // Technical issues
+    if (input.includes('app') || input.includes('technical') || input.includes('error') || input.includes('login') || input.includes('not working')) {
+      return 'For technical issues with the app, try clearing your cache or reinstalling the app. If the issue persists, contact support with screenshots of the error. WhatsApp: +91 81433 53030';
+    }
+
+    // General help
+    return 'I\'m here to help! You can ask me about:\n• Payments and salary\n• Bookings and schedules\n• Availability settings\n• Cancellations\n• Technical issues\n\nFor urgent matters, contact our team:\n📱 WhatsApp: +91 81433 53030\n📧 Email: sweeproindia@gmail.com';
   };
 
   const getStatusColor = (status: string) => {
@@ -189,27 +231,33 @@ export default function MaidSupportPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 slide-up">
           <Card className="dashboard-card">
             <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                  <Phone className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">24/7 Support</h3>
-                  <p className="text-sm text-muted-foreground">+91 98765 43210</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col items-center space-y-4">
                 <div className="w-12 h-12 bg-success rounded-lg flex items-center justify-center">
-                  <Mail className="h-6 w-6 text-success-foreground" />
+                  <Phone className="h-6 w-6 text-success-foreground" />
                 </div>
-                <div>
+                <div className="text-center">
+                  <h3 className="font-semibold text-foreground">WhatsApp Support</h3>
+                  <p className="text-sm text-muted-foreground">+91 81433 53030</p>
+                </div>
+                <Button className="h-11 rounded-full border-2 border-transparent bg-[#1800ad] text-white hover:bg-[#ca0013] font-semibold w-full shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl" onClick={() => window.open('https://wa.me/918143353030', '_blank')}>
+                  Chat on WhatsApp
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="dashboard-card">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                  <Mail className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <div className="text-center">
                   <h3 className="font-semibold text-foreground">Email Support</h3>
-                  <p className="text-sm text-muted-foreground">support@sweepro.com</p>
+                  <p className="text-sm text-muted-foreground">sweeproindia@gmail.com</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Copy the email above to contact us</p>
                 </div>
               </div>
             </CardContent>
@@ -217,13 +265,16 @@ export default function MaidSupportPage() {
 
           <Card className="dashboard-card">
             <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col items-center space-y-4">
                 <div className="w-12 h-12 bg-warning rounded-lg flex items-center justify-center">
                   <Clock className="h-6 w-6 text-warning-foreground" />
                 </div>
-                <div>
+                <div className="text-center">
                   <h3 className="font-semibold text-foreground">Response Time</h3>
                   <p className="text-sm text-muted-foreground">Within 2 hours</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">Mon-Sun, 8 AM - 10 PM</p>
                 </div>
               </div>
             </CardContent>

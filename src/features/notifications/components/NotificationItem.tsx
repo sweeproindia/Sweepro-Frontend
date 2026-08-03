@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Notification } from '../types';
-import { getNotificationHref, getNotificationIcon, getNotificationPriority, getPriorityClasses } from '../utils';
+import { getNotificationHref, getNotificationPriority, getPriorityClasses } from '../utils';
 
 export function NotificationItem({
   notification,
@@ -22,21 +21,24 @@ export function NotificationItem({
   const createdLabel = format(new Date(notification.createdAt), 'MMM d • h:mm a');
 
   return (
-    <button
-      type="button"
+    <div
       className={cn(
-        'w-full text-left p-4 border-b border-border hover:bg-muted/50 transition-colors group',
+        'w-full text-left p-4 border-b border-border hover:bg-muted/50 transition-colors group cursor-pointer',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         !notification.read ? styles.bg : '',
         !notification.read ? `border-l-4 ${styles.ring}` : 'border-l-4 border-l-transparent'
       )}
       onClick={() => onOpen(notification)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(notification);
+        }
+      }}
     >
       <div className="flex items-start gap-3">
-        <div className="mt-0.5" aria-hidden="true">
-          {getNotificationIcon(notification.type)}
-        </div>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -59,7 +61,7 @@ export function NotificationItem({
                   }}
                   aria-label="Delete notification"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  ×
                 </Button>
               )}
 
@@ -76,6 +78,6 @@ export function NotificationItem({
           ) : null}
         </div>
       </div>
-    </button>
+    </div>
   );
 }

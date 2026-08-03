@@ -9,6 +9,7 @@ import { useUser } from '@/contexts/UserContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { getAuthTokenType } from '@/services/api';
+import { validateEmail } from '@/utils/validation';
 import { motion } from 'framer-motion';
 
 // Predefined addresses for displaying available communities
@@ -118,7 +119,7 @@ export default function LoginPage() {
    * only runs once even if state changes re-trigger the useEffect.
    */
   const navigateAfterAuth = async (user: any) => {
-    if (hasNavigated) return;
+    // Don't use hasNavigated guard here - let the login handler manage it
     setHasNavigated(true);
 
     try {
@@ -137,11 +138,13 @@ export default function LoginPage() {
     if (!authInitialized || isAuthLoading) return;
     if (!isAuthenticated || !currentUser) return;
     if (hasNavigated) return;
+    // Don't navigate if email login is in progress - let the login handler handle it
+    if (isEmailLoading) return;
 
     setHasNavigated(true);
     navigateByRole(currentUser);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authInitialized, isAuthLoading, isAuthenticated, currentUser, hasNavigated]);
+  }, [authInitialized, isAuthLoading, isAuthenticated, currentUser, hasNavigated, isEmailLoading]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -196,17 +199,48 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      toast({
+        title: 'Invalid Email',
+        description: emailErr,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!password) {
+      toast({
+        title: 'Password Required',
+        description: 'Please enter your password.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsEmailLoading(true);
 
     try {
-      const loggedInUser = await login(email.trim(), password);
+      // Call AuthService directly (same as Google sign-in)
+      const response = await AuthService.login({ email: email.trim(), password });
 
-      toast({
-        title: 'Login successful!',
-        description: `Welcome back, ${loggedInUser.name}!`,
-      });
+      if (response.success && response.data?.user) {
+        const loggedInUser = response.data.user;
 
-      await navigateAfterAuth(loggedInUser);
+        toast({
+          title: 'Login successful!',
+          description: `Welcome back, ${loggedInUser.name}!`,
+        });
+
+        // Mark as authenticated immediately (same as Google sign-in)
+        setAuthenticatedUser(loggedInUser);
+
+        // Use the same navigation as Google sign-in
+        await navigateAfterAuth(loggedInUser);
+      } else {
+        throw new Error(response.message || 'Login failed');
+      }
     } catch (error: any) {
       if (error?.message?.toLowerCase().includes('verify your email')) {
         toast({
@@ -246,7 +280,7 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
-              <form onSubmit={handleEmailLogin} className="space-y-4">
+              <form noValidate onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
                   <div className="relative">
@@ -309,15 +343,6 @@ export default function LoginPage() {
                     'Sign in'
                   )}
                 </Button>
-
-                {(isEmailLoading || isLoading || hasNavigated) && (
-                  <div className="mt-3 p-3.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center space-x-2.5 shadow-sm animate-pulse">
-                    <Loader2 className="h-5 w-5 animate-spin text-[#1800ad]" />
-                    <span className="text-sm font-medium text-[#1800ad]">
-                      {hasNavigated ? 'Opening your dashboard...' : 'Signing you in, please wait...'}
-                    </span>
-                  </div>
-                )}
               </form>
 
               <div className="relative">

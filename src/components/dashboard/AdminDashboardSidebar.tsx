@@ -154,7 +154,7 @@ export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBooking
                           }
                           if (forceOpen && setOpen) setOpen(false);
                         }}
-                        className={active ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-medium rounded-lg' : ''}
+                        className={active ? 'bg-neutral-100 dark:bg-neutral-800 font-medium rounded-lg border-l-2 border-neutral-400 dark:border-neutral-500' : ''}
                       />
                       {item.showBadge && pendingBookingsCount > 0 && sidebarOpen && (
                         <Badge
@@ -164,13 +164,7 @@ export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBooking
                           {pendingBookingsCount}
                         </Badge>
                       )}
-                      {/* Active indicator bar */}
-                      {active && (
-                        <motion.div
-                          layoutId="admin-sidebar-active"
-                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full"
-                        />
-                      )}
+
                     </div>
                   );
                 })}

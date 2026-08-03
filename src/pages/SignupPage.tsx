@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError } from '@/services/api';
 import { parseApiError } from '@/utils/errorUtils';
+import { validateEmail, validatePassword, scrollToFirstError } from '@/utils/validation';
 import { motion } from 'framer-motion';
 
 // Predefined addresses from your client (Only for Customers)
@@ -176,16 +177,6 @@ export default function SignupPage() {
     }
   };
 
-  const validatePassword = (value: string): string | null => {
-    if (!value) return 'Password is required.';
-    if (value.length < 8) return 'Password must be at least 8 characters.';
-    if (!/[a-z]/.test(value)) return 'Password must include a lowercase letter.';
-    if (!/[A-Z]/.test(value)) return 'Password must include an uppercase letter.';
-    if (!/\d/.test(value)) return 'Password must include a number.';
-    if (!/[@$!%*?&]/.test(value)) return 'Password must include a special character (@$!%*?&).';
-    return null;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -204,8 +195,8 @@ export default function SignupPage() {
     else if (name.length < 2) nextErrors.name = 'Name must be at least 2 characters.';
     else if (!/^[a-zA-Z\s]+$/.test(name)) nextErrors.name = 'Name can only contain letters and spaces.';
 
-    if (!email) nextErrors.email = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Enter a valid email address.';
+    const emailErr = validateEmail(email);
+    if (emailErr) nextErrors.email = emailErr;
 
     if (!phone) nextErrors.phone = 'Phone number is required.';
     else if (!/^[6-9]\d{9}$/.test(phone)) nextErrors.phone = 'Enter a valid 10-digit Indian phone number starting with 6-9.';
@@ -235,6 +226,7 @@ export default function SignupPage() {
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
       setFormError('Please fix the highlighted fields.');
+      setTimeout(() => scrollToFirstError(nextErrors), 50);
       return;
     }
 
@@ -477,7 +469,7 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form noValidate onSubmit={handleSubmit} className="space-y-6">
                 {formError && (
                   <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {formError}
@@ -812,7 +804,7 @@ export default function SignupPage() {
                     >
                       I agree to the{' '}
                       <a
-                        href="/terms"
+                        href={`/terms?type=${isMaid ? 'worker' : 'customer'}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={e => e.stopPropagation()}

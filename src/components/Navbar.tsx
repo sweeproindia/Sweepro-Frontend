@@ -165,6 +165,10 @@ export const Navbar = ({
       href: 'faq-section',
       label: 'FAQ',
     },
+    {
+      href: 'b2b-services',
+      label: 'B2B Services',
+    },
   ];
 
   const scrollToSection = (sectionId: string) => {
