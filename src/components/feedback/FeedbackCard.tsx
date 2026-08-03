@@ -60,19 +60,19 @@ export function FeedbackCard({ onFeedbackSubmitted }: FeedbackCardProps) {
   const fetchEligibleBooking = async () => {
     setLoading(true);
     try {
-      console.log('📋 FeedbackCard - Fetching eligible bookings...');
+      if (import.meta.env.DEV) console.log('📋 FeedbackCard - Fetching eligible bookings...');
       const response = await FeedbackService.getEligibleBookings();
-      console.log('📋 FeedbackCard - Raw response:', response);
-      console.log('📋 FeedbackCard - Response success:', response.success);
-      console.log('📋 FeedbackCard - Response data:', response.data);
+      if (import.meta.env.DEV) console.log('📋 FeedbackCard - Raw response:', response);
+      if (import.meta.env.DEV) console.log('📋 FeedbackCard - Response success:', response.success);
+      if (import.meta.env.DEV) console.log('📋 FeedbackCard - Response data:', response.data);
       
       if (response.success && response.data) {
         // Backend returns: { success: true, data: { bookings: [...], assignedMaids: [...] } }
         // api.ts returns it as-is since it has success field
         const responseData = response.data;
         
-        console.log('📋 FeedbackCard - Response data type:', typeof responseData);
-        console.log('📋 FeedbackCard - Response data keys:', responseData ? Object.keys(responseData) : 'null');
+        if (import.meta.env.DEV) console.log('📋 FeedbackCard - Response data type:', typeof responseData);
+        if (import.meta.env.DEV) console.log('📋 FeedbackCard - Response data keys:', responseData ? Object.keys(responseData) : 'null');
         
         // Extract bookings and assignedMaids
         let bookingsArray: any[] = [];
@@ -83,9 +83,9 @@ export function FeedbackCard({ onFeedbackSubmitted }: FeedbackCardProps) {
           if ('bookings' in responseData) {
             if (Array.isArray(responseData.bookings)) {
               bookingsArray = responseData.bookings;
-              console.log('✅ Found bookings array:', bookingsArray.length);
+              if (import.meta.env.DEV) console.log('✅ Found bookings array:', bookingsArray.length);
             } else {
-              console.warn('⚠️ bookings exists but is not an array:', typeof responseData.bookings);
+              if (import.meta.env.DEV) console.warn('⚠️ bookings exists but is not an array:', typeof responseData.bookings);
             }
           }
           
@@ -93,50 +93,55 @@ export function FeedbackCard({ onFeedbackSubmitted }: FeedbackCardProps) {
           if ('assignedMaids' in responseData) {
             if (Array.isArray(responseData.assignedMaids)) {
               maidsArray = responseData.assignedMaids;
-              console.log('✅ Found assignedMaids array:', maidsArray.length);
+              if (import.meta.env.DEV) console.log('✅ Found assignedMaids array:', maidsArray.length);
             } else {
-              console.warn('⚠️ assignedMaids exists but is not an array:', typeof responseData.assignedMaids);
+              if (import.meta.env.DEV) console.warn('⚠️ assignedMaids exists but is not an array:', typeof responseData.assignedMaids);
             }
           }
           
           // Debug: log all keys in responseData
-          console.log('📋 All keys in responseData:', Object.keys(responseData));
+          if (import.meta.env.DEV) console.log('📋 All keys in responseData:', Object.keys(responseData));
         } else {
-          console.warn('⚠️ responseData is not an object:', typeof responseData);
+          if (import.meta.env.DEV) console.warn('⚠️ responseData is not an object:', typeof responseData);
         }
         
         // Get the most recent booking (first one)
         const booking = bookingsArray.length > 0 ? bookingsArray[0] : null;
         
-        console.log('📋 FeedbackCard - Final result:');
-        console.log('  - Eligible booking found:', !!booking);
-        console.log('  - Bookings array length:', bookingsArray.length);
-        console.log('  - Assigned maids count:', maidsArray.length);
-        
-        if (booking) {
-          console.log('  - Booking ID:', booking.id);
-          console.log('  - Booking status:', booking.status);
-          console.log('  - Booking has maid:', !!booking.maid);
+        if (import.meta.env.DEV) {
+          console.log('📋 FeedbackCard - Final result:');
+          console.log('  - Eligible booking found:', !!booking);
+          console.log('  - Bookings array length:', bookingsArray.length);
+          console.log('  - Assigned maids count:', maidsArray.length);
+          if (booking) {
+            console.log('  - Booking ID:', booking.id);
+            console.log('  - Booking status:', booking.status);
+            console.log('  - Booking has maid:', !!booking.maid);
+          }
         }
         
         setEligibleBooking(booking);
         setAssignedMaids(maidsArray);
       } else {
-        console.warn('⚠️ FeedbackCard - Response not successful or no data');
-        console.warn('  - Success:', response.success);
-        console.warn('  - Has data:', !!response.data);
+        if (import.meta.env.DEV) {
+          console.warn('⚠️ FeedbackCard - Response not successful or no data');
+          console.warn('  - Success:', response.success);
+          console.warn('  - Has data:', !!response.data);
+        }
         setEligibleBooking(null);
         setAssignedMaids([]);
       }
     } catch (error: any) {
       console.error('❌ FeedbackCard - Error fetching eligible booking:', error);
-      console.error('❌ Error message:', error?.message);
-      console.error('❌ Error response:', error?.response);
+      if (import.meta.env.DEV) {
+        console.error('❌ Error message:', error?.message);
+        console.error('❌ Error response:', error?.response);
+      }
       setEligibleBooking(null);
       setAssignedMaids([]);
     } finally {
       setLoading(false);
-      console.log('📋 FeedbackCard - Loading complete');
+      if (import.meta.env.DEV) console.log('📋 FeedbackCard - Loading complete');
     }
   };
 
@@ -157,21 +162,22 @@ export function FeedbackCard({ onFeedbackSubmitted }: FeedbackCardProps) {
 
   // Show loading state - return null to avoid flickering
   if (loading) {
-    console.log('📋 FeedbackCard - Still loading...');
     return null;
   }
 
   // Don't show card if no eligible booking
   if (!eligibleBooking) {
-    console.log('📋 FeedbackCard - No eligible booking found. Card will not be displayed.');
-    console.log('📋 FeedbackCard - This means:');
-    console.log('   1. No completed bookings exist, OR');
-    console.log('   2. All completed bookings already have feedback, OR');
-    console.log('   3. No bookings have been completed yet');
+    if (import.meta.env.DEV) {
+      console.log('📋 FeedbackCard - No eligible booking found. Card will not be displayed.');
+      console.log('📋 FeedbackCard - This means:');
+      console.log('   1. No completed bookings exist, OR');
+      console.log('   2. All completed bookings already have feedback, OR');
+      console.log('   3. No bookings have been completed yet');
+    }
     return null;
   }
 
-  console.log('✅ FeedbackCard - Rendering card for booking:', eligibleBooking.id);
+  if (import.meta.env.DEV) console.log('✅ FeedbackCard - Rendering card for booking:', eligibleBooking.id);
 
   // Use assigned maid from booking or first assigned maid
   const defaultMaid = eligibleBooking.maid || (assignedMaids.length > 0 ? {

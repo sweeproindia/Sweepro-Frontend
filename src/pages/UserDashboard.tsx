@@ -519,7 +519,10 @@ export default function UserDashboard() {
         </Card>
 
         {/* Feedback Section */}
-        {user && isAuthenticated && (
+        {/* BUG 4 FIX: Only mount FeedbackCard when the user has an ACTIVE subscription.
+            Previously it mounted for every authenticated user, firing an API call and
+            spamming console logs even for users with no plan or no completed bookings. */}
+        {user && isAuthenticated && subscription?.status === 'ACTIVE' && (
           <div className="slide-up">
             <FeedbackCard onFeedbackSubmitted={refreshDashboard} />
           </div>
