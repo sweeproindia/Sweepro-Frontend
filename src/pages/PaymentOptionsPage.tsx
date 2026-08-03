@@ -195,10 +195,16 @@ const PaymentOptionsPage = () => {
   const { toast } = useToast();
   const { user, updateUser } = useUser();
 
+  const getMinStartDate = () => {
+    const dayAfterTomorrow = new Date();
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+    return dayAfterTomorrow.toISOString().split('T')[0];
+  };
+
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [options, setOptions] = useState<ServiceOptions>({
     timeSlot: '',
-    startDate: '',
+    startDate: getMinStartDate(),
     address: '',
     apartmentId: '',
     apartmentNumber: '',
@@ -375,7 +381,10 @@ const PaymentOptionsPage = () => {
 
           const savedOptions = (location.state as any)?.selectedOptions || getFromStorage(STORAGE_KEYS.SERVICE_OPTIONS);
           if (savedOptions) {
-            setOptions(savedOptions);
+            setOptions({
+              ...savedOptions,
+              startDate: savedOptions.startDate || getMinStartDate()
+            });
           }
         }
       } catch (error) {
@@ -848,21 +857,18 @@ const PaymentOptionsPage = () => {
             <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-1" />
             Back to plans
           </Button>
-          <div  className="rounded-full px-4 py-1 flex " 
-          style={{
+          <div
+            className="inline-flex items-center rounded-full px-4 py-1.5 shadow-sm transition-all hover:bg-white"
+            style={{
               border: `1px solid ${BRAND.indigo}33`,
-            
+              background: 'rgba(255, 255, 255, 0.85)',
               color: BRAND.indigo
-            }}>
-            <img src='/apple-touch-icon.png' alt='Sweepro Logo' className='h-6 w-6 inline-block mr-2' />
-          <Badge
-            className="rounded-full bg-transpernt text- px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]"
-           style={{
-            color:BRAND.indigo
-           }}
+            }}
           >
-            {selectedPlan.name}
-          </Badge>
+            <img src="/apple-touch-icon.png" alt="Sweepro Logo" className="mr-2 h-5 w-5 object-contain" />
+            <span className="text-xs font-semibold uppercase tracking-[0.35em]">
+              {selectedPlan.name}
+            </span>
           </div>
         </div>
 
