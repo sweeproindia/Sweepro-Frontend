@@ -13,9 +13,10 @@ import {
   Phone,
   Send,
   Settings,
-  Shield
+  Shield,
+  Headphones
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface Message {
   id: number;
@@ -119,12 +120,35 @@ export default function MaidSupportPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'tickets' | 'faq'>('chat');
 
-  const handleSendMessage = () => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef<boolean>(true);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const distanceToBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+    isNearBottomRef.current = distanceToBottom < 100;
+  };
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      scrollToBottom('smooth');
+    }
+  }, [messages, isTyping]);
+
+  const handleSendMessage = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!newMessage.trim()) return;
 
+    const textToSend = newMessage.trim();
     const userMessage: Message = {
-      id: messages.length + 1,
-      text: newMessage,
+      id: Date.now(),
+      text: textToSend,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -133,17 +157,31 @@ export default function MaidSupportPage() {
     setNewMessage('');
     setIsTyping(true);
 
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+
+    isNearBottomRef.current = true;
+    setTimeout(() => scrollToBottom('smooth'), 50);
+
     // Simulate AI support response
     setTimeout(() => {
       const supportMessage: Message = {
-        id: messages.length + 2,
-        text: getBotResponse(newMessage),
+        id: Date.now() + 1,
+        text: getBotResponse(textToSend),
         sender: 'support',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, supportMessage]);
       setIsTyping(false);
-    }, 1500);
+
+      requestAnimationFrame(() => {
+        if (isNearBottomRef.current) {
+          scrollToBottom('smooth');
+        }
+        inputRef.current?.focus();
+      });
+    }, 1200);
   };
 
   const getBotResponse = (userInput: string): string => {
@@ -285,66 +323,111 @@ export default function MaidSupportPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Chat Interface */}
           <div className="lg:col-span-2">
-            <Card className="dashboard-card slide-up h-[600px] flex flex-col">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Live Chat Support</CardTitle>
-                    <CardDescription>Chat with our support team in real-time</CardDescription>
+            <Card className="dashboard-card slide-up h-[560px] flex flex-col overflow-hidden border border-border/80 shadow-md">
+              <div className="bg-muted/40 px-6 py-4 border-b border-border/60 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
+                      <Headphones className="h-5 w-5" />
+                    </div>
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-background" />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-success rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Online</span>
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                      Partner Support Desk
+                      <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">Live</span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Dedicated support for Sweepro Homecare Partners</p>
                   </div>
                 </div>
-              </CardHeader>
+                <div className="flex items-center space-x-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                  <span>Online</span>
+                </div>
+              </div>
 
-              <CardContent className="flex-1 flex flex-col">
+              <CardContent className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
+                <div
+                  ref={scrollContainerRef}
+                  onScroll={handleScroll}
+                  role="log"
+                  aria-live="polite"
+                  aria-label="Partner support conversation history"
+                  className="flex-1 overflow-y-auto px-2 py-2 space-y-3 scrollbar-thin scrollbar-thumb-muted"
+                >
+                  {messages.map((message) => {
+                    const isUser = message.sender === 'user';
+                    return (
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
-                          }`}
+                        key={message.id}
+                        className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in-50 duration-200`}
                       >
-                        <p className="text-sm">{message.text}</p>
-                        <p className="text-xs opacity-70 mt-1">{message.timestamp}</p>
+                        <div className={`flex items-end space-x-2 max-w-[85%] sm:max-w-[75%] ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                          {!isUser && (
+                            <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mb-1">
+                              <Headphones className="h-3.5 w-3.5" />
+                            </div>
+                          )}
+                          <div
+                            className={`px-4 py-2.5 shadow-sm text-xs sm:text-sm leading-relaxed ${
+                              isUser
+                                ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-xs'
+                                : 'bg-muted/80 text-foreground border border-border/50 rounded-2xl rounded-tl-xs'
+                            }`}
+                          >
+                            <div className="whitespace-pre-line">{message.text}</div>
+                            <div
+                              className={`text-[10px] mt-1 text-right select-none ${
+                                isUser ? 'text-primary-foreground/75' : 'text-muted-foreground/80'
+                              }`}
+                            >
+                              {message.timestamp}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {isTyping && (
-                    <div className="flex justify-start">
-                      <div className="bg-muted text-foreground px-4 py-2 rounded-lg">
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="flex justify-start items-end space-x-2 animate-in fade-in-50 duration-200">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                        <Headphones className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="bg-muted/80 text-foreground border border-border/50 rounded-2xl rounded-tl-xs px-4 py-3">
+                        <div className="flex items-center space-x-1.5">
+                          <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                          <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                          <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"></div>
                         </div>
                       </div>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Message Input */}
-                <div className="flex space-x-2">
+                <form onSubmit={handleSendMessage} className="pt-3 border-t border-border flex items-center space-x-2 mt-2">
                   <Input
+                    ref={inputRef}
                     placeholder="Type your message..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1"
+                    disabled={isTyping}
+                    aria-label="Type your support message"
+                    className="flex-1 rounded-full bg-background border-border px-4 py-2 text-xs sm:text-sm focus-visible:ring-2 focus-visible:ring-primary transition-all"
                   />
-                  <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
+                  <Button
+                    type="submit"
+                    disabled={isTyping || !newMessage.trim()}
+                    size="icon"
+                    aria-label="Send message"
+                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 transition-transform active:scale-95"
+                  >
                     <Send className="h-4 w-4" />
                   </Button>
-                </div>
+                </form>
               </CardContent>
             </Card>
           </div>

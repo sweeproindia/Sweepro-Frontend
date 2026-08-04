@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MessageCircle, Phone, Mail, Clock, HelpCircle, Search, ChevronRight, Send, Bot, User } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Phone, Mail, Clock, HelpCircle, Search, ChevronRight, Send, Bot } from 'lucide-react';
 
 const faqItems = [
   {
@@ -74,24 +73,46 @@ const supportChannels = [
 export default function SupportPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, type: 'bot', message: 'Hi! I\'m your AI assistant. How can I help you today?', timestamp: new Date() }
+    { id: 1, type: 'bot' as const, message: 'Hi! I\'m your AI assistant. How can I help you today?', timestamp: new Date() }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef<boolean>(true);
 
   const filteredFAQ = faqItems.filter(item =>
     item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const distanceToBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+    isNearBottomRef.current = distanceToBottom < 100;
+  };
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      scrollToBottom('smooth');
+    }
+  }, [chatMessages, isChatLoading]);
+
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
+    const messageText = chatInput.trim();
     const userMessage = {
       id: Date.now(),
       type: 'user' as const,
-      message: chatInput,
+      message: messageText,
       timestamp: new Date()
     };
 
@@ -99,16 +120,32 @@ export default function SupportPage() {
     setChatInput('');
     setIsChatLoading(true);
 
+    // Keep input focused immediately so user can keep typing
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+
+    // Force auto-scroll to bottom when user sends a message
+    isNearBottomRef.current = true;
+    setTimeout(() => scrollToBottom('smooth'), 50);
+
     // Simulate AI response
     setTimeout(() => {
       const botMessage = {
         id: Date.now() + 1,
         type: 'bot' as const,
-        message: getBotResponse(chatInput),
+        message: getBotResponse(messageText),
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, botMessage]);
       setIsChatLoading(false);
+
+      requestAnimationFrame(() => {
+        if (isNearBottomRef.current) {
+          scrollToBottom('smooth');
+        }
+        inputRef.current?.focus();
+      });
     }, 1000);
   };
 
@@ -161,7 +198,12 @@ export default function SupportPage() {
     }
 
     // General help
-    return 'I\'m here to help! You can ask me about:\n• Bookings and rescheduling\n• Payments and billing\n• Subscriptions and plans\n• Service quality issues\n• Buffer days\n\nFor complex issues, please use the support form below or contact our team:\n📱 WhatsApp: +91 81433 53030\n📧 Email: sweeproindia@gmail.com';
+    return 'I\'m here to help! You can ask me about:\n• Bookings and rescheduling\n• Payments and billing\n• Subscriptions and plans\n• Service quality issues\n• Buffer days\n\nFor complex issues, please use the support channels below or contact our team:\n📱 WhatsApp: +91 81433 53030\n📧 Email: sweeproindia@gmail.com';
+  };
+
+  const formatTime = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -176,63 +218,103 @@ export default function SupportPage() {
         </div>
 
         {/* AI Chat Support */}
-        <Card className="dashboard-card slide-up">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="flex items-center space-x-2 text-lg sm:text-xl">
-              <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              <span>AI Assistant</span>
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Get instant help with common questions and issues
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-            <div className="space-y-4">
-              <ScrollArea className="h-64 sm:h-80 w-full border border-border rounded-lg p-3 sm:p-4">
-                <div className="space-y-3 sm:space-y-4">
-                  {chatMessages.map((msg) => (
-                    <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`flex items-start space-x-2 max-w-[90%] sm:max-w-[80%] ${msg.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                        <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                          {msg.type === 'user' ? <User className="h-3 w-3 sm:h-4 sm:w-4" /> : <Bot className="h-3 w-3 sm:h-4 sm:w-4" />}
-                        </div>
-                        <div className={`rounded-lg p-2 sm:p-3 ${msg.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                          <p className="text-xs sm:text-sm">{msg.message}</p>
-                          <p className={`text-xs mt-1 ${msg.type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                            {msg.timestamp.toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {isChatLoading && (
-                    <div className="flex justify-start">
-                      <div className="flex items-start space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          <Bot className="h-4 w-4" />
-                        </div>
-                        <div className="bg-muted rounded-lg p-3">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+        <Card className="dashboard-card slide-up overflow-hidden border border-border/80 shadow-md">
+          <div className="bg-muted/40 px-4 py-3 border-b border-border/60 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-background" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  Sweepro AI Assistant
+                  <span className="text-[10px] bg-primary/10 text-primary font-medium px-2 py-0.5 rounded-full">Automated</span>
+                </h3>
+                <p className="text-xs text-muted-foreground">Instant help for bookings, billing & service inquiries</p>
+              </div>
+            </div>
+          </div>
+
+          <CardContent className="p-3 sm:p-4">
+            <div className="space-y-3">
+              <div
+                ref={scrollAreaRef}
+                onScroll={handleScroll}
+                role="log"
+                aria-live="polite"
+                aria-label="Support chat conversation history"
+                className="h-[320px] sm:h-[360px] overflow-y-auto px-2 py-2 space-y-3 scrollbar-thin scrollbar-thumb-muted"
+              >
+                {chatMessages.map((msg) => {
+                  const isUser = msg.type === 'user';
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in-50 duration-200`}
+                    >
+                      <div className={`flex items-end space-x-2 max-w-[85%] sm:max-w-[72%] ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        {!isUser && (
+                          <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0 mb-1">
+                            <Bot className="h-3.5 w-3.5" />
+                          </div>
+                        )}
+                        <div
+                          className={`px-3.5 py-2.5 shadow-sm text-xs sm:text-sm leading-relaxed ${
+                            isUser
+                              ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-xs'
+                              : 'bg-muted/80 text-foreground border border-border/50 rounded-2xl rounded-tl-xs'
+                          }`}
+                        >
+                          <div className="whitespace-pre-line">{msg.message}</div>
+                          <div
+                            className={`text-[10px] mt-1 text-right select-none ${
+                              isUser ? 'text-primary-foreground/75' : 'text-muted-foreground/80'
+                            }`}
+                          >
+                            {formatTime(msg.timestamp)}
                           </div>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              </ScrollArea>
+                  );
+                })}
 
-              <form onSubmit={handleChatSubmit} className="flex space-x-2">
+                {isChatLoading && (
+                  <div className="flex justify-start items-end space-x-2 animate-in fade-in-50 duration-200">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                      <Bot className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="bg-muted/80 text-foreground border border-border/50 rounded-2xl rounded-tl-xs px-4 py-3">
+                      <div className="flex items-center space-x-1.5">
+                        <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                        <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                        <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <form onSubmit={handleChatSubmit} className="pt-2 border-t border-border flex items-center space-x-2">
                 <Input
+                  ref={inputRef}
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Type your message..."
                   disabled={isChatLoading}
-                  className="flex-1"
+                  aria-label="Type your support message"
+                  className="flex-1 rounded-full bg-background border-border px-4 py-2 text-xs sm:text-sm focus-visible:ring-2 focus-visible:ring-primary transition-all"
                 />
-                <Button type="submit" disabled={isChatLoading || !chatInput.trim()} size="icon">
+                <Button
+                  type="submit"
+                  disabled={isChatLoading || !chatInput.trim()}
+                  size="icon"
+                  aria-label="Send message"
+                  className="rounded-full h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 transition-transform active:scale-95"
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </form>

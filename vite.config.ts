@@ -27,11 +27,13 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@tabler/icons-react": path.resolve(__dirname, "./node_modules/@tabler/icons-react/dist/cjs/tabler-icons-react.cjs").replace(/\\/g, '/'),
     },
   },
   test: {
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/setupTests.ts",
+    fileParallelism: false,
   },
 }));
