@@ -237,8 +237,8 @@ export default function MaidDashboardEnhanced() {
       upcomingBookings,
       totalEarnings,
       monthlyEarnings,
-      averageRating: 4.8, // This would come from a rating system
-      totalReviews: completedBookings, // Assuming 1 review per completed booking
+      averageRating: (user as any)?.profiles?.maid?.rating || 0,
+      totalReviews: (user as any)?.profiles?.maid?.totalRatings || 0,
       completionRate
     });
   };
