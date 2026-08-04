@@ -70,20 +70,20 @@ export const DashboardNavbar = ({
           : 'bg-white border-b border-gray-200 shadow-sm'
       }`}>
       <div className="flex-1 px-4 flex items-center relative">
-        {/* Left: Hamburger (mobile) + Logo (desktop) */}
+        {/* Left: Hamburger (mobile/tablet) + Logo (desktop) */}
         <div className="flex items-center gap-2">
           {onMobileMenuToggle && (
             <Button
               variant="ghost"
               size="sm"
-              className={`md:hidden ${userType === 'admin' ? 'text-white hover:bg-white/10' : ''}`}
+              className={`lg:hidden ${userType === 'admin' ? 'text-white hover:bg-white/10' : ''}`}
               onClick={onMobileMenuToggle}
             >
               <Menu className="h-5 w-5" />
             </Button>
           )}
           {/* Logo - desktop left aligned */}
-          <Link to="/" className="hidden md:flex items-center group">
+          <Link to="/" className="hidden lg:flex items-center group">
             <img
               src={userType === 'admin' ? '/assets/logo-black.png' : '/assets/logo.png'}
               alt="Sweepro Logo"
@@ -92,8 +92,8 @@ export const DashboardNavbar = ({
           </Link>
         </div>
 
-        {/* Logo - mobile centered (absolute) */}
-        <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
+        {/* Logo - mobile/tablet centered (absolute) */}
+        <div className="absolute left-1/2 -translate-x-1/2 lg:hidden">
           <Link to="/" className="flex items-center group">
             <img
               src={userType === 'admin' ? '/assets/logo-black.png' : '/assets/logo.png'}

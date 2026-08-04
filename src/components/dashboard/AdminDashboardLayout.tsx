@@ -37,19 +37,19 @@ export const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) =>
 
       {/* Main content area with sidebar and page content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Desktop (always visible) */}
-        <div className="hidden md:flex md:flex-shrink-0">
+        {/* Sidebar - Desktop (always visible on desktop) */}
+        <div className="hidden lg:flex lg:flex-shrink-0">
           <AdminDashboardSidebar />
         </div>
         
-        {/* Mobile Sidebar Overlay */}
+        {/* Mobile / Tablet Sidebar Overlay */}
         {isMobileSidebarOpen && (
           <>
             <div 
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity"
               onClick={() => setIsMobileSidebarOpen(false)}
             />
-            <div className="fixed inset-y-0 left-0 z-50 md:hidden animate-in slide-in-from-left duration-200">
+            <div className="fixed inset-y-0 left-0 z-50 lg:hidden animate-in slide-in-from-left duration-200">
               <AdminDashboardSidebar forceOpen setOpen={setIsMobileSidebarOpen} />
             </div>
           </>

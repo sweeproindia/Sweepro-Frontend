@@ -98,7 +98,7 @@ export const AdminDashboardSidebar = ({ open, setOpen, forceOpen, pendingBooking
   return (
     <Sidebar open={sidebarOpen} setOpen={setOpen}>
       <SidebarBody className="justify-between gap-6">
-        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [ms-overflow-style:none]">
           {/* Admin Panel Header */}
           {(sidebarOpen || forceOpen) && (
             <motion.div

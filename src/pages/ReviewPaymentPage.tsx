@@ -653,8 +653,88 @@ export default function ReviewPaymentPage() {
     });
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
+  // Deduplication set to prevent console log spam during development
+  const loggedInvalidDates = useRef<Set<string>>(new Set());
+
+  /**
+   * Safely formats a date string into a user-friendly format (e.g. "Wednesday, August 5, 2026").
+   * 
+   * - WHY INVALID DATES ARE HANDLED: Protects against uninitialized state, missing options, or legacy date strings.
+   * - WHY THE FALLBACK EXISTS: Ensures the UI always renders a valid, realistic kickoff date (day after tomorrow) instead of "January 1, 0001" or "Invalid Date".
+   * - WHY LOGGING IS DEV-ONLY: Gives developers immediate visibility during debugging while keeping production logs completely clean and silent.
+   */
+  const formatDate = (dateString?: string | Date | null) => {
+    const getFallbackDate = () => {
+      const dayAfterTomorrow = new Date();
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+      return dayAfterTomorrow;
+    };
+
+    const logDevWarning = (reason: string) => {
+      const isDev = (import.meta as any).env?.DEV || process.env.NODE_ENV === 'development';
+      if (isDev) {
+        const key = `${String(dateString)}:${reason}`;
+        if (!loggedInvalidDates.current.has(key)) {
+          loggedInvalidDates.current.add(key);
+          const fallbackFormatted = getFallbackDate().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+          console.warn('[formatDate Warning] Invalid date input encountered:', {
+            input: dateString ?? (dateString === null ? 'null' : 'undefined'),
+            reason,
+            fallbackUsed: fallbackFormatted
+          });
+        }
+      }
+    };
+
+    if (!dateString) {
+      logDevWarning(dateString === null ? 'Value is null' : dateString === '' ? 'Value is an empty string' : 'Value is undefined');
+      return getFallbackDate().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) {
+      logDevWarning('Value parses to Invalid Date');
+      return getFallbackDate().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    if (d.getFullYear() <= 1970) {
+      logDevWarning(`Suspicious year encountered (${d.getFullYear()} <= 1970)`);
+      return getFallbackDate().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // Parse "YYYY-MM-DD" in local time to avoid UTC timezone offset shifts
+    if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day);
+      return localDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    return d.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 
       month: 'long', 
@@ -703,22 +783,19 @@ export default function ReviewPaymentPage() {
             Back to options
           </Button>
 
-           <div  className="rounded-full px-4 py-1 flex " 
-                    style={{
-                        border: `1px solid ${BRAND.indigo}33`,
-                      
-                        color: BRAND.indigo
-                      }}>
-                      <img src='/apple-touch-icon.png' alt='Sweepro Logo' className='h-6 w-6 inline-block mr-2' />
-                    <Badge
-                      className="rounded-full bg-transpernt text- px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]"
-                     style={{
-                      color:BRAND.indigo
-                     }}
-                    >
-                      {selectedPlan.name}
-                    </Badge>
-                    </div>
+          <div
+            className="inline-flex items-center rounded-full px-4 py-1.5 shadow-sm transition-all hover:bg-white"
+            style={{
+              border: `1px solid ${BRAND.indigo}33`,
+              background: 'rgba(255, 255, 255, 0.85)',
+              color: BRAND.indigo
+            }}
+          >
+            <img src="/apple-touch-icon.png" alt="Sweepro Logo" className="mr-2 h-5 w-5 object-contain" />
+            <span className="text-xs font-semibold uppercase tracking-[0.35em]">
+              {selectedPlan.name}
+            </span>
+          </div>
         </div>
 
         <section

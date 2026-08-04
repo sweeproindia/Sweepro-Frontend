@@ -18,23 +18,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Main content area with sidebar and page content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Desktop (always visible) */}
-        <div className="hidden md:block">
+        {/* Sidebar - Desktop (always visible on desktop) */}
+        <div className="hidden lg:block">
           <DashboardSidebar />
         </div>
         
-        {/* Mobile Sidebar (controlled by navbar hamburger) */}
+        {/* Mobile / Tablet Sidebar (controlled by navbar hamburger) */}
         {isMobileSidebarOpen && (
           <>
             {/* Backdrop */}
             <div 
-              className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+              className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
               onClick={() => setIsMobileSidebarOpen(false)}
             />
             
             {/* Sidebar */}
-            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
-              <DashboardSidebar open={true} setOpen={setIsMobileSidebarOpen} />
+            <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
+              <DashboardSidebar open={true} setOpen={setIsMobileSidebarOpen} forceOpen={true} />
             </div>
           </>
         )}
