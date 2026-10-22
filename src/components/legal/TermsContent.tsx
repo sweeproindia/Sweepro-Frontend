@@ -31,8 +31,9 @@ export function TermsContent({ userType }: TermsContentProps) {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/terms?type=${userType}`);
-        const data = await response.json();
+const response = await fetch(
+  `https://sweepro-backend.onrender.com/api/terms?type=${userType}`
+);        const data = await response.json();
         
         if (data.success) {
           setTerms(data.data);
